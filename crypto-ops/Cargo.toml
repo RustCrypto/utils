@@ -1,0 +1,16 @@
+[package]
+name = "crypto-ops"
+version = "0.1.1"
+authors = ["The Rust-Crypto Project Developers"]
+license = "MIT/Apache-2.0"
+description = "Set of low-level functions useful for cryptography"
+documentation = "https://docs.rs/crypto-ops"
+repository = "https://github.com/RustCrypto/utils"
+keywords = ["crypto"]
+build = "build.rs"
+
+[dependencies]
+libc = {version = "^0.2", default-features = false}
+
+[build-dependencies]
+gcc = "^0.3"
