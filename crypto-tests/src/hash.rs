@@ -17,6 +17,7 @@ macro_rules! new_tests {
             },
         )*]
     };
+    ( $( $name:expr ),+, ) => (new_tests!($($name),+))
 }
 
 pub fn main_test<D: Digest + Default>(tests: &[Test]) {
