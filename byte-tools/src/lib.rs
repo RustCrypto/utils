@@ -189,6 +189,18 @@ pub fn read_u32_le(input: &[u8]) -> u32 {
     }
 }
 
+/// Read the value of a vector of bytes as a u64 value in little-endian format.
+pub fn read_u64_le(input: &[u8]) -> u64 {
+    assert!(input.len() == 8);
+    unsafe {
+        let mut tmp: u64 = mem::uninitialized();
+        ptr::copy_nonoverlapping(input.get_unchecked(0),
+                                 &mut tmp as *mut _ as *mut u8,
+                                 8);
+        u64::from_le(tmp)
+    }
+}
+
 /// Read the value of a vector of bytes as a u32 value in big-endian format.
 pub fn read_u32_be(input: &[u8]) -> u32 {
     assert!(input.len() == 4);
@@ -198,6 +210,18 @@ pub fn read_u32_be(input: &[u8]) -> u32 {
                                  &mut tmp as *mut _ as *mut u8,
                                  4);
         u32::from_be(tmp)
+    }
+}
+
+/// Read the value of a vector of bytes as a u64 value in big-endian format.
+pub fn read_u64_be(input: &[u8]) -> u64 {
+    assert!(input.len() == 8);
+    unsafe {
+        let mut tmp: u64 = mem::uninitialized();
+        ptr::copy_nonoverlapping(input.get_unchecked(0),
+                                 &mut tmp as *mut _ as *mut u8,
+                                 8);
+        u64::from_be(tmp)
     }
 }
 
