@@ -6,8 +6,5 @@ rust:
 matrix:
   allow_failures:
     - rust: nightly
-env:
-  - TEST_DIR=byte-tools
-  - TEST_DIR=crypto-tests
-  - TEST_DIR=fake-simd
-script: cd $TEST_DIR && cargo build --verbose && cargo test --verbose
+script: cargo test --verbose --all
+

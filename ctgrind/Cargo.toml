@@ -1,0 +1,12 @@
+[package]
+name = "ctgrind"
+version = "0.1.0"
+authors = ["The Rust-Crypto Project Developers"]
+license = "MIT/Apache-2.0"
+description = "Tool for checking that functions are constant time using Valgrind"
+documentation = "https://docs.rs/ctgrind"
+repository = "https://github.com/RustCrypto/utils"
+keywords = ["utils", "crypto", "constant-time"]
+
+[dependencies]
+vgrs = {git = "https://github.com/kmcallister/vgrs"}

@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "byte-tools",
+    "crypto-tests",
+    "ctgrind",
+    "digest-buffer",
+    "fake-simd",
+]
