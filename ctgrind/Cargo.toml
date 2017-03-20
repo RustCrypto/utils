@@ -10,3 +10,5 @@ keywords = ["utils", "crypto", "constant-time"]
 
 [dependencies]
 vgrs = {git = "https://github.com/kmcallister/vgrs"}
+
+[workspace]
