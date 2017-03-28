@@ -1,6 +1,6 @@
 [package]
 name = "crypto-tests"
-version = "0.4.0-beta"
+version = "0.4.0-rc1"
 authors = ["The Rust-Crypto Project Developers"]
 license = "MIT/Apache-2.0"
 description = "Test helpers for cryptographic algorithms"
@@ -9,6 +9,6 @@ repository = "https://github.com/RustCrypto/utils"
 keywords = ["crypto", "tests"]
 
 [dependencies]
-digest = "0.5.0-delta"
+digest = "0.5.0-rc1"
 block-cipher-trait = "0.4.0-alpha"
 generic-array = "0.7"

@@ -1,4 +1,4 @@
-use digest::Digest;
+use digest::{Digest, Input, VariableOutput};
 
 pub struct Test {
     pub name: &'static str,
@@ -47,6 +47,36 @@ pub fn main_test<D: Digest + Default>(tests: &[Test]) {
         assert_eq!(out[..], t.output[..]);
     }
 }
+
+pub fn variable_test<D: Input + VariableOutput + Default>(tests: &[Test]) {
+    let mut buf = [0u8; 1024];
+    // Test that it works when accepting the message all at once
+    for t in tests.iter() {
+        let mut sh = D::default();
+        sh.digest(t.input);
+
+        let out = sh.variable_result(&mut buf[..t.output.len()]).unwrap();
+
+        assert_eq!(out[..], t.output[..]);
+    }
+
+    // Test that it works when accepting the message in pieces
+    for t in tests.iter() {
+        let mut sh = D::default();
+        let len = t.input.len();
+        let mut left = len;
+        while left > 0 {
+            let take = (left + 1) / 2;
+            sh.digest(&t.input[len - left..take + len - left]);
+            left = left - take;
+        }
+
+        let out = sh.variable_result(&mut buf[..t.output.len()]).unwrap();
+
+        assert_eq!(out[..], t.output[..]);
+    }
+}
+
 
 pub fn one_million_a<D: Digest + Default>(expected: &[u8]) {
     let mut sh = D::default();
