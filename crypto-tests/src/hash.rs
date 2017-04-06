@@ -112,11 +112,11 @@ macro_rules! bench_digest {
         use test::Bencher;
         use digest::Digest;
 
-        bench_digest!(bench_16, $engine, 1<<4);
-        bench_digest!(bench_64, $engine, 1<<6);
-        bench_digest!(bench_256, $engine, 1<<8);
-        bench_digest!(bench_1k, $engine, 1<<10);
-        bench_digest!(bench_8k, $engine, 1<<13);
-        bench_digest!(bench_64k, $engine, 1<<16);
+        bench_digest!(bench1_16, $engine, 1<<4);
+        bench_digest!(bench2_64, $engine, 1<<6);
+        bench_digest!(bench3_256, $engine, 1<<8);
+        bench_digest!(bench4_1k, $engine, 1<<10);
+        bench_digest!(bench5_8k, $engine, 1<<13);
+        bench_digest!(bench6_64k, $engine, 1<<16);
     }
 }
