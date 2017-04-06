@@ -116,7 +116,7 @@ macro_rules! bench_digest {
         bench_digest!(bench2_64, $engine, 1<<6);
         bench_digest!(bench3_256, $engine, 1<<8);
         bench_digest!(bench4_1k, $engine, 1<<10);
-        bench_digest!(bench5_8k, $engine, 1<<13);
-        bench_digest!(bench6_64k, $engine, 1<<16);
+        bench_digest!(bench5_4k, $engine, 1<<12);
+        bench_digest!(bench6_16k, $engine, 1<<14);
     }
 }
