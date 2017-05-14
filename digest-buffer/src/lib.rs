@@ -2,95 +2,90 @@
 extern crate byte_tools;
 extern crate generic_array;
 use generic_array::{GenericArray, ArrayLength};
-use byte_tools::{copy_memory, zero};
+use byte_tools::zero;
 
 type Block<N> = GenericArray<u8, N>;
 
 #[derive(Clone, Copy)]
 pub struct DigestBuffer<N: ArrayLength<u8>> where N::ArrayType: Copy {
     buffer: GenericArray<u8, N>,
-    buffer_idx: usize,
+    pos: usize,
 }
 
 impl <N: ArrayLength<u8>> DigestBuffer<N> where N::ArrayType: Copy {
     pub fn new() -> DigestBuffer<N> {
         DigestBuffer::<N> {
             buffer: Default::default(),
-            buffer_idx: 0,
+            pos: 0,
         }
     }
 
-    pub fn input<F: FnMut(&Block<N>)>(&mut self, input: &[u8], mut func: F) {
-        let mut i = 0;
-        let size = self.size();
+    pub fn input<F: FnMut(&Block<N>)>(&mut self, mut input: &[u8], mut func: F) {
         // If there is already data in the buffer, copy as much as we can
         // into it and process the data if the buffer becomes full.
-        if self.buffer_idx != 0 {
-            let buffer_remaining = size - self.buffer_idx;
-            if input.len() >= buffer_remaining {
-                    copy_memory(
-                        &input[..buffer_remaining],
-                        &mut self.buffer[self.buffer_idx..size]);
-                self.buffer_idx = 0;
+        if self.pos != 0 {
+            let rem = N::to_usize() - self.pos;
+
+            if input.len() >= rem {
+                let (l, r) = input.split_at(rem);
+                input = r;
+                self.buffer[self.pos..].copy_from_slice(l);
+                self.pos = 0;
                 func(&self.buffer);
-                i += buffer_remaining;
             } else {
-                copy_memory(
-                    input,
-                    &mut self.buffer[self.buffer_idx..][..input.len()]);
-                self.buffer_idx += input.len();
+                let end = self.pos + input.len();
+                self.buffer[self.pos..end].copy_from_slice(input);
+                self.pos = end;
                 return;
             }
         }
 
         // While we have at least a full buffer size chunks's worth of data,
         // process that data without copying it into the buffer
-        while input.len() - i >= size {
-            let block = GenericArray::from_slice(&input[i..i + size]);
+        while input.len() >= N::to_usize() {
+            let (l, r) = input.split_at(N::to_usize());
+            input = r;
+            let block = GenericArray::from_slice(&l);
             func(block);
-            i += size;
         }
 
         // Copy any input data into the buffer. At this point in the method,
         // the ammount of data left in the input vector will be less than
         // the buffer size and the buffer will be empty.
-        let input_remaining = input.len() - i;
-        copy_memory(
-            &input[i..],
-            &mut self.buffer[0..input_remaining]);
-        self.buffer_idx += input_remaining;
+        self.buffer[..input.len()].copy_from_slice(input);
+        self.pos += input.len();
     }
 
     pub fn reset(&mut self) {
-        self.buffer_idx = 0;
+        self.pos = 0;
     }
 
     pub fn zero_until(&mut self, idx: usize) {
-        assert!(idx >= self.buffer_idx);
-        zero(&mut self.buffer[self.buffer_idx..idx]);
-        self.buffer_idx = idx;
+        assert!(idx >= self.pos);
+        zero(&mut self.buffer[self.pos..idx]);
+        self.pos = idx;
     }
 
     pub fn next(&mut self, len: usize) -> &mut [u8] {
-        self.buffer_idx += len;
-        &mut self.buffer[self.buffer_idx - len..self.buffer_idx]
+        self.pos += len;
+        &mut self.buffer[self.pos - len..self.pos]
     }
 
     pub fn full_buffer(& mut self) -> &Block<N> {
-        assert!(self.buffer_idx == self.size());
-        self.buffer_idx = 0;
+        assert!(self.pos == self.size());
+        self.pos = 0;
         &self.buffer
     }
 
     pub fn current_buffer(&mut self) -> &[u8] {
-        let tmp = self.buffer_idx;
-        self.buffer_idx = 0;
+        let tmp = self.pos;
+        self.pos = 0;
         &self.buffer[..tmp]
     }
 
-    pub fn position(&self) -> usize { self.buffer_idx }
+    pub fn position(&self) -> usize { self.pos }
 
-    pub fn remaining(&self) -> usize { self.size() - self.buffer_idx }
+    pub fn remaining(&self) -> usize { self.size() - self.pos }
 
     pub fn standard_padding<F: FnMut(&Block<N>)>(&mut self, rem: usize, mut func: F) {
         let size = self.size();
