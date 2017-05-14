@@ -18,7 +18,7 @@
 //! 
 //! // Create `Mac` trait implementation, namely HMAC-SHA256
 //! let mac = Hmac::<Sha256>::new(b"my secret and secure key");
-//! mac.input(b"my message");
+//! mac.input(b"input message");
 //! 
 //! // `result` has type `MacResult` which is a thin wrapper around array of
 //! // bytes for providing constant time equality check
