@@ -1,9 +1,51 @@
+//! Generic implementation of Hash-based Message Authentication Code (HMAC).
+//! 
+//! To use it you'll need a cryptographic hash function implementation from
+//! RustCrypto project. You can either import specific crate (e.g. `sha2`), or
+//! meta-crate `crypto-hashes` which reexport all related crates.
+//! 
+//! # Usage
+//! Let us demonstrate how to use HMAC using SHA256 as an example.
+//! 
+//! To get the authentication code:
+//! 
+//! ```rust,ignore
+//! extern crate sha2;
+//! extern crate hmac;
+//! 
+//! use hmac::{Hmac, Mac};
+//! use sha2::Sha256;
+//! 
+//! // Create `Mac` trait implementation, namely HMAC-SHA256
+//! let mac = Hmac::<Sha256>::new(b"my secret and secure key");
+//! mac.input(b"my message");
+//! 
+//! // `result` has type `MacResult` which is a thin wrapper around array of
+//! // bytes for providing constant time equality check
+//! let result = mac.result();
+//! // To get &[u8] use `code` method, but be carefull, since incorrect use
+//! // of the code value may permit timing attacks which defeat the security
+//! // provided by the `MacResult`.
+//! let code_bytes = resul.code();
+//! ```
+//! 
+//! To verify the message:
+//! 
+//! ```rust,ignore
+//! let mac = Hmac::<Sha256>::new(b"my secret and secure key");
+//! 
+//! mac.input(b"input message");
+//! 
+//! let is_code_correct = mac.verify(code_bytes); 
+//! ```
+
 #![no_std]
 extern crate generic_array;
 extern crate digest;
 extern crate crypto_mac;
 
-pub use crypto_mac::{Mac, MacResult};
+pub use crypto_mac::Mac;
+pub use crypto_mac::MacResult;
 use digest::{Input, FixedOutput};
 use generic_array::{ArrayLength, GenericArray};
 
