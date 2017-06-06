@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "block-buffer",
     "byte-tools",
     "crypto-tests",
     #"ctgrind",
