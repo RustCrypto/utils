@@ -4,6 +4,10 @@ extern crate byte_tools;
 use generic_array::{GenericArray, ArrayLength};
 use byte_tools::{zero, write_u64_le};
 
+mod paddings;
+
+pub use paddings::*;
+
 type Block<N> = GenericArray<u8, N>;
 
 #[derive(Default, Clone, Copy)]
@@ -89,148 +93,24 @@ impl <N: ArrayLength<u8>> BlockBuffer<N> where N::ArrayType: Copy {
     }
 
     #[inline]
+    pub fn pad_with<P: Padding>(&mut self) -> &mut GenericArray<u8, N> {
+        P::pad(self.buffer.as_mut_slice(), self.pos);
+        self.pos = 0;
+        &mut self.buffer
+    }
+
+    #[inline]
     pub fn size(&self) -> usize {
-         N::to_usize()
+        N::to_usize()
     }
 
     #[inline]
     pub fn position(&self) -> usize {
-         self.pos
+        self.pos
     }
 
     #[inline]
     pub fn remaining(&self) -> usize {
-         N::to_usize() - self.pos
+        self.size() - self.pos
     }
 }
-
-/*
-pub trait Padding {
-    fn pad<F, N>(self, buf: BlockBuffer<N>, func: F)
-        where F: FnMut(&Block<N>), N: ArrayLength<u8>, N::ArrayType: Copy;
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct UnpadError;
-
-pub trait Unpadding {
-    fn unpad(self, data: &[u8]) -> Result<&[u8], UnpadError>;
-}
-
-#[derive(Default, Copy, Clone, Debug)]
-struct ZeroPadding;
-
-impl Padding for ZeroPadding {
-    fn pad<F, N>(self, mut buf: BlockBuffer<N>, mut func: F)
-        where F: FnMut(&Block<N>), N: ArrayLength<u8>, N::ArrayType: Copy
-    {
-        zero(&mut buf.buffer[buf.pos..])
-        func(&buf.buffer);
-    }
-}
-
-impl Unpadding for ZeroPadding {
-    fn unpad(self, data: &[u8]) -> Result<&[u8], UnpadError> {
-        let mut n = data.len() - 1;
-        while n != 0 {
-            if data[n] != 0 {
-                break;
-            }
-            n -= 1;
-        }
-        Ok(&data[..n+1])
-    }
-}
-
-#[derive(Default, Copy, Clone, Debug)]
-struct AnsiX923;
-
-impl Padding for AnsiX923 {
-    fn pad<F, N>(self, mut buf: BlockBuffer<N>, mut func: F)
-        where F: FnMut(&Block<N>), N: ArrayLength<u8>, N::ArrayType: Copy
-    {
-        let n = N::to_usize() - 1;
-        for b in buf.buffer[buf.pos..n].iter_mut() {
-            *b = 0;
-        }
-        buf.buffer[n] = (n - buf.pos) as u8;
-        func(&buf.buffer);
-    }
-}
-
-impl Unpadding for AnsiX923 {
-    fn unpad(self, data: &[u8]) -> Result<&[u8], UnpadError> {
-        if data.is_empty() { return Err(UnpadError); }
-        let l = data.len();
-        let n = data[l-1] as usize;
-        if n == 0 {
-            return Err(UnpadError)
-        }
-        for v in &data[l-n..l-1] {
-            if *v != 0 { return Err(UnpadError); }
-        }
-        Ok(&data[..l-n])
-    }
-}
-
-#[derive(Default, Copy, Clone, Debug)]
-struct Pkcs7;
-
-impl Padding for Pkcs7 {
-    fn pad<F, N>(self, mut buf: BlockBuffer<N>, mut func: F)
-        where F: FnMut(&Block<N>), N: ArrayLength<u8>, N::ArrayType: Copy
-    {
-        let n = N::to_usize() - buf.pos;
-        for b in buf.buffer[buf.pos..].iter_mut() {
-            *b = n as u8;
-        }
-        func(&buf.buffer);
-    }
-}
-
-impl Unpadding for Pkcs7 {
-    fn unpad(self, data: &[u8]) -> Result<&[u8], UnpadError> {
-        if data.is_empty() { return Err(UnpadError); }
-        let l = data.len();
-        let n = data[l-1];
-        if n == 0 {
-            return Err(UnpadError)
-        }
-        for v in &data[l-n as usize..l-1] {
-            if *v != n { return Err(UnpadError); }
-        }
-        Ok(&data[..l-n as usize])
-    }
-}
-
-#[derive(Default, Copy, Clone, Debug)]
-struct Iso7816;
-
-impl Padding for Iso7816 {
-    fn pad<F, N>(self, mut buf: BlockBuffer<N>, mut func: F)
-        where F: FnMut(&Block<N>), N: ArrayLength<u8>, N::ArrayType: Copy
-    {
-        let n = N::to_usize() - buf.pos;
-        for b in buf.buffer[buf.pos+1..].iter_mut() {
-            *b = n as u8;
-        }
-        buf.buffer[buf.pos] = 0x80;
-        func(&buf.buffer);
-    }
-}
-
-impl Unpadding for Iso7816 {
-    fn unpad(self, data: &[u8]) -> Result<&[u8], UnpadError> {
-        if data.is_empty() { return Err(UnpadError); }
-        let mut n = data.len() - 1;
-        while n != 0 {
-            if data[n] != 0 {
-                break;
-            }
-            n -= 1;
-        }
-        if data[n] != 0x80 { return Err(UnpadError); }
-        Ok(&data[..n])
-    }
-}
-*/
