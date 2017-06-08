@@ -25,7 +25,13 @@ pub fn copy_memory(src: &[u8], dst: &mut [u8]) {
 /// Zero all bytes in dst
 #[inline]
 pub fn zero(dst: &mut [u8]) {
+    set(dst, 0);
+}
+
+/// Sets all bytes in `dst` equal to `value`
+#[inline]
+pub fn set(dst: &mut [u8], value: u8) {
     unsafe {
-        ptr::write_bytes(dst.as_mut_ptr(), 0, dst.len());
+        ptr::write_bytes(dst.as_mut_ptr(), value, dst.len());
     }
 }
