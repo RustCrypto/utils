@@ -12,8 +12,8 @@ type Block<N> = GenericArray<u8, N>;
 
 #[derive(Default, Clone, Copy)]
 pub struct BlockBuffer<N: ArrayLength<u8>> where N::ArrayType: Copy {
-    pub buffer: GenericArray<u8, N>,
-    pub pos: usize,
+    buffer: GenericArray<u8, N>,
+    pos: usize,
 }
 
 impl <N: ArrayLength<u8>> BlockBuffer<N> where N::ArrayType: Copy {
