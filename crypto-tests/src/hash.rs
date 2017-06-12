@@ -20,7 +20,7 @@ macro_rules! new_tests {
     ( $( $name:expr ),+, ) => (new_tests!($($name),+))
 }
 
-pub fn main_test<D: Digest + Default>(tests: &[Test]) {
+pub fn main_test<D: Digest>(tests: &[Test]) {
     // Test that it works when accepting the message all at once
     for t in tests.iter() {
         let mut sh = D::default();
@@ -53,7 +53,7 @@ pub fn variable_test<D: Input + VariableOutput + Default>(tests: &[Test]) {
     // Test that it works when accepting the message all at once
     for t in tests.iter() {
         let mut sh = D::default();
-        sh.digest(t.input);
+        sh.process(t.input);
 
         let out = sh.variable_result(&mut buf[..t.output.len()]).unwrap();
 
@@ -67,7 +67,7 @@ pub fn variable_test<D: Input + VariableOutput + Default>(tests: &[Test]) {
         let mut left = len;
         while left > 0 {
             let take = (left + 1) / 2;
-            sh.digest(&t.input[len - left..take + len - left]);
+            sh.process(&t.input[len - left..take + len - left]);
             left = left - take;
         }
 
@@ -76,7 +76,6 @@ pub fn variable_test<D: Input + VariableOutput + Default>(tests: &[Test]) {
         assert_eq!(out[..], t.output[..]);
     }
 }
-
 
 pub fn one_million_a<D: Digest + Default>(expected: &[u8]) {
     let mut sh = D::default();
