@@ -132,5 +132,6 @@ macro_rules! impl_buffer {
     }
 }
 
-impl_buffer!(BlockBuffer512, 64);
 impl_buffer!(BlockBuffer256, 32);
+impl_buffer!(BlockBuffer512, 64);
+impl_buffer!(BlockBuffer1024, 128);
