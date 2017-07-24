@@ -6,5 +6,4 @@ members = [
     #"ctgrind",
     #"digest-buffer",
     "fake-simd",
-    "hmac",
 ]
