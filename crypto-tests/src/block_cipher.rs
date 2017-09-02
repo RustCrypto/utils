@@ -60,5 +60,17 @@ macro_rules! bench_block_cipher {
             });
             bh.bytes = block.len() as u64;
         }
+
+        #[bench]
+        pub fn decrypt(bh: &mut Bencher) {
+            let state = <$cipher>::new(&[1u8; $key_len]).unwrap();
+            let mut block = Default::default();
+
+            bh.iter(|| {
+                state.decrypt_block(&mut block);
+                test::black_box(&block);
+            });
+            bh.bytes = block.len() as u64;
+        }
     }
 }

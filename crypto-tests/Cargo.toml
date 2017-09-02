@@ -1,6 +1,6 @@
 [package]
 name = "crypto-tests"
-version = "0.5.3"
+version = "0.5.4"
 authors = ["The Rust-Crypto Project Developers"]
 license = "MIT/Apache-2.0"
 description = "Test helpers for cryptographic algorithms"
