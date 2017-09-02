@@ -42,18 +42,16 @@ pub fn encrypt_decrypt<B: BlockCipherVarKey>(tests: &[BlockCipherTest]) {
 
 #[macro_export]
 macro_rules! bench_block_cipher {
-    ($cipher:path, $key:expr, $input:expr) => {
+    ($cipher:path, $key_len:expr) => {
         extern crate test;
         extern crate block_cipher_trait;
-        extern crate generic_array;
 
         use test::Bencher;
-        use block_cipher_trait::{BlockCipher, BlockCipherVarKey, from_slice};
-        use generic_array::GenericArray;
+        use block_cipher_trait::{BlockCipher, BlockCipherVarKey};
 
         #[bench]
         pub fn encrypt(bh: &mut Bencher) {
-            let state = <$cipher>::new($key);
+            let state = <$cipher>::new(&[1u8; $key_len]).unwrap();
             let mut block = Default::default();
 
             bh.iter(|| {
