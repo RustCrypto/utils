@@ -1,4 +1,4 @@
-use block_cipher_trait::{BlockCipherVarKey, from_slice};
+use block_cipher_trait::BlockCipherVarKey;
 use generic_array::GenericArray;
 
 pub struct BlockCipherTest {
@@ -23,21 +23,20 @@ macro_rules! new_block_cipher_tests {
 }
 
 pub fn encrypt_decrypt<B: BlockCipherVarKey>(tests: &[BlockCipherTest]) {
-    let mut buf = GenericArray::default();
     // test encryption
     for test in tests {
-        let state = B::new(test.key);
-        let input = from_slice(test.input);
-        state.encrypt_block(input, &mut buf);
-        assert_eq!(test.output, &buf[..]);
+        let state = B::new(test.key).unwrap();
+        let mut block = GenericArray::clone_from_slice(test.input);
+        state.encrypt_block(&mut block);
+        assert_eq!(test.output, block.as_slice());
     }
 
     // test decription
     for test in tests {
-        let state = B::new(test.key);
-        let output = from_slice(test.output);
-        state.decrypt_block(output, &mut buf);
-        assert_eq!(test.input, &buf[..]);
+        let state = B::new(test.key).unwrap();
+        let mut block = GenericArray::clone_from_slice(test.output);
+        state.decrypt_block(&mut block);
+        assert_eq!(test.input, block.as_slice());
     }
 }
 
@@ -55,13 +54,13 @@ macro_rules! bench_block_cipher {
         #[bench]
         pub fn encrypt(bh: &mut Bencher) {
             let state = <$cipher>::new($key);
-            let input = $input;
-            let mut output = GenericArray::new();
+            let mut block = Default::default();
 
             bh.iter(|| {
-                state.encrypt_block(&from_slice(input), &mut output);
+                state.encrypt_block(&mut block);
+                test::black_box(&block);
             });
-            bh.bytes = 8u64;
+            bh.bytes = block.len() as u64;
         }
     }
 }
