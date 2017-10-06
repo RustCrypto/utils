@@ -1,4 +1,4 @@
-use block_cipher_trait::BlockCipherVarKey;
+use block_cipher_trait::NewVarKey;
 use generic_array::GenericArray;
 
 pub struct BlockCipherTest {
@@ -22,7 +22,7 @@ macro_rules! new_block_cipher_tests {
     };
 }
 
-pub fn encrypt_decrypt<B: BlockCipherVarKey>(tests: &[BlockCipherTest]) {
+pub fn encrypt_decrypt<B: NewVarKey>(tests: &[BlockCipherTest]) {
     // test encryption
     for test in tests {
         let state = B::new(test.key).unwrap();
@@ -47,7 +47,7 @@ macro_rules! bench_block_cipher {
         extern crate block_cipher_trait;
 
         use test::Bencher;
-        use block_cipher_trait::{BlockCipher, BlockCipherVarKey};
+        use block_cipher_trait::{BlockCipher, NewVarKey};
 
         #[bench]
         pub fn encrypt(bh: &mut Bencher) {

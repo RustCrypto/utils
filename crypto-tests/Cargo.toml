@@ -1,6 +1,6 @@
 [package]
 name = "crypto-tests"
-version = "0.5.5"
+version = "0.6.0"
 authors = ["The Rust-Crypto Project Developers"]
 license = "MIT/Apache-2.0"
 description = "Test helpers for cryptographic algorithms"
@@ -11,5 +11,5 @@ keywords = ["crypto", "tests"]
 [dependencies]
 digest = "0.6"
 crypto-mac = "0.4"
-block-cipher-trait = "0.4"
+block-cipher-trait = "0.5"
 generic-array = "0.8"
