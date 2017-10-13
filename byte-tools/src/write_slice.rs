@@ -39,7 +39,7 @@ pub fn write_u64v_le(dst: &mut [u8], src: &[u64]) {
 }
 
 /// Write a vector of u64s into a vector of bytes. The values are written in
-/// little-endian format.
+/// big-endian format.
 #[inline]
 pub fn write_u64v_be(dst: &mut [u8], src: &[u64]) {
     write_slice!(src, dst, u64, 8, to_be);
