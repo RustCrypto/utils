@@ -10,3 +10,4 @@ members = [
 
 [patch.crates-io]
 block-cipher-trait = { git = "https://github.com/RustCrypto/traits" }
+digest = { git = "https://github.com/RustCrypto/traits" }
