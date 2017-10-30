@@ -69,7 +69,7 @@ macro_rules! impl_buffer {
             }
 
             #[inline]
-            fn digest_pad<F>(&mut self, up_to: usize, mut func: &mut F)
+            fn digest_pad<F>(&mut self, up_to: usize, func: &mut F)
                 where F: FnMut(&[u8; $len])
             {
                 self.buffer[self.pos] = 0x80;
