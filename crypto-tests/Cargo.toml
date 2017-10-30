@@ -12,4 +12,3 @@ keywords = ["crypto", "tests"]
 digest = "0.7"
 crypto-mac = "0.4"
 block-cipher-trait = "0.5"
-generic-array = "0.8"

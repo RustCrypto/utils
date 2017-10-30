@@ -1,5 +1,5 @@
 use block_cipher_trait::NewVarKey;
-use generic_array::GenericArray;
+use block_cipher_trait::generic_array::GenericArray;
 
 pub struct BlockCipherTest {
     pub name: &'static str,
