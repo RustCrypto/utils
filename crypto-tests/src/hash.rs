@@ -1,4 +1,4 @@
-use digest::{Digest, Input, VariableOutput};
+use digest::{Digest, Input, VariableOutput, ExtendableOutput, XofReader};
 
 pub struct Test {
     pub name: &'static str,
@@ -72,6 +72,38 @@ pub fn variable_test<D: Input + VariableOutput + Default>(tests: &[Test]) {
         }
 
         let out = sh.variable_result(&mut buf[..t.output.len()]).unwrap();
+
+        assert_eq!(out[..], t.output[..]);
+    }
+}
+
+
+pub fn xof_test<D: Input + ExtendableOutput + Default>(tests: &[Test]) {
+    let mut buf = [0u8; 1024];
+    // Test that it works when accepting the message all at once
+    for t in tests.iter() {
+        let mut sh = D::default();
+        sh.process(t.input);
+
+        let out = &mut buf[..t.output.len()];
+        sh.xof_result().read(out);
+
+        assert_eq!(out[..], t.output[..]);
+    }
+
+    // Test that it works when accepting the message in pieces
+    for t in tests.iter() {
+        let mut sh = D::default();
+        let len = t.input.len();
+        let mut left = len;
+        while left > 0 {
+            let take = (left + 1) / 2;
+            sh.process(&t.input[len - left..take + len - left]);
+            left = left - take;
+        }
+
+        let out = &mut buf[..t.output.len()];
+        sh.xof_result().read(out);
 
         assert_eq!(out[..], t.output[..]);
     }
