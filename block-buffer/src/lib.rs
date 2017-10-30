@@ -136,3 +136,9 @@ impl_buffer!(BlockBuffer128, 16);
 impl_buffer!(BlockBuffer256, 32);
 impl_buffer!(BlockBuffer512, 64);
 impl_buffer!(BlockBuffer1024, 128);
+
+impl_buffer!(BlockBuffer576, 72);
+impl_buffer!(BlockBuffer832, 104);
+impl_buffer!(BlockBuffer1088, 136);
+impl_buffer!(BlockBuffer1152, 144);
+impl_buffer!(BlockBuffer1344, 168);
