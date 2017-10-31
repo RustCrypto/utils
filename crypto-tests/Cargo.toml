@@ -10,5 +10,5 @@ keywords = ["crypto", "tests"]
 
 [dependencies]
 digest = "0.7"
-crypto-mac = "0.4"
+crypto-mac = "0.5"
 block-cipher-trait = "0.5"
