@@ -1,4 +1,5 @@
 use digest::{Digest, Input, VariableOutput, ExtendableOutput, XofReader};
+use core::fmt::Debug;
 
 pub struct Test {
     pub name: &'static str,
@@ -20,7 +21,7 @@ macro_rules! new_tests {
     ( $( $name:expr ),+, ) => (new_tests!($($name),+))
 }
 
-pub fn main_test<D: Digest>(tests: &[Test]) {
+pub fn main_test<D: Digest + Debug + Clone>(tests: &[Test]) {
     // Test that it works when accepting the message all at once
     for t in tests.iter() {
         let mut sh = D::default();
@@ -48,7 +49,9 @@ pub fn main_test<D: Digest>(tests: &[Test]) {
     }
 }
 
-pub fn variable_test<D: Input + VariableOutput + Default>(tests: &[Test]) {
+pub fn variable_test<D>(tests: &[Test])
+    where D: Input + VariableOutput + Default + Debug + Clone
+{
     let mut buf = [0u8; 1024];
     // Test that it works when accepting the message all at once
     for t in tests.iter() {
@@ -78,7 +81,9 @@ pub fn variable_test<D: Input + VariableOutput + Default>(tests: &[Test]) {
 }
 
 
-pub fn xof_test<D: Input + ExtendableOutput + Default>(tests: &[Test]) {
+pub fn xof_test<D>(tests: &[Test])
+    where D: Input + ExtendableOutput + Default + Debug + Clone
+{
     let mut buf = [0u8; 1024];
     // Test that it works when accepting the message all at once
     for t in tests.iter() {
@@ -109,7 +114,7 @@ pub fn xof_test<D: Input + ExtendableOutput + Default>(tests: &[Test]) {
     }
 }
 
-pub fn one_million_a<D: Digest + Default>(expected: &[u8]) {
+pub fn one_million_a<D: Digest + Default + Debug + Clone>(expected: &[u8]) {
     let mut sh = D::default();
     for _ in 0..50000 {
         sh.input(&[b'a'; 10]);
