@@ -50,12 +50,12 @@ pub fn main_test<D: Digest + Debug + Clone>(tests: &[Test]) {
 }
 
 pub fn variable_test<D>(tests: &[Test])
-    where D: Input + VariableOutput + Default + Debug + Clone
+    where D: Input + VariableOutput + Clone + Debug
 {
     let mut buf = [0u8; 1024];
     // Test that it works when accepting the message all at once
     for t in tests.iter() {
-        let mut sh = D::default();
+        let mut sh = D::new(t.output.len()).unwrap();
         sh.process(t.input);
 
         let out = sh.variable_result(&mut buf[..t.output.len()]).unwrap();
@@ -65,7 +65,7 @@ pub fn variable_test<D>(tests: &[Test])
 
     // Test that it works when accepting the message in pieces
     for t in tests.iter() {
-        let mut sh = D::default();
+        let mut sh = D::new(t.output.len()).unwrap();
         let len = t.input.len();
         let mut left = len;
         while left > 0 {
