@@ -23,17 +23,17 @@ macro_rules! new_mac_tests {
 
 pub fn mac_test<M: Mac>(tests: &[MacTest]) {
     for test in tests.iter() {
-        let mut hmac = M::new(test.key);
-        hmac.input(&test.input[..]);
-        assert!(hmac.verify(test.output));
+        let mut mac = M::new(test.key).unwrap();
+        mac.input(&test.input[..]);
+        mac.verify(test.output).unwrap();
     }
 
     // incremental test
     for test in tests.iter() {
-        let mut hmac = M::new(test.key);
+        let mut mac = M::new(test.key).unwrap();
         for i in 0..test.input.len() {
-            hmac.input(&test.input[i..i + 1]);
+            mac.input(&test.input[i..i + 1]);
         }
-        assert!(hmac.verify(test.output));
+        mac.verify(test.output).unwrap();
     }
 }
