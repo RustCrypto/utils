@@ -1,0 +1,12 @@
+[package]
+name = "dbl"
+version = "0.1.0"
+authors = ["RustCrypto Developers"]
+license = "MIT/Apache-2.0"
+description = "Double operation in Galois Field (GF)"
+documentation = "https://docs.rs/cmac"
+repository = "https://github.com/RustCrypto/utils"
+keywords = ["crypto", "dbl", "gf", "galois"]
+
+[dependencies]
+generic-array = "0.9"
