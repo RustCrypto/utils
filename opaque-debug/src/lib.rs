@@ -8,8 +8,6 @@
 #[macro_export]
 macro_rules! impl_opaque_debug {
     ($state:ty) => {
-        use core::fmt;
-
         impl fmt::Debug for $state {
             fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
                 write!(f, concat!(stringify!($state), " {{ ... }}"))
