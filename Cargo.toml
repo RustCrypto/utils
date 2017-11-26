@@ -6,9 +6,5 @@ members = [
     #"ctgrind",
     #"digest-buffer",
     "fake-simd",
+    "opaque-debug",
 ]
-
-[patch.crates-io]
-block-cipher-trait = { git = "https://github.com/RustCrypto/traits" }
-digest = { git = "https://github.com/RustCrypto/traits" }
-crypto-mac = { git = "https://github.com/RustCrypto/traits" }
