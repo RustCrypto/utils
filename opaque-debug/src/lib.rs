@@ -12,14 +12,18 @@ macro_rules! impl_opaque_debug {
     ($struct:ty) => {
         #[cfg(feature = "std")]
         impl ::std::fmt::Debug for $struct {
-            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+            fn fmt(&self, f: &mut ::std::fmt::Formatter)
+                -> Result<(), ::std::fmt::Error>
+            {
                 write!(f, concat!(stringify!($struct), " {{ ... }}"))
             }
         }
 
         #[cfg(not(feature = "std"))]
         impl ::core::fmt::Debug for $struct {
-            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+            fn fmt(&self, f: &mut ::core::fmt::Formatter)
+                -> Result<(), ::core::fmt::Error>
+            {
                 write!(f, concat!(stringify!($struct), " {{ ... }}"))
             }
         }
