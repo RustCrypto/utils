@@ -59,6 +59,32 @@ macro_rules! impl_buffer {
                 self.pos += input.len();
             }
 
+            /// Variant that doesn't flush the buffer until there's
+            /// additional data to be processed. Suitable for
+            /// tweakable block ciphers like Threefish that need to
+            /// know whether a block is the *last* data block before
+            /// processing it.
+            #[inline]
+            pub fn input_with_lazy_flush<F: FnMut(&[u8; $len])>(&mut self, mut input: &[u8], mut func: F) {
+                let rem = self.remaining();
+                if self.pos != 0 && input.len() > rem {
+                    let (l, r) = input.split_at(rem);
+                    input = r;
+                    self.buffer[self.pos..].copy_from_slice(l);
+                    self.pos = 0;
+                    func(&self.buffer);
+                }
+
+                while input.len() > self.size() {
+                    let (l, r) = input.split_at(self.size());
+                    input = r;
+                    func(array_ref!(l, 0, $len));
+                }
+
+                self.buffer[self.pos..self.pos+input.len()].copy_from_slice(input);
+                self.pos += input.len();
+            }
+
             #[inline]
             fn digest_pad<F>(&mut self, up_to: usize, func: &mut F)
                 where F: FnMut(&[u8; $len])
