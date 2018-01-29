@@ -6,5 +6,7 @@ members = [
     #"ctgrind",
     #"digest-buffer",
     "fake-simd",
+    "hex-literal",
+    "hex-literal/hex-literal-impl",
     "opaque-debug",
 ]
