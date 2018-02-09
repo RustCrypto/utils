@@ -22,15 +22,16 @@ proc_macro_expr_impl! {
         let bytes = input.as_bytes();
         let n = bytes.len();
         if bytes[0] != b'"' || bytes[n-1] != b'"' {
-            panic!("expected string literal as an input");
+            return "compile_error!(\"expected string literal\")".to_string();
         }
         let input = &input[1..n-1];
 
-        input.chars().for_each(|c| {
+        for (i, c) in input.chars().enumerate() {
             if !(is_hex_char(&c) || is_format_char(&c)) {
-                panic!("invalid character: {:?}", c);
+                return format!("compile_error!(\"\
+                    invalid character (position {}): {:?}\")", i + 1, c);
             }
-        });
+        };
         let n = input.chars().filter(is_hex_char).count() / 2;
         let mut s = String::with_capacity(2 + 7*n);
 
@@ -38,12 +39,15 @@ proc_macro_expr_impl! {
         let mut iter = input.chars().filter(is_hex_char);
         loop {
             let c1 = match iter.next() { Some(c) => c, None => break };
-            let c2 = iter.next().unwrap_or_else(|| panic!(
-                "expected even number of hex character"));
-            s += "0x";
-            s.push(c1);
-            s.push(c2);
-            s += "u8,";
+            if let Some(c2) = iter.next() {
+                s += "0x";
+                s.push(c1);
+                s.push(c2);
+                s += "u8,";
+            } else {
+                return "compile_error!(\"\
+                    expected even number of hex characters\")".to_string();
+            }
         }
         s.push(']');
 

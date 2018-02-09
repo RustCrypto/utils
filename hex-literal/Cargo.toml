@@ -1,6 +1,6 @@
 [package]
 name = "hex-literal"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["RustCrypto Developers"]
 license = "MIT/Apache-2.0"
 description = "Procedural macro for converting hexadecimal string to byte array at compile time."
@@ -10,4 +10,4 @@ keywords = ["hex", "proc-macro", "literals"]
 
 [dependencies]
 proc-macro-hack = "0.4"
-hex-literal-impl = { version = "0.1.0", path = "./hex-literal-impl" }
+hex-literal-impl = { version = "0.1.1", path = "./hex-literal-impl" }
