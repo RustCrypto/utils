@@ -1,10 +1,9 @@
 [workspace]
 members = [
     "block-buffer",
+    "block-padding",
     "byte-tools",
-    "crypto-tests",
-    #"ctgrind",
-    #"digest-buffer",
+    "dbl",
     "fake-simd",
     "hex-literal",
     "hex-literal/hex-literal-impl",
