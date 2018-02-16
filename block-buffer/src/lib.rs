@@ -69,10 +69,10 @@ macro_rules! impl_buffer {
             }
 
             #[inline]
-            fn digest_pad<F>(&mut self, up_to: usize, func: &mut F)
+            fn digest_pad<F>(&mut self, prefix: u8, up_to: usize, func: &mut F)
                 where F: FnMut(&[u8; $len])
             {
-                self.buffer[self.pos] = 0x80;
+                self.buffer[self.pos] = prefix;
                 self.pos += 1;
 
                 zero(&mut self.buffer[self.pos..]);
@@ -85,10 +85,10 @@ macro_rules! impl_buffer {
 
             #[inline]
             /// Will pad message with message length in big-endian format
-            pub fn len_padding<F>(&mut self, data_len: u64, mut func: F)
+            pub fn len_padding_with<F>(&mut self, prefix: u8, data_len: u64, mut func: F)
                 where F: FnMut(&[u8; $len])
             {
-                self.digest_pad(8, &mut func);
+                self.digest_pad(prefix, 8, &mut func);
                 let s = self.size();
                 write_u64_le(&mut self.buffer[s-8..], data_len);
                 func(&self.buffer);
@@ -96,15 +96,30 @@ macro_rules! impl_buffer {
             }
 
             #[inline]
-            pub fn len_padding_u128<F>(&mut self, hi: u64, lo: u64, mut func: F)
+            /// Will pad message with message length in big-endian format
+            pub fn len_padding<F>(&mut self, data_len: u64, func: F)
                 where F: FnMut(&[u8; $len])
             {
-                self.digest_pad(16, &mut func);
+                self.len_padding_with(0x80, data_len, func)
+            }
+
+            #[inline]
+            pub fn len_padding_u128_with<F>(&mut self, prefix: u8, hi: u64, lo: u64, mut func: F)
+                where F: FnMut(&[u8; $len])
+            {
+                self.digest_pad(prefix, 16, &mut func);
                 let s = self.size();
                 write_u64_le(&mut self.buffer[s-16..s-8], hi);
                 write_u64_le(&mut self.buffer[s-8..], lo);
                 func(&self.buffer);
                 self.pos = 0;
+            }
+
+            #[inline]
+            pub fn len_padding_u128<F>(&mut self, hi: u64, lo: u64, func: F)
+                where F: FnMut(&[u8; $len])
+            {
+                self.len_padding_u128_with(0x80, hi, lo, func)
             }
 
             #[inline]
