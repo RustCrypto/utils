@@ -12,3 +12,4 @@ categories = ["cryptography", "no-std"]
 [dependencies]
 arrayref = "0.3"
 byte-tools = "0.2"
+block-padding = { path = "../block-padding" }
