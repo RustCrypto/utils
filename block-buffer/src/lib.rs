@@ -34,23 +34,15 @@ macro_rules! impl_buffer {
         impl $name {
             #[inline]
             pub fn input<F: FnMut(&[u8; $len])>(&mut self, mut input: &[u8], mut func: F) {
-                // If there is already data in the buffer, copy as much as we can
-                // into it and process the data if the buffer becomes full.
-                if self.pos != 0 {
-                    let rem = self.remaining();
-
-                    if input.len() >= rem {
-                        let (l, r) = input.split_at(rem);
-                        input = r;
-                        self.buffer[self.pos..].copy_from_slice(l);
-                        self.pos = 0;
-                        func(&self.buffer);
-                    } else {
-                        let end = self.pos + input.len();
-                        self.buffer[self.pos..end].copy_from_slice(input);
-                        self.pos = end;
-                        return;
-                    }
+                // If there is already data in the buffer, process it if we have
+                // enough to complete the chunk.
+                let rem = self.remaining();
+                if self.pos != 0 && input.len() >= rem {
+                    let (l, r) = input.split_at(rem);
+                    input = r;
+                    self.buffer[self.pos..].copy_from_slice(l);
+                    self.pos = 0;
+                    func(&self.buffer);
                 }
 
                 // While we have at least a full buffer size chunks's worth of data,
@@ -61,11 +53,36 @@ macro_rules! impl_buffer {
                     func(array_ref!(l, 0, $len));
                 }
 
-                // Copy any input data into the buffer. At this point in the method,
-                // the ammount of data left in the input vector will be less than
-                // the buffer size and the buffer will be empty.
-                self.buffer[..input.len()].copy_from_slice(input);
-                self.pos = input.len();
+                // Copy any remaining partial chunk into the buffer. At this point
+                // the buffer is empty unless we don't have enough to fill it.
+                self.buffer[self.pos..self.pos+input.len()].copy_from_slice(input);
+                self.pos += input.len();
+            }
+
+            /// Variant that doesn't flush the buffer until there's
+            /// additional data to be processed. Suitable for
+            /// tweakable block ciphers like Threefish that need to
+            /// know whether a block is the *last* data block before
+            /// processing it.
+            #[inline]
+            pub fn input_with_lazy_flush<F: FnMut(&[u8; $len])>(&mut self, mut input: &[u8], mut func: F) {
+                let rem = self.remaining();
+                if self.pos != 0 && input.len() > rem {
+                    let (l, r) = input.split_at(rem);
+                    input = r;
+                    self.buffer[self.pos..].copy_from_slice(l);
+                    self.pos = 0;
+                    func(&self.buffer);
+                }
+
+                while input.len() > self.size() {
+                    let (l, r) = input.split_at(self.size());
+                    input = r;
+                    func(array_ref!(l, 0, $len));
+                }
+
+                self.buffer[self.pos..self.pos+input.len()].copy_from_slice(input);
+                self.pos += input.len();
             }
 
             #[inline]
