@@ -1,7 +1,7 @@
 #![no_std]
 extern crate byte_tools;
-extern crate block_padding;
-extern crate generic_array;
+pub extern crate block_padding;
+pub extern crate generic_array;
 
 use byte_tools::{zero, write_u64_le, write_u64_be};
 use block_padding::{Padding, PadError};
