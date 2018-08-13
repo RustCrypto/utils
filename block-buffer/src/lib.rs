@@ -75,14 +75,14 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// has at least `up_to` free bytes. All remaining bytes get
     /// zeroed-out.
     #[inline]
-    fn digest_pad<F>(&mut self, prefix: u8, up_to: usize, f: &mut F)
+    fn digest_pad<F>(&mut self, up_to: usize, f: &mut F)
         where F: FnMut(&GenericArray<u8, BlockSize>)
     {
         if self.pos == self.size() {
             f(&self.buffer);
             self.pos = 0;
         }
-        self.buffer[self.pos] = prefix;
+        self.buffer[self.pos] = 0x80;
         self.pos += 1;
 
         zero(&mut self.buffer[self.pos..]);
@@ -93,56 +93,56 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         }
     }
 
-    /// Pad message with provided prefix and 64 bit message length
+    /// Pad message with 0x80, zeros and 64-bit message length
     /// in big-endian format
     #[inline]
-    pub fn len64_padding_be<F>(&mut self, prefix: u8, data_len: u64, mut f: F)
+    pub fn len64_padding_be<F>(&mut self, data_len: u64, mut f: F)
         where F: FnMut(&GenericArray<u8, BlockSize>)
     {
-        self.digest_pad(prefix, 8, &mut f);
+        self.digest_pad(8, &mut f);
         let s = self.size();
         write_u64_be(&mut self.buffer[s-8..], data_len);
         f(&self.buffer);
         self.pos = 0;
     }
 
-    /// Pad message with provided prefix and 64 bit message length
+    /// Pad message with 0x80, zeros and 64-bit message length
     /// in little-endian format
     #[inline]
-    pub fn len64_padding_le<F>(&mut self, prefix: u8, data_len: u64, mut f: F)
+    pub fn len64_padding_le<F>(&mut self, data_len: u64, mut f: F)
         where F: FnMut(&GenericArray<u8, BlockSize>)
     {
-        self.digest_pad(prefix, 8, &mut f);
+        self.digest_pad(8, &mut f);
         let s = self.size();
         write_u64_le(&mut self.buffer[s-8..], data_len);
         f(&self.buffer);
         self.pos = 0;
     }
 
-    /// Pad message with provided prefix and 128 bit message length
+    /// Pad message with 0x80, zeros and 128-bit message length
     /// in big-endian format
     #[inline]
-    pub fn len128_padding_be<F>(&mut self, prefix: u8, hi: u64, lo: u64, mut f: F)
+    pub fn len128_padding_be<F>(&mut self, hi: u64, lo: u64, mut f: F)
         where F: FnMut(&GenericArray<u8, BlockSize>)
     {
-        self.digest_pad(prefix, 16, &mut f);
+        self.digest_pad(16, &mut f);
         let s = self.size();
-        write_u64_be(&mut self.buffer[s-16..s-8], lo);
-        write_u64_be(&mut self.buffer[s-8..], hi);
+        write_u64_be(&mut self.buffer[s-16..s-8], hi);
+        write_u64_be(&mut self.buffer[s-8..], lo);
         f(&self.buffer);
         self.pos = 0;
     }
 
-    /// Pad message with provided prefix and 128 bit message length
+    /// Pad message with 0x80, zeros and 128-bit message length
     /// in little-endian format
     #[inline]
-    pub fn len128_padding_le<F>(&mut self, prefix: u8, hi: u64, lo: u64, mut f: F)
+    pub fn len128_padding_le<F>(&mut self, hi: u64, lo: u64, mut f: F)
         where F: FnMut(&GenericArray<u8, BlockSize>)
     {
-        self.digest_pad(prefix, 16, &mut f);
+        self.digest_pad(16, &mut f);
         let s = self.size();
-        write_u64_le(&mut self.buffer[s-16..s-8], hi);
-        write_u64_le(&mut self.buffer[s-8..], lo);
+        write_u64_le(&mut self.buffer[s-16..s-8], lo);
+        write_u64_le(&mut self.buffer[s-8..], hi);
         f(&self.buffer);
         self.pos = 0;
     }
@@ -175,5 +175,12 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     #[inline]
     pub fn remaining(&self) -> usize {
         self.size() - self.pos
+    }
+
+
+    /// Reset buffer by setting cursor position to zero
+    #[inline]
+    pub fn reset(&mut self)  {
+        self.pos = 0
     }
 }
