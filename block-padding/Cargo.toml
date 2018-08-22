@@ -1,6 +1,6 @@
 [package]
 name = "block-padding"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["RustCrypto Developers"]
 license = "MIT/Apache-2.0"
 description = "Padding and unpadding of messages divided into blocks."
@@ -8,6 +8,9 @@ documentation = "https://docs.rs/block-padding"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["padding", "pkcs7", "ansix923", "iso7816"]
 categories = ["cryptography", "no-std"]
+
+[dependencies]
+byte-tools = "0.3"
 
 [badges]
 travis-ci = { repository = "RustCrypto/utils" }

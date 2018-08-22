@@ -4,7 +4,9 @@
 //! operations. Additionally several common padding schemes are available out
 //! of the box.
 #![no_std]
-use core::ptr;
+extern crate byte_tools;
+
+use byte_tools::{zero, set};
 
 /// Error for indicating failed padding operation
 #[derive(Clone, Copy, Debug)]
@@ -258,17 +260,5 @@ impl Padding for Iso7816 {
         }
         if data[n] != 0x80 { Err(UnpadError)? }
         Ok(&data[..n])
-    }
-}
-
-/// Zero all bytes in dst
-fn zero(dst: &mut [u8]) {
-    set(dst, 0);
-}
-
-/// Sets all bytes in `dst` equal to `value`
-fn set(dst: &mut [u8], value: u8) {
-    unsafe {
-        ptr::write_bytes(dst.as_mut_ptr(), value, dst.len());
     }
 }
