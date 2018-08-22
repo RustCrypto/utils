@@ -2,23 +2,24 @@
 pub extern crate byteorder;
 pub extern crate block_padding;
 pub extern crate generic_array;
+extern crate byte_tools;
 
 use byteorder::{ByteOrder, BE};
+use byte_tools::zero;
 use block_padding::{Padding, PadError};
 use generic_array::{GenericArray, ArrayLength};
-
-#[inline]
-pub fn zero(dst: &mut [u8]) {
-    unsafe {
-        core::ptr::write_bytes(dst.as_mut_ptr(), 0, dst.len());
-    }
-}
 
 /// Buffer for block processing of data
 #[derive(Clone, Default)]
 pub struct BlockBuffer<BlockSize: ArrayLength<u8>>  {
     buffer: GenericArray<u8, BlockSize>,
     pos: usize,
+}
+
+#[inline(always)]
+unsafe fn cast<N: ArrayLength<u8>>(block: &[u8]) -> &GenericArray<u8, N> {
+    debug_assert_eq!(block.len(), N::to_usize());
+    &*(block.as_ptr() as *const GenericArray<u8, N>)
 }
 
 impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
@@ -41,9 +42,9 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         // While we have at least a full buffer size chunks's worth of data,
         // process that data without copying it into the buffer
         while input.len() >= self.size() {
-            let (l, r) = input.split_at(self.size());
+            let (block, r) = input.split_at(self.size());
             input = r;
-            f(GenericArray::from_slice(l));
+            f(unsafe { cast(block) });
         }
 
         // Copy any remaining data into the buffer.
@@ -69,9 +70,9 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         }
 
         while input.len() > self.size() {
-            let (l, r) = input.split_at(self.size());
+            let (block, r) = input.split_at(self.size());
             input = r;
-            f(GenericArray::from_slice(l));
+            f(unsafe { cast(block) });
         }
 
         self.buffer[self.pos..self.pos+input.len()].copy_from_slice(input);
