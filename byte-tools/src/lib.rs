@@ -1,16 +1,6 @@
 #![no_std]
 use core::ptr;
 
-mod read_single;
-mod write_single;
-mod read_slice;
-mod write_slice;
-
-pub use read_single::*;
-pub use write_single::*;
-pub use read_slice::*;
-pub use write_slice::*;
-
 /// Copy bytes from src to dest
 #[inline]
 pub fn copy_memory(src: &[u8], dst: &mut [u8]) {
