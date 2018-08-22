@@ -6,10 +6,10 @@ license = "MIT/Apache-2.0"
 description = "Fixed size buffer for block processing of data"
 documentation = "https://docs.rs/block-buffer"
 repository = "https://github.com/RustCrypto/utils"
-keywords = ["block", "padding", "pkcs7", "ansix923", "iso7816"]
+keywords = ["block", "buffer"]
 categories = ["cryptography", "no-std"]
 
 [dependencies]
-byte-tools = "0.2"
+byteorder = { version = "1", default-features = false }
 block-padding = "0.1"
 generic-array = "0.11"

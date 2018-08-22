@@ -1,11 +1,18 @@
 #![no_std]
-extern crate byte_tools;
+pub extern crate byteorder;
 pub extern crate block_padding;
 pub extern crate generic_array;
 
-use byte_tools::{zero, write_u64_le, write_u64_be};
+use byteorder::{ByteOrder, BE};
 use block_padding::{Padding, PadError};
 use generic_array::{GenericArray, ArrayLength};
+
+#[inline]
+pub fn zero(dst: &mut [u8]) {
+    unsafe {
+        core::ptr::write_bytes(dst.as_mut_ptr(), 0, dst.len());
+    }
+}
 
 /// Buffer for block processing of data
 #[derive(Clone, Default)]
@@ -94,62 +101,39 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     }
 
     /// Pad message with 0x80, zeros and 64-bit message length
-    /// in big-endian format
+    /// in a byte order specified by `B`
     #[inline]
-    pub fn len64_padding_be<F>(&mut self, data_len: u64, mut f: F)
-        where F: FnMut(&GenericArray<u8, BlockSize>)
+    pub fn len64_padding<B, F>(&mut self, data_len: u64, mut f: F)
+        where B: ByteOrder, F: FnMut(&GenericArray<u8, BlockSize>)
     {
+        // TODO: replace `F` with `impl Trait` on MSRV bump
         self.digest_pad(8, &mut f);
         let s = self.size();
-        write_u64_be(&mut self.buffer[s-8..], data_len);
+        B::write_u64(&mut self.buffer[s-8..], data_len);
         f(&self.buffer);
         self.pos = 0;
     }
 
-    /// Pad message with 0x80, zeros and 64-bit message length
-    /// in little-endian format
-    #[inline]
-    pub fn len64_padding_le<F>(&mut self, data_len: u64, mut f: F)
-        where F: FnMut(&GenericArray<u8, BlockSize>)
-    {
-        self.digest_pad(8, &mut f);
-        let s = self.size();
-        write_u64_le(&mut self.buffer[s-8..], data_len);
-        f(&self.buffer);
-        self.pos = 0;
-    }
 
     /// Pad message with 0x80, zeros and 128-bit message length
-    /// in big-endian format
+    /// in the big-endian byte order
     #[inline]
     pub fn len128_padding_be<F>(&mut self, hi: u64, lo: u64, mut f: F)
         where F: FnMut(&GenericArray<u8, BlockSize>)
     {
+        // TODO: on MSRV bump replace `F` with `impl Trait`, use `u128`, add `B`
         self.digest_pad(16, &mut f);
         let s = self.size();
-        write_u64_be(&mut self.buffer[s-16..s-8], hi);
-        write_u64_be(&mut self.buffer[s-8..], lo);
+        BE::write_u64(&mut self.buffer[s-16..s-8], hi);
+        BE::write_u64(&mut self.buffer[s-8..], lo);
         f(&self.buffer);
         self.pos = 0;
     }
 
-    /// Pad message with 0x80, zeros and 128-bit message length
-    /// in little-endian format
-    #[inline]
-    pub fn len128_padding_le<F>(&mut self, hi: u64, lo: u64, mut f: F)
-        where F: FnMut(&GenericArray<u8, BlockSize>)
-    {
-        self.digest_pad(16, &mut f);
-        let s = self.size();
-        write_u64_le(&mut self.buffer[s-16..s-8], lo);
-        write_u64_le(&mut self.buffer[s-8..], hi);
-        f(&self.buffer);
-        self.pos = 0;
-    }
-
-    /// Pad message with given padding `P`, returns `PadError` if
-    /// internall buffer is full, which can only happen if `input_lazy`
-    /// was used.
+    /// Pad message with a given padding `P`
+    ///
+    /// Returns `PadError` if internall buffer is full, which can only happen if
+    /// `input_lazy` was used.
     #[inline]
     pub fn pad_with<P: Padding>(&mut self)
         -> Result<&mut GenericArray<u8, BlockSize>, PadError>
@@ -176,7 +160,6 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     pub fn remaining(&self) -> usize {
         self.size() - self.pos
     }
-
 
     /// Reset buffer by setting cursor position to zero
     #[inline]
