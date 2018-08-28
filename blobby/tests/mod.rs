@@ -15,15 +15,15 @@ fn check(data: &[u8], result: &[&[u8]]) {
 
 #[test]
 fn empty() {
-    let data = b"\x00\x00\x00\x00";
+    let data = b"\x00\x00";
     check(data, &[]);
 }
 
 #[test]
 fn single() {
     let data = b"\
-        \x01\x00\x00\x00\
-        \x0A\x00\x00\x00\
+        \x01\x00\
+        \x0A\x00\
         0123456789\
     ";
     check(data, &[b"0123456789"]);
@@ -32,9 +32,9 @@ fn single() {
 #[test]
 fn double() {
     let data = b"\
-        \x02\x00\x00\x00\
-        \x0A\x00\x00\x00\
-        \x03\x00\x00\x00\
+        \x02\x00\
+        \x0A\x00\
+        \x03\x00\
         0123456789\
         abc\
     ";
