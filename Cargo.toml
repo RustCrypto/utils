@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "blobby",
     "block-buffer",
     "block-padding",
     "byte-tools",

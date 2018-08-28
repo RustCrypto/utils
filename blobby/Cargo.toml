@@ -1,0 +1,7 @@
+[package]
+name = "blobby"
+version = "0.1.0"
+authors = ["newpavlov <newpavlov@gmail.com>"]
+
+[dependencies]
+byteorder = "1"
