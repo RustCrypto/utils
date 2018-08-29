@@ -2,7 +2,7 @@
 extern crate blobby;
 
 fn check(data: &[u8], result: &[&[u8]]) {
-    let mut blob = blobby::BlobIterator::new(data);
+    let mut blob = blobby::BlobIterator::new(data).unwrap();
     let mut res = result.iter();
     loop {
         match (blob.next(), res.next()) {
@@ -15,15 +15,15 @@ fn check(data: &[u8], result: &[&[u8]]) {
 
 #[test]
 fn empty() {
-    let data = b"\x00\x00";
+    let data = b"blobby\x00\x00";
     check(data, &[]);
 }
 
 #[test]
 fn single() {
-    let data = b"\
+    let data = b"blobby\
         \x01\x00\
-        \x0A\x00\
+        \x00\x00\x00\x00\x0A\x00\x00\x00\
         0123456789\
     ";
     check(data, &[b"0123456789"]);
@@ -31,10 +31,10 @@ fn single() {
 
 #[test]
 fn double() {
-    let data = b"\
+    let data = b"blobby\
         \x02\x00\
-        \x0A\x00\
-        \x03\x00\
+        \x00\x00\x00\x00\x0A\x00\x00\x00\
+        \x0A\x00\x00\x00\x0D\x00\x00\x00\
         0123456789\
         abc\
     ";
