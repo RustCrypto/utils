@@ -35,10 +35,21 @@ impl<'a> Iterator for DupBlobIterator<'a> {
     fn next(&mut self) -> Option<&'a [u8]> {
         if self.pos >= self.index.len()/8 { return None; }
         let n = 8*self.pos;
-        let start = LE::read_u32(&self.index[n..n + 4]) as usize;
-        let end = LE::read_u32(&self.index[n + 4..n + 8]) as usize;
+
+        // safe because we have checked self.pos earlier
+        debug_assert!(self.index.get(n..n + 8).is_some());
+        let (start, end) = unsafe {(
+            self.index.get_unchecked(n..n + 4),
+            self.index.get_unchecked(n + 4..n + 8),
+        )};
+        let start = LE::read_u32(start) as usize;
+        let end = LE::read_u32(end) as usize;
+
         self.pos += 1;
-        Some(&self.data[start..end])
+
+        // safe because we have checked index on initialization
+        debug_assert!(self.data.get(start..end).is_some());
+        Some(unsafe { self.data.get_unchecked(start..end) })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -83,11 +94,20 @@ impl<'a> Iterator for UniqueBlobIterator<'a> {
     fn next(&mut self) -> Option<&'a [u8]> {
         if self.pos >= self.index.len()/4 { return None; }
         let n = 4*self.pos;
-        let len = LE::read_u32(&self.index[n..n + 4]) as usize;
+
+        // safe because we have checked self.pos earlier
+        debug_assert!(self.index.get(n..n + 4).is_some());
+        let len = unsafe { self.index.get_unchecked(n..n + 4) };
+        let len = LE::read_u32(len) as usize;
+
         let start = self.cursor;
+        let end = start + len;
         self.pos += 1;
-        self.cursor += len;
-        Some(&self.data[start..self.cursor])
+        self.cursor = end;
+
+        // safe because we have checked index on initialization
+        debug_assert!(self.data.get(start..end).is_some());
+        Some(unsafe { self.data.get_unchecked(start..end) })
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
