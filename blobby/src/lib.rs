@@ -12,10 +12,14 @@ pub struct DupBlobIterator<'a> {
 
 impl<'a> DupBlobIterator<'a> {
     pub fn new(data: &'a [u8]) -> Result<Self, &'static str> {
+        if data.len() < 8 { Err("data is too small")? }
         let (magic, data) = data.split_at(4);
         if magic != b"BLBD" { Err("invalid data prefix")? }
         let (len, data) = data.split_at(4);
         let len = LE::read_u32(len) as usize;
+        if data.len() < 8*len {
+            Err("data is too small for provided number of items")?
+        }
         let (index, data) = data.split_at(8*len);
         for chunk in index.chunks(8) {
             let start = LE::read_u32(&chunk[..4]) as usize;
@@ -73,10 +77,14 @@ pub struct UniqueBlobIterator<'a> {
 
 impl<'a> UniqueBlobIterator<'a> {
     pub fn new(data: &'a [u8]) -> Result<Self, &'static str> {
+        if data.len() < 8 { Err("data is too small")? }
         let (magic, data) = data.split_at(4);
         if magic != b"BLBU" { Err("invalid data prefix")? }
         let (len, data) = data.split_at(4);
         let len = LE::read_u32(len) as usize;
+        if data.len() < 4*len {
+            Err("data is too small for provided number of items")?
+        }
         let (index, data) = data.split_at(4*len);
         let sum = index.chunks(4)
             .map(LE::read_u32)
