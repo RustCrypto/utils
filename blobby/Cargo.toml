@@ -1,7 +1,12 @@
 [package]
 name = "blobby"
 version = "0.1.0"
-authors = ["newpavlov <newpavlov@gmail.com>"]
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+description = "Iterator over simple binary blob storage"
+documentation = "https://docs.rs/blobby"
+repository = "https://github.com/RustCrypto/blobby"
+categories = ["no-std"]
 
 [dependencies]
 byteorder = { version = "1", default-features = false }
