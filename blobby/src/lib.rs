@@ -2,7 +2,7 @@
 extern crate byteorder;
 
 use byteorder::{LE, ByteOrder};
-use core::iter::{Iterator, FusedIterator, ExactSizeIterator};
+use core::iter::{Iterator, ExactSizeIterator};
 
 pub struct DupBlobIterator<'a> {
     index: &'a [u8],
@@ -62,7 +62,7 @@ impl<'a> Iterator for DupBlobIterator<'a> {
     }
 }
 
-impl<'a> FusedIterator for DupBlobIterator<'a> { }
+//impl<'a> FusedIterator for DupBlobIterator<'a> { }
 
 impl<'a> ExactSizeIterator for DupBlobIterator<'a> {
     fn len(&self) -> usize { self.index.len()/8 - self.pos }
@@ -124,7 +124,7 @@ impl<'a> Iterator for UniqueBlobIterator<'a> {
     }
 }
 
-impl<'a> FusedIterator for UniqueBlobIterator<'a> { }
+//impl<'a> FusedIterator for UniqueBlobIterator<'a> { }
 
 impl<'a> ExactSizeIterator for UniqueBlobIterator<'a> {
     fn len(&self) -> usize { self.index.len()/4 - self.pos }
