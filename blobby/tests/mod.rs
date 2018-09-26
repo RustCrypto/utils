@@ -1,20 +1,8 @@
 #![no_std]
 extern crate blobby;
 
-fn check_dup(data: &[u8], result: &[&[u8]]) {
-    let mut blob = blobby::DupBlobIterator::new(data).unwrap();
-    let mut res = result.iter();
-    loop {
-        match (blob.next(), res.next()) {
-            (Some(v1), Some(v2)) => assert_eq!(&v1, v2),
-            (None, None) => break,
-            _ => panic!("items number mismatch"),
-        }
-    }
-}
-
-fn check_unique(data: &[u8], result: &[&[u8]]) {
-    let mut blob = blobby::UniqueBlobIterator::new(data).unwrap();
+fn check(data: &[u8], result: &[&[u8]]) {
+    let mut blob = blobby::BlobIterator::new(data).unwrap();
     let mut res = result.iter();
     loop {
         match (blob.next(), res.next()) {
@@ -26,70 +14,91 @@ fn check_unique(data: &[u8], result: &[&[u8]]) {
 }
 
 #[test]
-fn dup_empty() {
-    let data = b"BLBD\x00\x00\x00\x00";
-    check_dup(data, &[]);
+fn test_single0() {
+    let data = b"blobby1";
+    check(data, &[]);
 }
 
 #[test]
-fn dup_single() {
-    let data = b"BLBD\
-        \x01\x00\x00\x00\
-        \x00\x00\x00\x00\x0A\x00\x00\x00\
-        0123456789\
-    ";
-    check_dup(data, &[b"0123456789"]);
+fn test_single1() {
+    let data = b"blobby1\x01a";
+    check(data, &[b"a"]);
+}
+
+
+#[test]
+fn test_single2() {
+    let data = b"blobby1\x03abc\x00\x01a";
+    check(data, &[b"abc", b"", b"a"]);
 }
 
 #[test]
-fn dup_double() {
-    let data = b"BLBD\
-        \x02\x00\x00\x00\
-        \x00\x00\x00\x00\x0A\x00\x00\x00\
-        \x0A\x00\x00\x00\x0D\x00\x00\x00\
-        0123456789\
-        abc\
-    ";
-    check_dup(data, &[b"0123456789", b"abc"]);
+fn test_single3() {
+    let data = b"blobby2\x03\x00abc\x00\x00\x01\x00a";
+    check(data, &[b"abc", b"", b"a"]);
+}
+
+
+#[test]
+fn test_single4() {
+    let data = b"blobby4\x03\x00\x00\x00abc\x00\x00\x00\x00\x01\x00\x00\x00a";
+    check(data, &[b"abc", b"", b"a"]);
+}
+
+
+#[test]
+fn test_single5() {
+    let data = b"blobby8\
+        \x03\x00\x00\x00\x00\x00\x00\x00abc\
+        \x00\x00\x00\x00\x00\x00\x00\x00\
+        \x01\x00\x00\x00\x00\x00\x00\x00a";
+    check(data, &[b"abc", b"", b"a"]);
 }
 
 #[test]
-fn dup_dublicate() {
-    let data = b"BLBD\
-        \x03\x00\x00\x00\
-        \x00\x00\x00\x00\x0A\x00\x00\x00\
-        \x0A\x00\x00\x00\x0D\x00\x00\x00\
-        \x00\x00\x00\x00\x0A\x00\x00\x00\
-        0123456789\
-        abc\
-    ";
-    check_dup(data, &[b"0123456789", b"abc", b"0123456789"]);
+fn test_double() {
+    let data = b"blobby1\x03abc\x00\x01a\x02cd";
+    let result: &[[&[u8]; 2]] = &[[b"abc", b""], [b"a", b"cd"]];
+
+    let mut blob = blobby::Blob2Iterator::new(data).unwrap();
+    let mut res = result.iter();
+    loop {
+        match (blob.next(), res.next()) {
+            (Some(v1), Some(v2)) => assert_eq!(&v1, v2),
+            (None, None) => break,
+            _ => panic!("items number mismatch"),
+        }
+    }
 }
 
 #[test]
-fn unique_empty() {
-    let data = b"BLBU\x00\x00\x00\x00";
-    check_unique(data, &[]);
+fn test_triple() {
+    let data = b"blobby1\x03abc\x00\x01a\x02cd\x03def\x00";
+    let result: &[[&[u8]; 3]] = &[[b"abc", b"", b"a"], [b"cd", b"def", b""]];
+
+    let mut blob = blobby::Blob3Iterator::new(data).unwrap();
+    let mut res = result.iter();
+    loop {
+        match (blob.next(), res.next()) {
+            (Some(v1), Some(v2)) => assert_eq!(&v1, v2),
+            (None, None) => break,
+            _ => panic!("items number mismatch"),
+        }
+    }
 }
 
 #[test]
-fn unique_single() {
-    let data = b"BLBU\
-        \x01\x00\x00\x00\
-        \x0A\x00\x00\x00\
-        0123456789\
-    ";
-    check_unique(data, &[b"0123456789"]);
-}
+fn test_quadruple() {
+    let data = b"blobby1\x03abc\x00\x01a\x02cd";
+    let result: &[[&[u8]; 4]] = &[[b"abc", b"", b"a", b"cd"]];
 
-#[test]
-fn unique_double() {
-    let data = b"BLBU\
-        \x02\x00\x00\x00\
-        \x0A\x00\x00\x00\
-        \x03\x00\x00\x00\
-        0123456789\
-        abc\
-    ";
-    check_unique(data, &[b"0123456789", b"abc"]);
+    let mut blob = blobby::Blob4Iterator::new(data).unwrap();
+    let mut res = result.iter();
+    loop {
+        match (blob.next(), res.next()) {
+            (Some(v1), Some(v2)) => assert_eq!(&v1, v2),
+            (None, None) => break,
+            _ => panic!("items number mismatch"),
+        }
+    }
 }

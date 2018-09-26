@@ -2,130 +2,151 @@
 extern crate byteorder;
 
 use byteorder::{LE, ByteOrder};
-use core::iter::{Iterator, ExactSizeIterator};
+use core::iter::Iterator;
 
-pub struct DupBlobIterator<'a> {
-    index: &'a [u8],
+/// Iterator over binary blobs
+pub struct BlobIterator<'a> {
     data: &'a [u8],
-    pos: usize,
+    size: IndexSize,
 }
 
-impl<'a> DupBlobIterator<'a> {
+impl<'a> BlobIterator<'a> {
+    /// Create a new `BlobIterator` for given `data`.
     pub fn new(data: &'a [u8]) -> Result<Self, &'static str> {
-        if data.len() < 8 { Err("data is too small")? }
-        let (magic, data) = data.split_at(4);
-        if magic != b"BLBD" { Err("invalid data prefix")? }
-        let (len, data) = data.split_at(4);
-        let len = LE::read_u32(len) as usize;
-        if data.len() < 8*len {
-            Err("data is too small for provided number of items")?
-        }
-        let (index, data) = data.split_at(8*len);
-        for chunk in index.chunks(8) {
-            let start = LE::read_u32(&chunk[..4]) as usize;
-            let end = LE::read_u32(&chunk[4..]) as usize;
-            if start > end { Err("index: start is bigger than end")? }
-            if end > data.len() {
-                Err("index: end points outside of data segment")?
-            }
-        }
-        Ok(Self { index, data, pos: 0 })
+        if data.len() < 7 { Err("data is too small")? }
+        let (header, data) = data.split_at(7);
+        let size = match header {
+            b"blobby1" => IndexSize::N8,
+            b"blobby2" => IndexSize::N16,
+            b"blobby4" => IndexSize::N32,
+            b"blobby8" => IndexSize::N64,
+            _ => Err("invalid data header")?,
+        };
+        Ok(BlobIterator { data, size })
     }
 }
 
-impl<'a> Iterator for DupBlobIterator<'a> {
+impl<'a> Iterator for BlobIterator<'a> {
     type Item = &'a [u8];
 
     fn next(&mut self) -> Option<&'a [u8]> {
-        if self.pos >= self.index.len()/8 { return None; }
-        let n = 8*self.pos;
-
-        // safe because we have checked self.pos earlier
-        debug_assert!(self.index.get(n..n + 8).is_some());
-        let (start, end) = unsafe {(
-            self.index.get_unchecked(n..n + 4),
-            self.index.get_unchecked(n + 4..n + 8),
-        )};
-        let start = LE::read_u32(start) as usize;
-        let end = LE::read_u32(end) as usize;
-
-        self.pos += 1;
-
-        // safe because we have checked index on initialization
-        debug_assert!(self.data.get(start..end).is_some());
-        Some(unsafe { self.data.get_unchecked(start..end) })
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let n = self.index.len()/8 - self.pos;
-        (n, Some(n))
+        if self.data.len() == 0 { return None; }
+        let (val, leftover) = self.size.read(self.data);
+        self.data = leftover;
+        Some(val)
     }
 }
 
-//impl<'a> FusedIterator for DupBlobIterator<'a> { }
-
-impl<'a> ExactSizeIterator for DupBlobIterator<'a> {
-    fn len(&self) -> usize { self.index.len()/8 - self.pos }
+/// Iterator over binary blob pairs
+pub struct Blob2Iterator<'a> {
+    inner: BlobIterator<'a>,
 }
 
-pub struct UniqueBlobIterator<'a> {
-    index: &'a [u8],
-    data: &'a [u8],
-    pos: usize,
-    cursor: usize,
-}
-
-impl<'a> UniqueBlobIterator<'a> {
+impl<'a> Blob2Iterator<'a> {
+    /// Create a new `Blob2Iterator` for given `data`.
     pub fn new(data: &'a [u8]) -> Result<Self, &'static str> {
-        if data.len() < 8 { Err("data is too small")? }
-        let (magic, data) = data.split_at(4);
-        if magic != b"BLBU" { Err("invalid data prefix")? }
-        let (len, data) = data.split_at(4);
-        let len = LE::read_u32(len) as usize;
-        if data.len() < 4*len {
-            Err("data is too small for provided number of items")?
-        }
-        let (index, data) = data.split_at(4*len);
-        let sum = index.chunks(4)
-            .map(LE::read_u32)
-            .fold(0, |a, v| a + v as usize);
-        if sum > data.len() {
-            Err("index element points outside of data segment")?
-        }
-        Ok(Self { index, data, pos: 0, cursor: 0 })
+        Ok(Self { inner: BlobIterator::new(data)? })
     }
 }
 
-impl<'a> Iterator for UniqueBlobIterator<'a> {
-    type Item = &'a [u8];
+impl<'a> Iterator for Blob2Iterator<'a> {
+    type Item = [&'a [u8]; 2];
 
-    fn next(&mut self) -> Option<&'a [u8]> {
-        if self.pos >= self.index.len()/4 { return None; }
-        let n = 4*self.pos;
-
-        // safe because we have checked self.pos earlier
-        debug_assert!(self.index.get(n..n + 4).is_some());
-        let len = unsafe { self.index.get_unchecked(n..n + 4) };
-        let len = LE::read_u32(len) as usize;
-
-        let start = self.cursor;
-        let end = start + len;
-        self.pos += 1;
-        self.cursor = end;
-
-        // safe because we have checked index on initialization
-        debug_assert!(self.data.get(start..end).is_some());
-        Some(unsafe { self.data.get_unchecked(start..end) })
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let n = self.index.len()/4 - self.pos;
-        (n, Some(n))
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut res = Self::Item::default();
+        for (i, v) in res.iter_mut().enumerate() {
+            *v = match self.inner.next() {
+                Some(val) => val,
+                None if i == 0 => return None,
+                None => panic!("failed to get 2 blobs, not enough elements."),
+            };
+        }
+        Some(res)
     }
 }
 
-//impl<'a> FusedIterator for UniqueBlobIterator<'a> { }
+/// Iterator over binary blob triples
+pub struct Blob3Iterator<'a> {
+    inner: BlobIterator<'a>,
+}
 
-impl<'a> ExactSizeIterator for UniqueBlobIterator<'a> {
-    fn len(&self) -> usize { self.index.len()/4 - self.pos }
+impl<'a> Blob3Iterator<'a> {
+    /// Create a new `Blob3Iterator` for given `data`.
+    pub fn new(data: &'a [u8]) -> Result<Self, &'static str> {
+        Ok(Self { inner: BlobIterator::new(data)? })
+    }
+}
+
+impl<'a> Iterator for Blob3Iterator<'a> {
+    type Item = [&'a [u8]; 3];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut res = Self::Item::default();
+        for (i, v) in res.iter_mut().enumerate() {
+            *v = match self.inner.next() {
+                Some(val) => val,
+                None if i == 0 => return None,
+                None => panic!("failed to get 3 blobs, not enough elements."),
+            };
+        }
+        Some(res)
+    }
+}
+
+/// Iterator over binary blob quadruples
+pub struct Blob4Iterator<'a> {
+    inner: BlobIterator<'a>,
+}
+
+impl<'a> Blob4Iterator<'a> {
+    /// Create a new `Blob4Iterator` for given `data`.
+    pub fn new(data: &'a [u8]) -> Result<Self, &'static str> {
+        Ok(Self { inner: BlobIterator::new(data)? })
+    }
+}
+
+impl<'a> Iterator for Blob4Iterator<'a> {
+    type Item = [&'a [u8]; 4];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut res = Self::Item::default();
+        for (i, v) in res.iter_mut().enumerate() {
+            *v = match self.inner.next() {
+                Some(val) => val,
+                None if i == 0 => return None,
+                None => panic!("failed to get 4 blobs, not enough elements."),
+            };
+        }
+        Some(res)
+    }
+}
+
+#[derive(Copy, Clone)]
+enum IndexSize {
+    N8,
+    N16,
+    N32,
+    N64,
+}
+
+macro_rules! branch_read {
+    ($data:ident, $n:expr, $method:ident) => {{
+        let (size, data) = $data.split_at($n);
+        let n = LE::$method(size) as usize;
+        data.split_at(n)
+    }}
+}
+
+impl IndexSize {
+    fn read<'a>(self, data: &'a [u8]) -> (&'a [u8], &'a [u8]) {
+        match self {
+            IndexSize::N8 => {
+                let n = data[0] as usize;
+                data[1..].split_at(n)
+            },
+            IndexSize::N16 => branch_read!(data, 2, read_u16),
+            IndexSize::N32 => branch_read!(data, 4, read_u32),
+            IndexSize::N64 => branch_read!(data, 8, read_u64),
+        }
+    }
 }
