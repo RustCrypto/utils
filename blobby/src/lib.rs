@@ -1,3 +1,30 @@
+//! This crate provides several iterators over simply binary blob storage.
+//!
+//! # Storage format
+//! Data in the storage format starts with magical string "blobby', next is one
+//! byte which denotes how many bytes are used for blob length prefixes. For
+//! example "blobby1" means that 1 byte is used for length, and "blobby2",
+//! "blobby4", "blobby8" mean 2, 4 and 8 bytes respectively (this number will
+//! be denoted as `n`).
+//!
+//! After header goes a sequence of records. Each record starts with prefix of
+//! `n` bytes in which record length (excluding prefix) is stored using little
+//! endian format.
+//!
+//! # Examples
+//! First line represents input binary string and second line shows blobs stored
+//! in it.
+//! ```text
+//! "blobby1\x05hello\x01 \x00\x05world"
+//! "hello", " ", "", "world"
+//! ```
+//! Example for `n=2`, note that length is given in little endian format:
+//! ```text
+//! "blobby2\x03\x00foo\x00\x00\x03\x00bar"
+//! "foo", "", "bar"
+//! ```
+#![doc(html_logo_url =
+    "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 #![no_std]
 extern crate byteorder;
 
