@@ -137,6 +137,11 @@ impl Padding for ZeroPadding {
 /// assert_eq!(padded_msg, b"test\x02\x02");
 /// assert_eq!(Pkcs7::unpad(&padded_msg).unwrap(), msg);
 /// ```
+/// ```
+/// # use block_padding::{Pkcs7, Padding};
+/// # let buffer = [0xff; 16];
+/// assert!(Pkcs7::unpad(&buffer).is_err());
+/// ```
 ///
 /// In addition to conditions stated in the `Padding` trait documentation,
 /// `pad_block` will return `PadError` if `block.len() > 255`, and in case of
@@ -156,7 +161,7 @@ impl Padding for Pkcs7 {
         if data.is_empty() { Err(UnpadError)? }
         let l = data.len();
         let n = data[l-1];
-        if n == 0 { Err(UnpadError)? }
+        if n == 0 || n as usize > l { Err(UnpadError)? }
         for v in &data[l-n as usize..l-1] {
             if *v != n { Err(UnpadError)? }
         }
@@ -188,6 +193,11 @@ impl Padding for Pkcs7 {
 /// assert_eq!(padded_msg, b"test\x00\x02");
 /// assert_eq!(AnsiX923::unpad(&padded_msg).unwrap(), msg);
 /// ```
+/// ```
+/// # use block_padding::{AnsiX923, Padding};
+/// # let buffer = [0xff; 16];
+/// assert!(AnsiX923::unpad(&buffer).is_err());
+/// ```
 ///
 /// In addition to conditions stated in the `Padding` trait documentation,
 /// `pad_block` will return `PadError` if `block.len() > 255`, and in case of
@@ -208,7 +218,7 @@ impl Padding for AnsiX923 {
         if data.is_empty() { Err(UnpadError)? }
         let l = data.len();
         let n = data[l-1] as usize;
-        if n == 0 {
+        if n == 0 || n > l {
             return Err(UnpadError)
         }
         for v in &data[l-n..l-1] {
