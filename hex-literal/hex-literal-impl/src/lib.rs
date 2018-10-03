@@ -37,8 +37,7 @@ proc_macro_expr_impl! {
 
         s.push('[');
         let mut iter = input.chars().filter(is_hex_char);
-        loop {
-            let c1 = match iter.next() { Some(c) => c, None => break };
+        while let Some(c1) = iter.next() {
             if let Some(c2) = iter.next() {
                 s += "0x";
                 s.push(c1);
