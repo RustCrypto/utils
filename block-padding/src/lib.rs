@@ -4,6 +4,8 @@
 //! operations. Additionally several common padding schemes are available out
 //! of the box.
 #![no_std]
+#![doc(html_logo_url =
+    "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 extern crate byte_tools;
 
 use byte_tools::{zero, set};
