@@ -11,5 +11,9 @@ categories = ["no-std"]
 [dependencies]
 byteorder = { version = "1", default-features = false }
 
+[dev-dependencies]
+hex = "0.3"
+byteorder = { version = "1", features = ["std"] }
+
 [badges]
 travis-ci = { repository = "RustCrypto/utils" }
