@@ -53,7 +53,8 @@ pub trait Padding {
     fn unpad(data: &[u8]) -> Result<&[u8], UnpadError>;
 }
 
-/// Pad block with zeros.
+/// Pad block with zeros. Block cipher modes of operation that use a block
+/// cipher as a stream cipher does not require padding.
 ///
 /// ```
 /// use block_padding::{ZeroPadding, Padding};
