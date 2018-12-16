@@ -54,7 +54,7 @@ pub trait Padding {
 }
 
 /// Pad block with zeros. Block cipher modes of operation that use a block
-/// cipher as a stream cipher does not require padding.
+/// cipher as a stream cipher do not require padding.
 ///
 /// ```
 /// use block_padding::{ZeroPadding, Padding};
