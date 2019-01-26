@@ -7,7 +7,8 @@ description = "Procedural macro for converting hexadecimal string to byte array 
 documentation = "https://docs.rs/hex-literal"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["hex", "proc-macro", "literals"]
+edition = "2018"
 
 [dependencies]
-proc-macro-hack = "0.4"
+proc-macro-hack = "0.5"
 hex-literal-impl = { version = "0.1.1", path = "./hex-literal-impl" }

@@ -1,5 +1,7 @@
-#[macro_use]
-extern crate proc_macro_hack;
+extern crate proc_macro;
+
+use proc_macro::TokenStream;
+use proc_macro_hack::proc_macro_hack;
 
 #[inline(always)]
 fn is_hex_char(c: &char) -> bool {
@@ -17,39 +19,35 @@ fn is_format_char(c: &char) -> bool {
     }
 }
 
-proc_macro_expr_impl! {
-    pub fn hex_impl(input: &str) -> String {
-        let bytes = input.as_bytes();
-        let n = bytes.len();
-        if bytes[0] != b'"' || bytes[n-1] != b'"' {
-            return "compile_error!(\"expected string literal\")".to_string();
+#[proc_macro_hack]
+pub fn hex(input: TokenStream) -> TokenStream {
+    let input = input.to_string();
+    let bytes = input.as_bytes();
+    let n = bytes.len();
+    assert!(bytes[0] == b'"' && bytes[n-1] == b'"', "expected string literal");
+    let input = &input[1..n-1];
+
+    for (i, c) in input.chars().enumerate() {
+        if !(is_hex_char(&c) || is_format_char(&c)) {
+            panic!("invalid character (position {}): {:?})", i + 1, c);
         }
-        let input = &input[1..n-1];
+    };
+    let n = input.chars().filter(is_hex_char).count() / 2;
+    let mut s = String::with_capacity(2 + 7*n);
 
-        for (i, c) in input.chars().enumerate() {
-            if !(is_hex_char(&c) || is_format_char(&c)) {
-                return format!("compile_error!(\"\
-                    invalid character (position {}): {:?}\")", i + 1, c);
-            }
-        };
-        let n = input.chars().filter(is_hex_char).count() / 2;
-        let mut s = String::with_capacity(2 + 7*n);
-
-        s.push('[');
-        let mut iter = input.chars().filter(is_hex_char);
-        while let Some(c1) = iter.next() {
-            if let Some(c2) = iter.next() {
-                s += "0x";
-                s.push(c1);
-                s.push(c2);
-                s += "u8,";
-            } else {
-                return "compile_error!(\"\
-                    expected even number of hex characters\")".to_string();
-            }
+    s.push('[');
+    let mut iter = input.chars().filter(is_hex_char);
+    while let Some(c1) = iter.next() {
+        if let Some(c2) = iter.next() {
+            s += "0x";
+            s.push(c1);
+            s.push(c2);
+            s += "u8,";
+        } else {
+            panic!("expected even number of hex characters");
         }
-        s.push(']');
-
-        s
     }
+    s.push(']');
+
+    s.parse().unwrap()
 }
