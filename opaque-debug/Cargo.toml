@@ -2,7 +2,7 @@
 name = "opaque-debug"
 version = "0.2.1"
 authors = ["RustCrypto Developers"]
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 description = "Macro for opaque Debug trait implementation"
 documentation = "https://docs.rs/opaque-debug"
 repository = "https://github.com/RustCrypto/utils"
