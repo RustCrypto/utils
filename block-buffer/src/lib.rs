@@ -11,8 +11,10 @@ use generic_array::{GenericArray, ArrayLength};
 use core::slice;
 
 /// Buffer for block processing of data
+#[repr(C)]
 #[derive(Clone, Default)]
 pub struct BlockBuffer<BlockSize: ArrayLength<u8>>  {
+    // important: buffer must be the first field for predictable alignment
     buffer: GenericArray<u8, BlockSize>,
     pos: usize,
 }
