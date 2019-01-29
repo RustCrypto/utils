@@ -2,18 +2,25 @@
 pub extern crate byteorder;
 pub extern crate block_padding;
 pub extern crate generic_array;
+extern crate alignas;
 extern crate byte_tools;
 
+use alignas::AlignAs;
 use byteorder::{ByteOrder, BE};
 use byte_tools::zero;
 use block_padding::{Padding, PadError};
 use generic_array::{GenericArray, ArrayLength};
 use core::slice;
 
+pub type BlockBuffer<BlockSize> = AlignedBuffer<BlockSize, u8>;
+
 /// Buffer for block processing of data
 #[derive(Clone, Default)]
-pub struct BlockBuffer<BlockSize: ArrayLength<u8>>  {
-    buffer: GenericArray<u8, BlockSize>,
+pub struct AlignedBuffer<BlockSize: ArrayLength<u8>, A: Copy>
+where
+    <BlockSize as ArrayLength<u8>>::ArrayType: Copy+Clone
+{
+    buffer: AlignAs<GenericArray<u8, BlockSize>, A>,
     pos: usize,
 }
 
@@ -25,7 +32,10 @@ unsafe fn cast<N: ArrayLength<u8>>(block: &[u8]) -> &GenericArray<u8, N> {
 
 
 
-impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
+impl<BlockSize: ArrayLength<u8>, A: Copy> AlignedBuffer<BlockSize, A>
+where
+    <BlockSize as ArrayLength<u8>>::ArrayType: Copy+Clone
+{
     /// Process data in `input` in blocks of size `BlockSize` using function `f`.
     #[inline]
     pub fn input<F>(&mut self, mut input: &[u8], mut f: F)
