@@ -55,6 +55,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         self.pos += input.len();
     }
 
+    /*
     /// Process data in `input` in blocks of size `BlockSize` using function `f`, which accepts
     /// slice of blocks.
     #[inline]
@@ -89,6 +90,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         self.buffer[self.pos..self.pos+right.len()].copy_from_slice(right);
         self.pos += right.len();
     }
+    */
 
     /// Variant that doesn't flush the buffer until there's additional
     /// data to be processed. Suitable for tweakable block ciphers
