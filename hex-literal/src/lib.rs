@@ -5,7 +5,7 @@
 //!
 //! - `'0'...'9'`, `'a'...'f'`, `'A'...'F'` — hex characters which will be used
 //!     in construction of the output byte array
-//! - `' '`, `'\r'`, `'\n'`, `'\t'`` — formatting characters which will be
+//! - `' '`, `'\r'`, `'\n'`, `'\t'` — formatting characters which will be
 //!     ignored
 //!
 //! # Examples
