@@ -32,23 +32,16 @@ pub trait Padding {
     /// Pads message with length `pos` in the provided buffer.
     ///
     /// `&buf[..pos]` is perceived as the message, the buffer must contain
-    /// enough leftover space for padding: if `pos % block_size == 0` then
-    /// a full extra block must be available, else `block_size - (pos %
-    /// block_size)` extra bytes must be available. Otherwise method will
-    /// return `PadError`.
+    /// enough leftover space for padding: `block_size - (pos % block_size)`
+    /// extra bytes must be available. Otherwise method will return
+    /// `PadError`.
     fn pad(buf: &mut [u8], pos: usize, block_size: usize)
         -> Result<&mut [u8], PadError>
     {
-        if pos % block_size == 0 {
-            if buf.len() - pos < block_size { Err(PadError)? }
-            Self::pad_block(&mut buf[pos..pos + block_size], 0)?;
-            Ok(&mut buf[..pos+block_size])
-        } else {
-            let bs = block_size * (pos / block_size);
-            if buf.len() - bs < block_size { Err(PadError)? }
-            Self::pad_block(&mut buf[bs..bs+block_size], pos - bs)?;
-            Ok(&mut buf[..bs+block_size])
-        }
+        let bs = block_size * (pos / block_size);
+        if buf.len() < bs || buf.len() - bs < block_size { Err(PadError)? }
+        Self::pad_block(&mut buf[bs..bs+block_size], pos - bs)?;
+        Ok(&mut buf[..bs+block_size])
     }
 
     /// Unpad given `data` by truncating it according to the used padding.
@@ -126,7 +119,7 @@ impl Padding for ZeroPadding {
 ///
 /// let msg = b"test";
 /// let n = msg.len();
-/// let mut buffer = [0xff; 16];
+/// let mut buffer = [0xff; 8];
 /// buffer[..n].copy_from_slice(msg);
 /// let padded_msg = Pkcs7::pad(&mut buffer, n, 8).unwrap();
 /// assert_eq!(padded_msg, b"test\x04\x04\x04\x04");
@@ -136,11 +129,16 @@ impl Padding for ZeroPadding {
 /// # use block_padding::{Pkcs7, Padding};
 /// # let msg = b"test";
 /// # let n = msg.len();
-/// # let mut buffer = [0xff; 16];
+/// # let mut buffer = [0xff; 8];
 /// # buffer[..n].copy_from_slice(msg);
 /// let padded_msg = Pkcs7::pad(&mut buffer, n, 2).unwrap();
 /// assert_eq!(padded_msg, b"test\x02\x02");
 /// assert_eq!(Pkcs7::unpad(&padded_msg).unwrap(), msg);
+/// ```
+/// ```
+/// # use block_padding::{Pkcs7, Padding};
+/// let mut buffer = [0xff; 5];
+/// assert!(Pkcs7::pad(&mut buffer, 4, 2).is_err());
 /// ```
 /// ```
 /// # use block_padding::{Pkcs7, Padding};
@@ -174,7 +172,7 @@ impl Padding for Pkcs7 {
     }
 }
 
-/// Pad block with zeros excpet the last byte which will be set to the number
+/// Pad block with zeros except the last byte which will be set to the number
 /// bytes.
 ///
 /// ```
