@@ -1,8 +1,8 @@
 [package]
 name = "hex-literal-impl"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["RustCrypto Developers"]
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 description = "Internal implementation of the hex-literal crate"
 repository = "https://github.com/RustCrypto/utils"
 
@@ -11,3 +11,4 @@ proc-macro-hack = "0.4"
 
 [lib]
 proc-macro = true
+
