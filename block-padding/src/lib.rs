@@ -31,18 +31,21 @@ pub trait Padding {
 
     /// Pads message with length `pos` in the provided buffer.
     ///
-    /// `&buf[..pos]` is percieved as the message, buffer must contain at
-    /// least one block of leftover space, i.e. `buf.len() - pos >= block_size`
-    /// must be true. Otherwise method will return `PadError`.
+    /// `&buf[..pos]` is perceived as the message, the buffer must contain
+    /// enough leftover space for padding: if `pos % block_size == 0` then
+    /// a full extra block must be available, else `block_size - (pos %
+    /// block_size)` extra bytes must be available. Otherwise method will
+    /// return `PadError`.
     fn pad(buf: &mut [u8], pos: usize, block_size: usize)
         -> Result<&mut [u8], PadError>
     {
-        if buf.len() - pos < block_size { Err(PadError)? }
         if pos % block_size == 0 {
+            if buf.len() - pos < block_size { Err(PadError)? }
             Self::pad_block(&mut buf[pos..pos + block_size], 0)?;
             Ok(&mut buf[..pos+block_size])
         } else {
             let bs = block_size * (pos / block_size);
+            if buf.len() - bs < block_size { Err(PadError)? }
             Self::pad_block(&mut buf[bs..bs+block_size], pos - bs)?;
             Ok(&mut buf[..bs+block_size])
         }
