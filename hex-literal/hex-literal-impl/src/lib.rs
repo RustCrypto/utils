@@ -1,9 +1,8 @@
 extern crate proc_macro;
 
-use proc_macro::TokenStream;
+use proc_macro::{TokenStream, TokenTree};
 use proc_macro_hack::proc_macro_hack;
 
-#[inline(always)]
 fn is_hex_char(c: &char) -> bool {
     match *c {
         '0'...'9' | 'a'...'f' | 'A'...'F' => true,
@@ -11,7 +10,6 @@ fn is_hex_char(c: &char) -> bool {
     }
 }
 
-#[inline(always)]
 fn is_format_char(c: &char) -> bool {
     match *c {
         ' ' | '\r' | '\n' | '\t' => true,
@@ -21,10 +19,15 @@ fn is_format_char(c: &char) -> bool {
 
 #[proc_macro_hack]
 pub fn hex(input: TokenStream) -> TokenStream {
-    let input = input.to_string();
+    let mut ts = input.into_iter();
+    let input = match (ts.next(), ts.next()) {
+        (Some(TokenTree::Literal(literal)), None) => literal.to_string(),
+        _ => panic!("expected one string literal"),
+    };
+
     let bytes = input.as_bytes();
     let n = bytes.len();
-    assert!(bytes[0] == b'"' && bytes[n-1] == b'"', "expected string literal");
+    // trim quote characters
     let input = &input[1..n-1];
 
     for (i, c) in input.chars().enumerate() {
