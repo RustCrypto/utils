@@ -27,15 +27,8 @@
 //! ```
 #![doc(html_logo_url =
     "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
-#[macro_use] extern crate proc_macro_hack;
 
-#[allow(unused_imports)]
-#[macro_use]
-extern crate hex_literal_impl;
+use proc_macro_hack::proc_macro_hack;
 #[doc(hidden)]
-pub use hex_literal_impl::*;
-
-proc_macro_expr_decl! {
-    /// Macro for converting hex string to byte array at compile time
-    hex! => hex_impl
-}
+#[proc_macro_hack]
+pub use hex_literal_impl::hex;
