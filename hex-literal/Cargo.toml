@@ -1,6 +1,6 @@
 [package]
 name = "hex-literal"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Procedural macro for converting hexadecimal string to byte array at compile time."
