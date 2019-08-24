@@ -5,7 +5,7 @@ use proc_macro_hack::proc_macro_hack;
 
 fn is_hex_char(c: &char) -> bool {
     match *c {
-        '0'...'9' | 'a'...'f' | 'A'...'F' => true,
+        '0'..='9' | 'a'..='f' | 'A'..='F' => true,
         _ => false,
     }
 }
