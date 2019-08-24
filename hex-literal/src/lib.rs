@@ -27,6 +27,7 @@
 //! ```
 #![doc(html_logo_url =
     "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
+#![no_std]
 
 use proc_macro_hack::proc_macro_hack;
 #[doc(hidden)]
