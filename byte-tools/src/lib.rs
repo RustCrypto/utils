@@ -3,7 +3,7 @@ use core::ptr;
 
 /// Copy bytes from `src` to `dst`
 ///
-/// Panics if `src.len() < dst.len()`
+/// Panics if the size of `src` is bigger than the size of `dst`
 #[inline(always)]
 pub fn copy(src: &[u8], dst: &mut [u8]) {
     assert!(dst.len() >= src.len());
