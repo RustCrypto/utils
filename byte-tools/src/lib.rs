@@ -6,7 +6,8 @@
 #[inline(always)]
 pub fn copy(src: &[u8], dst: &mut [u8]) {
     assert!(dst.len() >= src.len());
-    dst[..src.len()].copy_from_slice(src);
+    let dst = &mut dst[..src.len()]; // make sure that dst is the same length as src
+    dst.copy_from_slice(src);        // as it is required by copy_from_slice
 }
 
 /// Zero all bytes in `dst`
