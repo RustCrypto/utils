@@ -55,12 +55,12 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         self.pos += input.len();
     }
 
-    /*
     /// Process data in `input` in blocks of size `BlockSize` using function `f`, which accepts
     /// slice of blocks.
     #[inline]
     pub fn input2<F>(&mut self, mut input: &[u8], mut f: F)
-        where F: FnMut(&[GenericArray<u8, BlockSize>])
+    where
+        F: FnMut(&[GenericArray<u8, BlockSize>]),
     {
         // If there is already data in the buffer, process it if we have
         // enough to complete the chunk.
@@ -70,14 +70,18 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
             input = r;
             self.buffer[self.pos..].copy_from_slice(l);
             self.pos = 0;
-            f(slice::from_ref(&self.buffer));
+            // TODO: once MSRV is up to 1.28.0 use `slice::from_ref`.
+            f(unsafe {
+                // Safe becuase this matches the implementation in the std lib.
+                slice::from_raw_parts(&self.buffer, 1)
+            });
         }
 
         // While we have at least a full buffer size chunks's worth of data,
         // process it data without copying into the buffer
-        let n_blocks = input.len()/self.size();
-        let (left, right) = input.split_at(n_blocks*self.size());
-        // safe because we guarantee that `blocks` does not point outside of `input` 
+        let n_blocks = input.len() / self.size();
+        let (left, right) = input.split_at(n_blocks * self.size());
+        // safe because we guarantee that `blocks` does not point outside of `input`
         let blocks = unsafe {
             slice::from_raw_parts(
                 left.as_ptr() as *const GenericArray<u8, BlockSize>,
@@ -87,10 +91,9 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         f(blocks);
 
         // Copy remaining data into the buffer.
-        self.buffer[self.pos..self.pos+right.len()].copy_from_slice(right);
+        self.buffer[self.pos..self.pos + right.len()].copy_from_slice(right);
         self.pos += right.len();
     }
-    */
 
     /// Variant that doesn't flush the buffer until there's additional
     /// data to be processed. Suitable for tweakable block ciphers
