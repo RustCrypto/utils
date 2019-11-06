@@ -275,3 +275,49 @@ impl Padding for Iso7816 {
         Ok(&data[..n])
     }
 }
+
+/// Don't pad the data. Useful for key wrapping. Padding will fail if the data cannot be
+/// fitted into blocks without padding.
+///
+/// ```
+/// use block_padding::{NoPadding, Padding};
+///
+/// let msg = b"test";
+/// let n = msg.len();
+/// let mut buffer = [0xff; 16];
+/// buffer[..n].copy_from_slice(msg);
+/// let padded_msg = NoPadding::pad(&mut buffer, n, 4).unwrap();
+/// assert_eq!(padded_msg, b"test");
+/// assert_eq!(NoPadding::unpad(&padded_msg).unwrap(), msg);
+/// ```
+/// ```
+/// # use block_padding::{NoPadding, Padding};
+/// # let msg = b"test";
+/// # let n = msg.len();
+/// # let mut buffer = [0xff; 16];
+/// # buffer[..n].copy_from_slice(msg);
+/// let padded_msg = NoPadding::pad(&mut buffer, n, 2).unwrap();
+/// assert_eq!(padded_msg, b"test");
+/// assert_eq!(NoPadding::unpad(&padded_msg).unwrap(), msg);
+/// ```
+pub enum NoPadding {}
+
+impl Padding for NoPadding {
+    fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
+        if pos % block.len() != 0 {
+            Err(PadError)?
+        }
+        Ok(())
+    }
+
+    fn pad(buf: &mut [u8], pos: usize, block_size: usize) -> Result<&mut [u8], PadError> {
+        if pos % block_size != 0 {
+            Err(PadError)?
+        }
+        Ok(&mut buf[..pos])
+    }
+
+    fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
+        Ok(data)
+    }
+}
