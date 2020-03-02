@@ -8,7 +8,6 @@ use byteorder::{ByteOrder, BE};
 use byte_tools::zero;
 use block_padding::{Padding, PadError};
 use generic_array::{GenericArray, ArrayLength};
-use core::slice;
 
 /// Buffer for block processing of data
 #[derive(Clone, Default)]
