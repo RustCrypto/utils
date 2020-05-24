@@ -9,7 +9,10 @@
 extern crate alloc;
 
 /// Collection types implement all of the traits in this crate.
-pub trait Collection<T>: Default + Length + Truncate + TryExtend<T> {}
+pub trait Collection<T>:
+    AsRef<[T]> + AsMut<[T]> + Default + Length + Truncate + TryExtend<T> + TryPush<T>
+{
+}
 
 /// Obtain the length of a collection.
 pub trait Length {
@@ -80,6 +83,14 @@ impl<A, C: Default + TryExtend<A>> TryFromIterator<A> for C {
         collection.try_extend(iter)?;
         Ok(collection)
     }
+}
+
+/// Try to push an element onto a collection
+pub trait TryPush<T> {
+    /// Try to push an element onto a collection.
+    ///
+    /// Returns the original element if it's full.
+    fn try_push(&mut self, item: T) -> Result<(), T>;
 }
 
 /// [`TryCollect`] is an extension to [`Iterator`] which allows for performing
