@@ -1,0 +1,18 @@
+[package]
+name = "collectable"
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+edition = "2018"
+description = "Fallible, no_std-friendly collection traits"
+documentation = "https://docs.rs/collectable"
+repository = "https://github.com/RustCrypto/utils"
+categories = ["data-structures", "no-std"]
+keywords = ["arrayvec", "heapless"]
+
+[features]
+alloc = []
+
+[badges]
+maintenance = { status = "experimental" }
+travis-ci = { repository = "RustCrypto/utils" }
