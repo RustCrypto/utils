@@ -4,6 +4,7 @@ members = [
     "block-buffer",
     "block-padding",
     "byte-tools",
+    "collectable",
     "dbl",
     "fake-simd",
     "hex-literal",
