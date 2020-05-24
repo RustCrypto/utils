@@ -44,16 +44,16 @@ pub trait TryExtend<A> {
     type Error;
 
     /// Try to extend the collection from the given iterator.
-    fn try_extend<T>(&mut self, iter: &mut T) -> Result<(), Self::Error>
+    fn try_extend<T>(&mut self, iter: T) -> Result<(), Self::Error>
     where
-        T: Iterator<Item = A>;
+        T: IntoIterator<Item = A>;
 
     /// Try to extend the collection from the given slice.
     fn try_extend_from_slice(&mut self, slice: &[A]) -> Result<(), Self::Error>
     where
         A: Clone,
     {
-        self.try_extend(&mut slice.iter().cloned())
+        self.try_extend(slice.into_iter().cloned())
     }
 }
 
@@ -67,17 +67,17 @@ pub trait TryFromIterator<A>: Sized {
 
     /// Try to create a new collection from the given iterator, potentially
     /// returning an error if the underlying collection's capacity is exceeded.
-    fn try_from_iter<T>(iter: &mut T) -> Result<Self, Self::Error>
+    fn try_from_iter<T>(iter: T) -> Result<Self, Self::Error>
     where
-        T: Iterator<Item = A>;
+        T: IntoIterator<Item = A>;
 }
 
 impl<A, C: Default + TryExtend<A>> TryFromIterator<A> for C {
     type Error = <Self as TryExtend<A>>::Error;
 
-    fn try_from_iter<T>(iter: &mut T) -> Result<Self, Self::Error>
+    fn try_from_iter<T>(iter: T) -> Result<Self, Self::Error>
     where
-        T: Iterator<Item = A>,
+        T: IntoIterator<Item = A>,
     {
         let mut collection = Self::default();
         collection.try_extend(iter)?;
