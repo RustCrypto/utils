@@ -96,7 +96,7 @@ pub trait TryPush<T> {
 /// [`TryCollect`] is an extension to [`Iterator`] which allows for performing
 /// a fallible collection into a collection type.
 pub trait TryCollect<A> {
-    fn try_collect<B>(self) -> Result<B, B::Error>
+    fn try_collect<B>(&mut self) -> Result<B, B::Error>
     where
         B: TryFromIterator<A>;
 }
@@ -105,11 +105,11 @@ impl<A, T> TryCollect<A> for T
 where
     T: Iterator<Item = A>,
 {
-    fn try_collect<B>(mut self) -> Result<B, B::Error>
+    fn try_collect<B>(&mut self) -> Result<B, B::Error>
     where
         B: TryFromIterator<A>,
     {
-        B::try_from_iter(&mut self)
+        B::try_from_iter(self)
     }
 }
 
