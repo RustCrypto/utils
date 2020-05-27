@@ -13,7 +13,7 @@ categories = ["cryptography", "no-std"]
 byteorder = { version = "1.1", default-features = false }
 byte-tools = "0.3"
 block-padding = "0.1"
-generic-array = "0.13"
+generic-array = "0.14"
 
 [badges]
 travis-ci = { repository = "RustCrypto/utils" }
