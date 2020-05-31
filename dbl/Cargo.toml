@@ -1,6 +1,6 @@
 [package]
 name = "dbl"
-version = "0.2.1"
+version = "0.3.0-pre"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Double operation in Galois Field (GF)"
