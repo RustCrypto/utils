@@ -1,6 +1,6 @@
 extern crate proc_macro;
 
-use proc_macro::{TokenStream, TokenTree};
+use proc_macro::{TokenStream, TokenTree, Delimiter};
 use proc_macro_hack::proc_macro_hack;
 
 fn is_hex_char(c: &char) -> bool {
@@ -17,8 +17,29 @@ fn is_format_char(c: &char) -> bool {
     }
 }
 
+
+/// Strips any outer `Delimiter::None` groups from the input,
+/// returning a `TokenStream` consisting of the innermost
+/// non-empty-group `TokenTree`.
+/// This is used to handle a proc macro being invoked
+/// by a `macro_rules!` expansion.
+/// See https://github.com/rust-lang/rust/issues/72545 for background
+fn ignore_groups(mut input: TokenStream) -> TokenStream {
+    let mut tokens = input.clone().into_iter();
+    loop {
+        if let Some(TokenTree::Group(group)) = tokens.next() {
+            if group.delimiter() == Delimiter::None {
+                input = group.stream();
+                continue;
+            }
+        }
+        return input;
+    }
+}
+
 #[proc_macro_hack]
-pub fn hex(input: TokenStream) -> TokenStream {
+pub fn hex(mut input: TokenStream) -> TokenStream {
+    input = ignore_groups(input);
     let mut ts = input.into_iter();
     let input = match (ts.next(), ts.next()) {
         (Some(TokenTree::Literal(literal)), None) => literal.to_string(),
