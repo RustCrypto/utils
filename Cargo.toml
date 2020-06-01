@@ -8,6 +8,5 @@ members = [
     "dbl",
     "fake-simd",
     "hex-literal",
-    "hex-literal/hex-literal-impl",
     "opaque-debug",
 ]
