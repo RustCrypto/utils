@@ -1,6 +1,6 @@
 [package]
 name = "block-padding"
-version = "0.2.0-pre"
+version = "0.2.0"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Padding and unpadding of messages divided into blocks."
