@@ -11,5 +11,5 @@ categories = ["cryptography", "no-std"]
 edition = "2018"
 
 [dependencies]
-block-padding = { version = "0.2.0-pre", path = "../block-padding", optional = true }
+block-padding = { version = "0.2.0", path = "../block-padding", optional = true }
 generic-array = "0.14"
