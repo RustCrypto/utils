@@ -6,9 +6,6 @@
 #![no_std]
 #![doc(html_logo_url =
     "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
-extern crate byte_tools;
-
-use byte_tools::{zero, set};
 
 /// Error for indicating failed padding operation
 #[derive(Clone, Copy, Debug)]
@@ -80,7 +77,7 @@ pub enum ZeroPadding{}
 impl Padding for ZeroPadding {
     fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
         if pos > block.len() { Err(PadError)? }
-        zero(&mut block[pos..]);
+        set(&mut block[pos..], 0);
         Ok(())
     }
 
@@ -212,7 +209,7 @@ impl Padding for AnsiX923 {
         if block.len() > 255 { Err(PadError)? }
         if pos >= block.len() { Err(PadError)? }
         let bs = block.len();
-        zero(&mut block[pos..bs-1]);
+        set(&mut block[pos..bs-1], 0);
         block[bs-1] = (bs - pos) as u8;
         Ok(())
     }
@@ -260,7 +257,7 @@ impl Padding for Iso7816 {
     fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
         if pos >= block.len() { Err(PadError)? }
         block[pos] = 0x80;
-        zero(&mut block[pos+1..]);
+        set(&mut block[pos+1..], 0);
         Ok(())
     }
 
@@ -320,4 +317,10 @@ impl Padding for NoPadding {
     fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
         Ok(data)
     }
+}
+
+/// Sets all bytes in `dst` equal to `value`
+#[inline(always)]
+fn set(dst: &mut [u8], value: u8) {
+    dst.iter_mut().for_each(|b| *b = value);
 }
