@@ -132,11 +132,11 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         self.buffer[self.pos] = 0x80;
         self.pos += 1;
 
-        self.buffer[self.pos..].iter_mut().for_each(|b| *b = 0);
+        set_zero(&mut self.buffer[self.pos..]);
 
         if self.remaining() < up_to {
             f(&self.buffer);
-            self.buffer[..self.pos].iter_mut().for_each(|b| *b = 0);
+            set_zero(&mut self.buffer[..self.pos]);
         }
     }
 
@@ -218,5 +218,16 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     #[inline]
     pub fn reset(&mut self)  {
         self.pos = 0
+    }
+}
+
+/// Sets all bytes in `dst` to zero
+#[inline(always)]
+fn set_zero(dst: &mut [u8]) {
+    // SAFETY: we overwrite valid memory behind `dst`
+    // note: loop is not used here because it produces
+    // unnecessary branch which tests for zero-length slices
+    unsafe {
+        core::ptr::write_bytes(dst.as_mut_ptr(), 0, dst.len());
     }
 }
