@@ -1,7 +1,7 @@
 #![no_std]
-pub extern crate generic_array;
+pub use generic_array;
 #[cfg(feature = "block-padding")]
-pub extern crate block_padding;
+pub use block_padding;
 
 use core::{slice, convert::TryInto};
 use generic_array::{GenericArray, ArrayLength};
