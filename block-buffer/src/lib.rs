@@ -18,7 +18,7 @@ pub struct BlockBuffer<BlockSize: ArrayLength<u8>>  {
 impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// Process data in `input` in blocks of size `BlockSize` using function `f`.
     #[inline]
-    pub fn input_block<F>(
+    pub fn input_block(
         &mut self, mut input: &[u8], mut f: impl FnMut(&GenericArray<u8, BlockSize>),
     ) {
         let r = self.remaining();
@@ -91,9 +91,9 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// like Threefish that need to know whether a block is the *last*
     /// data block before processing it.
     #[inline]
-    pub fn input_lazy<F>(&mut self, mut input: &[u8], mut f: F)
-        where F: FnMut(&GenericArray<u8, BlockSize>)
-    {
+    pub fn input_lazy(
+        &mut self, mut input: &[u8], mut f: impl FnMut(&GenericArray<u8, BlockSize>),
+    ) {
         let r = self.remaining();
         if input.len() <= r {
             let n = input.len();
