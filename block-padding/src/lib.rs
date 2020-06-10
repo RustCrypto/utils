@@ -322,5 +322,10 @@ impl Padding for NoPadding {
 /// Sets all bytes in `dst` equal to `value`
 #[inline(always)]
 fn set(dst: &mut [u8], value: u8) {
-    dst.iter_mut().for_each(|b| *b = value);
+    // SAFETY: we overwrite valid memory behind `dst`
+    // note: loop is not used here because it produces
+    // unnecessary branch which tests for zero-length slices
+    unsafe {
+        core::ptr::write_bytes(dst.as_mut_ptr(), value, dst.len());
+    }
 }
