@@ -13,6 +13,9 @@
 //! to `true` and will not use CPUID instruction. Such behavior allows
 //! compiler to eliminate fallback code.
 #![no_std]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+compile_error!("This crate works only on x86 and x86-64 targets.");
+
 use core::sync::atomic::{AtomicU8, Ordering::Relaxed};
 
 /// This structure represents a lazily initialized static boolean value.
@@ -88,6 +91,9 @@ macro_rules! cpuid_bool {
     ($($tf:tt),+ $(,)? ) => {{
         #[cfg(not(all($(target_feature=$tf, )*)))]
         let res = {
+            #[cfg(target_arch = "x86")]
+            use core::arch::x86::{__cpuid, __cpuid_count};
+            #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::{__cpuid, __cpuid_count};
             static CPUID_BOOL: cpuid_bool::LazyBool = cpuid_bool::LazyBool::new();
             CPUID_BOOL.unsync_init(|| {
