@@ -5,6 +5,7 @@ members = [
     "block-padding",
     "byte-tools",
     "collectable",
+    "cpuid-bool",
     "dbl",
     "fake-simd",
     "hex-literal",
