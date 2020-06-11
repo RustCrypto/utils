@@ -12,6 +12,9 @@
 //! (e.g. by using `RUSTFLAGS`), `cpuid_bool!` macro immideatly will expand
 //! to `true` and will not use CPUID instruction. Such behavior allows
 //! compiler to eliminate fallback code.
+//!
+//! After first call macro caches result and returns it in subsequent
+//! calls, thus runtime overhead for them is minimal.
 #![no_std]
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 compile_error!("This crate works only on x86 and x86-64 targets.");
@@ -41,7 +44,7 @@ impl LazyBool {
             val = init() as u8;
             self.0.store(val as u8, Relaxed);
         }
-        val == 0
+        val != 0
     }
 }
 
@@ -52,7 +55,7 @@ macro_rules! expand_check_macro {
         #[doc(hidden)]
         macro_rules! check {
             $(
-                ($cr:expr, $name) => { $cr[$i].$reg & (1 << $offset) != 0 };
+                ($cr:expr, $name) => { ($cr[$i].$reg & (1 << $offset) != 0) };
             )*
         }
     };
@@ -95,6 +98,7 @@ macro_rules! cpuid_bool {
             use core::arch::x86::{__cpuid, __cpuid_count};
             #[cfg(target_arch = "x86_64")]
             use core::arch::x86_64::{__cpuid, __cpuid_count};
+
             static CPUID_BOOL: cpuid_bool::LazyBool = cpuid_bool::LazyBool::new();
             CPUID_BOOL.unsync_init(|| {
                 #[allow(unused_variables)]
@@ -102,7 +106,7 @@ macro_rules! cpuid_bool {
                     [__cpuid(1), __cpuid_count(7, 0)]
                 };
                 // TODO: find how to remove `true`
-                $(cpuid_bool::check!(cr, $tf) && )+ true
+                $(cpuid_bool::check!(cr, $tf) & )+ true
             })
         };
 
