@@ -1,19 +1,14 @@
 [package]
 name = "blobby"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Iterator over simple binary blob storage"
 documentation = "https://docs.rs/blobby"
 repository = "https://github.com/RustCrypto/utils"
 categories = ["no-std"]
-
-[dependencies]
-byteorder = { version = "1", default-features = false }
+edition = "2018"
 
 [dev-dependencies]
 hex = "0.3"
 byteorder = { version = "1", features = ["std"] }
-
-[badges]
-travis-ci = { repository = "RustCrypto/utils" }

@@ -26,10 +26,8 @@
 #![doc(html_logo_url =
     "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 #![no_std]
-extern crate byteorder;
 
-use byteorder::{LE, ByteOrder};
-use core::iter::Iterator;
+use core::{iter::Iterator, convert::TryInto};
 
 /// Iterator over binary blobs
 pub struct BlobIterator<'a> {
@@ -148,6 +146,34 @@ impl<'a> Iterator for Blob4Iterator<'a> {
     }
 }
 
+/// Iterator over binary blob quadruples
+pub struct Blob5Iterator<'a> {
+    inner: BlobIterator<'a>,
+}
+
+impl<'a> Blob5Iterator<'a> {
+    /// Create a new `Blob4Iterator` for given `data`.
+    pub fn new(data: &'a [u8]) -> Result<Self, &'static str> {
+        Ok(Self { inner: BlobIterator::new(data)? })
+    }
+}
+
+impl<'a> Iterator for Blob5Iterator<'a> {
+    type Item = [&'a [u8]; 5];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut res = Self::Item::default();
+        for (i, v) in res.iter_mut().enumerate() {
+            *v = match self.inner.next() {
+                Some(val) => val,
+                None if i == 0 => return None,
+                None => panic!("failed to get 5 blobs, not enough elements."),
+            };
+        }
+        Some(res)
+    }
+}
+
 #[derive(Copy, Clone)]
 enum IndexSize {
     N8,
@@ -157,9 +183,10 @@ enum IndexSize {
 }
 
 macro_rules! branch_read {
-    ($data:ident, $n:expr, $method:ident) => {{
-        let (size, data) = $data.split_at($n);
-        let n = LE::$method(size) as usize;
+    ($data:ident, $t:ty) => {{
+        let tn = core::mem::size_of::<$t>();
+        let (size, data) = $data.split_at(tn);
+        let n = <$t>::from_le_bytes(size.try_into().unwrap()) as usize;
         data.split_at(n)
     }}
 }
@@ -171,9 +198,9 @@ impl IndexSize {
                 let n = data[0] as usize;
                 data[1..].split_at(n)
             },
-            IndexSize::N16 => branch_read!(data, 2, read_u16),
-            IndexSize::N32 => branch_read!(data, 4, read_u32),
-            IndexSize::N64 => branch_read!(data, 8, read_u64),
+            IndexSize::N16 => branch_read!(data, u16),
+            IndexSize::N32 => branch_read!(data, u32),
+            IndexSize::N64 => branch_read!(data, u64),
         }
     }
 }
