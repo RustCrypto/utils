@@ -1,19 +1,12 @@
-//! Convert
-extern crate hex;
-extern crate blobby;
-extern crate byteorder;
-
-use std::env;
-use std::error::Error;
-use std::fs::File;
-use std::io;
-use std::io::{Write, BufRead, BufReader, BufWriter};
+//! Convert utility
+use std::{env, error::Error, fs::File};
+use std::io::{self, Write, BufRead, BufReader, BufWriter};
 use std::{u8, u16, u32};
 
-use byteorder::{LE, WriteBytesExt};
+use byteorder::{WriteBytesExt, LE};
 use blobby::BlobIterator;
 
-fn encode<R: BufRead, W: Write>(reader: R, mut writer: W)
+fn encode(reader: impl BufRead, mut writer: impl Write)
     -> io::Result<usize>
 {
     let mut res = Vec::new();
@@ -62,7 +55,7 @@ fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W)
     Ok(res.len())
 }
 
-fn main() -> Result<(), Box<Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().skip(1).collect();
     let is_encode = match args[0].as_str() {
         "encode" => true,
@@ -80,7 +73,7 @@ fn main() -> Result<(), Box<Error>> {
         decode(in_file, out_file)?
     };
 
-    println!("Processed {} record(s)", n);;
+    println!("Processed {} record(s)", n);
 
     Ok(())
 }
