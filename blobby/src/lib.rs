@@ -24,7 +24,7 @@
 //! assert_eq!(v.next(), None);
 //! ```
 //! [0]: https://en.wikipedia.org/wiki/Variable-length_quantity
-#![no_std]
+//#![no_std]
 #![doc(html_logo_url =
     "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 
@@ -36,6 +36,9 @@ pub struct BlobIterator<'a> {
     pos: usize,
 }
 
+const NEXT_MASK: u8 = 0b1000_0000;
+const VAL_MASK: u8 = 0b0111_1111;
+
 /// Read a git-flavoured VLQ value from `&data[*pos..]`.
 /// Increments `pos` to a number of read bytes.
 ///
@@ -44,9 +47,6 @@ pub struct BlobIterator<'a> {
 ///
 /// See the test submodule for example values.
 fn read_vlq(data: &[u8], pos: &mut usize) -> Option<usize> {
-    const NEXT_MASK: u8 = 0b1000_0000;
-    const VAL_MASK: u8 = 0b0111_1111;
-
     let b = data.get(*pos)?;
     *pos += 1;
     let mut next = b & NEXT_MASK;
@@ -156,50 +156,78 @@ new_iter!(Blob6Iterator, 6);
 
 #[cfg(test)]
 mod tests {
+    use super::{read_vlq, VAL_MASK, NEXT_MASK};
+
+    fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
+        macro_rules! step {
+            ($n:expr) => {
+                buf[$n] = if $n == 3 {
+                    (val & (VAL_MASK as usize)) as u8
+                } else {
+                    val -= 1;
+                    NEXT_MASK | (val & (VAL_MASK as usize)) as u8
+                };
+                val >>= 7;
+                if val == 0 {
+                    return &buf[$n..];
+                }
+            };
+        }
+
+        step!(3);
+        step!(2);
+        step!(1);
+        step!(0);
+        panic!("integer is too big")
+    }
+
+    #[test]
+    fn encode_decode() {
+        let mut buf = [0u8; 4];
+        for val in 0..=270549119 {
+            let res = encode_vlq(val, &mut buf);
+            let val_res = read_vlq(res, &mut 0).unwrap();
+            assert_eq!(val, val_res);
+        }
+    }
+
     #[test]
     fn test_vlq() {
-        use super::read_vlq;
-
         let mut pos = 0;
         let examples = [
             0b0000_0000, // 0
             0b0000_0010, // 2
             0b0111_1111, // 127
             0b1000_0000, 0b0000_0000, // 128
-            0b1111_1111, 0b0111_1111, // 4223
-            0b1000_0000, 0b1000_0000, 0b0000_0000, // 4224
+            0b1111_1111, 0b0111_1111, // 16511
+            0b1000_0000, 0b1000_0000, 0b0000_0000, // 16512
             0b1111_1111, 0b1111_1111, 0b0111_1111, // 2113663
             0b1000_0000, 0b1000_0000, 0b1000_0000, 0b0000_0000, // 2113664
             0b1111_1111, 0b1111_1111, 0b1111_1111, 0b0111_1111, // 270549119
             0b1111_1111, 0b1111_1111, 0b1111_1111, 0b1111_1111, 0b0111_1111,
         ];
 
-        assert_eq!(read_vlq(&examples, &mut pos), Some(0));
-        assert_eq!(pos, 1);
+        let targets = [
+            (0, 1),
+            (2, 1),
+            (127, 1),
+            (128, 2),
+            (16511, 2),
+            (16512, 3),
+            (2113663, 3),
+            (2113664, 4),
+            (270549119, 4),
+        ];
 
-        assert_eq!(read_vlq(&examples, &mut pos), Some(2));
-        assert_eq!(pos, 2);
+        let mut buf = [0u8; 4];
 
-        assert_eq!(read_vlq(&examples, &mut pos), Some(127));
-        assert_eq!(pos, 3);
-
-        assert_eq!(read_vlq(&examples, &mut pos), Some(128));
-        assert_eq!(pos, 5);
-
-        assert_eq!(read_vlq(&examples, &mut pos), Some(16511));
-        assert_eq!(pos, 7);
-
-        assert_eq!(read_vlq(&examples, &mut pos), Some(16512));
-        assert_eq!(pos, 10);
-
-        assert_eq!(read_vlq(&examples, &mut pos), Some(2113663));
-        assert_eq!(pos, 13);
-
-        assert_eq!(read_vlq(&examples, &mut pos), Some(2113664));
-        assert_eq!(pos, 17);
-
-        assert_eq!(read_vlq(&examples, &mut pos), Some(270549119));
-        assert_eq!(pos, 21);
+        for &(val, size) in targets.iter() {
+            println!("{:?} {} {}", val, size, pos);
+            let prev_pos = pos;
+            assert_eq!(read_vlq(&examples, &mut pos), Some(val));
+            assert_eq!(pos - prev_pos, size);
+            assert_eq!(encode_vlq(val, &mut buf), &examples[prev_pos..pos]);
+        }
 
         // only VLQ values of up to 4 bytes are supported
         assert_eq!(read_vlq(&examples, &mut pos), None);
