@@ -36,7 +36,7 @@
 
 use core::iter::Iterator;
 
-const INDEX_SIZE: usize = 32;
+const INDEX_SIZE: usize = 64;
 
 /// Iterator over binary blobs
 pub struct BlobIterator<'a> {
@@ -90,7 +90,7 @@ impl<'a> BlobIterator<'a> {
     /// Create a new `BlobIterator` for given `data`.
     pub fn new(data: &'a [u8]) -> Self {
         let mut pos = 0;
-        let mut idx: [&[u8]; INDEX_SIZE] = Default::default();
+        let mut idx: [&[u8]; INDEX_SIZE] = [&[]; INDEX_SIZE];
         let idx_n = read_vlq(data, &mut pos).unwrap();
         assert!(idx_n <= INDEX_SIZE);
         for entry in idx[..idx_n].iter_mut() {

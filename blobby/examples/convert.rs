@@ -67,6 +67,7 @@ fn encode(reader: impl BufRead, mut writer: impl Write)
         .map(|(i, &e)| (e, i))
         .collect();
 
+    println!("Index len: {:?}", idx.len());
     let mut buf = [0u8; 4];
     writer.write_all(encode_vlq(idx.len(), &mut buf))?;
     for e in idx {
