@@ -36,12 +36,9 @@
 
 use core::iter::Iterator;
 
-const INDEX_SIZE: usize = 64;
-
 /// Iterator over binary blobs
 pub struct BlobIterator<'a> {
     data: &'a [u8],
-    idx: [&'a [u8]; INDEX_SIZE],
     idx_n: usize,
     pos: usize,
 }
@@ -90,15 +87,26 @@ impl<'a> BlobIterator<'a> {
     /// Create a new `BlobIterator` for given `data`.
     pub fn new(data: &'a [u8]) -> Self {
         let mut pos = 0;
-        let mut idx: [&[u8]; INDEX_SIZE] = [&[]; INDEX_SIZE];
         let idx_n = read_vlq(data, &mut pos).unwrap();
-        assert!(idx_n <= INDEX_SIZE);
-        for entry in idx[..idx_n].iter_mut() {
+        let data = &data[pos..];
+        pos = 0;
+        for _ in 0..idx_n {
             let m = read_vlq(data, &mut pos).unwrap();
-            *entry = &data[pos..pos + m];
             pos += m;
         }
-        BlobIterator { data, idx, idx_n, pos }
+        BlobIterator { data, idx_n, pos }
+    }
+
+    fn get_idx_entry(&self, n: usize) -> &'a [u8] {
+        // not the most efficient approach... an alternative would be
+        // to cache index entry positions on a heap
+        let mut pos = 0;
+        for _ in 0..n {
+            let m = read_vlq(self.data, &mut pos).unwrap();
+            pos += m;
+        }
+        let m = read_vlq(self.data, &mut pos).unwrap();
+        &self.data[pos..pos+m]
     }
 
     fn read(&mut self) -> &'a [u8] {
@@ -108,7 +116,7 @@ impl<'a> BlobIterator<'a> {
         let val = val >> 1;
         if is_ref {
             assert!(val < self.idx_n);
-            self.idx[val]
+            self.get_idx_entry(val)
         } else {
             let s = self.pos;
             self.pos += val;
