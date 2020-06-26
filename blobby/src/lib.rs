@@ -1,27 +1,32 @@
 //! Iterators over a simple binary blob storage.
 //!
 //! # Storage format
-//! Storage format represents a sequence of binary blobs. Each entry starts
-//! with an unsigned integer `n` encoded using [variable-length quantity][0].
-//! The least significant bit of this integer is used as a flag. If the flag
-//! is equal to 0, then the number is followed by `n >> 1` bytes, representing
-//! a stored binary blob. Otherwise the entry references an entry stored
-//! `n >> 1` bytes from the storage beginning. Reference entries can not
-//! reference other reference entries.
+//! Storage format represents a sequence of binary blobs. The format uses
+//! git-flavored [variable-length quantity][0] (VLQ) for encoding unsigned
+//! numbers.
+//!
+//! File starts with a number of de-duplicated blobs `d`. It followed by `d`
+//! entries. Each entry starts with a integer `m`, immediately folowed by `m`
+//! bytes representing de-duplicated binary blob.
+//!
+//! Next follows unspecified number of entries representing sequence of stored
+//! blobs. Each entry starts with an unsigned integer `n`. The least significant
+//! bit of this integer is used as a flag. If the flag is equal to 0, then the
+//! number is followed by `n >> 1` bytes, representing a stored binary blob.
+//! Otherwise the entry references a de-duplicated entry number `n >> 1` stored
+//! at the beginning of the storage.
 //!
 //! # Examples
 //! ```
-//! // 0x0C = 5 << 1; 0x02 = 1 << 1
-//! // 0x15 = (10 << 1) + 1 -- 10th byte from the beginning
-//! let buf = b"\x0C hello\x02 \x00\x0C world\x02,\x01\x15";
+//! let buf = b"\x02\x05hello\x06world!\x01\x02 \x00\x03\x06:::\x03\x01";
 //! let mut v = blobby::BlobIterator::new(buf);
-//! assert_eq!(v.next().unwrap(), b" hello");
+//! assert_eq!(v.next().unwrap(), b"hello");
 //! assert_eq!(v.next().unwrap(), b" ");
 //! assert_eq!(v.next().unwrap(), b"");
-//! assert_eq!(v.next().unwrap(), b" world");
-//! assert_eq!(v.next().unwrap(), b",");
-//! assert_eq!(v.next().unwrap(), b" hello");
-//! assert_eq!(v.next().unwrap(), b" world");
+//! assert_eq!(v.next().unwrap(), b"world!");
+//! assert_eq!(v.next().unwrap(), b":::");
+//! assert_eq!(v.next().unwrap(), b"world!");
+//! assert_eq!(v.next().unwrap(), b"hello");
 //! assert_eq!(v.next(), None);
 //! ```
 //! [0]: https://en.wikipedia.org/wiki/Variable-length_quantity
@@ -31,9 +36,13 @@
 
 use core::iter::Iterator;
 
+const INDEX_SIZE: usize = 32;
+
 /// Iterator over binary blobs
 pub struct BlobIterator<'a> {
     data: &'a [u8],
+    idx: [&'a [u8]; INDEX_SIZE],
+    idx_n: usize,
     pos: usize,
 }
 
@@ -80,23 +89,26 @@ fn read_vlq(data: &[u8], pos: &mut usize) -> Option<usize> {
 impl<'a> BlobIterator<'a> {
     /// Create a new `BlobIterator` for given `data`.
     pub fn new(data: &'a [u8]) -> Self {
-        BlobIterator { data, pos: 0 }
+        let mut pos = 0;
+        let mut idx: [&[u8]; INDEX_SIZE] = Default::default();
+        let idx_n = read_vlq(data, &mut pos).unwrap();
+        assert!(idx_n <= INDEX_SIZE);
+        for entry in idx[..idx_n].iter_mut() {
+            let m = read_vlq(data, &mut pos).unwrap();
+            *entry = &data[pos..pos + m];
+            pos += m;
+        }
+        BlobIterator { data, idx, idx_n, pos }
     }
 
-    fn read(&mut self, second: bool) -> &'a [u8] {
+    fn read(&mut self) -> &'a [u8] {
         let val = read_vlq(self.data, &mut self.pos).unwrap();
         // the least significant bit is used as a flag
         let is_ref = (val & 1) != 0;
         let val = val >> 1;
         if is_ref {
-            assert!(self.pos >= val);
-            // prevenets potential infinite recursion
-            assert!(!second);
-            let t = self.pos;
-            self.pos = val;
-            let buf = self.read(true);
-            self.pos = t;
-            buf
+            assert!(val < self.idx_n);
+            self.idx[val]
         } else {
             let s = self.pos;
             self.pos += val;
@@ -110,7 +122,7 @@ impl<'a> Iterator for BlobIterator<'a> {
 
     fn next(&mut self) -> Option<&'a [u8]> {
         if self.pos < self.data.len() {
-            Some(self.read(false))
+            Some(self.read())
         } else {
             None
         }

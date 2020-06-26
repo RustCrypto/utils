@@ -1,5 +1,6 @@
 //! Convert utility
 use std::{env, error::Error, fs::File};
+use std::collections::HashMap;
 use std::io::{self, Write, BufRead, BufReader, BufWriter};
 use blobby::{BlobIterator};
 
@@ -32,41 +33,59 @@ fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
 fn encode(reader: impl BufRead, mut writer: impl Write)
     -> io::Result<usize>
 {
-    use std::collections::HashMap;
-    use std::collections::hash_map::Entry::{Occupied, Vacant};
-
-    let mut blobs: HashMap<Vec<u8>, usize> = HashMap::new();
-    let mut buf = [0u8; 4];
-    let mut pos = 0;
-    let mut recs = 0;
+    let mut blobs = Vec::new();
     for line in reader.lines() {
         let blob = hex::decode(line?.as_str())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-        match blobs.entry(blob) {
-            Occupied(e) => {
-                // TODO: be smarter about short blobs, e.g.
-                // store 1 byte blob directly, if reference VLQ
-                // takes more than one byte.
-                let n = (*e.get() << 1) + 1;
-                let vlq = encode_vlq(n , &mut buf);
-                writer.write_all(vlq)?;
-                pos += vlq.len();
-            }
-            Vacant(e) => {
-                let n = e.key().len();
-                let vlq = encode_vlq(n << 1, &mut buf);
-                let delta = vlq.len() + n;
-                writer.write_all(vlq)?;
-                writer.write_all(e.key())?;
-                if n != 0 {
-                    e.insert(pos);
-                }
-                pos += delta;
-            }
-        }
-        recs += 1;
+        blobs.push(blob);
     }
-    Ok(recs)
+
+    let mut idx_map = HashMap::new();
+    for blob in blobs.iter().filter(|b| b.len() != 0) {
+        let v = idx_map.entry(blob.as_slice()).or_insert(0);
+        *v += 1;
+    }
+
+    let mut idx: Vec<&[u8]> = idx_map
+        .iter()
+        .filter(|(_, &v)| v  > 1)
+        .map(|(&k, _)| k)
+        .collect();
+    idx.sort_by_key(|e| {
+        let k = match e {
+            &[0] => 2,
+            &[1] => 1,
+            _ => 0,
+        };
+        (k, idx_map.get(e).unwrap())
+    });
+    idx.reverse();
+
+    let rev_idx: HashMap<&[u8], usize> = idx
+        .iter()
+        .enumerate()
+        .map(|(i, &e)| (e, i))
+        .collect();
+
+    let mut buf = [0u8; 4];
+    writer.write_all(encode_vlq(idx.len(), &mut buf))?;
+    for e in idx {
+        writer.write_all(encode_vlq(e.len(), &mut buf))?;
+        writer.write_all(e)?;
+    }
+
+    for blob in blobs.iter() {
+        if let Some(dup_pos) = rev_idx.get(blob.as_slice()) {
+            let n = (dup_pos << 1) + 1;
+            writer.write_all(encode_vlq(n, &mut buf))?;
+        } else {
+            let n = blob.len() << 1;
+            writer.write_all(encode_vlq(n, &mut buf))?;
+            writer.write_all(blob)?;
+        }
+    }
+
+    Ok(blobs.len())
 }
 
 fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W)
