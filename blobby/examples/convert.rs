@@ -1,43 +1,72 @@
 //! Convert utility
 use std::{env, error::Error, fs::File};
 use std::io::{self, Write, BufRead, BufReader, BufWriter};
-use std::{u8, u16, u32};
+use blobby::{BlobIterator};
 
-use byteorder::{WriteBytesExt, LE};
-use blobby::BlobIterator;
+const NEXT_MASK: u8 = 0b1000_0000;
+const VAL_MASK: u8 = 0b0111_1111;
+
+fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
+    macro_rules! step {
+        ($n:expr) => {
+            buf[$n] = if $n == 3 {
+                (val & (VAL_MASK as usize)) as u8
+            } else {
+                val -= 1;
+                NEXT_MASK | (val & (VAL_MASK as usize)) as u8
+            };
+            val >>= 7;
+            if val == 0 {
+                return &buf[$n..];
+            }
+        };
+    }
+
+    step!(3);
+    step!(2);
+    step!(1);
+    step!(0);
+    panic!("integer is too big")
+}
 
 fn encode(reader: impl BufRead, mut writer: impl Write)
     -> io::Result<usize>
 {
-    let mut res = Vec::new();
+    use std::collections::HashMap;
+    use std::collections::hash_map::Entry::{Occupied, Vacant};
+
+    let mut blobs: HashMap<Vec<u8>, usize> = HashMap::new();
+    let mut buf = [0u8; 4];
+    let mut pos = 0;
+    let mut recs = 0;
     for line in reader.lines() {
         let blob = hex::decode(line?.as_str())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-        res.push(blob);
-    }
-    let n = match res.iter().map(|b| b.len()).max() {
-        None => 1,
-        Some(m) if m <= u8::MAX as usize => 1,
-        Some(m) if m <= u16::MAX as usize => 2,
-        Some(m) if m <= u32::MAX as usize => 4,
-        _ => 8,
-    };
-
-    writer.write_all(b"blobby")?;
-    writer.write_all(format!("{}", n).as_bytes())?;
-
-    for blob in res.iter() {
-        let s = blob.len();
-        match n {
-            1 => writer.write_all(&[s as u8])?,
-            2 => writer.write_u16::<LE>(s as u16)?,
-            4 => writer.write_u32::<LE>(s as u32)?,
-            8 => writer.write_u64::<LE>(s as u64)?,
-            _ => unreachable!(),
+        match blobs.entry(blob) {
+            Occupied(e) => {
+                // TODO: be smarter about short blobs, e.g.
+                // store 1 byte blob directly, if reference VLQ
+                // takes more than one byte.
+                let n = (*e.get() << 1) + 1;
+                let vlq = encode_vlq(n , &mut buf);
+                writer.write_all(vlq)?;
+                pos += vlq.len();
+            }
+            Vacant(e) => {
+                let n = e.key().len();
+                let vlq = encode_vlq(n << 1, &mut buf);
+                let delta = vlq.len() + n;
+                writer.write_all(vlq)?;
+                writer.write_all(e.key())?;
+                if n != 0 {
+                    e.insert(pos);
+                }
+                pos += delta;
+            }
         }
-        writer.write_all(blob)?;
+        recs += 1;
     }
-    Ok(res.len())
+    Ok(recs)
 }
 
 fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W)

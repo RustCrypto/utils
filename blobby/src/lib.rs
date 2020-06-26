@@ -6,14 +6,14 @@
 //! The least significant bit of this integer is used as a flag. If the flag
 //! is equal to 0, then the number is followed by `n >> 1` bytes, representing
 //! a stored binary blob. Otherwise the entry references an entry stored
-//! `n >> 1` bytes before the current position (after reading the integer).
-//! Reference entries can not reference other reference entries.
+//! `n >> 1` bytes from the storage beginning. Reference entries can not
+//! reference other reference entries.
 //!
 //! # Examples
 //! ```
 //! // 0x0C = 5 << 1; 0x02 = 1 << 1
-//! // 0x29 = (20 << 1) + 1 -- represents offset of minus 20 bytes
-//! let buf = b"\x0C hello\x02 \x00\x0C world\x02,\x29";
+//! // 0x15 = (10 << 1) + 1 -- 10th byte from the beginning
+//! let buf = b"\x0C hello\x02 \x00\x0C world\x02,\x01\x15";
 //! let mut v = blobby::BlobIterator::new(buf);
 //! assert_eq!(v.next().unwrap(), b" hello");
 //! assert_eq!(v.next().unwrap(), b" ");
@@ -21,6 +21,7 @@
 //! assert_eq!(v.next().unwrap(), b" world");
 //! assert_eq!(v.next().unwrap(), b",");
 //! assert_eq!(v.next().unwrap(), b" hello");
+//! assert_eq!(v.next().unwrap(), b" world");
 //! assert_eq!(v.next(), None);
 //! ```
 //! [0]: https://en.wikipedia.org/wiki/Variable-length_quantity
@@ -92,7 +93,7 @@ impl<'a> BlobIterator<'a> {
             // prevenets potential infinite recursion
             assert!(!second);
             let t = self.pos;
-            self.pos -= val;
+            self.pos = val;
             let buf = self.read(true);
             self.pos = t;
             buf
@@ -222,7 +223,6 @@ mod tests {
         let mut buf = [0u8; 4];
 
         for &(val, size) in targets.iter() {
-            println!("{:?} {} {}", val, size, pos);
             let prev_pos = pos;
             assert_eq!(read_vlq(&examples, &mut pos), Some(val));
             assert_eq!(pos - prev_pos, size);
