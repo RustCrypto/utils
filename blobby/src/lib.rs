@@ -36,7 +36,7 @@
 
 use core::iter::Iterator;
 
-const INDEX_SIZE: usize = 128;
+const INDEX_SIZE: usize = 160;
 
 /// Iterator over binary blobs
 pub struct BlobIterator<'a> {
