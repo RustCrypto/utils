@@ -30,7 +30,7 @@
 //! assert_eq!(v.next(), None);
 //! ```
 //! [0]: https://en.wikipedia.org/wiki/Variable-length_quantity
-//#![no_std]
+#![no_std]
 #![doc(html_logo_url =
     "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 
