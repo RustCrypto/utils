@@ -19,31 +19,41 @@
 //! # Examples
 //! ```
 //! let buf = b"\x02\x05hello\x06world!\x01\x02 \x00\x03\x06:::\x03\x01";
-//! let mut v = blobby::BlobIterator::new(buf);
-//! assert_eq!(v.next().unwrap(), b"hello");
-//! assert_eq!(v.next().unwrap(), b" ");
-//! assert_eq!(v.next().unwrap(), b"");
-//! assert_eq!(v.next().unwrap(), b"world!");
-//! assert_eq!(v.next().unwrap(), b":::");
-//! assert_eq!(v.next().unwrap(), b"world!");
-//! assert_eq!(v.next().unwrap(), b"hello");
+//! let mut v = blobby::BlobIterator::new(buf).unwrap();
+//! assert_eq!(v.next().unwrap().unwrap(), b"hello");
+//! assert_eq!(v.next().unwrap().unwrap(), b" ");
+//! assert_eq!(v.next().unwrap().unwrap(), b"");
+//! assert_eq!(v.next().unwrap().unwrap(), b"world!");
+//! assert_eq!(v.next().unwrap().unwrap(), b":::");
+//! assert_eq!(v.next().unwrap().unwrap(), b"world!");
+//! assert_eq!(v.next().unwrap().unwrap(), b"hello");
 //! assert_eq!(v.next(), None);
 //! ```
+//!
 //! [0]: https://en.wikipedia.org/wiki/Variable-length_quantity
 #![no_std]
-#![doc(html_logo_url =
-    "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png",
+    html_root_url = "https://docs.rs/blobby/0.3.0",
+)]
+extern crate alloc;
 
+use alloc::{boxed::Box, vec, vec::Vec};
 use core::iter::Iterator;
-
-const INDEX_SIZE: usize = 160;
 
 /// Iterator over binary blobs
 pub struct BlobIterator<'a> {
     data: &'a [u8],
-    idx: [&'a [u8]; INDEX_SIZE],
-    idx_n: usize,
+    dedup: Box<[&'a [u8]]>,
     pos: usize,
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+pub enum Error {
+    InvalidVlq,
+    InvalidIndex,
+    UnexpectedEnd,
+    NotEnoughElements,
 }
 
 const NEXT_MASK: u8 = 0b1000_0000;
@@ -56,8 +66,8 @@ const VAL_MASK: u8 = 0b0111_1111;
 /// or if VLQ is bigger than 4 bytes.
 ///
 /// See the test submodule for example values.
-fn read_vlq(data: &[u8], pos: &mut usize) -> Option<usize> {
-    let b = data.get(*pos)?;
+fn read_vlq(data: &[u8], pos: &mut usize) -> Result<usize, Error> {
+    let b = data.get(*pos).ok_or(Error::UnexpectedEnd)?;
     *pos += 1;
     let mut next = b & NEXT_MASK;
     let mut val = (b & VAL_MASK) as usize;
@@ -65,9 +75,9 @@ fn read_vlq(data: &[u8], pos: &mut usize) -> Option<usize> {
     macro_rules! step {
         () => {
             if next == 0 {
-                return Some(val)
+                return Ok(val)
             }
-            let b = data.get(*pos)?;
+            let b = data.get(*pos).ok_or(Error::UnexpectedEnd)?;
             *pos += 1;
             next = b & NEXT_MASK;
             let t = (b & VAL_MASK) as usize;
@@ -80,49 +90,63 @@ fn read_vlq(data: &[u8], pos: &mut usize) -> Option<usize> {
     step!();
 
     if next != 0 {
-        return None;
+        return Err(Error::InvalidVlq);
     }
 
-    Some(val)
+    Ok(val)
 }
 
 impl<'a> BlobIterator<'a> {
     /// Create a new `BlobIterator` for given `data`.
-    pub fn new(data: &'a [u8]) -> Self {
+    pub fn new(data: &'a [u8]) -> Result<Self, Error> {
         let mut pos = 0;
-        let mut idx: [&[u8]; INDEX_SIZE] = [&[]; INDEX_SIZE];
-        let idx_n = read_vlq(data, &mut pos).unwrap();
-        assert!(idx_n <= INDEX_SIZE);
-        for entry in idx[..idx_n].iter_mut() {
+        let dedup_n = read_vlq(data, &mut pos)?;
+
+        let mut dedup: Vec<&[u8]> = vec![&[]; dedup_n];
+        for entry in dedup.iter_mut() {
             let m = read_vlq(data, &mut pos).unwrap();
             *entry = &data[pos..pos + m];
             pos += m;
         }
-        BlobIterator { data, idx, idx_n, pos }
+        Ok(BlobIterator {
+            data: &data[pos..],
+            dedup: dedup.into_boxed_slice(),
+            pos: 0,
+        })
     }
 
-    fn read(&mut self) -> &'a [u8] {
+    fn read(&mut self) -> Result<&'a [u8], Error> {
         let val = read_vlq(self.data, &mut self.pos).unwrap();
         // the least significant bit is used as a flag
         let is_ref = (val & 1) != 0;
         let val = val >> 1;
         if is_ref {
-            assert!(val < self.idx_n);
-            self.idx[val]
+            if val >= self.dedup.len() {
+                return Err(Error::InvalidIndex);
+            }
+            Ok(self.dedup[val])
         } else {
             let s = self.pos;
             self.pos += val;
-            &self.data[s..self.pos]
+            Ok(&self.data[s..self.pos])
         }
+    }
+
+    fn error_block(&mut self) {
+        self.pos = self.data.len();
     }
 }
 
 impl<'a> Iterator for BlobIterator<'a> {
-    type Item = &'a [u8];
+    type Item = Result<&'a [u8], Error>;
 
-    fn next(&mut self) -> Option<&'a [u8]> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.pos < self.data.len() {
-            Some(self.read())
+            let val = self.read();
+            if val.is_err() {
+                self.error_block()
+            }
+            Some(val)
         } else {
             None
         }
@@ -138,24 +162,29 @@ macro_rules! new_iter {
         }
 
         impl<'a> $name<'a> {
-            pub fn new(data: &'a [u8]) -> Self {
-                Self { inner: BlobIterator::new(data) }
+            pub fn new(data: &'a [u8]) -> Result<Self, Error> {
+                BlobIterator::new(data).map(|inner| Self { inner })
             }
         }
 
         impl<'a> Iterator for $name<'a> {
-            type Item = [&'a [u8]; $n];
+            type Item = Result<[&'a [u8]; $n], Error>;
 
             fn next(&mut self) -> Option<Self::Item> {
-                let mut res = Self::Item::default();
+                let mut res: [&[u8]; $n] = Default::default();
+
                 for (i, v) in res.iter_mut().enumerate() {
                     *v = match self.inner.next() {
-                        Some(val) => val,
+                        Some(Ok(val)) => val,
+                        Some(Err(e)) => return Some(Err(e)),
                         None if i == 0 => return None,
-                        None => panic!("failed to get 2 blobs, not enough elements."),
+                        None => {
+                            self.inner.error_block();
+                            return Some(Err(Error::NotEnoughElements))
+                        },
                     };
                 }
-                Some(res)
+                Some(Ok(res))
             }
         }        
     };
@@ -169,7 +198,7 @@ new_iter!(Blob6Iterator, 6);
 
 #[cfg(test)]
 mod tests {
-    use super::{read_vlq, VAL_MASK, NEXT_MASK};
+    use super::{read_vlq, Error, VAL_MASK, NEXT_MASK};
 
     fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
         macro_rules! step {
@@ -236,13 +265,13 @@ mod tests {
 
         for &(val, size) in targets.iter() {
             let prev_pos = pos;
-            assert_eq!(read_vlq(&examples, &mut pos), Some(val));
+            assert_eq!(read_vlq(&examples, &mut pos), Ok(val));
             assert_eq!(pos - prev_pos, size);
             assert_eq!(encode_vlq(val, &mut buf), &examples[prev_pos..pos]);
         }
 
         // only VLQ values of up to 4 bytes are supported
-        assert_eq!(read_vlq(&examples, &mut pos), None);
+        assert_eq!(read_vlq(&examples, &mut pos), Err(Error::InvalidVlq));
         assert_eq!(pos, 25);
     }
 }

@@ -94,8 +94,17 @@ fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W)
 {
     let mut data = Vec::new();
     reader.read_to_end(&mut data)?;
-    let res: Vec<_> = BlobIterator::new(&data).collect();
+    let res: Vec<_> = BlobIterator::new(&data)
+        .map_err(|e| io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("invalid blobby data: {:?}", e),
+        ))?
+        .collect();
     for blob in res.iter() {
+        let blob = blob.map_err(|e| io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("invalid blobby data: {:?}", e),
+        ))?;
         writer.write_all(hex::encode(blob).as_bytes())?;
         writer.write_all(b"\n")?;
     }
