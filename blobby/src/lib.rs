@@ -6,27 +6,39 @@
 //! numbers.
 //!
 //! File starts with a number of de-duplicated blobs `d`. It followed by `d`
-//! entries. Each entry starts with a integer `m`, immediately folowed by `m`
+//! entries. Each entry starts with an integer `m`, immediately folowed by `m`
 //! bytes representing de-duplicated binary blob.
 //!
 //! Next follows unspecified number of entries representing sequence of stored
 //! blobs. Each entry starts with an unsigned integer `n`. The least significant
 //! bit of this integer is used as a flag. If the flag is equal to 0, then the
 //! number is followed by `n >> 1` bytes, representing a stored binary blob.
-//! Otherwise the entry references a de-duplicated entry number `n >> 1` stored
-//! at the beginning of the storage.
+//! Otherwise the entry references a de-duplicated entry number `n >> 1`.
 //!
 //! # Examples
 //! ```
-//! let buf = b"\x02\x05hello\x06world!\x01\x02 \x00\x03\x06:::\x03\x01";
+//! let buf = b"\x02\x05hello\x06world!\x01\x02 \x00\x03\x06:::\x03\x01\x00";
 //! let mut v = blobby::BlobIterator::new(buf).unwrap();
-//! assert_eq!(v.next().unwrap().unwrap(), b"hello");
-//! assert_eq!(v.next().unwrap().unwrap(), b" ");
-//! assert_eq!(v.next().unwrap().unwrap(), b"");
-//! assert_eq!(v.next().unwrap().unwrap(), b"world!");
-//! assert_eq!(v.next().unwrap().unwrap(), b":::");
-//! assert_eq!(v.next().unwrap().unwrap(), b"world!");
-//! assert_eq!(v.next().unwrap().unwrap(), b"hello");
+//! assert_eq!(v.next(), Some(Ok(&b"hello"[..])));
+//! assert_eq!(v.next(), Some(Ok(&b" "[..])));
+//! assert_eq!(v.next(), Some(Ok(&b""[..])));
+//! assert_eq!(v.next(), Some(Ok(&b"world!"[..])));
+//! assert_eq!(v.next(), Some(Ok(&b":::"[..])));
+//! assert_eq!(v.next(), Some(Ok(&b"world!"[..])));
+//! assert_eq!(v.next(), Some(Ok(&b"hello"[..])));
+//! assert_eq!(v.next(), Some(Ok(&b""[..])));
+//! assert_eq!(v.next(), None);
+//!
+//! let mut v = blobby::Blob2Iterator::new(buf).unwrap();
+//! assert_eq!(v.next(), Some(Ok([&b"hello"[..], b" "])));
+//! assert_eq!(v.next(), Some(Ok([&b""[..], b"world!"])));
+//! assert_eq!(v.next(), Some(Ok([&b":::"[..], b"world!"])));
+//! assert_eq!(v.next(), Some(Ok([&b"hello"[..], b""])));
+//! assert_eq!(v.next(), None);
+//!
+//! let mut v = blobby::Blob4Iterator::new(buf).unwrap();
+//! assert_eq!(v.next(), Some(Ok([&b"hello"[..], b" ", b"", b"world!"])));
+//! assert_eq!(v.next(), Some(Ok([&b":::"[..], b"world!", &b"hello"[..], b""])));
 //! assert_eq!(v.next(), None);
 //! ```
 //!
