@@ -48,11 +48,16 @@ pub struct BlobIterator<'a> {
     pos: usize,
 }
 
+/// `blobby` error type
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Error {
+    /// Decoded VLQ number is too big
     InvalidVlq,
+    /// Invalid de-duplicated blob index
     InvalidIndex,
+    /// Unexpected end of data
     UnexpectedEnd,
+    /// Not enough elements for `BlobNIterator`
     NotEnoughElements,
 }
 
@@ -97,7 +102,7 @@ fn read_vlq(data: &[u8], pos: &mut usize) -> Result<usize, Error> {
 }
 
 impl<'a> BlobIterator<'a> {
-    /// Create a new `BlobIterator` for given `data`.
+    /// Create new `BlobIterator` for given `data`.
     pub fn new(data: &'a [u8]) -> Result<Self, Error> {
         let mut pos = 0;
         let dedup_n = read_vlq(data, &mut pos)?;
@@ -128,7 +133,7 @@ impl<'a> BlobIterator<'a> {
         } else {
             let s = self.pos;
             self.pos += val;
-            Ok(&self.data[s..self.pos])
+            Ok(self.data.get(s..self.pos).ok_or(Error::UnexpectedEnd)?)
         }
     }
 
