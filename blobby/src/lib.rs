@@ -38,7 +38,7 @@
 //!
 //! let mut v = blobby::Blob4Iterator::new(buf).unwrap();
 //! assert_eq!(v.next(), Some(Ok([&b"hello"[..], b" ", b"", b"world!"])));
-//! assert_eq!(v.next(), Some(Ok([&b":::"[..], b"world!", &b"hello"[..], b""])));
+//! assert_eq!(v.next(), Some(Ok([&b":::"[..], b"world!", b"hello", b""])));
 //! assert_eq!(v.next(), None);
 //! ```
 //!
