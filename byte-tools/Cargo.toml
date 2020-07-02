@@ -1,9 +1,0 @@
-[package]
-name = "byte-tools"
-version = "0.3.1"
-authors = ["RustCrypto Developers"]
-license = "MIT OR Apache-2.0"
-description = "Bytes related utility functions"
-documentation = "https://docs.rs/byte-tools"
-repository = "https://github.com/RustCrypto/utils"
-keywords = ["bytes"]
