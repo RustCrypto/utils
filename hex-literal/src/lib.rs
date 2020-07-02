@@ -29,21 +29,8 @@
 
 extern crate proc_macro;
 
-use proc_macro::{Delimiter, TokenStream, TokenTree};
-
-fn is_hex_char(c: &char) -> bool {
-    match *c {
-        '0'..='9' | 'a'..='f' | 'A'..='F' => true,
-        _ => false,
-    }
-}
-
-fn is_format_char(c: &char) -> bool {
-    match *c {
-        ' ' | '\r' | '\n' | '\t' => true,
-        _ => false,
-    }
-}
+use proc_macro::{Delimiter, Group, Literal, Punct, Spacing, TokenStream, TokenTree};
+use std::iter::FromIterator;
 
 /// Strips any outer `Delimiter::None` groups from the input,
 /// returning a `TokenStream` consisting of the innermost
@@ -64,41 +51,73 @@ fn ignore_groups(mut input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro]
-pub fn hex(mut input: TokenStream) -> TokenStream {
-    input = ignore_groups(input);
-    let mut ts = input.into_iter();
-    let input = match (ts.next(), ts.next()) {
-        (Some(TokenTree::Literal(literal)), None) => literal.to_string(),
-        _ => panic!("expected one string literal"),
-    };
+struct TokenTreeIter {
+    buf: Vec<u8>,
+    pos: usize,
+    is_punct: bool,
+}
 
-    let bytes = input.as_bytes();
-    let n = bytes.len();
-    // trim quote characters
-    let input = &input[1..n - 1];
+impl TokenTreeIter {
+    fn new(input: TokenStream) -> Self {
+        let mut ts = ignore_groups(input).into_iter();
+        let input_str = match (ts.next(), ts.next()) {
+            (Some(TokenTree::Literal(literal)), None) => literal.to_string(),
+            _ => panic!("expected single string literal"),
+        };
+        let mut buf: Vec<u8> = input_str.into();
 
-    for (i, c) in input.chars().enumerate() {
-        if !(is_hex_char(&c) || is_format_char(&c)) {
-            panic!("invalid character (position {}): {:?})", i + 1, c);
+        match buf.as_slice() {
+            [b'"', .., b'"'] => (),
+            _ => panic!("expected single string literal"),
+        };
+        buf.pop();
+        Self { buf, pos: 1, is_punct: false }
+    }
+
+    fn next_hex_val(&mut self) -> Option<u8> {
+        loop {
+            let v = match self.buf.get(self.pos) {
+                Some(&v) => v,
+                None => return None,
+            };
+            self.pos += 1;
+            let n = match v {
+                b'0'..=b'9' => v - 48,
+                b'A'..=b'F' => v - 55,
+                b'a'..=b'f' => v - 87,
+                b' ' | b'\r' | b'\n' | b'\t' => continue,
+                _ => panic!("invalid character"),
+            };
+            return Some(n);
         }
     }
-    let n = input.chars().filter(is_hex_char).count() / 2;
-    let mut s = String::with_capacity(2 + 7 * n);
+}
 
-    s.push('[');
-    let mut iter = input.chars().filter(is_hex_char);
-    while let Some(c1) = iter.next() {
-        if let Some(c2) = iter.next() {
-            s += "0x";
-            s.push(c1);
-            s.push(c2);
-            s += "u8,";
+impl Iterator for TokenTreeIter {
+    type Item = TokenTree;
+
+    fn next(&mut self) -> Option<TokenTree> {
+        if self.pos >= self.buf.len() {
+            return None;
+        }
+        let v = if self.is_punct {
+            TokenTree::Punct(Punct::new(',', Spacing::Alone))
         } else {
-            panic!("expected even number of hex characters");
-        }
+            let p1 = self.next_hex_val()?;
+            let p2 = match self.next_hex_val() {
+                Some(v) => v,
+                None => panic!("expected even number of hex characters"),
+            };
+            let val = (p1 << 4) + p2;
+            TokenTree::Literal(Literal::u8_suffixed(val))
+        };
+        self.is_punct = !self.is_punct;
+        Some(v)
     }
-    s.push(']');
+}
 
-    s.parse().unwrap()
+#[proc_macro]
+pub fn hex(input: TokenStream) -> TokenStream {
+    let ts = TokenStream::from_iter(TokenTreeIter::new(input));
+    TokenStream::from(TokenTree::Group(Group::new(Delimiter::Bracket, ts)))
 }
