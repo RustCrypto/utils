@@ -1,0 +1,33 @@
+name: cpuid-bool
+
+on:
+  pull_request:
+      paths:
+        - "cpuid-bool/**"
+        - "Cargo.*"
+  push:
+    branches: master
+
+defaults:
+  run:
+    working-directory: cpuid-bool
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.32.0 # MSRV
+          - stable
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: ${{ matrix.rust }}
+    - run: cargo test --release

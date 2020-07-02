@@ -1,0 +1,33 @@
+name: blobby
+
+on:
+  pull_request:
+      paths:
+        - "blobby/**"
+        - "Cargo.*"
+  push:
+    branches: master
+
+defaults:
+  run:
+    working-directory: blobby
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.36.0 # MSRV
+          - stable
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: ${{ matrix.rust }}
+    - run: cargo test --release
