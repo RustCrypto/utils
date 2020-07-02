@@ -4,11 +4,7 @@
 //! operations. Additionally several common padding schemes are available out
 //! of the box.
 #![no_std]
-#![doc(html_logo_url =
-    "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
-extern crate byte_tools;
-
-use byte_tools::{zero, set};
+#![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
 
 /// Error for indicating failed padding operation
 #[derive(Clone, Copy, Debug)]
@@ -35,13 +31,13 @@ pub trait Padding {
     /// enough leftover space for padding: `block_size - (pos % block_size)`
     /// extra bytes must be available. Otherwise method will return
     /// `PadError`.
-    fn pad(buf: &mut [u8], pos: usize, block_size: usize)
-        -> Result<&mut [u8], PadError>
-    {
+    fn pad(buf: &mut [u8], pos: usize, block_size: usize) -> Result<&mut [u8], PadError> {
         let bs = block_size * (pos / block_size);
-        if buf.len() < bs || buf.len() - bs < block_size { Err(PadError)? }
-        Self::pad_block(&mut buf[bs..bs+block_size], pos - bs)?;
-        Ok(&mut buf[..bs+block_size])
+        if buf.len() < bs || buf.len() - bs < block_size {
+            Err(PadError)?
+        }
+        Self::pad_block(&mut buf[bs..bs + block_size], pos - bs)?;
+        Ok(&mut buf[..bs + block_size])
     }
 
     /// Unpad given `data` by truncating it according to the used padding.
@@ -75,24 +71,26 @@ pub trait Padding {
 ///
 /// Note that zero padding may not be reversible if the original message ends
 /// with one or more zero bytes.
-pub enum ZeroPadding{}
+pub enum ZeroPadding {}
 
 impl Padding for ZeroPadding {
     fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
-        if pos > block.len() { Err(PadError)? }
-        zero(&mut block[pos..]);
+        if pos > block.len() {
+            Err(PadError)?
+        }
+        set(&mut block[pos..], 0);
         Ok(())
     }
 
-    fn pad(buf: &mut [u8], pos: usize, block_size: usize)
-        -> Result<&mut [u8], PadError>
-    {
+    fn pad(buf: &mut [u8], pos: usize, block_size: usize) -> Result<&mut [u8], PadError> {
         if pos % block_size == 0 {
             Ok(&mut buf[..pos])
         } else {
             let bs = block_size * (pos / block_size);
             let be = bs + block_size;
-            if buf.len() < be { Err(PadError)? }
+            if buf.len() < be {
+                Err(PadError)?
+            }
             Self::pad_block(&mut buf[bs..be], pos - bs)?;
             Ok(&mut buf[..be])
         }
@@ -106,7 +104,7 @@ impl Padding for ZeroPadding {
             }
             n -= 1;
         }
-        Ok(&data[..n+1])
+        Ok(&data[..n + 1])
     }
 }
 
@@ -149,24 +147,34 @@ impl Padding for ZeroPadding {
 /// In addition to conditions stated in the `Padding` trait documentation,
 /// `pad_block` will return `PadError` if `block.len() > 255`, and in case of
 /// `pad` if `block_size > 255`.
-pub enum Pkcs7{}
+pub enum Pkcs7 {}
 
 impl Padding for Pkcs7 {
     fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
-        if block.len() > 255 { Err(PadError)? }
-        if pos >= block.len() { Err(PadError)? }
+        if block.len() > 255 {
+            Err(PadError)?
+        }
+        if pos >= block.len() {
+            Err(PadError)?
+        }
         let n = block.len() - pos;
         set(&mut block[pos..], n as u8);
         Ok(())
     }
 
     fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
-        if data.is_empty() { Err(UnpadError)? }
+        if data.is_empty() {
+            Err(UnpadError)?
+        }
         let l = data.len();
-        let n = data[l-1];
-        if n == 0 || n as usize > l { Err(UnpadError)? }
-        for v in &data[l-n as usize..l-1] {
-            if *v != n { Err(UnpadError)? }
+        let n = data[l - 1];
+        if n == 0 || n as usize > l {
+            Err(UnpadError)?
+        }
+        for v in &data[l - n as usize..l - 1] {
+            if *v != n {
+                Err(UnpadError)?
+            }
         }
         Ok(&data[..l - n as usize])
     }
@@ -205,29 +213,37 @@ impl Padding for Pkcs7 {
 /// In addition to conditions stated in the `Padding` trait documentation,
 /// `pad_block` will return `PadError` if `block.len() > 255`, and in case of
 /// `pad` if `block_size > 255`.
-pub enum AnsiX923{}
+pub enum AnsiX923 {}
 
 impl Padding for AnsiX923 {
-    fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError>{
-        if block.len() > 255 { Err(PadError)? }
-        if pos >= block.len() { Err(PadError)? }
+    fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
+        if block.len() > 255 {
+            Err(PadError)?
+        }
+        if pos >= block.len() {
+            Err(PadError)?
+        }
         let bs = block.len();
-        zero(&mut block[pos..bs-1]);
-        block[bs-1] = (bs - pos) as u8;
+        set(&mut block[pos..bs - 1], 0);
+        block[bs - 1] = (bs - pos) as u8;
         Ok(())
     }
 
     fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
-        if data.is_empty() { Err(UnpadError)? }
+        if data.is_empty() {
+            Err(UnpadError)?
+        }
         let l = data.len();
-        let n = data[l-1] as usize;
+        let n = data[l - 1] as usize;
         if n == 0 || n > l {
-            return Err(UnpadError)
+            return Err(UnpadError);
         }
-        for v in &data[l-n..l-1] {
-            if *v != 0 { Err(UnpadError)? }
+        for v in &data[l - n..l - 1] {
+            if *v != 0 {
+                Err(UnpadError)?
+            }
         }
-        Ok(&data[..l-n])
+        Ok(&data[..l - n])
     }
 }
 
@@ -254,24 +270,32 @@ impl Padding for AnsiX923 {
 /// assert_eq!(padded_msg, b"test\x80\x00");
 /// assert_eq!(Iso7816::unpad(&padded_msg).unwrap(), msg);
 /// ```
-pub enum Iso7816{}
+pub enum Iso7816 {}
 
 impl Padding for Iso7816 {
     fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
-        if pos >= block.len() { Err(PadError)? }
+        if pos >= block.len() {
+            Err(PadError)?
+        }
         block[pos] = 0x80;
-        zero(&mut block[pos+1..]);
+        set(&mut block[pos + 1..], 0);
         Ok(())
     }
 
     fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
-        if data.is_empty() { Err(UnpadError)? }
+        if data.is_empty() {
+            Err(UnpadError)?
+        }
         let mut n = data.len() - 1;
         while n != 0 {
-            if data[n] != 0 { break; }
+            if data[n] != 0 {
+                break;
+            }
             n -= 1;
         }
-        if data[n] != 0x80 { Err(UnpadError)? }
+        if data[n] != 0x80 {
+            Err(UnpadError)?
+        }
         Ok(&data[..n])
     }
 }
@@ -319,5 +343,16 @@ impl Padding for NoPadding {
 
     fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
         Ok(data)
+    }
+}
+
+/// Sets all bytes in `dst` equal to `value`
+#[inline(always)]
+fn set(dst: &mut [u8], value: u8) {
+    // SAFETY: we overwrite valid memory behind `dst`
+    // note: loop is not used here because it produces
+    // unnecessary branch which tests for zero-length slices
+    unsafe {
+        core::ptr::write_bytes(dst.as_mut_ptr(), value, dst.len());
     }
 }

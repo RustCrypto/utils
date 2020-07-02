@@ -11,14 +11,15 @@ pub extern crate core as __core;
 /// undesirable to leak internal state, which can happen for example through
 /// uncareful logging.
 #[macro_export]
-macro_rules! impl_opaque_debug {
+macro_rules! implement {
     ($struct:ty) => {
         impl $crate::__core::fmt::Debug for $struct {
-            fn fmt(&self, f: &mut $crate::__core::fmt::Formatter)
-                -> Result<(), $crate::__core::fmt::Error>
-            {
+            fn fmt(
+                &self,
+                f: &mut $crate::__core::fmt::Formatter,
+            ) -> Result<(), $crate::__core::fmt::Error> {
                 write!(f, concat!(stringify!($struct), " {{ ... }}"))
             }
         }
-    }
+    };
 }

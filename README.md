@@ -1,4 +1,4 @@
-# RustCrypto: utility crates [![Build Status](https://travis-ci.org/RustCrypto/utils.svg?branch=master)](https://travis-ci.org/RustCrypto/utils)
+# RustCrypto: Utilities
 This repository contains various utility crates used in the RustCrypto project.
 
 ## License

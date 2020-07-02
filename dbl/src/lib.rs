@@ -1,7 +1,7 @@
 #![no_std]
 extern crate generic_array;
 
-use generic_array::typenum::{U8, U16, U32};
+use generic_array::typenum::{U16, U32, U8};
 use generic_array::GenericArray;
 
 use core::mem;
@@ -46,7 +46,7 @@ impl Dbl for GenericArray<u8, U8> {
 
         let a = val & 1;
         val >>= 1;
-        val ^= a*((1 << 63) ^ (C64 >> 1));
+        val ^= a * ((1 << 63) ^ (C64 >> 1));
 
         unsafe { mem::transmute(val.to_be()) }
     }
@@ -70,7 +70,7 @@ impl Dbl for GenericArray<u8, U16> {
         val[0] <<= 1;
         val[0] ^= b;
         val[1] <<= 1;
-        val[1] ^= a*C128;
+        val[1] ^= a * C128;
 
         to_be(&mut val);
         unsafe { mem::transmute(val) }
@@ -86,8 +86,8 @@ impl Dbl for GenericArray<u8, U16> {
         val[0] >>= 1;
         val[1] >>= 1;
         val[1] ^= a;
-        val[0] ^= b*(1 << 63);
-        val[1] ^= b*(C128 >> 1);
+        val[0] ^= b * (1 << 63);
+        val[1] ^= b * (C128 >> 1);
 
         to_be(&mut val);
         unsafe { mem::transmute(val) }
@@ -111,7 +111,7 @@ impl Dbl for GenericArray<u8, U32> {
         val[2] <<= 1;
         val[2] ^= d;
         val[3] <<= 1;
-        val[3] ^= a*C256;
+        val[3] ^= a * C256;
 
         to_be(&mut val);
         unsafe { mem::transmute(val) }
@@ -134,8 +134,8 @@ impl Dbl for GenericArray<u8, U32> {
         val[2] ^= b;
         val[3] ^= c;
 
-        val[0] ^= d*(1 << 63);
-        val[3] ^= d*(C256 >> 1);
+        val[0] ^= d * (1 << 63);
+        val[3] ^= d * (C256 >> 1);
 
         to_be(&mut val);
         unsafe { mem::transmute(val) }

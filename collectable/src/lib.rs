@@ -53,7 +53,7 @@ pub trait TryExtend<A> {
     where
         A: Clone,
     {
-        self.try_extend(slice.into_iter().cloned())
+        self.try_extend(slice.iter().cloned())
     }
 }
 
