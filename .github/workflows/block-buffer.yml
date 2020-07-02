@@ -1,0 +1,55 @@
+name: block-buffer
+
+on:
+  pull_request:
+      paths:
+        - "block-buffer/**"
+        - "Cargo.*"
+  push:
+    branches: master
+
+defaults:
+  run:
+    working-directory: block-buffer
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.41.0 # MSRV
+          - stable
+        target:
+          - thumbv7em-none-eabi
+          - wasm32-unknown-unknown
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
+          override: true
+      - run: cargo build --release --target ${{ matrix.target }}
+      - run: cargo build --features block-padding --release --target ${{ matrix.target }}
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.41.0 # MSRV
+          - stable
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: ${{ matrix.rust }}
+    - run: cargo test --release
+    - run: cargo test --features block-padding --release
+    - run: cargo test --all-features --release
