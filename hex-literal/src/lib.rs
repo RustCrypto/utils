@@ -97,9 +97,6 @@ impl Iterator for TokenTreeIter {
     type Item = TokenTree;
 
     fn next(&mut self) -> Option<TokenTree> {
-        if self.pos >= self.buf.len() {
-            return None;
-        }
         let v = if self.is_punct {
             TokenTree::Punct(Punct::new(',', Spacing::Alone))
         } else {
