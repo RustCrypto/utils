@@ -1,8 +1,8 @@
 //! Convert utility
-use std::{env, error::Error, fs::File};
+use blobby::BlobIterator;
 use std::collections::HashMap;
-use std::io::{self, Write, BufRead, BufReader, BufWriter};
-use blobby::{BlobIterator};
+use std::io::{self, BufRead, BufReader, BufWriter, Write};
+use std::{env, error::Error, fs::File};
 
 const NEXT_MASK: u8 = 0b1000_0000;
 const VAL_MASK: u8 = 0b0111_1111;
@@ -30,9 +30,7 @@ fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
     panic!("integer is too big")
 }
 
-fn encode(reader: impl BufRead, mut writer: impl Write)
-    -> io::Result<usize>
-{
+fn encode(reader: impl BufRead, mut writer: impl Write) -> io::Result<usize> {
     let mut blobs = Vec::new();
     for line in reader.lines() {
         let blob = hex::decode(line?.as_str())
@@ -48,7 +46,7 @@ fn encode(reader: impl BufRead, mut writer: impl Write)
 
     let mut idx: Vec<&[u8]> = idx_map
         .iter()
-        .filter(|(_, &v)| v  > 1)
+        .filter(|(_, &v)| v > 1)
         .map(|(&k, _)| k)
         .collect();
     idx.sort_by_key(|e| {
@@ -61,11 +59,7 @@ fn encode(reader: impl BufRead, mut writer: impl Write)
     });
     idx.reverse();
 
-    let rev_idx: HashMap<&[u8], usize> = idx
-        .iter()
-        .enumerate()
-        .map(|(i, &e)| (e, i))
-        .collect();
+    let rev_idx: HashMap<&[u8], usize> = idx.iter().enumerate().map(|(i, &e)| (e, i)).collect();
 
     println!("Index len: {:?}", idx.len());
     let mut buf = [0u8; 4];
@@ -89,22 +83,24 @@ fn encode(reader: impl BufRead, mut writer: impl Write)
     Ok(blobs.len())
 }
 
-fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W)
-    -> io::Result<usize>
-{
+fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W) -> io::Result<usize> {
     let mut data = Vec::new();
     reader.read_to_end(&mut data)?;
     let res: Vec<_> = BlobIterator::new(&data)
-        .map_err(|e| io::Error::new(
-            io::ErrorKind::InvalidData,
-            format!("invalid blobby data: {:?}", e),
-        ))?
+        .map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("invalid blobby data: {:?}", e),
+            )
+        })?
         .collect();
     for blob in res.iter() {
-        let blob = blob.map_err(|e| io::Error::new(
-            io::ErrorKind::InvalidData,
-            format!("invalid blobby data: {:?}", e),
-        ))?;
+        let blob = blob.map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("invalid blobby data: {:?}", e),
+            )
+        })?;
         writer.write_all(hex::encode(blob).as_bytes())?;
         writer.write_all(b"\n")?;
     }

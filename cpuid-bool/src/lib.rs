@@ -22,7 +22,7 @@ compile_error!("This crate works only on x86 and x86-64 targets.");
 use core::sync::atomic::{AtomicU8, Ordering::Relaxed};
 
 /// This structure represents a lazily initialized static boolean value.
-/// 
+///
 /// Useful when it is preferable to just rerun initialization instead of
 /// locking. Used internally by the `cpuid_bool` macro.
 pub struct LazyBool(AtomicU8);
@@ -61,7 +61,7 @@ macro_rules! expand_check_macro {
     };
 }
 
-expand_check_macro!{
+expand_check_macro! {
     ("mmx", 0, edx, 23),
     ("sse", 0, edx, 25),
     ("sse2", 0, edx, 26),

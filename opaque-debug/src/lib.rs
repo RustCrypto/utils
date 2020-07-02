@@ -14,11 +14,12 @@ pub extern crate core as __core;
 macro_rules! implement {
     ($struct:ty) => {
         impl $crate::__core::fmt::Debug for $struct {
-            fn fmt(&self, f: &mut $crate::__core::fmt::Formatter)
-                -> Result<(), $crate::__core::fmt::Error>
-            {
+            fn fmt(
+                &self,
+                f: &mut $crate::__core::fmt::Formatter,
+            ) -> Result<(), $crate::__core::fmt::Error> {
                 write!(f, concat!(stringify!($struct), " {{ ... }}"))
             }
         }
-    }
+    };
 }

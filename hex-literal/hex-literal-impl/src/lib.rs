@@ -1,6 +1,6 @@
 extern crate proc_macro;
 
-use proc_macro::{TokenStream, TokenTree, Delimiter};
+use proc_macro::{Delimiter, TokenStream, TokenTree};
 use proc_macro_hack::proc_macro_hack;
 
 fn is_hex_char(c: &char) -> bool {
@@ -16,7 +16,6 @@ fn is_format_char(c: &char) -> bool {
         _ => false,
     }
 }
-
 
 /// Strips any outer `Delimiter::None` groups from the input,
 /// returning a `TokenStream` consisting of the innermost
@@ -49,15 +48,15 @@ pub fn hex(mut input: TokenStream) -> TokenStream {
     let bytes = input.as_bytes();
     let n = bytes.len();
     // trim quote characters
-    let input = &input[1..n-1];
+    let input = &input[1..n - 1];
 
     for (i, c) in input.chars().enumerate() {
         if !(is_hex_char(&c) || is_format_char(&c)) {
             panic!("invalid character (position {}): {:?})", i + 1, c);
         }
-    };
+    }
     let n = input.chars().filter(is_hex_char).count() / 2;
-    let mut s = String::with_capacity(2 + 7*n);
+    let mut s = String::with_capacity(2 + 7 * n);
 
     s.push('[');
     let mut iter = input.chars().filter(is_hex_char);

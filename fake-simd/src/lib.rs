@@ -14,7 +14,8 @@ impl Add for u32x4 {
             self.0.wrapping_add(rhs.0),
             self.1.wrapping_add(rhs.1),
             self.2.wrapping_add(rhs.2),
-            self.3.wrapping_add(rhs.3))
+            self.3.wrapping_add(rhs.3),
+        )
     }
 }
 
@@ -27,7 +28,8 @@ impl Sub for u32x4 {
             self.0.wrapping_sub(rhs.0),
             self.1.wrapping_sub(rhs.1),
             self.2.wrapping_sub(rhs.2),
-            self.3.wrapping_sub(rhs.3))
+            self.3.wrapping_sub(rhs.3),
+        )
     }
 }
 
@@ -36,7 +38,12 @@ impl BitAnd for u32x4 {
 
     #[inline(always)]
     fn bitand(self, rhs: u32x4) -> u32x4 {
-        u32x4(self.0 & rhs.0, self.1 & rhs.1, self.2 & rhs.2, self.3 & rhs.3)
+        u32x4(
+            self.0 & rhs.0,
+            self.1 & rhs.1,
+            self.2 & rhs.2,
+            self.3 & rhs.3,
+        )
     }
 }
 
@@ -45,7 +52,12 @@ impl BitOr for u32x4 {
 
     #[inline(always)]
     fn bitor(self, rhs: u32x4) -> u32x4 {
-        u32x4(self.0 | rhs.0, self.1 | rhs.1, self.2 | rhs.2, self.3 | rhs.3)
+        u32x4(
+            self.0 | rhs.0,
+            self.1 | rhs.1,
+            self.2 | rhs.2,
+            self.3 | rhs.3,
+        )
     }
 }
 
@@ -54,7 +66,12 @@ impl BitXor for u32x4 {
 
     #[inline(always)]
     fn bitxor(self, rhs: u32x4) -> u32x4 {
-        u32x4(self.0 ^ rhs.0, self.1 ^ rhs.1, self.2 ^ rhs.2, self.3 ^ rhs.3)
+        u32x4(
+            self.0 ^ rhs.0,
+            self.1 ^ rhs.1,
+            self.2 ^ rhs.2,
+            self.3 ^ rhs.3,
+        )
     }
 }
 
@@ -72,7 +89,12 @@ impl Shl<u32x4> for u32x4 {
 
     #[inline(always)]
     fn shl(self, rhs: u32x4) -> u32x4 {
-        u32x4(self.0 << rhs.0, self.1 << rhs.1, self.2 << rhs.2, self.3 << rhs.3)
+        u32x4(
+            self.0 << rhs.0,
+            self.1 << rhs.1,
+            self.2 << rhs.2,
+            self.3 << rhs.3,
+        )
     }
 }
 
@@ -90,7 +112,12 @@ impl Shr<u32x4> for u32x4 {
 
     #[inline(always)]
     fn shr(self, rhs: u32x4) -> u32x4 {
-        u32x4(self.0 >> rhs.0, self.1 >> rhs.1, self.2 >> rhs.2, self.3 >> rhs.3)
+        u32x4(
+            self.0 >> rhs.0,
+            self.1 >> rhs.1,
+            self.2 >> rhs.2,
+            self.3 >> rhs.3,
+        )
     }
 }
 

@@ -46,7 +46,7 @@
 #![no_std]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png",
-    html_root_url = "https://docs.rs/blobby/0.3.0",
+    html_root_url = "https://docs.rs/blobby/0.3.0"
 )]
 extern crate alloc;
 
@@ -92,7 +92,7 @@ fn read_vlq(data: &[u8], pos: &mut usize) -> Result<usize, Error> {
     macro_rules! step {
         () => {
             if next == 0 {
-                return Ok(val)
+                return Ok(val);
             }
             let b = data.get(*pos).ok_or(Error::UnexpectedEnd)?;
             *pos += 1;
@@ -197,13 +197,13 @@ macro_rules! new_iter {
                         None if i == 0 => return None,
                         None => {
                             self.inner.error_block();
-                            return Some(Err(Error::NotEnoughElements))
-                        },
+                            return Some(Err(Error::NotEnoughElements));
+                        }
                     };
                 }
                 Some(Ok(res))
             }
-        }        
+        }
     };
 }
 
@@ -215,7 +215,7 @@ new_iter!(Blob6Iterator, 6);
 
 #[cfg(test)]
 mod tests {
-    use super::{read_vlq, Error, VAL_MASK, NEXT_MASK};
+    use super::{read_vlq, Error, NEXT_MASK, VAL_MASK};
 
     fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
         macro_rules! step {
@@ -251,6 +251,7 @@ mod tests {
     }
 
     #[test]
+    #[rustfmt::skip]
     fn test_vlq() {
         let mut pos = 0;
         let examples = [
