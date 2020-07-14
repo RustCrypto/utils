@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.1.0 (2020-07-14)
 ### Fixed
-- SGX target support ([#67])
+- SGX target support ([#68])
 
-[#67]: https://github.com/RustCrypto/utils/pull/67
+[#68]: https://github.com/RustCrypto/utils/pull/68
 
 ## 0.1.0 (2020-06-11)
 - Initial release
