@@ -1,6 +1,6 @@
 [package]
 name = "cpuid-bool"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "A lightweight no-std compatible alternative to is_x86_feature_detected"
