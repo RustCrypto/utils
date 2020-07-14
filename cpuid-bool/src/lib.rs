@@ -92,7 +92,8 @@ expand_check_macro! {
 #[macro_export]
 macro_rules! cpuid_bool {
     ($($tf:tt),+ $(,)? ) => {{
-        #[cfg(not(all($(target_feature=$tf, )*)))]
+        // CPUID is not available on SGX targets
+        #[cfg(not(all(not(target_env = "sgx"), $(target_feature=$tf, )*)))]
         let res = {
             #[cfg(target_arch = "x86")]
             use core::arch::x86::{__cpuid, __cpuid_count};
