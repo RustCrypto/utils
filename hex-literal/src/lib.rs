@@ -26,9 +26,99 @@
 //! # }
 //! ```
 #![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
-#![no_std]
 
-#[doc(hidden)]
-#[proc_macro_hack]
-pub use hex_literal_impl::hex;
-use proc_macro_hack::proc_macro_hack;
+extern crate proc_macro;
+
+use proc_macro::{Delimiter, Group, Literal, Punct, Spacing, TokenStream, TokenTree};
+use std::iter::FromIterator;
+
+/// Strips any outer `Delimiter::None` groups from the input,
+/// returning a `TokenStream` consisting of the innermost
+/// non-empty-group `TokenTree`.
+/// This is used to handle a proc macro being invoked
+/// by a `macro_rules!` expansion.
+/// See https://github.com/rust-lang/rust/issues/72545 for background
+fn ignore_groups(mut input: TokenStream) -> TokenStream {
+    let mut tokens = input.clone().into_iter();
+    loop {
+        if let Some(TokenTree::Group(group)) = tokens.next() {
+            if group.delimiter() == Delimiter::None {
+                input = group.stream();
+                continue;
+            }
+        }
+        return input;
+    }
+}
+
+struct TokenTreeIter {
+    buf: Vec<u8>,
+    pos: usize,
+    is_punct: bool,
+}
+
+impl TokenTreeIter {
+    fn new(input: TokenStream) -> Self {
+        let mut ts = ignore_groups(input).into_iter();
+        let input_str = match (ts.next(), ts.next()) {
+            (Some(TokenTree::Literal(literal)), None) => literal.to_string(),
+            _ => panic!("expected single string literal"),
+        };
+        let mut buf: Vec<u8> = input_str.into();
+
+        match buf.as_slice() {
+            [b'"', .., b'"'] => (),
+            _ => panic!("expected single string literal"),
+        };
+        buf.pop();
+        Self {
+            buf,
+            pos: 1,
+            is_punct: false,
+        }
+    }
+
+    fn next_hex_val(&mut self) -> Option<u8> {
+        loop {
+            let v = match self.buf.get(self.pos) {
+                Some(&v) => v,
+                None => return None,
+            };
+            self.pos += 1;
+            let n = match v {
+                b'0'..=b'9' => v - 48,
+                b'A'..=b'F' => v - 55,
+                b'a'..=b'f' => v - 87,
+                b' ' | b'\r' | b'\n' | b'\t' => continue,
+                _ => panic!("invalid character"),
+            };
+            return Some(n);
+        }
+    }
+}
+
+impl Iterator for TokenTreeIter {
+    type Item = TokenTree;
+
+    fn next(&mut self) -> Option<TokenTree> {
+        let v = if self.is_punct {
+            TokenTree::Punct(Punct::new(',', Spacing::Alone))
+        } else {
+            let p1 = self.next_hex_val()?;
+            let p2 = match self.next_hex_val() {
+                Some(v) => v,
+                None => panic!("expected even number of hex characters"),
+            };
+            let val = (p1 << 4) + p2;
+            TokenTree::Literal(Literal::u8_suffixed(val))
+        };
+        self.is_punct = !self.is_punct;
+        Some(v)
+    }
+}
+
+#[proc_macro]
+pub fn hex(input: TokenStream) -> TokenStream {
+    let ts = TokenStream::from_iter(TokenTreeIter::new(input));
+    TokenStream::from(TokenTree::Group(Group::new(Delimiter::Bracket, ts)))
+}

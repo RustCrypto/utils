@@ -7,6 +7,5 @@ members = [
     "cpuid-bool",
     "dbl",
     "hex-literal",
-    "hex-literal/hex-literal-impl",
     "opaque-debug",
 ]
