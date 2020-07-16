@@ -71,7 +71,11 @@ impl TokenTreeIter {
             _ => panic!("expected single string literal"),
         };
         buf.pop();
-        Self { buf, pos: 1, is_punct: false }
+        Self {
+            buf,
+            pos: 1,
+            is_punct: false,
+        }
     }
 
     fn next_hex_val(&mut self) -> Option<u8> {
