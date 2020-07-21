@@ -71,7 +71,7 @@ fn encode(reader: impl BufRead, mut writer: impl Write) -> io::Result<usize> {
 
     for blob in blobs.iter() {
         if let Some(dup_pos) = rev_idx.get(blob.as_slice()) {
-            let n = (dup_pos << 1) + 1;
+            let n = (dup_pos << 1) + 1usize;
             writer.write_all(encode_vlq(n, &mut buf))?;
         } else {
             let n = blob.len() << 1;
