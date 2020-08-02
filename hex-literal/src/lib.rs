@@ -90,7 +90,7 @@ impl TokenTreeIter {
                 b'A'..=b'F' => v - 55,
                 b'a'..=b'f' => v - 87,
                 b' ' | b'\r' | b'\n' | b'\t' => continue,
-                _ => panic!("invalid character"),
+                _ => panic!("encountered invalid character"),
             };
             return Some(n);
         }
@@ -117,6 +117,8 @@ impl Iterator for TokenTreeIter {
     }
 }
 
+/// Macro for converting string literal containing hex-encoded string
+/// to an array containing decoded bytes
 #[proc_macro]
 pub fn hex(input: TokenStream) -> TokenStream {
     let ts = TokenStream::from_iter(TokenTreeIter::new(input));
