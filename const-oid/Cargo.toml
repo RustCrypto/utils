@@ -1,0 +1,11 @@
+[package]
+name = "const-oid"
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+edition = "2018"
+description = "Object Identifier (OID) constants with heapless no_std support"
+documentation = "https://docs.rs/const-oid"
+repository = "https://github.com/RustCrypto/utils"
+categories = ["data-structures", "no-std"]
+keywords = ["itu", "oid"]
