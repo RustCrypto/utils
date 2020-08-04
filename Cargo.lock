@@ -24,6 +24,10 @@ name = "collectable"
 version = "0.0.2"
 
 [[package]]
+name = "const-oid"
+version = "0.0.0"
+
+[[package]]
 name = "cpuid-bool"
 version = "0.1.2"
 

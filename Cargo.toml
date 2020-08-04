@@ -4,6 +4,7 @@ members = [
     "block-buffer",
     "block-padding",
     "collectable",
+    "const-oid",
     "cpuid-bool",
     "dbl",
     "hex-literal",
