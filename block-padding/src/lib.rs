@@ -71,6 +71,7 @@ pub trait Padding {
 ///
 /// Note that zero padding may not be reversible if the original message ends
 /// with one or more zero bytes.
+#[derive(Clone, Copy, Debug)]
 pub enum ZeroPadding {}
 
 impl Padding for ZeroPadding {
@@ -147,6 +148,7 @@ impl Padding for ZeroPadding {
 /// In addition to conditions stated in the `Padding` trait documentation,
 /// `pad_block` will return `PadError` if `block.len() > 255`, and in case of
 /// `pad` if `block_size > 255`.
+#[derive(Clone, Copy, Debug)]
 pub enum Pkcs7 {}
 
 impl Padding for Pkcs7 {
@@ -213,6 +215,7 @@ impl Padding for Pkcs7 {
 /// In addition to conditions stated in the `Padding` trait documentation,
 /// `pad_block` will return `PadError` if `block.len() > 255`, and in case of
 /// `pad` if `block_size > 255`.
+#[derive(Clone, Copy, Debug)]
 pub enum AnsiX923 {}
 
 impl Padding for AnsiX923 {
@@ -270,6 +273,7 @@ impl Padding for AnsiX923 {
 /// assert_eq!(padded_msg, b"test\x80\x00");
 /// assert_eq!(Iso7816::unpad(&padded_msg).unwrap(), msg);
 /// ```
+#[derive(Clone, Copy, Debug)]
 pub enum Iso7816 {}
 
 impl Padding for Iso7816 {
@@ -324,6 +328,7 @@ impl Padding for Iso7816 {
 /// assert_eq!(padded_msg, b"test");
 /// assert_eq!(NoPadding::unpad(&padded_msg).unwrap(), msg);
 /// ```
+#[derive(Clone, Copy, Debug)]
 pub enum NoPadding {}
 
 impl Padding for NoPadding {
