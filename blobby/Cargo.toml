@@ -10,4 +10,4 @@ categories = ["no-std"]
 edition = "2018"
 
 [dev-dependencies]
-hex = "0.3"
+hex = "0.4"
