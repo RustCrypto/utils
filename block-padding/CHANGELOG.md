@@ -8,6 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `Copy`, `Clone`, and `Debug` trait implementations for padding types ([#78])
 
-[#78]: https://github.com/RustCrypto/utils/pull/76
+[#78]: https://github.com/RustCrypto/utils/pull/78
 
 ## 0.2.0 (2020-07-10)
