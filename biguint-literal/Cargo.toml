@@ -1,0 +1,13 @@
+[package]
+name = "biguint-literal"
+version = "0.1.0"
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+description = "Procedural macros for converting string literals to biguint arrays"
+documentation = "https://docs.rs/biguint-literal"
+repository = "https://github.com/RustCrypto/utils"
+keywords = ["biguint", "proc-macro", "literals"]
+edition = "2018"
+
+[lib]
+proc-macro = true
