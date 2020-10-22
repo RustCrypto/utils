@@ -9,4 +9,5 @@ members = [
     "dbl",
     "hex-literal",
     "opaque-debug",
+    "wycheproof",
 ]

@@ -1,0 +1,36 @@
+[package]
+name = "wycheproof"
+version = "0.1.0"
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+description = "Utilities for retrieving Wycheproof test vectors"
+repository = "https://github.com/RustCrypto/utils"
+keywords = ["test", "Wycheproof"]
+categories = ["cryptography", "no-std"]
+edition = "2018"
+
+[dependencies]
+hex = "*"
+serde = { version = "*", features = ["derive"] }
+
+[dev-dependencies]
+aes = "*"
+aes-gcm = "*"
+aes-siv = "*"
+cmac = "*"
+chacha20poly1305 = "*"
+digest = "*"
+ed25519-dalek = "*"
+elliptic-curve = "*"
+generic-array = "*"
+hex = "*"
+hkdf = "*"
+hmac = "*"
+p256 = { version = "*", features = ["ecdsa"] }
+serde_json = "*"
+sha-1 = "*"
+sha2 = "*"
+signature = "*"
+
+[build-dependencies]
+git2 = "*"
