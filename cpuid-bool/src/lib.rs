@@ -1,13 +1,14 @@
 //! Macro for checking CPU capabilities at runtime.
 //!
-//! # Usage example
+//! # Example
 //! ```
+//! // This macro creates `cpuid_aes_sha` module
 //! cpuid_bool::new!(cpuid_aes_sha, "aes", "sha");
 //!
 //! // `token` is a Zero Sized Type value, which guarantees
 //! // that underlying static storage got properly initialized,
 //! // which allows to omit initialization branch
-//! let token = cpuid_aes_sha::init();
+//! let token: cpuid_aes_sha::InitToken = cpuid_aes_sha::init();
 //! if token.get() {
 //!     println!("CPU supports both SHA and AES extensions");
 //! } else {
