@@ -13,7 +13,7 @@
 //! } else {
 //!     println!("SHA and AES extensions are not supported");
 //! }
-//! 
+//!
 //! // If stored value needed only once you can get stored value
 //! // omitting the token
 //! let val = cpuid_aes_sha::get();
