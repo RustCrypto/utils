@@ -70,10 +70,21 @@ version = "0.3.0"
 
 [[package]]
 name = "pkcs8"
-version = "0.2.0"
+version = "0.0.0"
 dependencies = [
  "const-oid",
  "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "subtle-encoding",
+ "zeroize",
+]
+
+[[package]]
+name = "subtle-encoding"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7dcb1ed7b8330c5eed5441052651dd7a12c75e2ed88f2ec024ae1fa3a5e59945"
+dependencies = [
+ "zeroize",
 ]
 
 [[package]]
@@ -87,3 +98,9 @@ name = "version_check"
 version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5a972e5669d67ba988ce3dc826706fb0a8b01471c088cb0b6110b805cc36aed"
+
+[[package]]
+name = "zeroize"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05f33972566adbd2d3588b0491eb94b98b43695c4ef897903470ede4f3f5a28a"
