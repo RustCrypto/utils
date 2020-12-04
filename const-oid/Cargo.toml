@@ -12,3 +12,6 @@ repository = "https://github.com/RustCrypto/utils"
 categories = ["data-structures", "encoding", "no-std"]
 keywords = ["iso", "iec", "itu", "oid"]
 readme = "README.md"
+
+[features]
+std = []

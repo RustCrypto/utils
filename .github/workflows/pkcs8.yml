@@ -1,16 +1,16 @@
-name: const-oid
+name: pkcs8
 
 on:
   pull_request:
     paths:
-      - "const-oid/**"
+      - "pkcs8/**"
       - "Cargo.*"
   push:
     branches: master
 
 defaults:
   run:
-    working-directory: const-oid
+    working-directory: pkcs8
 
 env:
   CARGO_INCREMENTAL: 0

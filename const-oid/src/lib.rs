@@ -16,7 +16,7 @@
 //! ISO/IEC standard for naming any object, concept, or "thing" with a globally unambiguous
 //! persistent name.
 //!
-//! See also: https://en.wikipedia.org/wiki/Object_identifier
+//! See also: <https://en.wikipedia.org/wiki/Object_identifier>
 //!
 //! # Minimum Supported Rust Version
 //!
@@ -30,7 +30,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
 
-#[cfg(test)]
+#[cfg(any(feature = "std", test))]
 extern crate std;
 
 use core::{convert::TryFrom, fmt, str::FromStr};
@@ -49,6 +49,15 @@ const SECOND_NODE_MAX: u32 = 39;
 /// Error type
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Error;
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("Error")
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {}
 
 /// Object identifier (OID)
 #[derive(Copy, Clone, Eq, PartialEq)]
