@@ -54,3 +54,29 @@ pub use const_oid::ObjectIdentifier;
 
 #[cfg(feature = "alloc")]
 pub use crate::document::Document;
+
+/// Parse an object from a PKCS#8 encoded document.
+pub trait FromPkcs8: Sized {
+    /// Parse the `private_key` field of a PKCS#8-encoded private key's
+    /// `PrivateKeyInfo`.
+    fn from_pkcs8_private_key_info(private_key_info: PrivateKeyInfo<'_>) -> Result<Self>;
+
+    /// Deserialize PKCS#8-encoded private key from ASN.1 DER
+    /// (binary format).
+    fn from_pkcs8_der(bytes: &[u8]) -> Result<Self> {
+        Self::from_pkcs8_private_key_info(PrivateKeyInfo::from_der(bytes)?)
+    }
+
+    /// Deserialize PKCS#8-encoded private key from PEM.
+    ///
+    /// Keys in this format begin with the following delimiter:
+    ///
+    /// ```text
+    /// -----BEGIN PRIVATE KEY-----
+    /// ```
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    fn from_pkcs8_pem(s: &str) -> Result<Self> {
+        Self::from_pkcs8_der(Document::from_pem(s)?.as_ref())
+    }
+}
