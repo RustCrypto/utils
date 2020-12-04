@@ -20,12 +20,16 @@
 //! This crate requires **Rust 1.46** at a minimum.
 
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png",
     html_root_url = "https://docs.rs/pkcs8/0.0.0"
 )]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
 #[cfg(feature = "std")]
 extern crate std;
@@ -34,11 +38,17 @@ mod algorithm;
 mod asn1;
 mod error;
 
+#[cfg(feature = "pem")]
+#[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+pub mod pem;
+
 pub use crate::{
     algorithm::AlgorithmIdentifier,
     error::{Error, Result},
 };
 pub use const_oid::ObjectIdentifier;
+
+use core::convert::TryFrom;
 
 /// PKCS#8 `PrivateKeyInfo`.
 ///
@@ -75,5 +85,13 @@ impl<'a> PrivateKeyInfo<'a> {
     /// Parse [`PrivateKeyInfo`] encoded as ASN.1 DER
     pub fn from_der(bytes: &'a [u8]) -> Result<Self> {
         asn1::parse_private_key_info(bytes)
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for PrivateKeyInfo<'a> {
+    type Error = Error;
+
+    fn try_from(bytes: &'a [u8]) -> Result<Self> {
+        Self::from_der(bytes)
     }
 }

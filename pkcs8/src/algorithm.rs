@@ -1,6 +1,7 @@
 //! X.509 `AlgorithmIdentifier`
 
 use crate::{asn1, Error, ObjectIdentifier, Result};
+use core::convert::TryFrom;
 
 /// X.509 `AlgorithmIdentifier`
 ///
@@ -35,5 +36,13 @@ impl AlgorithmIdentifier {
         } else {
             Err(Error)
         }
+    }
+}
+
+impl TryFrom<&[u8]> for AlgorithmIdentifier {
+    type Error = Error;
+
+    fn try_from(bytes: &[u8]) -> Result<Self> {
+        Self::from_der(bytes)
     }
 }
