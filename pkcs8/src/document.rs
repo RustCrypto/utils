@@ -30,7 +30,7 @@ impl Document {
 
     /// Parse [`Document`] from PEM-encoded PKCS#8.
     ///
-    /// PEM-encoded can be identified by the leading delimiter:
+    /// PEM-encoding can be identified by the leading delimiter:
     ///
     /// ```text
     /// -----BEGIN PRIVATE KEY-----
