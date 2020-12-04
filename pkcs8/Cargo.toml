@@ -34,8 +34,8 @@ features = ["alloc"]
 hex-literal = "0.3"
 
 [features]
-alloc = []
-pem = ["alloc", "subtle-encoding", "zeroize"]
+alloc = ["zeroize"]
+pem = ["alloc", "subtle-encoding"]
 std = ["alloc", "const-oid/std"]
 
 [package.metadata.docs.rs]

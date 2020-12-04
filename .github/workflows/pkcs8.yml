@@ -36,6 +36,7 @@ jobs:
           target: ${{ matrix.target }}
           override: true
       - run: cargo build --release --target ${{ matrix.target }}
+      - run: cargo build --release --target ${{ matrix.target }} --features alloc
       - run: cargo build --release --target ${{ matrix.target }} --features pem
 
   test:
@@ -53,5 +54,6 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - run: cargo test --release
+      - run: cargo test --release --features alloc
       - run: cargo test --release --features pem
       - run: cargo test --release --all-features

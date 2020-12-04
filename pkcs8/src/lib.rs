@@ -39,9 +39,11 @@ mod asn1;
 mod error;
 mod private_key_info;
 
+#[cfg(feature = "alloc")]
+mod document;
+
 #[cfg(feature = "pem")]
-#[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
-pub mod pem;
+mod pem;
 
 pub use crate::{
     algorithm::AlgorithmIdentifier,
@@ -49,3 +51,6 @@ pub use crate::{
     private_key_info::PrivateKeyInfo,
 };
 pub use const_oid::ObjectIdentifier;
+
+#[cfg(feature = "alloc")]
+pub use crate::document::Document;
