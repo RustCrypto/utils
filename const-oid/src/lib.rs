@@ -112,31 +112,41 @@ impl ObjectIdentifier {
 
         // TODO(tarcieri): use `const_mut_ref` when stable.
         // See: <https://github.com/rust-lang/rust/issues/57349>
+        #[rustfmt::skip]
         let n = match nodes.len() {
-            3 => [nodes[0], nodes[1], nodes[2], 0, 0, 0, 0, 0, 0, 0],
-            4 => [nodes[0], nodes[1], nodes[2], nodes[3], 0, 0, 0, 0, 0, 0],
+            3 => [
+                nodes[0], nodes[1], nodes[2], 0, 0,
+                0, 0, 0, 0, 0
+            ],
+            4 => [
+                nodes[0], nodes[1], nodes[2], nodes[3], 0,
+                0, 0, 0, 0, 0
+            ],
             5 => [
-                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4], 0, 0, 0, 0, 0,
+                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4],
+                0, 0, 0, 0, 0,
             ],
             6 => [
-                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4], nodes[5], 0, 0, 0, 0,
+                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4],
+                nodes[5], 0, 0, 0, 0,
             ],
             7 => [
-                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4], nodes[5], nodes[6], 0, 0, 0,
+                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4],
+                nodes[5], nodes[6], 0, 0, 0,
             ],
             8 => [
-                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4], nodes[5], nodes[6], nodes[7], 0,
-                0,
+                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4],
+                nodes[5], nodes[6], nodes[7], 0, 0,
             ],
             9 => [
-                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4], nodes[5], nodes[6], nodes[7],
-                nodes[8], 0,
+                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4],
+                nodes[5], nodes[6], nodes[7], nodes[8], 0,
             ],
             10 => [
-                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4], nodes[5], nodes[6], nodes[7],
-                nodes[8], nodes[9],
+                nodes[0], nodes[1], nodes[2], nodes[3], nodes[4],
+                nodes[5], nodes[6], nodes[7], nodes[8], nodes[9],
             ],
-            _ => [0u32; MAX_NODES], // Checks above prevent this case, but makes the compiler happy
+            _ => [0u32; MAX_NODES], // Checks above prevent this case, but makes Miri happy
         };
 
         Self {
