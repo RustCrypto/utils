@@ -1,4 +1,12 @@
-//! PKCS#8 parser
+//! PKCS#8 parser: supports the subset of ASN.1 DER needed to parse PKCS#8.
+//!
+//! Note: per RFC 5208, PKCS#8 is technically BER encoded (despite what
+//! things like the OpenSSL's `-outform DER` would lead you to believe).
+//!
+//! Despite that, this implementation presently attempts to reject BER-encoded
+//! PKCS#8 keys that are not valid DER. This is because PKCS#8 keys are
+//! typically described as "DER", and if it actually turns out to be a
+//! legitimate practical problem the parsing rules can be relaxed.
 
 use crate::{AlgorithmIdentifier, Error, ObjectIdentifier, PrivateKeyInfo, Result};
 
@@ -27,11 +35,31 @@ fn parse_byte(bytes: &mut &[u8]) -> Result<u8> {
 /// Parse DER-encoded length
 fn parse_len(bytes: &mut &[u8]) -> Result<usize> {
     match parse_byte(bytes)? {
-        len if len <= 0x80 => Ok(len as usize),
-        0x81 => Ok(parse_byte(bytes)? as usize),
+        // Note: per X.690 Section 8.1.3.6.1 the byte 0x80 encodes indefinite
+        // lengths. This parser deliberately does not support them.
+        len if len < 0x80 => Ok(len as usize),
+        0x81 => {
+            let len = parse_byte(bytes)? as usize;
+
+            // X.690 Section 10.1: DER lengths must be encoded with a minimum
+            // number of octets
+            if len >= 0x80 {
+                Ok(len)
+            } else {
+                Err(Error)
+            }
+        }
         0x82 => {
             let len_hi = parse_byte(bytes)? as usize;
-            Ok((len_hi << 8) | (parse_byte(bytes)? as usize))
+            let len = (len_hi << 8) | (parse_byte(bytes)? as usize);
+
+            // X.690 Section 10.1: DER lengths must be encoded with a minimum
+            // number of octets
+            if len > 0xFF {
+                Ok(len)
+            } else {
+                Err(Error)
+            }
         }
         _ => {
             // We specialize to a maximum 3-byte length
