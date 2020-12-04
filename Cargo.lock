@@ -59,8 +59,22 @@ name = "hex-literal"
 version = "0.3.1"
 
 [[package]]
+name = "hex-literal"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5af1f635ef1bc545d78392b136bfe1c9809e029023c84a3638a864a10b8819c8"
+
+[[package]]
 name = "opaque-debug"
 version = "0.3.0"
+
+[[package]]
+name = "pkcs8"
+version = "0.2.0"
+dependencies = [
+ "const-oid",
+ "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "typenum"
