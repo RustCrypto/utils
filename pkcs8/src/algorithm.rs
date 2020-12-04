@@ -16,7 +16,9 @@ use core::convert::TryFrom;
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct AlgorithmIdentifier {
     /// Algorithm OID.
-    pub algorithm: ObjectIdentifier,
+    ///
+    /// This is the `algorithm` field in the `AlgorithmIdentifier` ASN.1 schema.
+    pub oid: ObjectIdentifier,
 
     /// Algorithm parameters.
     ///

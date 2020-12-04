@@ -124,7 +124,7 @@ pub(crate) fn parse_algorithm_identifier(input: &mut &[u8]) -> Result<AlgorithmI
     };
 
     Ok(AlgorithmIdentifier {
-        algorithm,
+        oid: algorithm,
         parameters,
     })
 }

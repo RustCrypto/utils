@@ -21,10 +21,7 @@ const RSA_2048_PEM_EXAMPLE: &str = include_str!("examples/rsa2048.pem");
 fn parse_ec_p256_der() {
     let pk_info = PrivateKeyInfo::from_der(EC_P256_DER_EXAMPLE).unwrap();
 
-    assert_eq!(
-        pk_info.algorithm.algorithm,
-        "1.2.840.10045.2.1".parse().unwrap()
-    );
+    assert_eq!(pk_info.algorithm.oid, "1.2.840.10045.2.1".parse().unwrap());
 
     assert_eq!(
         pk_info.algorithm.parameters.unwrap(),
@@ -41,7 +38,7 @@ fn parse_rsa_2048_der() {
     let pk_info = PrivateKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
 
     assert_eq!(
-        pk_info.algorithm.algorithm,
+        pk_info.algorithm.oid,
         "1.2.840.113549.1.1.1".parse().unwrap()
     );
 
