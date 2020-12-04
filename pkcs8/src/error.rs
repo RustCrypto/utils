@@ -8,7 +8,7 @@ pub struct Error;
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("Error")
+        f.write_str("PKCS#8 error")
     }
 }
 
