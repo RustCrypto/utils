@@ -1,7 +1,7 @@
 //! PKCS#8 `PrivateKeyInfo`.
 
 use crate::{asn1, AlgorithmIdentifier, Error, Result};
-use core::convert::TryFrom;
+use core::{convert::TryFrom, fmt};
 
 /// PKCS#8 `PrivateKeyInfo`.
 ///
@@ -26,6 +26,7 @@ use core::convert::TryFrom;
 ///
 /// Attributes ::= SET OF Attribute
 /// ```
+#[derive(Copy, Clone)]
 pub struct PrivateKeyInfo<'a> {
     /// X.509 [`AlgorithmIdentifier`]
     pub algorithm: AlgorithmIdentifier,
@@ -46,5 +47,13 @@ impl<'a> TryFrom<&'a [u8]> for PrivateKeyInfo<'a> {
 
     fn try_from(bytes: &'a [u8]) -> Result<Self> {
         Self::from_der(bytes)
+    }
+}
+
+impl<'a> fmt::Debug for PrivateKeyInfo<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PrivateKeyInfo")
+            .field("algorithm", &self.algorithm)
+            .finish() // TODO(tarcieri): use `finish_non_exhaustive` when stable
     }
 }
