@@ -3,7 +3,7 @@
 use crate::{asn1, AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
 
-/// PKCS#8 `PrivateKeyInfo`.
+/// PKCS#8 `PrivateKeyInfo`
 ///
 /// ASN.1 structure containing an [`AlgorithmIdentifier`] and private key
 /// data in an algorithm specific format.
