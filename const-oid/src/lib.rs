@@ -88,6 +88,8 @@ impl ObjectIdentifier {
     ///
     /// For that reason this method is not recommended except for use in
     /// constants (where it will generate a compiler error instead).
+    /// To parse an OID from a `&[u32]` slice without panicking on error,
+    /// use [`TryFrom<&[u32]>`][1] instead.
     ///
     /// In order for an OID to be valid, it must meet the following criteria:
     ///
@@ -95,6 +97,8 @@ impl ObjectIdentifier {
     /// - The OID MUST NOT have more nodes than the [`MAX_NODES`] constant
     /// - The first node MUST be within the range 0-2
     /// - The second node MUST be within the range 0-39
+    ///
+    /// [1]: ./struct.ObjectIdentifier.html#impl-TryFrom%3C%26%27_%20%5Bu32%5D%3E
     pub const fn new(nodes: &[u32]) -> Self {
         const_assert!(nodes.len() >= 3, "OID too short (minimum 3 nodes)");
         const_assert!(
@@ -210,11 +214,22 @@ impl FromStr for ObjectIdentifier {
     }
 }
 
-impl TryFrom<&[u8]> for ObjectIdentifier {
+impl TryFrom<&[u32]> for ObjectIdentifier {
     type Error = Error;
 
-    fn try_from(bytes: &[u8]) -> Result<Self, Error> {
-        Self::from_ber(bytes)
+    fn try_from(nodes: &[u32]) -> Result<Self, Error> {
+        if nodes.len() < 3 || nodes.len() > MAX_NODES {
+            return Err(Error);
+        }
+
+        let mut nodes_arr = [0u32; MAX_NODES];
+        nodes_arr[..nodes.len()].copy_from_slice(nodes);
+        validate_nodes(nodes_arr)?;
+
+        Ok(Self {
+            nodes: nodes_arr,
+            length: nodes.len(),
+        })
     }
 }
 
@@ -284,7 +299,7 @@ fn parse_byte(bytes: &mut &[u8]) -> Result<u8, Error> {
 #[cfg(test)]
 mod tests {
     use super::ObjectIdentifier;
-    use std::string::ToString;
+    use std::{convert::TryFrom, string::ToString};
 
     /// Example OID value
     const EXAMPLE_OID: ObjectIdentifier = ObjectIdentifier::new(&[1, 2, 840, 10045, 2, 1]);
@@ -327,6 +342,21 @@ mod tests {
 
         // Invalid second node
         assert!("1.40.840.10045.2.1".parse::<ObjectIdentifier>().is_err());
+    }
+
+    #[test]
+    fn try_from_u32_slice() {
+        let oid = ObjectIdentifier::try_from([1, 2, 840, 10045, 2, 1].as_ref()).unwrap();
+        assert_eq!(EXAMPLE_OID, oid);
+
+        // Truncated
+        assert!(ObjectIdentifier::try_from([1, 2].as_ref()).is_err());
+
+        // Invalid first node
+        assert!(ObjectIdentifier::try_from([3, 2, 840, 10045, 3, 1, 7].as_ref()).is_err());
+
+        // Invalid second node
+        assert!(ObjectIdentifier::try_from([1, 40, 840, 10045, 3, 1, 7].as_ref()).is_err());
     }
 
     #[test]
