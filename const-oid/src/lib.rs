@@ -1,14 +1,5 @@
-//! Object Identifier (OID) constants with heapless `no_std` support.
-//!
-//! This crate supports creating [`ObjectIdentifier`] constants with
-//! compile-time checks on validity.
-//!
-//! It has full `no_std` support with no dependencies on a heap/liballoc and
-//! stores OID values as static data.
-//!
-//! The [`ObjectIdentifier`] type can also be used for runtime modeling of OIDs
-//! (e.g. when parsing messages), with the goal of easily comparing them to
-//! constant values.
+//! Const-friendly ISO/IEC Object Identifier (OID) library with support for
+//! heapless `no_std`-environments.
 //!
 //! # About OIDs
 //!
