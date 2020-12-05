@@ -48,10 +48,10 @@ fn parse_rsa_2048_der() {
 #[test]
 #[cfg(feature = "pem")]
 fn parse_ec_p256_pem() {
-    let pkcs8_doc: pkcs8::Document = EC_P256_PEM_EXAMPLE.parse().unwrap();
+    let pkcs8_doc: pkcs8::PrivateKeyDocument = EC_P256_PEM_EXAMPLE.parse().unwrap();
     assert_eq!(pkcs8_doc.as_ref(), EC_P256_DER_EXAMPLE);
 
-    // Ensure `pkcs8::Document` parses successfully
+    // Ensure `pkcs8::PrivateKeyDocument` parses successfully
     let pk_info = PrivateKeyInfo::from_der(EC_P256_DER_EXAMPLE).unwrap();
     assert_eq!(pkcs8_doc.private_key_info().algorithm, pk_info.algorithm);
 }
@@ -59,10 +59,10 @@ fn parse_ec_p256_pem() {
 #[test]
 #[cfg(feature = "pem")]
 fn parse_rsa_2048_pem() {
-    let pkcs8_doc: pkcs8::Document = RSA_2048_PEM_EXAMPLE.parse().unwrap();
+    let pkcs8_doc: pkcs8::PrivateKeyDocument = RSA_2048_PEM_EXAMPLE.parse().unwrap();
     assert_eq!(pkcs8_doc.as_ref(), RSA_2048_DER_EXAMPLE);
 
-    // Ensure `pkcs8::Document` parses successfully
+    // Ensure `pkcs8::PrivateKeyDocument` parses successfully
     let pk_info = PrivateKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
     assert_eq!(pkcs8_doc.private_key_info().algorithm, pk_info.algorithm);
 }

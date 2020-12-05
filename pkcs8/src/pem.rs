@@ -1,15 +1,21 @@
 //! PEM encoding support (RFC 7468)
 
-use crate::{Document, Error, Result};
-use alloc::borrow::ToOwned;
+use crate::{Error, Result};
+use alloc::{borrow::ToOwned, vec::Vec};
 use subtle_encoding::base64;
 use zeroize::Zeroizing;
 
-/// Pre-encapsulation boundary
-const PRE_ENCAPSULATION_BOUNDARY: &str = "-----BEGIN PRIVATE KEY-----\n";
+/// Private key pre-encapsulation boundary
+pub(crate) const BEGIN_PRIVATE_KEY: &str = "-----BEGIN PRIVATE KEY-----\n";
 
-/// Post-encapsulation boundary
-const POST_ENCAPSULATION_BOUNDARY: &str = "\n-----END PRIVATE KEY-----";
+/// Private key post-encapsulation boundary
+pub(crate) const END_PRIVATE_KEY: &str = "\n-----END PRIVATE KEY-----";
+
+/// Public key pre-encapsulation boundary
+pub(crate) const BEGIN_PUBLIC_KEY: &str = "-----BEGIN PUBLIC KEY-----\n";
+
+/// Public key post-encapsulation boundary
+pub(crate) const END_PUBLIC_KEY: &str = "\n-----END PUBLIC KEY-----";
 
 /// Parse "PEM encoding" as described in RFC 7468:
 /// <https://tools.ietf.org/html/rfc7468>
@@ -19,17 +25,16 @@ const POST_ENCAPSULATION_BOUNDARY: &str = "\n-----END PRIVATE KEY-----";
 /// implements a dialect intended for textual encodings of PKIX,
 /// PKCS, and CMS structures.
 // TODO(tarcieri): better harden for fully constant-time operation
-pub(crate) fn parse(s: &str) -> Result<Document> {
+pub(crate) fn parse(s: &str, begin: &str, end: &str) -> Result<Zeroizing<Vec<u8>>> {
     let s = s.trim_end();
 
     // TODO(tarcieri): handle missing newlines
-    let s = s.strip_prefix(PRE_ENCAPSULATION_BOUNDARY).ok_or(Error)?;
-    let s = s.strip_suffix(POST_ENCAPSULATION_BOUNDARY).ok_or(Error)?;
+    let s = s.strip_prefix(begin).ok_or(Error)?;
+    let s = s.strip_suffix(end).ok_or(Error)?;
 
     // TODO(tarcieri): fix subtle-encoding to tolerate whitespace
     let mut s = Zeroizing::new(s.to_owned());
     s.retain(|c| !c.is_whitespace());
 
-    let pkcs8_der = base64::decode(&*s).map_err(|_| Error).map(Zeroizing::new)?;
-    Document::from_der(&*pkcs8_der)
+    base64::decode(&*s).map_err(|_| Error).map(Zeroizing::new)
 }

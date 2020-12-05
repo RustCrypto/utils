@@ -55,7 +55,7 @@ pub use crate::{
 pub use const_oid::ObjectIdentifier;
 
 #[cfg(feature = "alloc")]
-pub use crate::document::Document;
+pub use crate::document::{PrivateKeyDocument, PublicKeyDocument};
 
 /// Parse an object from a PKCS#8 encoded document.
 pub trait FromPkcs8: Sized {
@@ -79,6 +79,6 @@ pub trait FromPkcs8: Sized {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn from_pkcs8_pem(s: &str) -> Result<Self> {
-        Self::from_pkcs8_der(Document::from_pem(s)?.as_ref())
+        Self::from_pkcs8_der(PrivateKeyDocument::from_pem(s)?.as_ref())
     }
 }
