@@ -12,15 +12,25 @@
 //!
 //! # About OIDs
 //!
-//! Object Identifiers, a.k.a. OIDs, are an International Telecommunications Union (ITU) and
-//! ISO/IEC standard for naming any object, concept, or "thing" with a globally unambiguous
-//! persistent name.
+//! Object Identifiers, a.k.a. OIDs, are an International Telecommunications
+//! Union (ITU) and ISO/IEC standard for naming any object, concept, or "thing"
+//! with a globally unambiguous persistent name.
 //!
-//! See also: <https://en.wikipedia.org/wiki/Object_identifier>
+//! The following is an example of an OID, in this case identifying the
+//! `rsaEncryption` algorithm:
+//!
+//! ```text
+//! 1.2.840.113549.1.1.1
+//! ```
+//!
+//! For more information, see: <https://en.wikipedia.org/wiki/Object_identifier>
 //!
 //! # Minimum Supported Rust Version
 //!
 //! This crate requires **Rust 1.46** at a minimum.
+//!
+//! Minimum supported Rust version may be changed in the future, but it will be
+//! accompanied with a minor version bump.
 
 #![no_std]
 #![doc(
