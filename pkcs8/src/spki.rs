@@ -21,8 +21,7 @@ pub struct SubjectPublicKeyInfo<'a> {
     /// X.509 [`AlgorithmIdentifier`]
     pub algorithm: AlgorithmIdentifier,
 
-    /// Public key data. This is technically an ASN.1 `BIT STRING`, but this
-    /// implementation constrains its contents to an octet granularity
+    /// Public key data
     pub subject_public_key: &'a [u8],
 }
 
