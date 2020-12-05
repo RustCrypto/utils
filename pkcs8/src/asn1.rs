@@ -8,10 +8,15 @@
 //! typically described as "DER", and if it actually turns out to be a
 //! legitimate practical problem the parsing rules can be relaxed.
 
-use crate::{AlgorithmIdentifier, Error, ObjectIdentifier, PrivateKeyInfo, Result};
+use crate::{
+    AlgorithmIdentifier, Error, ObjectIdentifier, PrivateKeyInfo, Result, SubjectPublicKeyInfo,
+};
 
 /// ASN.1 `INTEGER` tag
 const INTEGER_TAG: u8 = 0x02;
+
+/// ASN.1 `BIT STRING` tag
+const BIT_STRING_TAG: u8 = 0x03;
 
 /// ASN.1 `OCTET STRING` tag
 const OCTET_STRING_TAG: u8 = 0x04;
@@ -36,7 +41,7 @@ fn parse_byte(bytes: &mut &[u8]) -> Result<u8> {
 fn parse_len(bytes: &mut &[u8]) -> Result<usize> {
     match parse_byte(bytes)? {
         // Note: per X.690 Section 8.1.3.6.1 the byte 0x80 encodes indefinite
-        // lengths. This parser deliberately does not support them.
+        // lengths, which are not allowed in DER
         len if len < 0x80 => Ok(len as usize),
         0x81 => {
             let len = parse_byte(bytes)? as usize;
@@ -158,8 +163,7 @@ pub(crate) fn parse_algorithm_identifier(input: &mut &[u8]) -> Result<AlgorithmI
 }
 
 /// Parse a PKCS#8 document containing ASN.1 DER-encoded `PrivateKeyInfo`
-pub(crate) fn parse_private_key_info<'a>(mut input: &'a [u8]) -> Result<PrivateKeyInfo<'a>> {
-    // Parse outer SEQUENCE
+pub(crate) fn parse_private_key_info(mut input: &[u8]) -> Result<PrivateKeyInfo<'_>> {
     let mut bytes = parse_length_delimited(&mut input, SEQUENCE_TAG)?;
 
     if !input.is_empty() {
@@ -174,10 +178,7 @@ pub(crate) fn parse_private_key_info<'a>(mut input: &'a [u8]) -> Result<PrivateK
         return Err(Error);
     }
 
-    // Parse `privateKeyAlgorithm`
     let algorithm = parse_algorithm_identifier(&mut bytes)?;
-
-    // Parse `privateKey`
     let private_key = parse_length_delimited(&mut bytes, OCTET_STRING_TAG)?;
 
     // We currently don't support any trailing attribute data
@@ -188,5 +189,29 @@ pub(crate) fn parse_private_key_info<'a>(mut input: &'a [u8]) -> Result<PrivateK
     Ok(PrivateKeyInfo {
         algorithm,
         private_key,
+    })
+}
+
+/// Parse ASN.1 DER encoded `SubjectPublicKeyInfo`.
+///
+/// Note that this implementation assumes an outer `SEQUENCE` tag which is not
+/// present in X.509. This is for the purpose of public key storage.
+pub(crate) fn parse_spki(mut input: &[u8]) -> Result<SubjectPublicKeyInfo<'_>> {
+    let mut bytes = parse_length_delimited(&mut input, SEQUENCE_TAG)?;
+
+    if !input.is_empty() {
+        return Err(Error);
+    }
+
+    let algorithm = parse_algorithm_identifier(&mut bytes)?;
+    let subject_public_key = parse_length_delimited(&mut bytes, BIT_STRING_TAG)?;
+
+    if !bytes.is_empty() {
+        return Err(Error);
+    }
+
+    Ok(SubjectPublicKeyInfo {
+        algorithm,
+        subject_public_key,
     })
 }

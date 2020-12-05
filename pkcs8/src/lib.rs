@@ -38,6 +38,7 @@ mod algorithm;
 mod asn1;
 mod error;
 mod private_key_info;
+mod spki;
 
 #[cfg(feature = "alloc")]
 mod document;
@@ -49,6 +50,7 @@ pub use crate::{
     algorithm::AlgorithmIdentifier,
     error::{Error, Result},
     private_key_info::PrivateKeyInfo,
+    spki::SubjectPublicKeyInfo,
 };
 pub use const_oid::ObjectIdentifier;
 
