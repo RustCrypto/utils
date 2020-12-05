@@ -5,7 +5,8 @@ authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 edition = "2018"
 description = """
-ISO/IEC Object Identifier (OID) constants with heapless no_std support
+Const-friendly ISO/IEC Object Identifier (OID) library with support for
+heapless no_std-environments
 """
 documentation = "https://docs.rs/const-oid"
 repository = "https://github.com/RustCrypto/utils"
