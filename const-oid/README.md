@@ -7,7 +7,8 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-ISO/IEC Object Identifier (OID) constants with heapless no_std support.
+Const-friendly ISO/IEC Object Identifier (OID) library with support for
+heapless `no_std`-environments
 
 [Documentation][docs-link]
 
