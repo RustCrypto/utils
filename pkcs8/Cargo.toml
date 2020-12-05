@@ -15,7 +15,7 @@ keywords = ["crypto", "key", "private"]
 readme = "README.md"
 
 [dependencies.const-oid]
-version = "=0.3.0-pre"
+version = "0.3"
 path = "../const-oid"
 
 [dependencies.subtle-encoding]
