@@ -29,6 +29,7 @@
 #![warn(missing_docs, rust_2018_idioms)]
 
 #[cfg(feature = "alloc")]
+#[macro_use]
 extern crate alloc;
 
 #[cfg(feature = "std")]
