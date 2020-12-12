@@ -15,4 +15,9 @@ keywords = ["iso", "iec", "itu", "oid"]
 readme = "README.md"
 
 [features]
-std = []
+alloc = []
+std = ["alloc"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
