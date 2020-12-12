@@ -24,12 +24,17 @@
 //! accompanied with a minor version bump.
 
 #![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png",
     html_root_url = "https://docs.rs/const-oid/0.3.4"
 )]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
+
+#[cfg(feature = "alloc")]
+#[macro_use]
+extern crate alloc;
 
 #[cfg(any(feature = "std", test))]
 extern crate std;
@@ -59,6 +64,9 @@ impl fmt::Display for Error {
 
 #[cfg(feature = "std")]
 impl std::error::Error for Error {}
+
+/// Result type
+pub type Result<T> = core::result::Result<T, Error>;
 
 /// Object identifier (OID)
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -161,7 +169,7 @@ impl ObjectIdentifier {
     }
 
     /// Parse an OID from from its BER/DER encoding.
-    pub fn from_ber(mut bytes: &[u8]) -> Result<Self, Error> {
+    pub fn from_ber(mut bytes: &[u8]) -> Result<Self> {
         let octet = parse_byte(&mut bytes)?;
 
         let mut nodes = [0u32; MAX_NODES];
@@ -186,6 +194,41 @@ impl ObjectIdentifier {
         validate_nodes(nodes)?;
         Ok(Self { nodes, length })
     }
+
+    /// Get the length of this OID when serialized as ASN.1 BER
+    pub fn ber_len(&self) -> usize {
+        self.as_ref()[2..]
+            .iter()
+            .fold(1, |sum, n| sum + base128_len(*n))
+    }
+
+    /// Write the BER encoding of this OID into the given slice, returning
+    /// a new slice containing the written data
+    pub fn write_ber<'a>(&self, bytes: &'a mut [u8]) -> Result<&'a [u8]> {
+        if bytes.is_empty() {
+            return Err(Error);
+        }
+
+        bytes[0] = (self.nodes[0] * (SECOND_NODE_MAX + 1)) as u8 | self.nodes[1] as u8;
+
+        let mut offset = 1;
+
+        for &node in &self.as_ref()[2..] {
+            offset += write_base128(&mut bytes[offset..], node)?;
+        }
+
+        Ok(&bytes[..offset])
+    }
+
+    /// Serialize this OID as ASN.1 BER
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    pub fn to_ber(&self) -> alloc::vec::Vec<u8> {
+        let mut output = vec![0u8; self.ber_len()];
+        self.write_ber(&mut output)
+            .expect("incorrectly sized buffer");
+        output
+    }
 }
 
 impl AsRef<[u32]> for ObjectIdentifier {
@@ -197,7 +240,7 @@ impl AsRef<[u32]> for ObjectIdentifier {
 impl FromStr for ObjectIdentifier {
     type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Error> {
+    fn from_str(s: &str) -> Result<Self> {
         let mut nodes = [0u32; MAX_NODES];
         let mut length = 0;
 
@@ -218,7 +261,7 @@ impl FromStr for ObjectIdentifier {
 impl TryFrom<&[u32]> for ObjectIdentifier {
     type Error = Error;
 
-    fn try_from(nodes: &[u32]) -> Result<Self, Error> {
+    fn try_from(nodes: &[u32]) -> Result<Self> {
         if nodes.len() < 3 || nodes.len() > MAX_NODES {
             return Err(Error);
         }
@@ -255,7 +298,7 @@ impl fmt::Display for ObjectIdentifier {
 }
 
 /// Run validations on a node array
-fn validate_nodes(nodes: [u32; MAX_NODES]) -> Result<(), Error> {
+fn validate_nodes(nodes: [u32; MAX_NODES]) -> Result<()> {
     if nodes[0] > FIRST_NODE_MAX {
         return Err(Error);
     }
@@ -267,8 +310,15 @@ fn validate_nodes(nodes: [u32; MAX_NODES]) -> Result<(), Error> {
     Ok(())
 }
 
+/// Parse a single byte from a slice
+fn parse_byte(bytes: &mut &[u8]) -> Result<u8> {
+    let byte = *bytes.get(0).ok_or(Error)?;
+    *bytes = &bytes[1..];
+    Ok(byte)
+}
+
 /// Parse a base 128 (big endian) integer from a bytestring
-fn parse_base128(bytes: &mut &[u8]) -> Result<u32, Error> {
+fn parse_base128(bytes: &mut &[u8]) -> Result<u32> {
     let mut result = 0;
     let mut shift = 0;
 
@@ -290,11 +340,33 @@ fn parse_base128(bytes: &mut &[u8]) -> Result<u32, Error> {
     }
 }
 
-/// Parse a single byte from a slice
-fn parse_byte(bytes: &mut &[u8]) -> Result<u8, Error> {
-    let byte = *bytes.get(0).ok_or(Error)?;
-    *bytes = &bytes[1..];
-    Ok(byte)
+/// Write the given unsigned integer in base 128
+fn write_base128(bytes: &mut [u8], mut n: u32) -> Result<usize> {
+    let nbytes = base128_len(n);
+    let mut i = nbytes.checked_sub(1).expect("length underflow");
+    let mut mask = 0;
+
+    while n > 0x80 {
+        let byte = bytes.get_mut(i).ok_or(Error)?;
+        *byte = (n & 0b1111111 | mask) as u8;
+        n >>= 7;
+        i = i.checked_sub(1).unwrap();
+        mask = 0b10000000;
+    }
+
+    *bytes.get_mut(0).unwrap() = (n | mask) as u8;
+    Ok(nbytes)
+}
+
+/// Compute the length of a value when encoded in base 128
+fn base128_len(n: u32) -> usize {
+    match n {
+        0..=0x7f => 1usize,
+        0x80..=0x3fff => 2,
+        0x4000..=0x1fffff => 3,
+        0x200000..=0x1fffffff => 4,
+        _ => 5,
+    }
 }
 
 #[cfg(test)]
@@ -358,6 +430,19 @@ mod tests {
 
         // Invalid second node
         assert!(ObjectIdentifier::try_from([1, 40, 840, 10045, 3, 1, 7].as_ref()).is_err());
+    }
+
+    #[test]
+    fn write_ber() {
+        let mut buffer = [0u8; 16];
+        let slice = EXAMPLE_OID.write_ber(&mut buffer).unwrap();
+        assert_eq!(slice, EXAMPLE_OID_BER);
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn to_ber() {
+        assert_eq!(EXAMPLE_OID.to_ber(), EXAMPLE_OID_BER);
     }
 
     #[test]
