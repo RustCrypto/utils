@@ -66,3 +66,19 @@ fn parse_rsa_2048_pem() {
     let pk_info = PrivateKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
     assert_eq!(pkcs8_doc.private_key_info().algorithm, pk_info.algorithm);
 }
+
+#[test]
+#[cfg(feature = "alloc")]
+fn serialize_ec_p256_pem() {
+    let pk = PrivateKeyInfo::from_der(EC_P256_DER_EXAMPLE).unwrap();
+    let pk_encoded = pk.to_der();
+    assert_eq!(EC_P256_DER_EXAMPLE, pk_encoded);
+}
+
+#[test]
+#[cfg(feature = "alloc")]
+fn serialize_rsa_2048_pem() {
+    let pk = PrivateKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
+    let pk_encoded = pk.to_der();
+    assert_eq!(RSA_2048_DER_EXAMPLE, pk_encoded);
+}

@@ -28,7 +28,7 @@ pub struct SubjectPublicKeyInfo<'a> {
 impl<'a> SubjectPublicKeyInfo<'a> {
     /// Parse [`SubjectPublicKeyInfo`] encoded as ASN.1 DER
     pub fn from_der(bytes: &'a [u8]) -> Result<Self> {
-        asn1::parse_spki(bytes)
+        asn1::decoder::decode_spki(bytes)
     }
 }
 
