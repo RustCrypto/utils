@@ -10,7 +10,7 @@ use {crate::Error, std::vec::Vec, zeroize::Zeroizing};
 
 /// Parse a private key object from a PKCS#8 encoded document.
 pub trait FromPrivateKey: Sized {
-    /// Parse the `PrivateKeyInfo` from a PKCS#8-encoded document.
+    /// Parse the [`PrivateKeyInfo`] from a PKCS#8-encoded document.
     fn from_pkcs8_private_key_info(private_key_info: PrivateKeyInfo<'_>) -> Result<Self>;
 
     /// Deserialize PKCS#8 private key from ASN.1 DER-encoded data
@@ -93,6 +93,30 @@ pub trait FromPublicKey: Sized {
             let pem = std::str::from_utf8(&*bytes).map_err(|_| Error)?;
             Self::from_public_key_pem(pem)
         })
+    }
+}
+
+/// Serialize a private key object to a PKCS#8 encoded document.
+pub trait ToPrivateKey {
+    /// Serialize this object as [`PrivateKeyInfo`]
+    fn as_pkcs8_private_key_info(&self) -> PrivateKeyInfo<'_>;
+
+    /// Serialize PKCS#8 private key as ASN.1 DER-encoded data
+    /// (binary format).
+    fn write_pkcs8_der<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a [u8]> {
+        self.as_pkcs8_private_key_info().write_der(buffer)
+    }
+}
+
+/// Serialize a public key object to a SPKI-encoded document.
+pub trait ToPublicKey {
+    /// Serialize this object as [`PrivateKeyInfo`]
+    fn as_spki(&self) -> PrivateKeyInfo<'_>;
+
+    /// Serialize SPKI public key as ASN.1 DER-encoded data
+    /// (binary format).
+    fn write_spki_der<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a [u8]> {
+        self.as_spki().write_der(buffer)
     }
 }
 

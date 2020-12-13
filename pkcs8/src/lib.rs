@@ -53,7 +53,7 @@ pub use crate::{
     error::{Error, Result},
     private_key_info::PrivateKeyInfo,
     spki::SubjectPublicKeyInfo,
-    traits::{FromPrivateKey, FromPublicKey},
+    traits::{FromPrivateKey, FromPublicKey, ToPrivateKey, ToPublicKey},
 };
 pub use const_oid::ObjectIdentifier;
 
