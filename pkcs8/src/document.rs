@@ -38,7 +38,7 @@ impl PrivateKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn from_pem(s: &str) -> Result<Self> {
-        let der_bytes = pem::parse(s, pem::BEGIN_PRIVATE_KEY, pem::END_PRIVATE_KEY)?;
+        let der_bytes = pem::parse(s, pem::PRIVATE_KEY_BOUNDARY)?;
         Self::from_der(&*der_bytes)
     }
 
@@ -107,7 +107,7 @@ impl PublicKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn from_pem(s: &str) -> Result<Self> {
-        let der_bytes = pem::parse(s, pem::BEGIN_PUBLIC_KEY, pem::END_PUBLIC_KEY)?;
+        let der_bytes = pem::parse(s, pem::PUBLIC_KEY_BOUNDARY)?;
         Self::from_der(&*der_bytes)
     }
 

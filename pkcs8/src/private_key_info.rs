@@ -3,6 +3,14 @@
 use crate::{asn1, AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
 
+#[cfg(feature = "alloc")]
+use crate::document::PrivateKeyDocument;
+#[cfg(feature = "alloc")]
+use zeroize::Zeroizing;
+
+#[cfg(feature = "pem")]
+use crate::pem;
+
 /// PKCS#8 `PrivateKeyInfo`
 ///
 /// ASN.1 structure containing an [`AlgorithmIdentifier`] and private key
@@ -41,21 +49,30 @@ impl<'a> PrivateKeyInfo<'a> {
         asn1::decoder::decode_private_key_info(bytes)
     }
 
-    /// Write ASN.1 DER-encoded [`AlgorithmIdentifier`] to the provided
+    /// Write ASN.1 DER-encoded [`PrivateKeyInfo`] to the provided
     /// buffer, returning a slice containing the encoded data.
     pub fn write_der<'b>(&self, buffer: &'b mut [u8]) -> Result<&'b [u8]> {
         let offset = asn1::encoder::encode_private_key_info(buffer, self)?;
         Ok(&buffer[..offset])
     }
 
-    /// Encode this [`AlgorithmIdentifier`] as ASN.1 DER.
+    /// Encode this [`PrivateKeyInfo`] as ASN.1 DER.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    pub fn to_der(&self) -> alloc::vec::Vec<u8> {
+    pub fn to_der(&self) -> PrivateKeyDocument {
         let len = asn1::encoder::private_key_info_len(self).unwrap();
-        let mut buffer = vec![0u8; len];
+        let mut buffer = Zeroizing::new(vec![0u8; len]);
         self.write_der(&mut buffer).unwrap();
-        buffer
+        PrivateKeyDocument::from_der(&buffer).expect("malformed DER")
+    }
+
+    /// Encode this [`PrivateKeyInfo`] as PEM-encoded ASN.1 DER.
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    pub fn to_pem(&self) -> Zeroizing<alloc::string::String> {
+        let doc = self.to_der();
+        let pem = pem::serialize(doc.as_ref(), pem::PRIVATE_KEY_BOUNDARY).expect("malformed PEM");
+        Zeroizing::new(pem)
     }
 }
 
