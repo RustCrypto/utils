@@ -9,7 +9,9 @@
 //! legitimate practical problem the parsing rules can be relaxed.
 
 use super::Tag;
-use crate::{AlgorithmIdentifier, Error, ObjectIdentifier, PrivateKeyInfo, Result};
+use crate::{
+    AlgorithmIdentifier, Error, ObjectIdentifier, PrivateKeyInfo, Result, SubjectPublicKeyInfo,
+};
 
 /// Encode a single byte at the given offset
 fn encode_byte(buffer: &mut [u8], offset: usize, byte: u8) -> Result<()> {
@@ -114,7 +116,7 @@ pub(crate) fn encode_algorithm_identifier(
     Ok(offset)
 }
 
-/// Get the length of a DER-encoded [`PrivateKeyInfo`]
+/// Get the length of DER-encoded [`PrivateKeyInfo`]
 #[cfg(feature = "alloc")]
 pub(crate) fn private_key_info_len(private_key_info: &PrivateKeyInfo<'_>) -> Result<usize> {
     let alg_id_len = algorithm_identifier_len(&private_key_info.algorithm)?;
@@ -151,6 +153,36 @@ pub(crate) fn encode_private_key_info(
         &mut buffer[offset..],
         Tag::OctetString,
         private_key_info.private_key,
+    )?;
+
+    Ok(offset)
+}
+
+/// Get the length of DER-encoded [`SubjectPublicKeyInfo`]
+#[cfg(feature = "alloc")]
+pub(crate) fn spki_len(spki: &SubjectPublicKeyInfo<'_>) -> Result<usize> {
+    let alg_id_len = algorithm_identifier_len(&spki.algorithm)?;
+    let public_key_len = header_len(spki.subject_public_key.len())?
+        .checked_add(spki.subject_public_key.len())
+        .ok_or(Error)?;
+    let sequence_len = alg_id_len.checked_add(public_key_len).ok_or(Error)?;
+    header_len(sequence_len).and_then(|n| n.checked_add(sequence_len).ok_or(Error))
+}
+
+/// Encode [`SubjectPublicKeyInfo`]
+pub(crate) fn encode_spki(buffer: &mut [u8], spki: &SubjectPublicKeyInfo<'_>) -> Result<usize> {
+    let alg_id_len = algorithm_identifier_len(&spki.algorithm)?;
+    let private_key_len = header_len(spki.subject_public_key.len())?
+        .checked_add(spki.subject_public_key.len())
+        .ok_or(Error)?;
+    let sequence_len = alg_id_len.checked_add(private_key_len).ok_or(Error)?;
+
+    let mut offset = encode_header(buffer, Tag::Sequence, sequence_len)?;
+    offset += encode_algorithm_identifier(&mut buffer[offset..], &spki.algorithm)?;
+    offset += encode_length_delimited(
+        &mut buffer[offset..],
+        Tag::BitString,
+        spki.subject_public_key,
     )?;
 
     Ok(offset)

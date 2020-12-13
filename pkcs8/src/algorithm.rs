@@ -40,7 +40,7 @@ impl AlgorithmIdentifier {
         }
     }
 
-    /// Write an ASN.1 DER-encoded [`AlgorithmIdentifier`] to the provided
+    /// Write ASN.1 DER-encoded [`AlgorithmIdentifier`] to the provided
     /// buffer, returning a slice containing the encoded data.
     pub fn write_der<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a [u8]> {
         let offset = asn1::encoder::encode_algorithm_identifier(buffer, self)?;
