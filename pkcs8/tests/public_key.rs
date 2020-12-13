@@ -67,7 +67,7 @@ fn parse_rsa_2048_pem() {
 fn serialize_ec_p256_der() {
     let pk = SubjectPublicKeyInfo::from_der(EC_P256_DER_EXAMPLE).unwrap();
     let pk_encoded = pk.to_der();
-    assert_eq!(EC_P256_DER_EXAMPLE, pk_encoded);
+    assert_eq!(EC_P256_DER_EXAMPLE, pk_encoded.as_ref());
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn serialize_ec_p256_der() {
 fn serialize_rsa_2048_der() {
     let pk = SubjectPublicKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
     let pk_encoded = pk.to_der();
-    assert_eq!(RSA_2048_DER_EXAMPLE, pk_encoded);
+    assert_eq!(RSA_2048_DER_EXAMPLE, pk_encoded.as_ref());
 }
 
 #[test]

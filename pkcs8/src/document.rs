@@ -3,13 +3,14 @@
 
 use crate::{Error, PrivateKeyInfo, Result, SubjectPublicKeyInfo};
 use alloc::{borrow::ToOwned, vec::Vec};
-use core::{convert::TryFrom, fmt};
-use zeroize::Zeroizing;
+use core::{
+    convert::{TryFrom, TryInto},
+    fmt,
+};
+use zeroize::{Zeroize, Zeroizing};
 
 #[cfg(feature = "pem")]
-use crate::pem;
-#[cfg(feature = "pem")]
-use core::str::FromStr;
+use {crate::pem, alloc::string::String, core::str::FromStr};
 
 /// PKCS#8 private key document
 ///
@@ -23,9 +24,7 @@ pub struct PrivateKeyDocument(Zeroizing<Vec<u8>>);
 impl PrivateKeyDocument {
     /// Parse [`PrivateKeyDocument`] from ASN.1 DER-encoded PKCS#8
     pub fn from_der(bytes: &[u8]) -> Result<Self> {
-        // Ensure document is well-formed
-        PrivateKeyInfo::from_der(bytes)?;
-        Ok(Self(Zeroizing::new(bytes.to_owned())))
+        bytes.try_into()
     }
 
     /// Parse [`PrivateKeyDocument`] from PEM-encoded PKCS#8.
@@ -38,8 +37,15 @@ impl PrivateKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn from_pem(s: &str) -> Result<Self> {
-        let der_bytes = pem::parse(s, pem::PRIVATE_KEY_BOUNDARY)?;
+        let der_bytes = pem::decode(s, pem::PRIVATE_KEY_BOUNDARY)?;
         Self::from_der(&*der_bytes)
+    }
+
+    /// Serialize [`PrivateKeyDocument`] as self-zeroizing PEM-encoded PKCS#8 string.
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    pub fn to_pem(&self) -> Zeroizing<String> {
+        Zeroizing::new(pem::encode(&self.0, pem::PRIVATE_KEY_BOUNDARY))
     }
 
     /// Parse the [`PrivateKeyInfo`] contained in this [`PrivateKeyDocument`]
@@ -58,7 +64,23 @@ impl TryFrom<&[u8]> for PrivateKeyDocument {
     type Error = Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self> {
-        Self::from_der(bytes)
+        // Ensure document is well-formed
+        PrivateKeyInfo::from_der(bytes)?;
+        Ok(Self(Zeroizing::new(bytes.to_owned())))
+    }
+}
+
+impl TryFrom<Vec<u8>> for PrivateKeyDocument {
+    type Error = Error;
+
+    fn try_from(mut bytes: Vec<u8>) -> Result<Self> {
+        // Ensure document is well-formed
+        if PrivateKeyInfo::from_der(&bytes).is_ok() {
+            Ok(Self(Zeroizing::new(bytes)))
+        } else {
+            bytes.zeroize();
+            Err(Error)
+        }
     }
 }
 
@@ -92,9 +114,7 @@ pub struct PublicKeyDocument(Vec<u8>);
 impl PublicKeyDocument {
     /// Parse [`PublicKeyDocument`] from ASN.1 DER
     pub fn from_der(bytes: &[u8]) -> Result<Self> {
-        // Ensure document is well-formed
-        SubjectPublicKeyInfo::from_der(bytes)?;
-        Ok(Self(bytes.to_owned()))
+        bytes.try_into()
     }
 
     /// Parse [`PublicKeyDocument`] from PEM
@@ -107,8 +127,15 @@ impl PublicKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn from_pem(s: &str) -> Result<Self> {
-        let der_bytes = pem::parse(s, pem::PUBLIC_KEY_BOUNDARY)?;
+        let der_bytes = pem::decode(s, pem::PUBLIC_KEY_BOUNDARY)?;
         Self::from_der(&*der_bytes)
+    }
+
+    /// Serialize [`PublicKeyDocument`] as PEM-encoded PKCS#8 string.
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    pub fn to_pem(&self) -> String {
+        pem::encode(&self.0, pem::PUBLIC_KEY_BOUNDARY)
     }
 
     /// Parse the [`SubjectPublicKeyInfo`] contained in this [`PublicKeyDocument`]
@@ -128,7 +155,19 @@ impl TryFrom<&[u8]> for PublicKeyDocument {
     type Error = Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self> {
-        Self::from_der(bytes)
+        // Ensure document is well-formed
+        SubjectPublicKeyInfo::from_der(bytes)?;
+        Ok(Self(bytes.to_owned()))
+    }
+}
+
+impl TryFrom<Vec<u8>> for PublicKeyDocument {
+    type Error = Error;
+
+    fn try_from(bytes: Vec<u8>) -> Result<Self> {
+        // Ensure document is well-formed
+        SubjectPublicKeyInfo::from_der(&bytes)?;
+        Ok(Self(bytes))
     }
 }
 

@@ -3,6 +3,9 @@
 use crate::{asn1, AlgorithmIdentifier, Error, Result};
 use core::convert::TryFrom;
 
+#[cfg(feature = "alloc")]
+use {crate::PublicKeyDocument, core::convert::TryInto};
+
 #[cfg(feature = "pem")]
 use crate::pem;
 
@@ -44,11 +47,11 @@ impl<'a> SubjectPublicKeyInfo<'a> {
     /// Encode this [`SubjectPublicKeyInfo] as ASN.1 DER.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    pub fn to_der(&self) -> alloc::vec::Vec<u8> {
+    pub fn to_der(&self) -> PublicKeyDocument {
         let len = asn1::encoder::spki_len(self).unwrap();
         let mut buffer = vec![0u8; len];
         self.write_der(&mut buffer).unwrap();
-        buffer
+        buffer.try_into().expect("malformed DER")
     }
 
     /// Encode this [`SubjectPublicKeyInfo`] as PEM-encoded ASN.1 DER.
@@ -56,7 +59,7 @@ impl<'a> SubjectPublicKeyInfo<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> alloc::string::String {
         let doc = self.to_der();
-        pem::serialize(doc.as_ref(), pem::PUBLIC_KEY_BOUNDARY).expect("malformed PEM")
+        pem::encode(doc.as_ref(), pem::PUBLIC_KEY_BOUNDARY)
     }
 }
 

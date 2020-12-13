@@ -53,9 +53,12 @@ pub use crate::{
     error::{Error, Result},
     private_key_info::PrivateKeyInfo,
     spki::SubjectPublicKeyInfo,
-    traits::{FromPrivateKey, FromPublicKey, ToPrivateKey, ToPublicKey},
+    traits::{FromPrivateKey, FromPublicKey},
 };
 pub use const_oid::ObjectIdentifier;
 
 #[cfg(feature = "alloc")]
-pub use crate::document::{PrivateKeyDocument, PublicKeyDocument};
+pub use crate::{
+    document::{PrivateKeyDocument, PublicKeyDocument},
+    traits::{ToPrivateKey, ToPublicKey},
+};
