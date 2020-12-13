@@ -3,6 +3,9 @@
 use hex_literal::hex;
 use pkcs8::PrivateKeyInfo;
 
+#[cfg(any(feature = "pem", feature = "std"))]
+use pkcs8::PrivateKeyDocument;
+
 /// Elliptic Curve (P-256) PKCS#8 private key encoded as ASN.1 DER
 const EC_P256_DER_EXAMPLE: &[u8] = include_bytes!("examples/p256-priv.der");
 
@@ -48,10 +51,10 @@ fn parse_rsa_2048_der() {
 #[test]
 #[cfg(feature = "pem")]
 fn parse_ec_p256_pem() {
-    let pkcs8_doc: pkcs8::PrivateKeyDocument = EC_P256_PEM_EXAMPLE.parse().unwrap();
+    let pkcs8_doc: PrivateKeyDocument = EC_P256_PEM_EXAMPLE.parse().unwrap();
     assert_eq!(pkcs8_doc.as_ref(), EC_P256_DER_EXAMPLE);
 
-    // Ensure `pkcs8::PrivateKeyDocument` parses successfully
+    // Ensure `PrivateKeyDocument` parses successfully
     let pk_info = PrivateKeyInfo::from_der(EC_P256_DER_EXAMPLE).unwrap();
     assert_eq!(pkcs8_doc.private_key_info().algorithm, pk_info.algorithm);
 }
@@ -59,10 +62,10 @@ fn parse_ec_p256_pem() {
 #[test]
 #[cfg(feature = "pem")]
 fn parse_rsa_2048_pem() {
-    let pkcs8_doc: pkcs8::PrivateKeyDocument = RSA_2048_PEM_EXAMPLE.parse().unwrap();
+    let pkcs8_doc: PrivateKeyDocument = RSA_2048_PEM_EXAMPLE.parse().unwrap();
     assert_eq!(pkcs8_doc.as_ref(), RSA_2048_DER_EXAMPLE);
 
-    // Ensure `pkcs8::PrivateKeyDocument` parses successfully
+    // Ensure `PrivateKeyDocument` parses successfully
     let pk_info = PrivateKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
     assert_eq!(pkcs8_doc.private_key_info().algorithm, pk_info.algorithm);
 }
@@ -97,4 +100,18 @@ fn serialize_rsa_2048_pem() {
     let pk = PrivateKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
     let pk_encoded = pk.to_pem();
     assert_eq!(RSA_2048_PEM_EXAMPLE, &*pk_encoded);
+}
+
+#[test]
+#[cfg(feature = "std")]
+fn load_der_file() {
+    let pkcs8_doc = PrivateKeyDocument::load_der_file("tests/examples/p256-priv.der").unwrap();
+    assert_eq!(pkcs8_doc.as_ref(), EC_P256_DER_EXAMPLE);
+}
+
+#[test]
+#[cfg(all(feature = "pem", feature = "std"))]
+fn load_pem_file() {
+    let pkcs8_doc = PrivateKeyDocument::load_pem_file("tests/examples/p256-priv.pem").unwrap();
+    assert_eq!(pkcs8_doc.as_ref(), EC_P256_DER_EXAMPLE);
 }

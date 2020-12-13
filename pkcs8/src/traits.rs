@@ -9,7 +9,7 @@ use crate::{PrivateKeyDocument, PublicKeyDocument};
 use alloc::string::String;
 
 #[cfg(feature = "std")]
-use {crate::Error, std::fs};
+use std::path::Path;
 
 #[cfg(any(feature = "pem", feature = "std"))]
 use zeroize::Zeroizing;
@@ -22,7 +22,14 @@ pub trait FromPrivateKey: Sized {
     /// Deserialize PKCS#8 private key from ASN.1 DER-encoded data
     /// (binary format).
     fn from_pkcs8_der(bytes: &[u8]) -> Result<Self> {
-        Self::from_pkcs8_private_key_info(PrivateKeyInfo::from_der(bytes)?)
+        PrivateKeyInfo::from_der(bytes).and_then(Self::from_pkcs8_private_key_info)
+    }
+
+    /// Deserialize PKCS#8 private key from a [`PrivateKeyDocument`].
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    fn from_pkcs8_doc(doc: &PrivateKeyDocument) -> Result<Self> {
+        Self::from_pkcs8_private_key_info(doc.private_key_info())
     }
 
     /// Deserialize PKCS#8-encoded private key from PEM.
@@ -35,32 +42,23 @@ pub trait FromPrivateKey: Sized {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn from_pkcs8_pem(s: &str) -> Result<Self> {
-        Self::from_pkcs8_der(PrivateKeyDocument::from_pem(s)?.as_ref())
+        PrivateKeyDocument::from_pem(s).and_then(|doc| Self::from_pkcs8_doc(&doc))
     }
 
     /// Load PKCS#8 private key from an ASN.1 DER-encoded file on the local
     /// filesystem (binary format).
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    fn load_pkcs8_der_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        fs::read(path)
-            .map(Zeroizing::new)
-            .map_err(|_| Error)
-            .and_then(|bytes| Self::from_pkcs8_der(&*bytes))
+    fn load_pkcs8_der_file(path: impl AsRef<Path>) -> Result<Self> {
+        PrivateKeyDocument::load_der_file(path).and_then(|doc| Self::from_pkcs8_doc(&doc))
     }
 
     /// Load PKCS#8 private key from a PEM-encoded file on the local filesystem.
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    fn load_pkcs8_pem_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        fs::read(path)
-            .map(Zeroizing::new)
-            .map_err(|_| Error)
-            .and_then(|bytes| {
-                let pem = std::str::from_utf8(&*bytes).map_err(|_| Error)?;
-                Self::from_pkcs8_pem(pem)
-            })
+    fn load_pkcs8_pem_file(path: impl AsRef<Path>) -> Result<Self> {
+        PrivateKeyDocument::load_pem_file(path).and_then(|doc| Self::from_pkcs8_doc(&doc))
     }
 }
 
@@ -72,7 +70,14 @@ pub trait FromPublicKey: Sized {
     /// Deserialize object from ASN.1 DER-encoded [`SubjectPublicKeyInfo`]
     /// (binary format).
     fn from_public_key_der(bytes: &[u8]) -> Result<Self> {
-        Self::from_spki(SubjectPublicKeyInfo::from_der(bytes)?)
+        SubjectPublicKeyInfo::from_der(bytes).and_then(Self::from_spki)
+    }
+
+    /// Deserialize PKCS#8 private key from a [`PrivateKeyDocument`].
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    fn from_public_key_doc(doc: &PublicKeyDocument) -> Result<Self> {
+        Self::from_spki(doc.spki())
     }
 
     /// Deserialize PEM-encoded [`SubjectPublicKeyInfo`].
@@ -85,7 +90,7 @@ pub trait FromPublicKey: Sized {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn from_public_key_pem(s: &str) -> Result<Self> {
-        Self::from_public_key_der(PublicKeyDocument::from_pem(s)?.as_ref())
+        PublicKeyDocument::from_pem(s).and_then(|doc| Self::from_public_key_doc(&doc))
     }
 
     /// Load public key object from an ASN.1 DER-encoded file on the local
@@ -93,9 +98,7 @@ pub trait FromPublicKey: Sized {
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn load_public_key_der_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        fs::read(path)
-            .map_err(|_| Error)
-            .and_then(|bytes| Self::from_public_key_der(&*bytes))
+        PublicKeyDocument::load_der_file(path).and_then(|doc| Self::from_public_key_doc(&doc))
     }
 
     /// Load public key object from a PEM-encoded file on the local filesystem.
@@ -103,10 +106,7 @@ pub trait FromPublicKey: Sized {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn load_public_key_pem_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        fs::read(path).map_err(|_| Error).and_then(|bytes| {
-            let pem = std::str::from_utf8(&*bytes).map_err(|_| Error)?;
-            Self::from_public_key_pem(pem)
-        })
+        PublicKeyDocument::load_pem_file(path).and_then(|doc| Self::from_public_key_doc(&doc))
     }
 }
 

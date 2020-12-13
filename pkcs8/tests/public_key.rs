@@ -3,6 +3,9 @@
 use hex_literal::hex;
 use pkcs8::SubjectPublicKeyInfo;
 
+#[cfg(any(feature = "pem", feature = "std"))]
+use pkcs8::PublicKeyDocument;
+
 /// Elliptic Curve (P-256) `SubjectPublicKeyInfo` encoded as ASN.1 DER
 const EC_P256_DER_EXAMPLE: &[u8] = include_bytes!("examples/p256-pub.der");
 
@@ -43,10 +46,10 @@ fn parse_rsa_2048_der() {
 #[test]
 #[cfg(feature = "pem")]
 fn parse_ec_p256_pem() {
-    let doc: pkcs8::PublicKeyDocument = EC_P256_PEM_EXAMPLE.parse().unwrap();
+    let doc: PublicKeyDocument = EC_P256_PEM_EXAMPLE.parse().unwrap();
     assert_eq!(doc.as_ref(), EC_P256_DER_EXAMPLE);
 
-    // Ensure `pkcs8::PublicKeyDocument` parses successfully
+    // Ensure `PublicKeyDocument` parses successfully
     let spki = SubjectPublicKeyInfo::from_der(EC_P256_DER_EXAMPLE).unwrap();
     assert_eq!(doc.spki(), spki);
 }
@@ -54,10 +57,10 @@ fn parse_ec_p256_pem() {
 #[test]
 #[cfg(feature = "pem")]
 fn parse_rsa_2048_pem() {
-    let doc: pkcs8::PublicKeyDocument = RSA_2048_PEM_EXAMPLE.parse().unwrap();
+    let doc: PublicKeyDocument = RSA_2048_PEM_EXAMPLE.parse().unwrap();
     assert_eq!(doc.as_ref(), RSA_2048_DER_EXAMPLE);
 
-    // Ensure `pkcs8::PublicKeyDocument` parses successfully
+    // Ensure `PublicKeyDocument` parses successfully
     let spki = SubjectPublicKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
     assert_eq!(doc.spki(), spki);
 }
@@ -92,4 +95,18 @@ fn serialize_rsa_2048_pem() {
     let pk = SubjectPublicKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
     let pk_encoded = pk.to_pem();
     assert_eq!(RSA_2048_PEM_EXAMPLE.trim_end(), pk_encoded);
+}
+
+#[test]
+#[cfg(feature = "std")]
+fn load_der_file() {
+    let pkcs8_doc = PublicKeyDocument::load_der_file("tests/examples/p256-pub.der").unwrap();
+    assert_eq!(pkcs8_doc.as_ref(), EC_P256_DER_EXAMPLE);
+}
+
+#[test]
+#[cfg(all(feature = "pem", feature = "std"))]
+fn load_pem_file() {
+    let pkcs8_doc = PublicKeyDocument::load_pem_file("tests/examples/p256-pub.pem").unwrap();
+    assert_eq!(pkcs8_doc.as_ref(), EC_P256_DER_EXAMPLE);
 }
