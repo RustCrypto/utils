@@ -9,6 +9,9 @@ use core::{
 };
 use zeroize::{Zeroize, Zeroizing};
 
+#[cfg(feature = "std")]
+use std::{fs, path::Path, str};
+
 #[cfg(feature = "pem")]
 use {crate::pem, alloc::string::String, core::str::FromStr};
 
@@ -46,6 +49,24 @@ impl PrivateKeyDocument {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<String> {
         Zeroizing::new(pem::encode(&self.0, pem::PRIVATE_KEY_BOUNDARY))
+    }
+
+    /// Load [`PrivateKeyDocument`] from an ASN.1 DER-encoded file on the local
+    /// filesystem (binary format).
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    pub fn load_der_file(path: impl AsRef<Path>) -> Result<Self> {
+        fs::read(path).map_err(|_| Error).and_then(Self::try_from)
+    }
+
+    /// Load [`PrivateKeyDocument`] from a PEM-encoded file on the local filesystem.
+    #[cfg(all(feature = "pem", feature = "std"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    pub fn load_pem_file(path: impl AsRef<Path>) -> Result<Self> {
+        let bytes = fs::read(path).map(Zeroizing::new).map_err(|_| Error)?;
+        let pem = str::from_utf8(&*bytes).map_err(|_| Error)?;
+        Self::from_pem(pem)
     }
 
     /// Parse the [`PrivateKeyInfo`] contained in this [`PrivateKeyDocument`]
@@ -136,6 +157,23 @@ impl PublicKeyDocument {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> String {
         pem::encode(&self.0, pem::PUBLIC_KEY_BOUNDARY)
+    }
+
+    /// Load [`PublicKeyDocument`] from an ASN.1 DER-encoded file on the local
+    /// filesystem (binary format).
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    pub fn load_der_file(path: impl AsRef<Path>) -> Result<Self> {
+        fs::read(path).map_err(|_| Error).and_then(Self::try_from)
+    }
+
+    /// Load [`PublicKeyDocument`] from a PEM-encoded file on the local filesystem.
+    #[cfg(all(feature = "pem", feature = "std"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    pub fn load_pem_file(path: impl AsRef<Path>) -> Result<Self> {
+        let pem = fs::read_to_string(path).map_err(|_| Error)?;
+        Self::from_pem(&pem)
     }
 
     /// Parse the [`SubjectPublicKeyInfo`] contained in this [`PublicKeyDocument`]
