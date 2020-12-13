@@ -2,11 +2,17 @@
 
 use crate::{PrivateKeyInfo, Result, SubjectPublicKeyInfo};
 
-#[cfg(feature = "pem")]
+#[cfg(feature = "alloc")]
 use crate::{PrivateKeyDocument, PublicKeyDocument};
 
+#[cfg(feature = "pem")]
+use alloc::string::String;
+
 #[cfg(feature = "std")]
-use {crate::Error, std::vec::Vec, zeroize::Zeroizing};
+use {crate::Error, std::fs};
+
+#[cfg(any(feature = "pem", feature = "std"))]
+use zeroize::Zeroizing;
 
 /// Parse a private key object from a PKCS#8 encoded document.
 pub trait FromPrivateKey: Sized {
@@ -36,19 +42,25 @@ pub trait FromPrivateKey: Sized {
     /// filesystem (binary format).
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    fn load_pkcs8_der(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        load_file(path).and_then(|bytes| Self::from_pkcs8_der(&*bytes))
+    fn load_pkcs8_der_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        fs::read(path)
+            .map(Zeroizing::new)
+            .map_err(|_| Error)
+            .and_then(|bytes| Self::from_pkcs8_der(&*bytes))
     }
 
     /// Load PKCS#8 private key from a PEM-encoded file on the local filesystem.
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    fn load_pkcs8_pem(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        load_file(path).and_then(|bytes| {
-            let pem = std::str::from_utf8(&*bytes).map_err(|_| Error)?;
-            Self::from_pkcs8_pem(pem)
-        })
+    fn load_pkcs8_pem_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        fs::read(path)
+            .map(Zeroizing::new)
+            .map_err(|_| Error)
+            .and_then(|bytes| {
+                let pem = std::str::from_utf8(&*bytes).map_err(|_| Error)?;
+                Self::from_pkcs8_pem(pem)
+            })
     }
 }
 
@@ -80,16 +92,18 @@ pub trait FromPublicKey: Sized {
     /// filesystem (binary format).
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    fn load_public_key_der(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        load_file(path).and_then(|bytes| Self::from_public_key_der(&*bytes))
+    fn load_public_key_der_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        fs::read(path)
+            .map_err(|_| Error)
+            .and_then(|bytes| Self::from_public_key_der(&*bytes))
     }
 
     /// Load public key object from a PEM-encoded file on the local filesystem.
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    fn load_public_key_pem(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        load_file(path).and_then(|bytes| {
+    fn load_public_key_pem_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        fs::read(path).map_err(|_| Error).and_then(|bytes| {
             let pem = std::str::from_utf8(&*bytes).map_err(|_| Error)?;
             Self::from_public_key_pem(pem)
         })
@@ -97,31 +111,31 @@ pub trait FromPublicKey: Sized {
 }
 
 /// Serialize a private key object to a PKCS#8 encoded document.
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub trait ToPrivateKey {
-    /// Serialize this object as [`PrivateKeyInfo`]
-    fn as_pkcs8_private_key_info(&self) -> PrivateKeyInfo<'_>;
+    /// Serialize a [`PrivateKeyDocument`] containing a PKCS#8-encoded private key.
+    fn to_pkcs8_der(&self) -> PrivateKeyDocument;
 
-    /// Serialize PKCS#8 private key as ASN.1 DER-encoded data
-    /// (binary format).
-    fn write_pkcs8_der<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a [u8]> {
-        self.as_pkcs8_private_key_info().write_der(buffer)
+    /// Serialize this private key as PEM-encoded PKCS#8.
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    fn to_pkcs8_pem(&self) -> Zeroizing<String> {
+        self.to_pkcs8_der().to_pem()
     }
 }
 
 /// Serialize a public key object to a SPKI-encoded document.
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub trait ToPublicKey {
-    /// Serialize this object as [`PrivateKeyInfo`]
-    fn as_spki(&self) -> PrivateKeyInfo<'_>;
+    /// Serialize a [`PublicKeyDocument`] containing a SPKI-encoded public key.
+    fn to_public_key_der(&self) -> PublicKeyDocument;
 
-    /// Serialize SPKI public key as ASN.1 DER-encoded data
-    /// (binary format).
-    fn write_spki_der<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a [u8]> {
-        self.as_spki().write_der(buffer)
+    /// Serialize this public key as PEM-encoded SPKI.
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    fn to_public_key_pem(&self) -> String {
+        self.to_public_key_der().to_pem()
     }
-}
-
-/// Load data from a file into a self-zeroizing buffer
-#[cfg(feature = "std")]
-fn load_file(path: impl AsRef<std::path::Path>) -> Result<Zeroizing<Vec<u8>>> {
-    std::fs::read(path).map(Zeroizing::new).map_err(|_| Error)
 }

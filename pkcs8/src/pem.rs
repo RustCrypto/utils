@@ -35,7 +35,7 @@ pub(crate) const PUBLIC_KEY_BOUNDARY: Boundary = Boundary {
 /// implements a dialect intended for textual encodings of PKIX,
 /// PKCS, and CMS structures.
 // TODO(tarcieri): better harden for fully constant-time operation
-pub(crate) fn parse(s: &str, boundary: Boundary) -> Result<Zeroizing<Vec<u8>>> {
+pub(crate) fn decode(s: &str, boundary: Boundary) -> Result<Zeroizing<Vec<u8>>> {
     let s = s.trim_end();
 
     // TODO(tarcieri): handle missing newlines
@@ -51,7 +51,7 @@ pub(crate) fn parse(s: &str, boundary: Boundary) -> Result<Zeroizing<Vec<u8>>> {
 
 /// Serialize "PEM encoding" as described in RFC 7468:
 /// <https://tools.ietf.org/html/rfc7468>
-pub(crate) fn serialize(data: &[u8], boundary: Boundary) -> Result<String> {
+pub(crate) fn encode(data: &[u8], boundary: Boundary) -> String {
     let mut output = String::new();
     output.push_str(boundary.pre);
 
@@ -69,5 +69,5 @@ pub(crate) fn serialize(data: &[u8], boundary: Boundary) -> Result<String> {
     }
 
     output.push_str(boundary.post);
-    Ok(output)
+    output
 }

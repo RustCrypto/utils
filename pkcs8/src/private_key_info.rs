@@ -4,9 +4,7 @@ use crate::{asn1, AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
 
 #[cfg(feature = "alloc")]
-use crate::document::PrivateKeyDocument;
-#[cfg(feature = "alloc")]
-use zeroize::Zeroizing;
+use {crate::document::PrivateKeyDocument, zeroize::Zeroizing};
 
 #[cfg(feature = "pem")]
 use crate::pem;
@@ -71,7 +69,7 @@ impl<'a> PrivateKeyInfo<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<alloc::string::String> {
         let doc = self.to_der();
-        let pem = pem::serialize(doc.as_ref(), pem::PRIVATE_KEY_BOUNDARY).expect("malformed PEM");
+        let pem = pem::encode(doc.as_ref(), pem::PRIVATE_KEY_BOUNDARY);
         Zeroizing::new(pem)
     }
 }
