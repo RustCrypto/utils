@@ -3,6 +3,9 @@
 use crate::{asn1, AlgorithmIdentifier, Error, Result};
 use core::convert::TryFrom;
 
+#[cfg(feature = "pem")]
+use crate::pem;
+
 /// X.509 `SubjectPublicKeyInfo` (SPKI)
 ///
 /// ASN.1 structure containing an [`AlgorithmIdentifier`] and public key
@@ -46,6 +49,14 @@ impl<'a> SubjectPublicKeyInfo<'a> {
         let mut buffer = vec![0u8; len];
         self.write_der(&mut buffer).unwrap();
         buffer
+    }
+
+    /// Encode this [`SubjectPublicKeyInfo`] as PEM-encoded ASN.1 DER.
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    pub fn to_pem(&self) -> alloc::string::String {
+        let doc = self.to_der();
+        pem::serialize(doc.as_ref(), pem::PUBLIC_KEY_BOUNDARY).expect("malformed PEM")
     }
 }
 
