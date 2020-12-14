@@ -1,5 +1,5 @@
 //! Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #8:
-//! Private-Key Information Syntax Specification (RFC 5208).
+//! Private-Key Information Syntax Specification ([RFC 5208]).
 //!
 //! # About
 //!
@@ -30,6 +30,8 @@
 //! # Minimum Supported Rust Version
 //!
 //! This crate requires **Rust 1.46** at a minimum.
+//!
+//! [RFC 5208]: https://tools.ietf.org/html/rfc5208
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
