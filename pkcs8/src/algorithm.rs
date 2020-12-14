@@ -3,6 +3,12 @@
 use crate::{asn1, Error, ObjectIdentifier, Result};
 use core::convert::TryFrom;
 
+/// [`AlgorithmIdentifier`] OID for RSA.
+/// We special case handling of RSA for compliance with [RFC 3279].
+///
+/// [RFC 3279]: https://tools.ietf.org/html/rfc3279
+const RSA_ALGORITHM_OID: ObjectIdentifier = ObjectIdentifier::new(&[1, 2, 840, 113549, 1, 1, 1]);
+
 /// X.509 `AlgorithmIdentifier`
 ///
 /// Defined in RFC 5280 Section 4.1.1.2:
@@ -55,6 +61,18 @@ impl AlgorithmIdentifier {
         let mut buffer = vec![0u8; len];
         self.write_der(&mut buffer).unwrap();
         buffer
+    }
+
+    /// Special case handling for the `parameters` field for RSA's
+    /// [`AlgorithmIdentifier`] to ensure compliance with
+    /// [RFC 3279 Section 2.3.1][1]:
+    ///
+    /// > The parameters field MUST have ASN.1 type NULL for this
+    /// > algorithm identifier.
+    ///
+    /// [1]: https://tools.ietf.org/html/rfc3279#section-2.3.1
+    pub(crate) fn is_params_field_null(&self) -> bool {
+        self.oid == RSA_ALGORITHM_OID
     }
 }
 

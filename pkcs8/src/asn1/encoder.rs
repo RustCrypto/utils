@@ -91,31 +91,48 @@ pub(crate) fn encode_oid(buffer: &mut [u8], oid: ObjectIdentifier) -> Result<usi
 /// Get the length of a DER-encoded [`AlgorithmIdentifier`]
 pub(crate) fn algorithm_identifier_len(algorithm_id: &AlgorithmIdentifier) -> Result<usize> {
     let alg_oid_len = oid_len(algorithm_id.oid)?;
-    let params_len = match algorithm_id.parameters {
-        Some(p) => oid_len(p)?,
-        None => 2, // OID or NULL (2-bytes)
-    };
+    let params_len = algorithm_parameters_len(algorithm_id)?;
     let sequence_len = alg_oid_len.checked_add(params_len).unwrap();
     header_len(sequence_len).and_then(|n| n.checked_add(sequence_len).ok_or(Error::Encode))
 }
 
-/// Encode an [`AlgorithmIdentifier`]
+/// Get the length of the `parameters` field of a DER-encoded
+/// [`AlgorithmIdentifier`].
+pub(crate) fn algorithm_parameters_len(algorithm_id: &AlgorithmIdentifier) -> Result<usize> {
+    if algorithm_id.is_params_field_null() {
+        // Special case handling for RSA's mandatory NULL parameter field
+        if algorithm_id.parameters.is_some() {
+            return Err(Error::Encode);
+        }
+
+        Ok(2) // Length of DER-encoded NULL object
+    } else if let Some(params) = algorithm_id.parameters {
+        oid_len(params)
+    } else {
+        Ok(0)
+    }
+}
+
+/// Encode an [`AlgorithmIdentifier`].
 pub(crate) fn encode_algorithm_identifier(
     buffer: &mut [u8],
     algorithm_id: &AlgorithmIdentifier,
 ) -> Result<usize> {
     let alg_oid_len = oid_len(algorithm_id.oid)?;
-    let params_len = match algorithm_id.parameters {
-        Some(p) => oid_len(p)?,
-        None => 2, // OID or NULL (2-bytes)
-    };
+    let params_len = algorithm_parameters_len(algorithm_id)?;
     let sequence_len = alg_oid_len.checked_add(params_len).unwrap();
 
     let mut offset = encode_header(buffer, Tag::Sequence, sequence_len)?;
     offset += encode_oid(&mut buffer[offset..], algorithm_id.oid)?;
     offset += match algorithm_id.parameters {
         Some(oid) => encode_oid(&mut buffer[offset..], oid)?,
-        None => encode_header(&mut buffer[offset..], Tag::Null, 0)?,
+        None => {
+            if algorithm_id.is_params_field_null() {
+                encode_header(&mut buffer[offset..], Tag::Null, 0)?
+            } else {
+                0
+            }
+        }
     };
 
     Ok(offset)
