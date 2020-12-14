@@ -123,6 +123,21 @@ pub trait ToPrivateKey {
     fn to_pkcs8_pem(&self) -> Zeroizing<String> {
         self.to_pkcs8_der().to_pem()
     }
+
+    /// Write ASN.1 DER-encoded PKCS#8 private key to the given path
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    fn write_pkcs8_der_file(&self, path: impl AsRef<Path>) -> Result<()> {
+        self.to_pkcs8_der().write_der_file(path)
+    }
+
+    /// Write ASN.1 DER-encoded PKCS#8 private key to the given path
+    #[cfg(all(feature = "pem", feature = "std"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    fn write_pkcs8_pem_file(&self, path: impl AsRef<Path>) -> Result<()> {
+        self.to_pkcs8_der().write_pem_file(path)
+    }
 }
 
 /// Serialize a public key object to a SPKI-encoded document.
@@ -137,5 +152,20 @@ pub trait ToPublicKey {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn to_public_key_pem(&self) -> String {
         self.to_public_key_der().to_pem()
+    }
+
+    /// Write ASN.1 DER-encoded public key to the given path
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    fn write_public_key_der_file(&self, path: impl AsRef<Path>) -> Result<()> {
+        self.to_public_key_der().write_der_file(path)
+    }
+
+    /// Write ASN.1 DER-encoded public key to the given path
+    #[cfg(all(feature = "pem", feature = "std"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    fn write_public_key_pem_file(&self, path: impl AsRef<Path>) -> Result<()> {
+        self.to_public_key_der().write_pem_file(path)
     }
 }
