@@ -36,7 +36,7 @@ impl AlgorithmIdentifier {
         if bytes.is_empty() {
             Ok(algorithm)
         } else {
-            Err(Error)
+            Err(Error::Decode)
         }
     }
 

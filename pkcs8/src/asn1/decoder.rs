@@ -15,7 +15,7 @@ use crate::{
 
 /// Parse a single byte from a slice
 fn decode_byte(bytes: &mut &[u8]) -> Result<u8> {
-    let byte = *bytes.get(0).ok_or(Error)?;
+    let byte = *bytes.get(0).ok_or(Error::Decode)?;
     *bytes = &bytes[1..];
     Ok(byte)
 }
@@ -34,7 +34,7 @@ fn decode_len(bytes: &mut &[u8]) -> Result<usize> {
             if len >= 0x80 {
                 Ok(len)
             } else {
-                Err(Error)
+                Err(Error::Decode)
             }
         }
         0x82 => {
@@ -46,12 +46,12 @@ fn decode_len(bytes: &mut &[u8]) -> Result<usize> {
             if len > 0xFF {
                 Ok(len)
             } else {
-                Err(Error)
+                Err(Error::Decode)
             }
         }
         _ => {
             // We specialize to a maximum 3-byte length
-            Err(Error)
+            Err(Error::Decode)
         }
     }
 }
@@ -59,21 +59,21 @@ fn decode_len(bytes: &mut &[u8]) -> Result<usize> {
 /// Parse DER-encoded INTEGER
 fn decode_integer(bytes: &mut &[u8]) -> Result<usize> {
     if decode_byte(bytes)? != Tag::Integer as u8 {
-        return Err(Error);
+        return Err(Error::Decode);
     }
 
     // We presently specialize for 1-byte integers to parse versions
     if decode_len(bytes)? == 1 {
         Ok(decode_byte(bytes)? as usize)
     } else {
-        Err(Error)
+        Err(Error::Decode)
     }
 }
 
 /// Parse length-delimited data
 fn decode_length_delimited<'a>(bytes: &mut &'a [u8], expected_tag: Tag) -> Result<&'a [u8]> {
     if decode_byte(bytes)? != expected_tag as u8 {
-        return Err(Error);
+        return Err(Error::Decode);
     }
 
     let len = decode_len(bytes)?;
@@ -83,7 +83,7 @@ fn decode_length_delimited<'a>(bytes: &mut &'a [u8], expected_tag: Tag) -> Resul
         *bytes = tail;
         Ok(head)
     } else {
-        Err(Error)
+        Err(Error::Decode)
     }
 }
 
@@ -102,13 +102,13 @@ pub(crate) fn decode_algorithm_identifier(input: &mut &[u8]) -> Result<Algorithm
 
     // Check OBJECT ID header
     if decode_byte(&mut bytes)? != Tag::ObjectIdentifier as u8 {
-        return Err(Error);
+        return Err(Error::Decode);
     }
 
     let len = decode_len(&mut bytes)?;
 
     if len > bytes.len() {
-        return Err(Error);
+        return Err(Error::Decode);
     }
 
     let (alg_bytes, mut param_bytes) = bytes.split_at(len);
@@ -117,12 +117,12 @@ pub(crate) fn decode_algorithm_identifier(input: &mut &[u8]) -> Result<Algorithm
 
     let parameters = if tag == Tag::Null as u8 {
         if decode_len(&mut param_bytes)? != 0 {
-            return Err(Error);
+            return Err(Error::Decode);
         }
 
         // Disallow any trailing data after the parameters
         if !param_bytes.is_empty() {
-            return Err(Error);
+            return Err(Error::Decode);
         }
 
         None
@@ -130,12 +130,12 @@ pub(crate) fn decode_algorithm_identifier(input: &mut &[u8]) -> Result<Algorithm
         let len = decode_len(&mut param_bytes)?;
 
         if len != param_bytes.len() {
-            return Err(Error);
+            return Err(Error::Decode);
         }
 
         Some(ObjectIdentifier::from_ber(param_bytes)?)
     } else {
-        return Err(Error);
+        return Err(Error::Decode);
     };
 
     Ok(AlgorithmIdentifier {
@@ -149,7 +149,7 @@ pub(crate) fn decode_private_key_info(mut input: &[u8]) -> Result<PrivateKeyInfo
     let mut bytes = decode_length_delimited(&mut input, Tag::Sequence)?;
 
     if !input.is_empty() {
-        return Err(Error);
+        return Err(Error::Decode);
     }
 
     // Parse `version` INTEGER
@@ -157,7 +157,7 @@ pub(crate) fn decode_private_key_info(mut input: &[u8]) -> Result<PrivateKeyInfo
 
     // RFC 5208 designates `0` as the only valid version for PKCS#8 documents
     if version != 0 {
-        return Err(Error);
+        return Err(Error::Decode);
     }
 
     let algorithm = decode_algorithm_identifier(&mut bytes)?;
@@ -165,7 +165,7 @@ pub(crate) fn decode_private_key_info(mut input: &[u8]) -> Result<PrivateKeyInfo
 
     // We currently don't support any trailing attribute data
     if !bytes.is_empty() {
-        return Err(Error);
+        return Err(Error::Decode);
     }
 
     Ok(PrivateKeyInfo {
@@ -182,14 +182,14 @@ pub(crate) fn decode_spki(mut input: &[u8]) -> Result<SubjectPublicKeyInfo<'_>> 
     let mut bytes = decode_length_delimited(&mut input, Tag::Sequence)?;
 
     if !input.is_empty() {
-        return Err(Error);
+        return Err(Error::Decode);
     }
 
     let algorithm = decode_algorithm_identifier(&mut bytes)?;
     let subject_public_key = decode_length_delimited(&mut bytes, Tag::BitString)?;
 
     if !bytes.is_empty() {
-        return Err(Error);
+        return Err(Error::Decode);
     }
 
     Ok(SubjectPublicKeyInfo {

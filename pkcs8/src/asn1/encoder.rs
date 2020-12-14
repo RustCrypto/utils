@@ -15,7 +15,10 @@ use crate::{
 
 /// Encode a single byte at the given offset
 fn encode_byte(buffer: &mut [u8], offset: usize, byte: u8) -> Result<()> {
-    buffer.get_mut(offset).map(|b| *b = byte).ok_or(Error)
+    buffer
+        .get_mut(offset)
+        .map(|b| *b = byte)
+        .ok_or(Error::Encode)
 }
 
 /// Encode length prefix
@@ -36,7 +39,7 @@ fn encode_len(buffer: &mut [u8], length: usize) -> Result<usize> {
             encode_byte(buffer, 2, (length & 0xFF) as u8)?;
             Ok(3)
         }
-        _ => Err(Error),
+        _ => Err(Error::Encode),
     }
 }
 
@@ -46,14 +49,14 @@ fn header_len(body_len: usize) -> Result<usize> {
         0..=0x7F => Ok(2),
         0x80..=0xFF => Ok(3),
         0x100..=0xFFFF => Ok(4),
-        _ => Err(Error),
+        _ => Err(Error::Encode),
     }
 }
 
 /// Encode a tag and a length header
 pub(crate) fn encode_header(buffer: &mut [u8], tag: Tag, length: usize) -> Result<usize> {
     encode_byte(buffer, 0, tag as u8)?;
-    encode_len(&mut buffer[1..], length).and_then(|len| len.checked_add(1).ok_or(Error))
+    encode_len(&mut buffer[1..], length).and_then(|len| len.checked_add(1).ok_or(Error::Encode))
 }
 
 /// Encode length-delimited tagged data
@@ -61,17 +64,19 @@ pub(crate) fn encode_length_delimited(buffer: &mut [u8], tag: Tag, data: &[u8]) 
     let offset = encode_header(buffer, tag, data.len())?;
 
     if buffer[offset..].len() < data.len() {
-        return Err(Error);
+        return Err(Error::Encode);
     }
 
     buffer[offset..(offset + data.len())].copy_from_slice(data);
-    offset.checked_add(data.len()).ok_or(Error)
+    offset.checked_add(data.len()).ok_or(Error::Encode)
 }
 
 /// Get the length of a DER-encoded OID
 pub(crate) fn oid_len(oid: ObjectIdentifier) -> Result<usize> {
     let body_len = oid.ber_len();
-    header_len(body_len)?.checked_add(body_len).ok_or(Error)
+    header_len(body_len)?
+        .checked_add(body_len)
+        .ok_or(Error::Encode)
 }
 
 /// Encode an OID
@@ -80,7 +85,7 @@ pub(crate) fn encode_oid(buffer: &mut [u8], oid: ObjectIdentifier) -> Result<usi
 
     offset
         .checked_add(oid.write_ber(&mut buffer[offset..])?.len())
-        .ok_or(Error)
+        .ok_or(Error::Encode)
 }
 
 /// Get the length of a DER-encoded [`AlgorithmIdentifier`]
@@ -91,7 +96,7 @@ pub(crate) fn algorithm_identifier_len(algorithm_id: &AlgorithmIdentifier) -> Re
         None => 2, // OID or NULL (2-bytes)
     };
     let sequence_len = alg_oid_len.checked_add(params_len).unwrap();
-    header_len(sequence_len).and_then(|n| n.checked_add(sequence_len).ok_or(Error))
+    header_len(sequence_len).and_then(|n| n.checked_add(sequence_len).ok_or(Error::Encode))
 }
 
 /// Encode an [`AlgorithmIdentifier`]
@@ -123,12 +128,12 @@ pub(crate) fn private_key_info_len(private_key_info: &PrivateKeyInfo<'_>) -> Res
     let version_len = 3;
     let private_key_len = header_len(private_key_info.private_key.len())?
         .checked_add(private_key_info.private_key.len())
-        .ok_or(Error)?;
+        .ok_or(Error::Encode)?;
     let sequence_len = alg_id_len
         .checked_add(version_len)
         .and_then(|len| len.checked_add(private_key_len))
-        .ok_or(Error)?;
-    header_len(sequence_len).and_then(|n| n.checked_add(sequence_len).ok_or(Error))
+        .ok_or(Error::Encode)?;
+    header_len(sequence_len).and_then(|n| n.checked_add(sequence_len).ok_or(Error::Encode))
 }
 
 /// Encode [`PrivateKeyInfo`]
@@ -140,11 +145,11 @@ pub(crate) fn encode_private_key_info(
     let version_len = 3;
     let private_key_len = header_len(private_key_info.private_key.len())?
         .checked_add(private_key_info.private_key.len())
-        .ok_or(Error)?;
+        .ok_or(Error::Encode)?;
     let sequence_len = alg_id_len
         .checked_add(version_len)
         .and_then(|len| len.checked_add(private_key_len))
-        .ok_or(Error)?;
+        .ok_or(Error::Encode)?;
 
     let mut offset = encode_header(buffer, Tag::Sequence, sequence_len)?;
     offset += encode_length_delimited(&mut buffer[offset..], Tag::Integer, &[0])?;
@@ -164,9 +169,11 @@ pub(crate) fn spki_len(spki: &SubjectPublicKeyInfo<'_>) -> Result<usize> {
     let alg_id_len = algorithm_identifier_len(&spki.algorithm)?;
     let public_key_len = header_len(spki.subject_public_key.len())?
         .checked_add(spki.subject_public_key.len())
-        .ok_or(Error)?;
-    let sequence_len = alg_id_len.checked_add(public_key_len).ok_or(Error)?;
-    header_len(sequence_len).and_then(|n| n.checked_add(sequence_len).ok_or(Error))
+        .ok_or(Error::Encode)?;
+    let sequence_len = alg_id_len
+        .checked_add(public_key_len)
+        .ok_or(Error::Encode)?;
+    header_len(sequence_len).and_then(|n| n.checked_add(sequence_len).ok_or(Error::Encode))
 }
 
 /// Encode [`SubjectPublicKeyInfo`]
@@ -174,8 +181,10 @@ pub(crate) fn encode_spki(buffer: &mut [u8], spki: &SubjectPublicKeyInfo<'_>) ->
     let alg_id_len = algorithm_identifier_len(&spki.algorithm)?;
     let private_key_len = header_len(spki.subject_public_key.len())?
         .checked_add(spki.subject_public_key.len())
-        .ok_or(Error)?;
-    let sequence_len = alg_id_len.checked_add(private_key_len).ok_or(Error)?;
+        .ok_or(Error::Encode)?;
+    let sequence_len = alg_id_len
+        .checked_add(private_key_len)
+        .ok_or(Error::Encode)?;
 
     let mut offset = encode_header(buffer, Tag::Sequence, sequence_len)?;
     offset += encode_algorithm_identifier(&mut buffer[offset..], &spki.algorithm)?;
