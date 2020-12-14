@@ -69,6 +69,21 @@ impl PrivateKeyDocument {
         Self::from_pem(pem)
     }
 
+    /// Write ASN.1 DER-encoded PKCS#8 private key to the given path
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    pub fn write_der_file(&self, path: impl AsRef<Path>) -> Result<()> {
+        write_secret_file(path, self.as_ref())
+    }
+
+    /// Write PEM-encoded PKCS#8 private key to the given path
+    #[cfg(all(feature = "pem", feature = "std"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    pub fn write_pem_file(&self, path: impl AsRef<Path>) -> Result<()> {
+        write_secret_file(path, self.to_pem().as_bytes())
+    }
+
     /// Parse the [`PrivateKeyInfo`] contained in this [`PrivateKeyDocument`]
     pub fn private_key_info(&self) -> PrivateKeyInfo<'_> {
         PrivateKeyInfo::from_der(self.0.as_ref()).expect("constructor failed to validate document")
@@ -176,6 +191,21 @@ impl PublicKeyDocument {
         Self::from_pem(&pem)
     }
 
+    /// Write ASN.1 DER-encoded public key to the given path
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    pub fn write_der_file(&self, path: impl AsRef<Path>) -> Result<()> {
+        fs::write(path, self.as_ref()).map_err(|_| Error)
+    }
+
+    /// Write PEM-encoded public key to the given path
+    #[cfg(all(feature = "pem", feature = "std"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    pub fn write_pem_file(&self, path: impl AsRef<Path>) -> Result<()> {
+        fs::write(path, self.to_pem().as_bytes()).map_err(|_| Error)
+    }
+
     /// Parse the [`SubjectPublicKeyInfo`] contained in this [`PublicKeyDocument`]
     pub fn spki(&self) -> SubjectPublicKeyInfo<'_> {
         SubjectPublicKeyInfo::from_der(self.0.as_ref())
@@ -225,4 +255,31 @@ impl FromStr for PublicKeyDocument {
     fn from_str(s: &str) -> Result<Self> {
         Self::from_pem(s)
     }
+}
+
+/// Write a file containing secret data to the filesystem, restricting the
+/// file permissions so it's only readable by the owner
+#[cfg(all(unix, feature = "std"))]
+fn write_secret_file(path: impl AsRef<Path>, data: &[u8]) -> Result<()> {
+    use std::{io::Write, os::unix::fs::OpenOptionsExt};
+
+    /// File permissions for secret data
+    #[cfg(unix)]
+    const SECRET_FILE_PERMS: u32 = 0o600;
+
+    fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .mode(SECRET_FILE_PERMS)
+        .open(path)
+        .and_then(|mut file| file.write_all(data))
+        .map_err(|_| Error)
+}
+
+/// Write a file containing secret data to the filesystem
+// TODO(tarcieri): permissions hardening on Windows
+#[cfg(all(not(unix), feature = "std"))]
+fn write_secret_file(path: impl AsRef<Path>, data: &[u8]) -> Result<()> {
+    fs::write(path, data).map_err(|_| Error)
 }
