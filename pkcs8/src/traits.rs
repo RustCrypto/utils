@@ -49,16 +49,16 @@ pub trait FromPrivateKey: Sized {
     /// filesystem (binary format).
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    fn load_pkcs8_der_file(path: impl AsRef<Path>) -> Result<Self> {
-        PrivateKeyDocument::load_der_file(path).and_then(|doc| Self::from_pkcs8_doc(&doc))
+    fn read_pkcs8_der_file(path: impl AsRef<Path>) -> Result<Self> {
+        PrivateKeyDocument::read_der_file(path).and_then(|doc| Self::from_pkcs8_doc(&doc))
     }
 
     /// Load PKCS#8 private key from a PEM-encoded file on the local filesystem.
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    fn load_pkcs8_pem_file(path: impl AsRef<Path>) -> Result<Self> {
-        PrivateKeyDocument::load_pem_file(path).and_then(|doc| Self::from_pkcs8_doc(&doc))
+    fn read_pkcs8_pem_file(path: impl AsRef<Path>) -> Result<Self> {
+        PrivateKeyDocument::read_pem_file(path).and_then(|doc| Self::from_pkcs8_doc(&doc))
     }
 }
 
@@ -97,16 +97,16 @@ pub trait FromPublicKey: Sized {
     /// filesystem (binary format).
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    fn load_public_key_der_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        PublicKeyDocument::load_der_file(path).and_then(|doc| Self::from_public_key_doc(&doc))
+    fn read_public_key_der_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        PublicKeyDocument::read_der_file(path).and_then(|doc| Self::from_public_key_doc(&doc))
     }
 
     /// Load public key object from a PEM-encoded file on the local filesystem.
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    fn load_public_key_pem_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
-        PublicKeyDocument::load_pem_file(path).and_then(|doc| Self::from_public_key_doc(&doc))
+    fn read_public_key_pem_file(path: impl AsRef<std::path::Path>) -> Result<Self> {
+        PublicKeyDocument::read_pem_file(path).and_then(|doc| Self::from_public_key_doc(&doc))
     }
 }
 
