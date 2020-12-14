@@ -4,14 +4,26 @@
 //! # About
 //!
 //! This is a minimalistic library targeting `no_std` platforms and small code
-//! size. It avoids the use of any heap-based data structures.
+//! size. It supports decoding/encoding of the following types without the use
+//! of a heap:
 //!
-//! Presently only deserialization is supported.
+//! - [`PrivateKeyInfo`]: algorithm identifier and data representing a private key.
+//! - [`SubjectPublicKeyInfo`]: algorithm identifier and data representing a public key.
+//!
+//! When the `alloc` feature is enabled, the following additional types are
+//! available which provide more convenient decoding/encoding support:
+//!
+//! - [`PrivateKeyDocument`]: heap-backed storage for serialized [`PrivateKeyInfo`].
+//! - [`PublicKeyDocument`]: heap-backed storage for serialized [`SubjectPublicKeyInfo`].
+//!
+//! When the `pem` feature is enabled, it also supports decoding/encoding
+//! documents from "PEM encoding" format as defined in RFC 7468.
 //!
 //! # Supported Algorithms
 //!
 //! This crate is presently specialized for parsing RSA (`rsaEncryption`)
-//! and ECC (`id-ecPublicKey`) keys.
+//! and ECC (`id-ecPublicKey`) keys, but may work with other formats which
+//! use an optional OID for [`AlgorithmIdentifier`] parameters.
 //!
 //! Encrypted private keys are presently unsupported.
 //!
