@@ -1,6 +1,6 @@
 [package]
 name = "pkcs8"
-version = "0.2.1" # Also update html_root_url in lib.rs when bumping this
+version = "0.2.2" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #8:
 Private-Key Information Syntax Specification (RFC 5208)
