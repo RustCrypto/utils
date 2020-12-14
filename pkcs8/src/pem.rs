@@ -39,14 +39,16 @@ pub(crate) fn decode(s: &str, boundary: Boundary) -> Result<Zeroizing<Vec<u8>>> 
     let s = s.trim_end();
 
     // TODO(tarcieri): handle missing newlines
-    let s = s.strip_prefix(boundary.pre).ok_or(Error)?;
-    let s = s.strip_suffix(boundary.post).ok_or(Error)?;
+    let s = s.strip_prefix(boundary.pre).ok_or(Error::Decode)?;
+    let s = s.strip_suffix(boundary.post).ok_or(Error::Decode)?;
 
     // TODO(tarcieri): fix subtle-encoding to tolerate whitespace
     let mut s = Zeroizing::new(s.to_owned());
     s.retain(|c| !c.is_whitespace());
 
-    base64::decode(&*s).map_err(|_| Error).map(Zeroizing::new)
+    base64::decode(&*s)
+        .map_err(|_| Error::Decode)
+        .map(Zeroizing::new)
 }
 
 /// Serialize "PEM encoding" as described in RFC 7468:

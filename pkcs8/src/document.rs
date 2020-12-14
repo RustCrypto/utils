@@ -56,7 +56,7 @@ impl PrivateKeyDocument {
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn read_der_file(path: impl AsRef<Path>) -> Result<Self> {
-        fs::read(path).map_err(|_| Error).and_then(Self::try_from)
+        fs::read(path)?.try_into()
     }
 
     /// Load [`PrivateKeyDocument`] from a PEM-encoded file on the local filesystem.
@@ -64,8 +64,8 @@ impl PrivateKeyDocument {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn read_pem_file(path: impl AsRef<Path>) -> Result<Self> {
-        let bytes = fs::read(path).map(Zeroizing::new).map_err(|_| Error)?;
-        let pem = str::from_utf8(&*bytes).map_err(|_| Error)?;
+        let bytes = Zeroizing::new(fs::read(path)?);
+        let pem = str::from_utf8(&*bytes).map_err(|_| Error::Decode)?;
         Self::from_pem(pem)
     }
 
@@ -115,7 +115,7 @@ impl TryFrom<Vec<u8>> for PrivateKeyDocument {
             Ok(Self(Zeroizing::new(bytes)))
         } else {
             bytes.zeroize();
-            Err(Error)
+            Err(Error::Decode)
         }
     }
 }
@@ -179,7 +179,7 @@ impl PublicKeyDocument {
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn read_der_file(path: impl AsRef<Path>) -> Result<Self> {
-        fs::read(path).map_err(|_| Error).and_then(Self::try_from)
+        fs::read(path)?.try_into()
     }
 
     /// Load [`PublicKeyDocument`] from a PEM-encoded file on the local filesystem.
@@ -187,7 +187,7 @@ impl PublicKeyDocument {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn read_pem_file(path: impl AsRef<Path>) -> Result<Self> {
-        let pem = fs::read_to_string(path).map_err(|_| Error)?;
+        let pem = fs::read_to_string(path)?;
         Self::from_pem(&pem)
     }
 
@@ -195,7 +195,8 @@ impl PublicKeyDocument {
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn write_der_file(&self, path: impl AsRef<Path>) -> Result<()> {
-        fs::write(path, self.as_ref()).map_err(|_| Error)
+        fs::write(path, self.as_ref())?;
+        Ok(())
     }
 
     /// Write PEM-encoded public key to the given path
@@ -203,7 +204,8 @@ impl PublicKeyDocument {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn write_pem_file(&self, path: impl AsRef<Path>) -> Result<()> {
-        fs::write(path, self.to_pem().as_bytes()).map_err(|_| Error)
+        fs::write(path, self.to_pem().as_bytes())?;
+        Ok(())
     }
 
     /// Parse the [`SubjectPublicKeyInfo`] contained in this [`PublicKeyDocument`]
@@ -273,13 +275,15 @@ fn write_secret_file(path: impl AsRef<Path>, data: &[u8]) -> Result<()> {
         .truncate(true)
         .mode(SECRET_FILE_PERMS)
         .open(path)
-        .and_then(|mut file| file.write_all(data))
-        .map_err(|_| Error)
+        .and_then(|mut file| file.write_all(data))?;
+
+    Ok(())
 }
 
 /// Write a file containing secret data to the filesystem
 // TODO(tarcieri): permissions hardening on Windows
 #[cfg(all(not(unix), feature = "std"))]
 fn write_secret_file(path: impl AsRef<Path>, data: &[u8]) -> Result<()> {
-    fs::write(path, data).map_err(|_| Error)
+    fs::write(path, data)?;
+    Ok(())
 }
