@@ -9,12 +9,19 @@ use pkcs8::PublicKeyDocument;
 /// Elliptic Curve (P-256) `SubjectPublicKeyInfo` encoded as ASN.1 DER
 const EC_P256_DER_EXAMPLE: &[u8] = include_bytes!("examples/p256-pub.der");
 
+/// Ed25519 `SubjectPublicKeyInfo` encoded as ASN.1 DER
+const ED25519_DER_EXAMPLE: &[u8] = include_bytes!("examples/ed25519-pub.der");
+
 /// RSA-2048 `SubjectPublicKeyInfo` encoded as ASN.1 DER
 const RSA_2048_DER_EXAMPLE: &[u8] = include_bytes!("examples/rsa2048-pub.der");
 
 /// Elliptic Curve (P-256) public key encoded as PEM
 #[cfg(feature = "pem")]
 const EC_P256_PEM_EXAMPLE: &str = include_str!("examples/p256-pub.pem");
+
+/// Ed25519 public key encoded as PEM
+#[cfg(feature = "pem")]
+const ED25519_PEM_EXAMPLE: &str = include_str!("examples/ed25519-pub.pem");
 
 /// RSA-2048 PKCS#8 public key encoded as PEM
 #[cfg(feature = "pem")]
@@ -35,6 +42,18 @@ fn parse_ec_p256_der() {
 }
 
 #[test]
+fn parse_ed25519_der() {
+    let spki = SubjectPublicKeyInfo::from_der(ED25519_DER_EXAMPLE).unwrap();
+
+    assert_eq!(spki.algorithm.oid, "1.3.101.112".parse().unwrap());
+    assert_eq!(spki.algorithm.parameters, None);
+    assert_eq!(
+        spki.subject_public_key,
+        &hex!("004D29167F3F1912A6F7ADFA293A051A15C05EC67B8F17267B1C5550DCE853BD0D")[..]
+    );
+}
+
+#[test]
 fn parse_rsa_2048_der() {
     let spki = SubjectPublicKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
 
@@ -51,6 +70,17 @@ fn parse_ec_p256_pem() {
 
     // Ensure `PublicKeyDocument` parses successfully
     let spki = SubjectPublicKeyInfo::from_der(EC_P256_DER_EXAMPLE).unwrap();
+    assert_eq!(doc.spki(), spki);
+}
+
+#[test]
+#[cfg(feature = "pem")]
+fn parse_ed25519_pem() {
+    let doc: PublicKeyDocument = ED25519_PEM_EXAMPLE.parse().unwrap();
+    assert_eq!(doc.as_ref(), ED25519_DER_EXAMPLE);
+
+    // Ensure `PublicKeyDocument` parses successfully
+    let spki = SubjectPublicKeyInfo::from_der(ED25519_DER_EXAMPLE).unwrap();
     assert_eq!(doc.spki(), spki);
 }
 

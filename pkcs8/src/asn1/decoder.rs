@@ -113,29 +113,33 @@ pub(crate) fn decode_algorithm_identifier(input: &mut &[u8]) -> Result<Algorithm
 
     let (alg_bytes, mut param_bytes) = bytes.split_at(len);
     let algorithm = ObjectIdentifier::from_ber(alg_bytes)?;
-    let tag = decode_byte(&mut param_bytes)?;
 
-    let parameters = if tag == Tag::Null as u8 {
-        if decode_len(&mut param_bytes)? != 0 {
-            return Err(Error::Decode);
-        }
-
-        // Disallow any trailing data after the parameters
-        if !param_bytes.is_empty() {
-            return Err(Error::Decode);
-        }
-
+    let parameters = if param_bytes.is_empty() {
         None
-    } else if tag == Tag::ObjectIdentifier as u8 {
-        let len = decode_len(&mut param_bytes)?;
+    } else {
+        let tag = decode_byte(&mut param_bytes)?;
+        if tag == Tag::Null as u8 {
+            if decode_len(&mut param_bytes)? != 0 {
+                return Err(Error::Decode);
+            }
 
-        if len != param_bytes.len() {
+            // Disallow any trailing data after the parameters
+            if !param_bytes.is_empty() {
+                return Err(Error::Decode);
+            }
+
+            None
+        } else if tag == Tag::ObjectIdentifier as u8 {
+            let len = decode_len(&mut param_bytes)?;
+
+            if len != param_bytes.len() {
+                return Err(Error::Decode);
+            }
+
+            Some(ObjectIdentifier::from_ber(param_bytes)?)
+        } else {
             return Err(Error::Decode);
         }
-
-        Some(ObjectIdentifier::from_ber(param_bytes)?)
-    } else {
-        return Err(Error::Decode);
     };
 
     Ok(AlgorithmIdentifier {

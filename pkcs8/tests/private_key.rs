@@ -9,12 +9,19 @@ use pkcs8::PrivateKeyDocument;
 /// Elliptic Curve (P-256) PKCS#8 private key encoded as ASN.1 DER
 const EC_P256_DER_EXAMPLE: &[u8] = include_bytes!("examples/p256-priv.der");
 
+/// Ed25519 PKCS#8 private key encoded as ASN.1 DER
+const ED25519_DER_EXAMPLE: &[u8] = include_bytes!("examples/ed25519-priv.der");
+
 /// RSA-2048 PKCS#8 private key encoded as ASN.1 DER
 const RSA_2048_DER_EXAMPLE: &[u8] = include_bytes!("examples/rsa2048-priv.der");
 
 /// Elliptic Curve (P-256) PKCS#8 private key encoded as PEM
 #[cfg(feature = "pem")]
 const EC_P256_PEM_EXAMPLE: &str = include_str!("examples/p256-priv.pem");
+
+/// Ed25519 PKCS#8 private key encoded as PEM
+#[cfg(feature = "pem")]
+const ED25519_PEM_EXAMPLE: &str = include_str!("examples/ed25519-priv.pem");
 
 /// RSA-2048 PKCS#8 private key encoded as PEM
 #[cfg(feature = "pem")]
@@ -37,6 +44,21 @@ fn parse_ec_p256_der() {
 }
 
 #[test]
+fn parse_ed25519_der() {
+    let pk = PrivateKeyInfo::from_der(ED25519_DER_EXAMPLE).unwrap();
+
+    assert_eq!(pk.algorithm.oid, "1.3.101.112".parse().unwrap());
+    assert_eq!(pk.algorithm.parameters, None);
+
+    // Extracted with:
+    // $ openssl asn1parse -in tests/examples/ed25519-priv.der -inform der
+    assert_eq!(
+        pk.private_key,
+        &hex!("042017ED9C73E9DB649EC189A612831C5FC570238207C1AA9DFBD2C53E3FF5E5EA85")[..]
+    );
+}
+
+#[test]
 fn parse_rsa_2048_der() {
     let pk = PrivateKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
 
@@ -56,6 +78,17 @@ fn parse_ec_p256_pem() {
 
     // Ensure `PrivateKeyDocument` parses successfully
     let pk_info = PrivateKeyInfo::from_der(EC_P256_DER_EXAMPLE).unwrap();
+    assert_eq!(pkcs8_doc.private_key_info().algorithm, pk_info.algorithm);
+}
+
+#[test]
+#[cfg(feature = "pem")]
+fn parse_ed25519_pem() {
+    let pkcs8_doc: PrivateKeyDocument = ED25519_PEM_EXAMPLE.parse().unwrap();
+    assert_eq!(pkcs8_doc.as_ref(), ED25519_DER_EXAMPLE);
+
+    // Ensure `PrivateKeyDocument` parses successfully
+    let pk_info = PrivateKeyInfo::from_der(ED25519_DER_EXAMPLE).unwrap();
     assert_eq!(pkcs8_doc.private_key_info().algorithm, pk_info.algorithm);
 }
 
