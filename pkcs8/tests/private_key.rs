@@ -104,14 +104,14 @@ fn serialize_rsa_2048_pem() {
 
 #[test]
 #[cfg(feature = "std")]
-fn load_der_file() {
-    let pkcs8_doc = PrivateKeyDocument::load_der_file("tests/examples/p256-priv.der").unwrap();
+fn read_der_file() {
+    let pkcs8_doc = PrivateKeyDocument::read_der_file("tests/examples/p256-priv.der").unwrap();
     assert_eq!(pkcs8_doc.as_ref(), EC_P256_DER_EXAMPLE);
 }
 
 #[test]
 #[cfg(all(feature = "pem", feature = "std"))]
-fn load_pem_file() {
-    let pkcs8_doc = PrivateKeyDocument::load_pem_file("tests/examples/p256-priv.pem").unwrap();
+fn read_pem_file() {
+    let pkcs8_doc = PrivateKeyDocument::read_pem_file("tests/examples/p256-priv.pem").unwrap();
     assert_eq!(pkcs8_doc.as_ref(), EC_P256_DER_EXAMPLE);
 }

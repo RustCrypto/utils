@@ -55,7 +55,7 @@ impl PrivateKeyDocument {
     /// filesystem (binary format).
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn load_der_file(path: impl AsRef<Path>) -> Result<Self> {
+    pub fn read_der_file(path: impl AsRef<Path>) -> Result<Self> {
         fs::read(path).map_err(|_| Error).and_then(Self::try_from)
     }
 
@@ -63,7 +63,7 @@ impl PrivateKeyDocument {
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn load_pem_file(path: impl AsRef<Path>) -> Result<Self> {
+    pub fn read_pem_file(path: impl AsRef<Path>) -> Result<Self> {
         let bytes = fs::read(path).map(Zeroizing::new).map_err(|_| Error)?;
         let pem = str::from_utf8(&*bytes).map_err(|_| Error)?;
         Self::from_pem(pem)
@@ -178,7 +178,7 @@ impl PublicKeyDocument {
     /// filesystem (binary format).
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn load_der_file(path: impl AsRef<Path>) -> Result<Self> {
+    pub fn read_der_file(path: impl AsRef<Path>) -> Result<Self> {
         fs::read(path).map_err(|_| Error).and_then(Self::try_from)
     }
 
@@ -186,7 +186,7 @@ impl PublicKeyDocument {
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn load_pem_file(path: impl AsRef<Path>) -> Result<Self> {
+    pub fn read_pem_file(path: impl AsRef<Path>) -> Result<Self> {
         let pem = fs::read_to_string(path).map_err(|_| Error)?;
         Self::from_pem(&pem)
     }

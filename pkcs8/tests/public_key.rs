@@ -99,14 +99,14 @@ fn serialize_rsa_2048_pem() {
 
 #[test]
 #[cfg(feature = "std")]
-fn load_der_file() {
-    let pkcs8_doc = PublicKeyDocument::load_der_file("tests/examples/p256-pub.der").unwrap();
+fn read_der_file() {
+    let pkcs8_doc = PublicKeyDocument::read_der_file("tests/examples/p256-pub.der").unwrap();
     assert_eq!(pkcs8_doc.as_ref(), EC_P256_DER_EXAMPLE);
 }
 
 #[test]
 #[cfg(all(feature = "pem", feature = "std"))]
-fn load_pem_file() {
-    let pkcs8_doc = PublicKeyDocument::load_pem_file("tests/examples/p256-pub.pem").unwrap();
+fn read_pem_file() {
+    let pkcs8_doc = PublicKeyDocument::read_pem_file("tests/examples/p256-pub.pem").unwrap();
     assert_eq!(pkcs8_doc.as_ref(), EC_P256_DER_EXAMPLE);
 }
