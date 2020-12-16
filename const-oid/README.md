@@ -1,4 +1,4 @@
-# RustCrypto: Object Identifier (OID) Constants
+# RustCrypto: X.660 Object Identifiers (OID)
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -7,10 +7,28 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-Const-friendly ISO/IEC Object Identifier (OID) library with support for
-heapless `no_std`-environments
+Const-friendly implementation of the ISO/IEC Object Identifier (OID) standard
+as defined in ITU [X.660], with support for BER/DER encoding/decoding as well
+as heapless `no_std` (i.e. embedded) environments.
 
 [Documentation][docs-link]
+
+## About OIDs
+
+Object Identifiers, a.k.a. OIDs, are an International Telecommunications
+Union (ITU) and ISO/IEC standard for naming any object, concept, or "thing"
+with a globally unambiguous persistent name.
+
+OIDS are defined in the ITU's [X.660] standard.
+
+The following is an example of an OID, in this case identifying the
+`rsaEncryption` algorithm:
+
+```text
+1.2.840.113549.1.1.1
+```
+
+For more information, see: <https://en.wikipedia.org/wiki/Object_identifier>
 
 ## License
 
@@ -39,3 +57,7 @@ dual licensed as above, without any additional terms or conditions.
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
 [build-image]: https://github.com/RustCrypto/utils/workflows/const-oid/badge.svg?branch=master&event=push
 [build-link]: https://github.com/RustCrypto/utils/actions
+
+[//]: # (general links)
+
+[X.660]: https://www.itu.int/rec/T-REC-X.660
