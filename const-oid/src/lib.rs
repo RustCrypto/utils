@@ -18,6 +18,14 @@
 //!
 //! For more information, see: <https://en.wikipedia.org/wiki/Object_identifier>
 //!
+//! # Limits
+//!
+//! This library stores OIDs using a compact fixed-size layout and enforces
+//! the following constraints on the number of arcs:
+//!
+//! - Minimum number of arcs: 3 (i.e. [`MIN_ARCS`])
+//! - Maximum number of arcs: 12 (i.e. [`MAX_ARCS`])
+//!
 //! # Minimum Supported Rust Version
 //!
 //! This crate requires **Rust 1.46** at a minimum.
@@ -48,6 +56,11 @@ use core::{
     fmt,
     str::{FromStr, Split},
 };
+
+/// Minimum number of arcs in an OID.
+///
+/// This library will refuse to parse OIDs with fewer than this number of arcs.
+pub const MIN_ARCS: usize = 3;
 
 /// Maximum number of arcs in an OID.
 ///
@@ -129,7 +142,7 @@ impl ObjectIdentifier {
     ///
     /// [1]: ./struct.ObjectIdentifier.html#impl-TryFrom%3C%26%27_%20%5Bu32%5D%3E
     pub const fn new(arcs: &[u32]) -> Self {
-        const_assert!(arcs.len() >= 3, "OID too short (minimum 3 arcs)");
+        const_assert!(arcs.len() >= MIN_ARCS, "OID too short (minimum 3 arcs)");
         const_assert!(
             arcs.len() <= MAX_ARCS,
             "OID too long (internal limit reached)"
@@ -196,7 +209,7 @@ impl ObjectIdentifier {
             _ => [0u32; MAX_LOWER_ARCS], // Checks above prevent this case, but makes Miri happy
         };
 
-        // TODO(tarcieri): use `LowerArcs` constructor when const-friendly
+        // TODO(tarcieri): use `LowerArcs::new` when `const fn`-friendly
         Self {
             root_arcs,
             lower_arcs: LowerArcs {
@@ -297,7 +310,7 @@ impl TryFrom<&[u32]> for ObjectIdentifier {
     type Error = Error;
 
     fn try_from(arcs: &[u32]) -> Result<Self> {
-        if arcs.len() < 3 || arcs.len() > MAX_ARCS {
+        if arcs.len() < MIN_ARCS || arcs.len() > MAX_ARCS {
             return Err(Error);
         }
 
@@ -363,11 +376,7 @@ impl RootArcs {
     /// Create [`RootArcs`] from the first and second arc values represented
     /// as `u32` integers.
     fn new(first_arc: u32, second_arc: u32) -> Result<Self> {
-        if first_arc > FIRST_ARC_MAX {
-            return Err(Error);
-        }
-
-        if second_arc > SECOND_ARC_MAX {
+        if first_arc > FIRST_ARC_MAX || second_arc > SECOND_ARC_MAX {
             return Err(Error);
         }
 
@@ -413,6 +422,19 @@ struct LowerArcs {
 }
 
 impl LowerArcs {
+    /// Create new [`LowerArcs`] from an array and length, validating length
+    /// is in range (1..MAX_LOWER_ARCS)
+    fn new(arcs: [u32; MAX_LOWER_ARCS], length: usize) -> Result<Self> {
+        if length > 0 && length < MAX_LOWER_ARCS {
+            Ok(Self {
+                arcs,
+                length: length as u8,
+            })
+        } else {
+            Err(Error)
+        }
+    }
+
     /// Parse [`LowerArcs`] from ASN.1 BER.
     fn from_ber(mut bytes: &[u8]) -> Result<Self> {
         let mut arcs = [0u32; MAX_LOWER_ARCS];
@@ -424,15 +446,7 @@ impl LowerArcs {
             index = index.checked_add(1).unwrap();
         }
 
-        // Require at LEAST one lower arc
-        if index > 0 {
-            Ok(LowerArcs {
-                arcs,
-                length: index as u8,
-            })
-        } else {
-            Err(Error)
-        }
+        Self::new(arcs, index)
     }
 
     /// Helper for parsing [`LowerArcs`] from a string
@@ -446,7 +460,7 @@ impl LowerArcs {
             length += 1;
         }
 
-        Ok(Self { arcs, length })
+        Self::new(arcs, length)
     }
 
     /// Get the number of lower arcs
@@ -580,6 +594,9 @@ mod tests {
         let oid = EXAMPLE_OID_STRING.parse::<ObjectIdentifier>().unwrap();
         assert_eq!(oid, EXAMPLE_OID);
 
+        // Too short
+        assert!("1.2".parse::<ObjectIdentifier>().is_err());
+
         // Truncated
         assert!("1.2.840.10045.2.".parse::<ObjectIdentifier>().is_err());
 
@@ -595,7 +612,7 @@ mod tests {
         let oid = ObjectIdentifier::try_from([1, 2, 840, 10045, 2, 1].as_ref()).unwrap();
         assert_eq!(EXAMPLE_OID, oid);
 
-        // Truncated
+        // Too short
         assert!(ObjectIdentifier::try_from([1, 2].as_ref()).is_err());
 
         // Invalid first arc
@@ -620,19 +637,19 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn truncated_oid() {
+    fn new_too_short() {
         ObjectIdentifier::new(&[1, 2]);
     }
 
     #[test]
     #[should_panic]
-    fn invalid_first_arc() {
+    fn new_invalid_first_arc() {
         ObjectIdentifier::new(&[3, 2, 840, 10045, 3, 1, 7]);
     }
 
     #[test]
     #[should_panic]
-    fn invalid_second_arc() {
+    fn new_invalid_second_arc() {
         ObjectIdentifier::new(&[1, 40, 840, 10045, 3, 1, 7]);
     }
 }
