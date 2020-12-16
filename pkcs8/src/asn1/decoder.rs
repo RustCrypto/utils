@@ -10,7 +10,8 @@
 
 use super::Tag;
 use crate::{
-    AlgorithmIdentifier, Error, ObjectIdentifier, PrivateKeyInfo, Result, SubjectPublicKeyInfo,
+    AlgorithmIdentifier, AlgorithmParameters, Error, ObjectIdentifier, PrivateKeyInfo, Result,
+    SubjectPublicKeyInfo,
 };
 
 /// Parse a single byte from a slice
@@ -128,7 +129,7 @@ pub(crate) fn decode_algorithm_identifier(input: &mut &[u8]) -> Result<Algorithm
                 return Err(Error::Decode);
             }
 
-            None
+            Some(AlgorithmParameters::Null)
         } else if tag == Tag::ObjectIdentifier as u8 {
             let len = decode_len(&mut param_bytes)?;
 
@@ -136,7 +137,8 @@ pub(crate) fn decode_algorithm_identifier(input: &mut &[u8]) -> Result<Algorithm
                 return Err(Error::Decode);
             }
 
-            Some(ObjectIdentifier::from_ber(param_bytes)?)
+            let oid = ObjectIdentifier::from_ber(param_bytes)?;
+            Some(AlgorithmParameters::Oid(oid))
         } else {
             return Err(Error::Decode);
         }

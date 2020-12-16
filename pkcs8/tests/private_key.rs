@@ -34,7 +34,7 @@ fn parse_ec_p256_der() {
     assert_eq!(pk.algorithm.oid, "1.2.840.10045.2.1".parse().unwrap());
 
     assert_eq!(
-        pk.algorithm.parameters.unwrap(),
+        pk.algorithm.parameters.unwrap().oid().unwrap(),
         "1.2.840.10045.3.1.7".parse().unwrap()
     );
 
@@ -63,7 +63,7 @@ fn parse_rsa_2048_der() {
     let pk = PrivateKeyInfo::from_der(RSA_2048_DER_EXAMPLE).unwrap();
 
     assert_eq!(pk.algorithm.oid, "1.2.840.113549.1.1.1".parse().unwrap());
-    assert_eq!(pk.algorithm.parameters, None);
+    assert!(pk.algorithm.parameters.unwrap().is_null());
 
     // Extracted with:
     // $ openssl asn1parse -in tests/examples/rsa2048-priv.der -inform der
