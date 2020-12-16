@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 (2020-12-16)
+### Added
+- `Arcs` iterator ([#141], [#142])
+
+### Changed
+- Rename "nodes" to "arcs" ([#142])
+- Layout optimization ([#143])
+- Refactor and improve length limits ([#144])
+
+[#144]: https://github.com/RustCrypto/utils/pull/144
+[#143]: https://github.com/RustCrypto/utils/pull/143
+[#142]: https://github.com/RustCrypto/utils/pull/142
+[#141]: https://github.com/RustCrypto/utils/pull/141
+
 ## 0.3.5 (2020-12-12)
 ### Added
 - `ObjectIdentifier::{write_ber, to_ber}` methods ([#118])
