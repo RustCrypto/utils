@@ -70,7 +70,7 @@ version = "0.3.0"
 
 [[package]]
 name = "pkcs8"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "const-oid",
  "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
