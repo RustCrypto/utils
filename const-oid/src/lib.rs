@@ -43,13 +43,24 @@ extern crate alloc;
 #[cfg(any(feature = "std", test))]
 extern crate std;
 
-use core::{convert::TryFrom, fmt, str::FromStr};
+use core::{
+    convert::TryFrom,
+    fmt,
+    str::{FromStr, Split},
+};
 
 /// Maximum number of arcs in an OID.
 ///
-/// Note: this limit is not a part of the OID standard, but represents an
-/// internal size constraint of this library.
-pub const MAX_ARCS: usize = 10;
+/// Note: this limit is not defined in OID standards, but instead represents an
+/// internal size constraint of this library. It represents an upper bound for
+/// this library's intended use cases (i.e. RustCrypto), but can be adjusted
+/// upward if there is a legitimate use case (please file a GitHub issue if you
+/// have a use case for increasing this limit in practice).
+pub const MAX_ARCS: usize = 12;
+
+/// Maximum number of "lower" arcs, which does not include the first and second
+/// arcs, which are stored as [`RootArcs`].
+const MAX_LOWER_ARCS: usize = MAX_ARCS - 2;
 
 /// Maximum value of the first arc in an OID
 const FIRST_ARC_MAX: u32 = 2;
@@ -76,11 +87,13 @@ pub type Result<T> = core::result::Result<T, Error>;
 /// Object identifier (OID)
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct ObjectIdentifier {
-    /// Arcs in this OID
-    arcs: [u32; MAX_ARCS],
+    /// Byte containing the first and second arcs of this OID, stored
+    /// separately from the others to minimize this type's size.
+    root_arcs: RootArcs,
 
-    /// Number of arcs in this OID
-    length: usize,
+    /// Additional "lower" arcs beyond the first and second arcs, which are
+    /// stored as [`RootArcs`].
+    lower_arcs: LowerArcs,
 }
 
 /// Constant panicking assertion.
@@ -121,54 +134,84 @@ impl ObjectIdentifier {
             arcs.len() <= MAX_ARCS,
             "OID too long (internal limit reached)"
         );
-        const_assert!(arcs[0] <= FIRST_ARC_MAX, "invalid first arc (must be 0-2)");
+
+        let first_arc = arcs[0];
         const_assert!(
-            arcs[1] <= SECOND_ARC_MAX,
+            first_arc <= FIRST_ARC_MAX,
+            "invalid first arc (must be 0-2)"
+        );
+
+        let second_arc = arcs[1];
+        const_assert!(
+            second_arc <= SECOND_ARC_MAX,
             "invalid second arc (must be 0-39)"
         );
+
+        let root_arcs = RootArcs((first_arc * (SECOND_ARC_MAX + 1)) as u8 | second_arc as u8);
 
         // TODO(tarcieri): use `const_mut_ref` when stable.
         // See: <https://github.com/rust-lang/rust/issues/57349>
         #[rustfmt::skip]
-        let n = match arcs.len() {
+        let lower_arcs = match arcs.len() {
             3 => [
-                arcs[0], arcs[1], arcs[2], 0, 0,
+                arcs[2], 0, 0, 0, 0,
                 0, 0, 0, 0, 0
             ],
             4 => [
-                arcs[0], arcs[1], arcs[2], arcs[3], 0,
+                arcs[2], arcs[3], arcs[4], 0, 0,
                 0, 0, 0, 0, 0
             ],
             5 => [
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4],
-                0, 0, 0, 0, 0,
+                arcs[2], arcs[3], arcs[4], 0, 0,
+                0, 0, 0, 0, 0
             ],
             6 => [
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4],
-                arcs[5], 0, 0, 0, 0,
+                arcs[2], arcs[3], arcs[4], arcs[5], 0,
+                0, 0, 0, 0, 0
             ],
             7 => [
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4],
-                arcs[5], arcs[6], 0, 0, 0,
+                arcs[2], arcs[3], arcs[4], arcs[5], arcs[6],
+                0, 0, 0, 0, 0,
             ],
             8 => [
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4],
-                arcs[5], arcs[6], arcs[7], 0, 0,
+                arcs[2], arcs[3], arcs[4], arcs[5], arcs[6],
+                arcs[7], 0, 0, 0, 0,
             ],
             9 => [
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4],
-                arcs[5], arcs[6], arcs[7], arcs[8], 0,
+                arcs[2], arcs[3], arcs[4], arcs[5], arcs[6],
+                arcs[7], arcs[8], 0, 0, 0,
             ],
             10 => [
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4],
-                arcs[5], arcs[6], arcs[7], arcs[8], arcs[9],
+                arcs[2], arcs[3], arcs[4], arcs[5], arcs[6],
+                arcs[7], arcs[8], arcs[9], 0, 0,
             ],
-            _ => [0u32; MAX_ARCS], // Checks above prevent this case, but makes Miri happy
+            11 => [
+                arcs[2], arcs[3], arcs[4], arcs[5], arcs[6],
+                arcs[7], arcs[8], arcs[9], arcs[10], 0,
+            ],
+            12 => [
+                arcs[2], arcs[3], arcs[4], arcs[5], arcs[6],
+                arcs[7], arcs[8], arcs[9], arcs[10], arcs[11],
+            ],
+            _ => [0u32; MAX_LOWER_ARCS], // Checks above prevent this case, but makes Miri happy
         };
 
+        // TODO(tarcieri): use `LowerArcs` constructor when const-friendly
         Self {
-            arcs: n,
-            length: arcs.len(),
+            root_arcs,
+            lower_arcs: LowerArcs {
+                length: (arcs.len() - 2) as u8,
+                arcs: lower_arcs,
+            },
+        }
+    }
+
+    /// Return the arc with the given index, if it exists.
+    pub fn arc(&self, index: usize) -> Option<u32> {
+        match index {
+            0 => Some(self.root_arcs.first_arc()),
+            1 => Some(self.root_arcs.second_arc()),
+            n => self.lower_arcs.as_ref().get(n - 2).cloned(),
         }
     }
 
@@ -185,41 +228,24 @@ impl ObjectIdentifier {
 
     /// Number of arcs in this [`ObjectIdentifier`].
     pub fn len(&self) -> usize {
-        self.length
+        2 + self.lower_arcs.len()
     }
 
     /// Parse an OID from from its BER/DER encoding.
     pub fn from_ber(mut bytes: &[u8]) -> Result<Self> {
-        let octet = parse_byte(&mut bytes)?;
+        let root_arcs = parse_byte(&mut bytes).and_then(RootArcs::try_from)?;
+        let lower_arcs = LowerArcs::from_ber(bytes)?;
 
-        let mut arcs = [0u32; MAX_ARCS];
-        arcs[0] = (octet / (SECOND_ARC_MAX as u8 + 1)) as u32;
-        arcs[1] = (octet % (SECOND_ARC_MAX as u8 + 1)) as u32;
-
-        let mut length = 2;
-
-        while !bytes.is_empty() {
-            arcs[length] = parse_base128(&mut bytes)?;
-            length += 1;
-
-            if length > MAX_ARCS {
-                return Err(Error);
-            }
-        }
-
-        if length < 3 {
-            return Err(Error);
-        }
-
-        validate_arcs(arcs)?;
-        Ok(Self { arcs, length })
+        Ok(Self {
+            root_arcs,
+            lower_arcs,
+        })
     }
 
     /// Get the length of this OID when serialized as ASN.1 BER.
     pub fn ber_len(&self) -> usize {
-        self.arcs[2..self.length]
-            .iter()
-            .fold(1, |sum, n| sum + base128_len(*n))
+        // 1-byte from serialized `RootArcs`
+        1 + self.lower_arcs.ber_len()
     }
 
     /// Write the BER encoding of this OID into the given slice, returning
@@ -229,11 +255,11 @@ impl ObjectIdentifier {
             return Err(Error);
         }
 
-        bytes[0] = (self.arcs[0] * (SECOND_ARC_MAX + 1)) as u8 | self.arcs[1] as u8;
+        bytes[0] = self.root_arcs.into();
 
         let mut offset = 1;
 
-        for &arc in &self.arcs[2..self.length] {
+        for &arc in self.lower_arcs.as_ref() {
             offset += write_base128(&mut bytes[offset..], arc)?;
         }
 
@@ -245,8 +271,7 @@ impl ObjectIdentifier {
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn to_ber(&self) -> alloc::vec::Vec<u8> {
         let mut output = vec![0u8; self.ber_len()];
-        self.write_ber(&mut output)
-            .expect("incorrectly sized buffer");
+        self.write_ber(&mut output).expect("bad buffer size");
         output
     }
 }
@@ -255,20 +280,16 @@ impl FromStr for ObjectIdentifier {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let mut arcs = [0u32; MAX_ARCS];
-        let mut length = 0;
+        let mut split = s.split('.');
+        let first_arc = split.next().and_then(|s| s.parse().ok()).ok_or(Error)?;
+        let second_arc = split.next().and_then(|s| s.parse().ok()).ok_or(Error)?;
+        let root_arcs = RootArcs::new(first_arc, second_arc)?;
+        let lower_arcs = LowerArcs::from_split(&mut split)?;
 
-        for (i, n) in s.split('.').enumerate() {
-            if i + 1 == MAX_ARCS {
-                return Err(Error);
-            }
-
-            arcs[i] = n.parse().map_err(|_| Error)?;
-            length += 1;
-        }
-
-        validate_arcs(arcs)?;
-        Ok(Self { arcs, length })
+        Ok(Self {
+            root_arcs,
+            lower_arcs,
+        })
     }
 }
 
@@ -280,13 +301,12 @@ impl TryFrom<&[u32]> for ObjectIdentifier {
             return Err(Error);
         }
 
-        let mut arcs_arr = [0u32; MAX_ARCS];
-        arcs_arr[..arcs.len()].copy_from_slice(arcs);
-        validate_arcs(arcs_arr)?;
+        let root_arcs = RootArcs::new(arcs[0], arcs[1])?;
+        let lower_arcs = LowerArcs::try_from(&arcs[2..])?;
 
         Ok(Self {
-            arcs: arcs_arr,
-            length: arcs.len(),
+            root_arcs,
+            lower_arcs,
         })
     }
 }
@@ -326,27 +346,142 @@ impl Iterator for Arcs {
     type Item = u32;
 
     fn next(&mut self) -> Option<u32> {
-        if self.index < self.oid.length {
-            let arc = self.oid.arcs[self.index];
-            self.index = self.index.checked_add(1).unwrap();
-            Some(arc)
-        } else {
-            None
-        }
+        let arc = self.oid.arc(self.index)?;
+        self.index = self.index.checked_add(1).unwrap();
+        Some(arc)
     }
 }
 
-/// Run validations on a arc array
-fn validate_arcs(arcs: [u32; MAX_ARCS]) -> Result<()> {
-    if arcs[0] > FIRST_ARC_MAX {
-        return Err(Error);
+/// Byte containing the first and second arcs of an OID.
+///
+/// This is represented this way in order to reduce the overall size of the
+/// [`ObjectIdentifier`] struct.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+struct RootArcs(u8);
+
+impl RootArcs {
+    /// Create [`RootArcs`] from the first and second arc values represented
+    /// as `u32` integers.
+    fn new(first_arc: u32, second_arc: u32) -> Result<Self> {
+        if first_arc > FIRST_ARC_MAX {
+            return Err(Error);
+        }
+
+        if second_arc > SECOND_ARC_MAX {
+            return Err(Error);
+        }
+
+        let byte = (first_arc * (SECOND_ARC_MAX + 1)) as u8 | second_arc as u8;
+        Ok(Self(byte))
     }
 
-    if arcs[1] > SECOND_ARC_MAX {
-        return Err(Error);
+    /// Get the value of the first arc
+    fn first_arc(self) -> u32 {
+        self.0 as u32 / (SECOND_ARC_MAX + 1)
     }
 
-    Ok(())
+    /// Get the value of the second arc
+    fn second_arc(self) -> u32 {
+        self.0 as u32 % (SECOND_ARC_MAX + 1)
+    }
+}
+
+impl TryFrom<u8> for RootArcs {
+    type Error = Error;
+
+    fn try_from(octet: u8) -> Result<Self> {
+        let first = octet as u32 / (SECOND_ARC_MAX + 1);
+        let second = octet as u32 % (SECOND_ARC_MAX + 1);
+        Self::new(first, second)
+    }
+}
+
+impl From<RootArcs> for u8 {
+    fn from(root_arcs: RootArcs) -> u8 {
+        root_arcs.0
+    }
+}
+
+/// "Lower" arcs beyond the first and second arcs in an OID.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+struct LowerArcs {
+    /// Number of additional "lower" arcs.
+    length: u8,
+
+    /// "Lower" arc values.
+    arcs: [u32; MAX_LOWER_ARCS],
+}
+
+impl LowerArcs {
+    /// Parse [`LowerArcs`] from ASN.1 BER.
+    fn from_ber(mut bytes: &[u8]) -> Result<Self> {
+        let mut arcs = [0u32; MAX_LOWER_ARCS];
+        let mut index = 0;
+
+        while !bytes.is_empty() {
+            let byte = arcs.get_mut(index).ok_or(Error)?;
+            *byte = parse_base128(&mut bytes)?;
+            index = index.checked_add(1).unwrap();
+        }
+
+        // Require at LEAST one lower arc
+        if index > 0 {
+            Ok(LowerArcs {
+                arcs,
+                length: index as u8,
+            })
+        } else {
+            Err(Error)
+        }
+    }
+
+    /// Helper for parsing [`LowerArcs`] from a string
+    fn from_split(split: &mut Split<'_, char>) -> Result<Self> {
+        let mut arcs = [0u32; MAX_LOWER_ARCS];
+        let mut length = 0;
+
+        for (i, n) in split.enumerate() {
+            let arc = arcs.get_mut(i).ok_or(Error)?;
+            *arc = n.parse().map_err(|_| Error)?;
+            length += 1;
+        }
+
+        Ok(Self { arcs, length })
+    }
+
+    /// Get the number of lower arcs
+    pub fn len(&self) -> usize {
+        self.length as usize
+    }
+
+    /// Get the length of the lower arcs when serialized as ASN.1 BER.
+    pub fn ber_len(&self) -> usize {
+        self.as_ref().iter().fold(0, |sum, n| sum + base128_len(*n))
+    }
+}
+
+impl AsRef<[u32]> for LowerArcs {
+    fn as_ref(&self) -> &[u32] {
+        &self.arcs[..self.len()]
+    }
+}
+
+impl TryFrom<&[u32]> for LowerArcs {
+    type Error = Error;
+
+    fn try_from(arcs: &[u32]) -> Result<Self> {
+        if arcs.len() > MAX_LOWER_ARCS {
+            return Err(Error);
+        }
+
+        let mut lower_arcs = [0u32; MAX_LOWER_ARCS];
+        lower_arcs[..arcs.len()].copy_from_slice(arcs);
+
+        Ok(Self {
+            arcs: lower_arcs,
+            length: arcs.len() as u8,
+        })
+    }
 }
 
 /// Parse a single byte from a slice
@@ -424,8 +559,7 @@ mod tests {
 
     #[test]
     fn display() {
-        let oid = EXAMPLE_OID.to_string();
-        assert_eq!(oid, EXAMPLE_OID_STRING);
+        assert_eq!(EXAMPLE_OID.to_string(), EXAMPLE_OID_STRING);
     }
 
     #[test]
