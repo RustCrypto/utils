@@ -91,6 +91,7 @@ macro_rules! const_assert {
     };
 }
 
+#[allow(clippy::len_without_is_empty)]
 impl ObjectIdentifier {
     /// Create an OID from a slice of integers.
     ///
@@ -172,6 +173,21 @@ impl ObjectIdentifier {
         }
     }
 
+    /// Iterate over the nodes in an [`ObjectIdentifier`].
+    ///
+    /// This returns [`Nodes`], an iterator over `u32` values.
+    pub fn nodes(&self) -> Nodes {
+        Nodes {
+            oid: *self,
+            index: 0,
+        }
+    }
+
+    /// Number of nodes in this [`ObjectIdentifier`].
+    pub fn len(&self) -> usize {
+        self.length
+    }
+
     /// Parse an OID from from its BER/DER encoding.
     pub fn from_ber(mut bytes: &[u8]) -> Result<Self> {
         let octet = parse_byte(&mut bytes)?;
@@ -201,7 +217,7 @@ impl ObjectIdentifier {
 
     /// Get the length of this OID when serialized as ASN.1 BER
     pub fn ber_len(&self) -> usize {
-        self.as_ref()[2..]
+        self.nodes[2..self.length]
             .iter()
             .fold(1, |sum, n| sum + base128_len(*n))
     }
@@ -217,7 +233,7 @@ impl ObjectIdentifier {
 
         let mut offset = 1;
 
-        for &node in &self.as_ref()[2..] {
+        for &node in &self.nodes[2..self.length] {
             offset += write_base128(&mut bytes[offset..], node)?;
         }
 
@@ -232,12 +248,6 @@ impl ObjectIdentifier {
         self.write_ber(&mut output)
             .expect("incorrectly sized buffer");
         output
-    }
-}
-
-impl AsRef<[u32]> for ObjectIdentifier {
-    fn as_ref(&self) -> &[u32] {
-        &self.nodes[..self.length]
     }
 }
 
@@ -289,15 +299,40 @@ impl fmt::Debug for ObjectIdentifier {
 
 impl fmt::Display for ObjectIdentifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (i, node) in self.as_ref().iter().enumerate() {
+        for (i, node) in self.nodes().enumerate() {
             write!(f, "{}", node)?;
 
-            if i < self.as_ref().len() - 1 {
+            if i < self.len() - 1 {
                 write!(f, ".")?;
             }
         }
 
         Ok(())
+    }
+}
+
+/// [`Iterator`] over nodes in an [`ObjectIdentifier`].
+///
+/// This iterates over all nodes in an OID, including the root.
+pub struct Nodes {
+    /// OID we're iterating over
+    oid: ObjectIdentifier,
+
+    /// Current node
+    index: usize,
+}
+
+impl Iterator for Nodes {
+    type Item = u32;
+
+    fn next(&mut self) -> Option<u32> {
+        if self.index < self.oid.length {
+            let node = self.oid.nodes[self.index];
+            self.index = self.index.checked_add(1).unwrap();
+            Some(node)
+        } else {
+            None
+        }
     }
 }
 
