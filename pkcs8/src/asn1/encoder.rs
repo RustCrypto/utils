@@ -10,7 +10,8 @@
 
 use super::Tag;
 use crate::{
-    AlgorithmIdentifier, Error, ObjectIdentifier, PrivateKeyInfo, Result, SubjectPublicKeyInfo,
+    AlgorithmIdentifier, AlgorithmParameters, Error, ObjectIdentifier, PrivateKeyInfo, Result,
+    SubjectPublicKeyInfo,
 };
 
 /// Encode a single byte at the given offset
@@ -99,17 +100,10 @@ pub(crate) fn algorithm_identifier_len(algorithm_id: &AlgorithmIdentifier) -> Re
 /// Get the length of the `parameters` field of a DER-encoded
 /// [`AlgorithmIdentifier`].
 pub(crate) fn algorithm_parameters_len(algorithm_id: &AlgorithmIdentifier) -> Result<usize> {
-    if algorithm_id.is_params_field_null() {
-        // Special case handling for RSA's mandatory NULL parameter field
-        if algorithm_id.parameters.is_some() {
-            return Err(Error::Encode);
-        }
-
-        Ok(2) // Length of DER-encoded NULL object
-    } else if let Some(params) = algorithm_id.parameters {
-        oid_len(params)
-    } else {
-        Ok(0)
+    match algorithm_id.parameters {
+        Some(AlgorithmParameters::Null) => Ok(2),
+        Some(AlgorithmParameters::Oid(oid)) => oid_len(oid),
+        None => Ok(0),
     }
 }
 
@@ -125,14 +119,9 @@ pub(crate) fn encode_algorithm_identifier(
     let mut offset = encode_header(buffer, Tag::Sequence, sequence_len)?;
     offset += encode_oid(&mut buffer[offset..], algorithm_id.oid)?;
     offset += match algorithm_id.parameters {
-        Some(oid) => encode_oid(&mut buffer[offset..], oid)?,
-        None => {
-            if algorithm_id.is_params_field_null() {
-                encode_header(&mut buffer[offset..], Tag::Null, 0)?
-            } else {
-                0
-            }
-        }
+        Some(AlgorithmParameters::Null) => encode_header(&mut buffer[offset..], Tag::Null, 0)?,
+        Some(AlgorithmParameters::Oid(oid)) => encode_oid(&mut buffer[offset..], oid)?,
+        None => 0,
     };
 
     Ok(offset)

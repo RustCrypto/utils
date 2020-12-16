@@ -69,7 +69,7 @@ mod document;
 mod pem;
 
 pub use crate::{
-    algorithm::AlgorithmIdentifier,
+    algorithm::{AlgorithmIdentifier, AlgorithmParameters},
     error::{Error, Result},
     private_key_info::PrivateKeyInfo,
     spki::SubjectPublicKeyInfo,
