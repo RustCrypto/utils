@@ -1,11 +1,13 @@
-//! Const-friendly ISO/IEC Object Identifier (OID) library with support for
-//! heapless `no_std`-environments.
+//! Const-friendly X.660 Object Identifier (OID) library with support for
+//! heapless `no_std` (i.e. embedded) environments.
 //!
 //! # About OIDs
 //!
 //! Object Identifiers, a.k.a. OIDs, are an International Telecommunications
 //! Union (ITU) and ISO/IEC standard for naming any object, concept, or "thing"
 //! with a globally unambiguous persistent name.
+//!
+//! OIDS are defined in the ITU's [X.660] standard.
 //!
 //! The following is an example of an OID, in this case identifying the
 //! `rsaEncryption` algorithm:
@@ -22,6 +24,8 @@
 //!
 //! Minimum supported Rust version may be changed in the future, but it will be
 //! accompanied with a minor version bump.
+//!
+//! [X.660]: https://www.itu.int/rec/T-REC-X.660
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
