@@ -30,6 +30,7 @@ extern crate std;
 pub mod decode;
 pub mod encode;
 mod error;
+pub mod length;
 mod tag;
 
 pub use crate::{

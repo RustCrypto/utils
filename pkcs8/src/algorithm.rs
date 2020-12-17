@@ -173,7 +173,7 @@ pub(crate) fn encode_identifier(
     buffer: &mut [u8],
     algorithm_id: &AlgorithmIdentifier,
 ) -> Result<usize> {
-    let alg_oid_len = der::encode::oid_len(algorithm_id.oid)?;
+    let alg_oid_len = der::length::oid(algorithm_id.oid)?;
     let params_len = parameters_len(algorithm_id)?;
     let sequence_len = alg_oid_len.checked_add(params_len).unwrap();
 
@@ -192,11 +192,11 @@ pub(crate) fn encode_identifier(
 
 /// Get the length of a DER-encoded [`AlgorithmIdentifier`]
 pub(crate) fn identifier_len(algorithm_id: &AlgorithmIdentifier) -> Result<usize> {
-    let alg_oid_len = der::encode::oid_len(algorithm_id.oid)?;
+    let alg_oid_len = der::length::oid(algorithm_id.oid)?;
     let params_len = parameters_len(algorithm_id)?;
     let sequence_len = alg_oid_len.checked_add(params_len).unwrap();
 
-    der::encode::header_len(sequence_len)
+    der::length::header(sequence_len)
         .ok()
         .and_then(|n| n.checked_add(sequence_len))
         .ok_or(Error::Encode)
@@ -207,7 +207,7 @@ pub(crate) fn identifier_len(algorithm_id: &AlgorithmIdentifier) -> Result<usize
 fn parameters_len(algorithm_id: &AlgorithmIdentifier) -> Result<usize> {
     match algorithm_id.parameters {
         Some(AlgorithmParameters::Null) => Ok(2),
-        Some(AlgorithmParameters::Oid(oid)) => Ok(der::encode::oid_len(oid)?),
+        Some(AlgorithmParameters::Oid(oid)) => Ok(der::length::oid(oid)?),
         None => Ok(0),
     }
 }

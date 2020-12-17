@@ -120,14 +120,14 @@ impl<'a> fmt::Debug for PrivateKeyInfo<'a> {
 fn private_key_info_len(private_key_info: &PrivateKeyInfo<'_>) -> Result<usize> {
     let alg_id_len = algorithm::identifier_len(&private_key_info.algorithm)?;
     let version_len = 3;
-    let private_key_len = der::encode::header_len(private_key_info.private_key.len())?
+    let private_key_len = der::length::header(private_key_info.private_key.len())?
         .checked_add(private_key_info.private_key.len())
         .ok_or(Error::Encode)?;
     let sequence_len = alg_id_len
         .checked_add(version_len)
         .and_then(|len| len.checked_add(private_key_len))
         .ok_or(Error::Encode)?;
-    der::encode::header_len(sequence_len)
+    der::length::header(sequence_len)
         .ok()
         .and_then(|n| n.checked_add(sequence_len))
         .ok_or(Error::Encode)
@@ -140,7 +140,7 @@ fn encode_private_key_info(
 ) -> Result<usize> {
     let alg_id_len = algorithm::identifier_len(&private_key_info.algorithm)?;
     let version_len = 3;
-    let private_key_len = der::encode::header_len(private_key_info.private_key.len())?
+    let private_key_len = der::length::header(private_key_info.private_key.len())?
         .checked_add(private_key_info.private_key.len())
         .ok_or(Error::Encode)?;
     let sequence_len = alg_id_len

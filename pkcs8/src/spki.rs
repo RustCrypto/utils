@@ -57,7 +57,7 @@ impl<'a> SubjectPublicKeyInfo<'a> {
     /// buffer, returning a slice containing the encoded data.
     pub fn write_der<'b>(&self, buffer: &'b mut [u8]) -> Result<&'b [u8]> {
         let alg_id_len = algorithm::identifier_len(&self.algorithm)?;
-        let private_key_len = der::encode::header_len(self.subject_public_key.len())?
+        let private_key_len = der::length::header(self.subject_public_key.len())?
             .checked_add(self.subject_public_key.len())
             .ok_or(Error::Encode)?;
         let sequence_len = alg_id_len
@@ -106,13 +106,13 @@ impl<'a> TryFrom<&'a [u8]> for SubjectPublicKeyInfo<'a> {
 #[cfg(feature = "alloc")]
 fn spki_len(spki: &SubjectPublicKeyInfo<'_>) -> Result<usize> {
     let alg_id_len = algorithm::identifier_len(&spki.algorithm)?;
-    let public_key_len = der::encode::header_len(spki.subject_public_key.len())?
+    let public_key_len = der::length::header(spki.subject_public_key.len())?
         .checked_add(spki.subject_public_key.len())
         .ok_or(Error::Encode)?;
     let sequence_len = alg_id_len
         .checked_add(public_key_len)
         .ok_or(Error::Encode)?;
-    der::encode::header_len(sequence_len)
+    der::length::header(sequence_len)
         .ok()
         .and_then(|n| n.checked_add(sequence_len))
         .ok_or(Error::Encode)

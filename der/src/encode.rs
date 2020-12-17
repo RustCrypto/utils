@@ -5,18 +5,6 @@ use crate::{Error, Result, Tag};
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
 
-/// Compute the length of a header including the tag byte.
-///
-/// This function supports `body` lengths up to 65,535 bytes.
-pub fn header_len(body_len: usize) -> Result<usize> {
-    match body_len {
-        0..=0x7F => Ok(2),
-        0x80..=0xFF => Ok(3),
-        0x100..=0xFFFF => Ok(4),
-        _ => Err(Error),
-    }
-}
-
 /// Encode a tag and a length header
 pub fn header(buffer: &mut [u8], tag: Tag, len: usize) -> Result<usize> {
     byte(buffer, 0, tag as u8)?;
@@ -33,14 +21,6 @@ pub fn nested(buffer: &mut [u8], tag: Tag, data: &[u8]) -> Result<usize> {
 
     buffer[offset..(offset + data.len())].copy_from_slice(data);
     offset.checked_add(data.len()).ok_or(Error)
-}
-
-/// Get the length of a DER-encoded OID
-#[cfg(feature = "oid")]
-#[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
-pub fn oid_len(oid: ObjectIdentifier) -> Result<usize> {
-    let body_len = oid.ber_len();
-    header_len(body_len)?.checked_add(body_len).ok_or(Error)
 }
 
 /// Encode [`ObjectIdentifier`].
