@@ -39,10 +39,7 @@ impl AlgorithmIdentifier {
     ///
     /// Returns `None` if it is absent or not an OID.
     pub fn parameters_oid(&self) -> Option<ObjectIdentifier> {
-        match self.parameters {
-            Some(AlgorithmParameters::Oid(oid)) => Some(oid),
-            _ => None,
-        }
+        self.parameters.and_then(AlgorithmParameters::oid)
     }
 
     /// Write ASN.1 DER-encoded [`AlgorithmIdentifier`] to the provided
