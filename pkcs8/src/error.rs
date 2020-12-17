@@ -49,8 +49,8 @@ impl fmt::Display for Error {
 #[cfg(feature = "std")]
 impl std::error::Error for Error {}
 
-impl From<const_oid::Error> for Error {
-    fn from(_: const_oid::Error) -> Error {
+impl From<der::Error> for Error {
+    fn from(_: der::Error) -> Error {
         Error::Decode
     }
 }

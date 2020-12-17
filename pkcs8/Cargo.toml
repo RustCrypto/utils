@@ -9,14 +9,15 @@ authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 edition = "2018"
 documentation = "https://docs.rs/pkcs8"
-repository = "https://github.com/RustCrypto/utils"
+repository = "https://github.com/RustCrypto/utils/tree/master/pkcs8"
 categories = ["cryptography", "data-structures", "encoding", "no-std"]
 keywords = ["crypto", "key", "private"]
 readme = "README.md"
 
-[dependencies.const-oid]
-version = "0.4"
-path = "../const-oid"
+[dependencies.der]
+version = "0"
+path = "../der"
+features = ["oid"]
 
 [dependencies.subtle-encoding]
 version = "0.5"
@@ -36,7 +37,7 @@ hex-literal = "0.3"
 [features]
 alloc = ["zeroize"]
 pem = ["alloc", "subtle-encoding"]
-std = ["alloc", "const-oid/std"]
+std = ["alloc"]
 
 [package.metadata.docs.rs]
 all-features = true

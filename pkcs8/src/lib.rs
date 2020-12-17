@@ -56,7 +56,6 @@ extern crate alloc;
 extern crate std;
 
 mod algorithm;
-mod asn1;
 mod error;
 mod private_key_info;
 mod spki;
@@ -75,7 +74,7 @@ pub use crate::{
     spki::SubjectPublicKeyInfo,
     traits::{FromPrivateKey, FromPublicKey},
 };
-pub use const_oid::ObjectIdentifier;
+pub use der::ObjectIdentifier;
 
 #[cfg(feature = "alloc")]
 pub use crate::{
