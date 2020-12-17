@@ -15,16 +15,11 @@ use core::convert::TryFrom;
 /// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct AlgorithmIdentifier {
-    /// Algorithm OID.
-    ///
-    /// This is the `algorithm` field in the `AlgorithmIdentifier` ASN.1 schema.
+    /// Algorithm OID, i.e. the `algorithm` field in the `AlgorithmIdentifier`
+    /// ASN.1 schema.
     pub oid: ObjectIdentifier,
 
-    /// Algorithm parameters.
-    ///
-    /// According to RFC 5280, this technically contains algorithm-defined
-    /// `ANY` data, however as this crate is specialized to RSA and ECC keys,
-    /// we only support an OID in this field.
+    /// Algorithm `parameters`.
     pub parameters: Option<AlgorithmParameters>,
 }
 
@@ -69,7 +64,7 @@ impl TryFrom<&[u8]> for AlgorithmIdentifier {
 /// The `parameters` field of `AlgorithmIdentifier`.
 ///
 /// This is an algorithm-defined `ANY` field. We presently support OIDs
-/// (as used by `id-ecPublicKey`) and NULL for RSA as required by
+/// (as used by `id-ecPublicKey`) and ASN.1 `NULL` for RSA as required by
 /// [RFC 3279 Section 2.3.1][1].
 ///
 /// This enum is marked as `non_exhaustive` to potentially support other
