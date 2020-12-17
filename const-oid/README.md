@@ -1,4 +1,4 @@
-# RustCrypto: X.660 Object Identifiers (OID)
+# RustCrypto: Object Identifiers (OIDs)
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
