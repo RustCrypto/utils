@@ -23,8 +23,8 @@
 //! This library stores OIDs using a compact fixed-size layout and enforces
 //! the following constraints on the number of arcs:
 //!
-//! - Minimum number of arcs: 3 (i.e. [`MIN_ARCS`])
-//! - Maximum number of arcs: 12 (i.e. [`MAX_ARCS`])
+//! - Minimum number of arcs: **3** (i.e. [`MIN_ARCS`])
+//! - Maximum number of arcs: **12** (i.e. [`MAX_ARCS`])
 //!
 //! # Minimum Supported Rust Version
 //!
@@ -65,10 +65,15 @@ pub const MIN_ARCS: usize = 3;
 /// Maximum number of arcs in an OID.
 ///
 /// Note: this limit is not defined in OID standards, but instead represents an
-/// internal size constraint of this library. It represents an upper bound for
-/// this library's intended use cases (i.e. RustCrypto), but can be adjusted
-/// upward if there is a legitimate use case (please file a GitHub issue if you
-/// have a use case for increasing this limit in practice).
+/// internal size constraint of this library determined as an upper bound for
+/// this library's intended use cases (i.e. [RustCrypto projects][1]).
+///
+/// It can potentially be raised as part of a breaking release if there is a
+/// legitimate use case. If you have such a use case for increasing this limit
+/// in practice, please [file a GitHub issue][2].
+///
+/// [1]: https://github.com/RustCrypto/
+/// [2]: https://github.com/RustCrypto/utils/issues
 pub const MAX_ARCS: usize = 12;
 
 /// Maximum number of "lower" arcs, which does not include the first and second
