@@ -33,11 +33,9 @@ pub fn integer(bytes: &mut &[u8]) -> Result<usize> {
     }
 }
 
-/// Decode nested value (e.g. `OCTET STRING`, `SEQUENCE`).
-///
-/// This function provides a panic-free foundation for parsing ASN.1 DER's
-/// tag-length-value (TLV) encoded data.
-pub fn nested<'a, F, T>(bytes: &mut &'a [u8], f: F) -> Result<T>
+/// Decode `ANY` TLV-encoded ASN.1 value, calling the provided [`FnOnce`] with
+/// the [`Tag`] and the value upon success, and returning the result.
+pub fn any<'a, F, T>(bytes: &mut &'a [u8], f: F) -> Result<T>
 where
     F: FnOnce(Tag, &'a [u8]) -> Result<T>,
 {
@@ -53,12 +51,26 @@ where
     f(tag, head)
 }
 
-/// Expect a nested value with the given [`Tag`]
+/// Parse an `OPTIONAL` value, calling the provided [`FnOnce`] if the value is
+/// present and returning `Some` on success, or `None` if the value is absent.
+pub fn optional<'a, F, T>(bytes: &mut &'a [u8], f: F) -> Result<Option<T>>
+where
+    F: FnOnce(Tag, &'a [u8]) -> Result<T>,
+{
+    if bytes.is_empty() {
+        Ok(None)
+    } else {
+        any(bytes, f).map(Some)
+    }
+}
+
+/// Expect a TLV-encoded value with the given [`Tag`], calling the provided
+/// [`FnOnce`] with the value if the tag matches.
 pub fn tagged<'a, F, T>(bytes: &mut &'a [u8], expected_tag: Tag, f: F) -> Result<T>
 where
     F: FnOnce(&'a [u8]) -> Result<T>,
 {
-    nested(bytes, |tag, inner| {
+    any(bytes, |tag, inner| {
         tag.expect(expected_tag)?;
         f(inner)
     })
@@ -68,7 +80,9 @@ where
 #[cfg(feature = "oid")]
 #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
 pub fn oid(bytes: &mut &[u8]) -> Result<ObjectIdentifier> {
-    Ok(ObjectIdentifier::from_ber(bytes)?)
+    tagged(bytes, Tag::ObjectIdentifier, |oid| {
+        Ok(ObjectIdentifier::from_ber(oid)?)
+    })
 }
 
 /// Decode `BIT STRING`
