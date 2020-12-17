@@ -13,7 +13,7 @@ pub fn header(nested_len: usize) -> Result<usize> {
         0..=0x7F => Ok(2),
         0x80..=0xFF => Ok(3),
         0x100..=0xFFFF => Ok(4),
-        _ => Err(Error),
+        _ => Err(Error::Overlength),
     }
 }
 
@@ -22,5 +22,7 @@ pub fn header(nested_len: usize) -> Result<usize> {
 #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
 pub fn oid(oid: ObjectIdentifier) -> Result<usize> {
     let body_len = oid.ber_len();
-    header(body_len)?.checked_add(body_len).ok_or(Error)
+    header(body_len)?
+        .checked_add(body_len)
+        .ok_or(Error::Overflow)
 }

@@ -34,23 +34,25 @@ pub struct SubjectPublicKeyInfo<'a> {
 impl<'a> SubjectPublicKeyInfo<'a> {
     /// Parse [`SubjectPublicKeyInfo`] encoded as ASN.1 DER.
     pub fn from_der(mut input: &'a [u8]) -> Result<Self> {
-        let mut bytes = der::decode::nested(&mut input, der::Tag::Sequence)?;
+        let result = der::decode::sequence(&mut input, |mut bytes| {
+            let algorithm = algorithm::decode_identifier(&mut bytes)?;
+            let subject_public_key = der::decode::bit_string(&mut bytes)?;
 
-        if !input.is_empty() {
-            return Err(Error::Decode);
+            if !bytes.is_empty() {
+                return Err(der::Error::Overlength);
+            }
+
+            Ok(Self {
+                algorithm,
+                subject_public_key,
+            })
+        })?;
+
+        if input.is_empty() {
+            Ok(result)
+        } else {
+            Err(Error::Decode)
         }
-
-        let algorithm = algorithm::decode_identifier(&mut bytes)?;
-        let subject_public_key = der::decode::nested(&mut bytes, der::Tag::BitString)?;
-
-        if !bytes.is_empty() {
-            return Err(Error::Decode);
-        }
-
-        Ok(Self {
-            algorithm,
-            subject_public_key,
-        })
     }
 
     /// Write ASN.1 DER-encoded [`SubjectPublicKeyInfo`] to the provided
