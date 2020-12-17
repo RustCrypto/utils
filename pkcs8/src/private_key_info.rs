@@ -1,6 +1,6 @@
 //! PKCS#8 `PrivateKeyInfo`.
 
-use crate::{asn1, AlgorithmIdentifier, Error, Result};
+use crate::{algorithm, AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
 
 #[cfg(feature = "alloc")]
@@ -43,14 +43,39 @@ pub struct PrivateKeyInfo<'a> {
 
 impl<'a> PrivateKeyInfo<'a> {
     /// Parse [`PrivateKeyInfo`] encoded as ASN.1 DER.
-    pub fn from_der(bytes: &'a [u8]) -> Result<Self> {
-        asn1::decoder::decode_private_key_info(bytes)
+    pub fn from_der(mut input: &'a [u8]) -> Result<Self> {
+        let mut bytes = der::decode::nested(&mut input, der::Tag::Sequence)?;
+
+        if !input.is_empty() {
+            return Err(Error::Decode);
+        }
+
+        // Parse `version` INTEGER
+        let version = der::decode::integer(&mut bytes)?;
+
+        // RFC 5208 designates `0` as the only valid version for PKCS#8 documents
+        if version != 0 {
+            return Err(Error::Decode);
+        }
+
+        let algorithm = algorithm::decode_identifier(&mut bytes)?;
+        let private_key = der::decode::nested(&mut bytes, der::Tag::OctetString)?;
+
+        // We currently don't support any trailing attribute data
+        if !bytes.is_empty() {
+            return Err(Error::Decode);
+        }
+
+        Ok(Self {
+            algorithm,
+            private_key,
+        })
     }
 
     /// Write ASN.1 DER-encoded [`PrivateKeyInfo`] to the provided
     /// buffer, returning a slice containing the encoded data.
     pub fn write_der<'b>(&self, buffer: &'b mut [u8]) -> Result<&'b [u8]> {
-        let offset = asn1::encoder::encode_private_key_info(buffer, self)?;
+        let offset = encode_private_key_info(buffer, self)?;
         Ok(&buffer[..offset])
     }
 
@@ -58,7 +83,7 @@ impl<'a> PrivateKeyInfo<'a> {
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn to_der(&self) -> PrivateKeyDocument {
-        let len = asn1::encoder::private_key_info_len(self).unwrap();
+        let len = private_key_info_len(self).unwrap();
         let mut buffer = Zeroizing::new(vec![0u8; len]);
         self.write_der(&mut buffer).unwrap();
         PrivateKeyDocument::from_der(&buffer).expect("malformed DER")
@@ -88,4 +113,49 @@ impl<'a> fmt::Debug for PrivateKeyInfo<'a> {
             .field("algorithm", &self.algorithm)
             .finish() // TODO(tarcieri): use `finish_non_exhaustive` when stable
     }
+}
+
+/// Get the length of DER-encoded [`PrivateKeyInfo`]
+#[cfg(feature = "alloc")]
+fn private_key_info_len(private_key_info: &PrivateKeyInfo<'_>) -> Result<usize> {
+    let alg_id_len = algorithm::identifier_len(&private_key_info.algorithm)?;
+    let version_len = 3;
+    let private_key_len = der::encode::header_len(private_key_info.private_key.len())?
+        .checked_add(private_key_info.private_key.len())
+        .ok_or(Error::Encode)?;
+    let sequence_len = alg_id_len
+        .checked_add(version_len)
+        .and_then(|len| len.checked_add(private_key_len))
+        .ok_or(Error::Encode)?;
+    der::encode::header_len(sequence_len)
+        .ok()
+        .and_then(|n| n.checked_add(sequence_len))
+        .ok_or(Error::Encode)
+}
+
+/// Encode [`PrivateKeyInfo`]
+fn encode_private_key_info(
+    buffer: &mut [u8],
+    private_key_info: &PrivateKeyInfo<'_>,
+) -> Result<usize> {
+    let alg_id_len = algorithm::identifier_len(&private_key_info.algorithm)?;
+    let version_len = 3;
+    let private_key_len = der::encode::header_len(private_key_info.private_key.len())?
+        .checked_add(private_key_info.private_key.len())
+        .ok_or(Error::Encode)?;
+    let sequence_len = alg_id_len
+        .checked_add(version_len)
+        .and_then(|len| len.checked_add(private_key_len))
+        .ok_or(Error::Encode)?;
+
+    let mut offset = der::encode::header(buffer, der::Tag::Sequence, sequence_len)?;
+    offset += der::encode::nested(&mut buffer[offset..], der::Tag::Integer, &[0])?;
+    offset += algorithm::encode_identifier(&mut buffer[offset..], &private_key_info.algorithm)?;
+    offset += der::encode::nested(
+        &mut buffer[offset..],
+        der::Tag::OctetString,
+        private_key_info.private_key,
+    )?;
+
+    Ok(offset)
 }

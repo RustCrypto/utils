@@ -1,0 +1,28 @@
+[package]
+name = "der"
+version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
+description = """
+Pure Rust embedded-friendly implementation of the Distinguished Encoding Rules (DER)
+for Abstract Syntax Notation One (ASN.1) as described in ITU X.690
+"""
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+edition = "2018"
+documentation = "https://docs.rs/pkcs8"
+repository = "https://github.com/RustCrypto/utils/tree/master/pkcs8"
+categories = ["cryptography", "data-structures", "encoding", "no-std"]
+keywords = ["asn1", "crypto", "itu", "pkcs"]
+readme = "README.md"
+
+[dependencies.oid]
+package = "const-oid"
+version = "0.4"
+optional = true
+path = "../const-oid"
+
+[features]
+std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

@@ -1,18 +1,17 @@
-name: pkcs8
+name: der
 
 on:
   pull_request:
     paths:
       - "const-oid/**"
       - "der/**"
-      - "pkcs8/**"
       - "Cargo.*"
   push:
     branches: master
 
 defaults:
   run:
-    working-directory: pkcs8
+    working-directory: der
 
 env:
   CARGO_INCREMENTAL: 0
@@ -37,9 +36,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
           override: true
-      - run: cargo build --release --target ${{ matrix.target }}
-      - run: cargo build --release --target ${{ matrix.target }} --features alloc
-      - run: cargo build --release --target ${{ matrix.target }} --features pem
+      - run: cargo build --target ${{ matrix.target }} --release
 
   test:
     runs-on: ubuntu-latest
@@ -56,6 +53,4 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - run: cargo test --release
-      - run: cargo test --release --features alloc
-      - run: cargo test --release --features pem
       - run: cargo test --release --all-features
