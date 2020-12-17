@@ -1,22 +1,67 @@
 //! ASN.1 DER decoding support.
 
 use crate::{Error, Result, Tag};
+use core::convert::TryFrom;
 
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
 
+/// Extract the leading byte from a slice.
+///
+/// This function provides a panic-free foundation for parsing single bytes.
+// TODO(tarcieri): encapsulate and remove from public API
+pub fn byte(bytes: &mut &[u8]) -> Result<u8> {
+    let byte = *bytes.get(0).ok_or(Error::Truncated)?;
+    *bytes = &bytes[1..];
+    Ok(byte)
+}
+
+/// Decode a [`Tag`] value
+pub fn tag(bytes: &mut &[u8]) -> Result<Tag> {
+    byte(bytes).and_then(Tag::try_from)
+}
+
 /// Decode `INTEGER`.
 pub fn integer(bytes: &mut &[u8]) -> Result<usize> {
-    if byte(bytes)? != Tag::Integer as u8 {
-        return Err(Error);
-    }
+    let tag = tag(bytes)?.expect(Tag::Integer)?;
 
-    // We presently specialize for 1-byte integers to parse versions
+    // TODO(tarcieri): support for INTEGER values longer than 1-byte
     if length(bytes)? == 1 {
         Ok(byte(bytes)? as usize)
     } else {
-        Err(Error)
+        Err(Error::Length { tag })
     }
+}
+
+/// Decode nested value (e.g. `OCTET STRING`, `SEQUENCE`).
+///
+/// This function provides a panic-free foundation for parsing ASN.1 DER's
+/// tag-length-value (TLV) encoded data.
+pub fn nested<'a, F, T>(bytes: &mut &'a [u8], f: F) -> Result<T>
+where
+    F: FnOnce(Tag, &'a [u8]) -> Result<T>,
+{
+    let tag = tag(bytes)?;
+    let len = length(bytes)?;
+
+    if len > bytes.len() {
+        return Err(Error::Length { tag });
+    }
+
+    let (head, tail) = bytes.split_at(len);
+    *bytes = tail;
+    f(tag, head)
+}
+
+/// Expect a nested value with the given [`Tag`]
+pub fn tagged<'a, F, T>(bytes: &mut &'a [u8], expected_tag: Tag, f: F) -> Result<T>
+where
+    F: FnOnce(&'a [u8]) -> Result<T>,
+{
+    nested(bytes, |tag, inner| {
+        tag.expect(expected_tag)?;
+        f(inner)
+    })
 }
 
 /// Decode [`ObjectIdentifier`].
@@ -26,31 +71,22 @@ pub fn oid(bytes: &mut &[u8]) -> Result<ObjectIdentifier> {
     Ok(ObjectIdentifier::from_ber(bytes)?)
 }
 
-/// Decode nested value (e.g. `OCTET STRING`, `SEQUENCE`).
-pub fn nested<'a>(bytes: &mut &'a [u8], expected_tag: Tag) -> Result<&'a [u8]> {
-    if byte(bytes)? != expected_tag as u8 {
-        return Err(Error);
-    }
-
-    let len = length(bytes)?;
-
-    if len <= bytes.len() {
-        let (head, tail) = bytes.split_at(len);
-        *bytes = tail;
-        Ok(head)
-    } else {
-        Err(Error)
-    }
+/// Decode `BIT STRING`
+pub fn bit_string<'a>(bytes: &mut &'a [u8]) -> Result<&'a [u8]> {
+    tagged(bytes, Tag::BitString, Ok)
 }
 
-/// Extract the leading byte from a slice.
-///
-/// This function provides a panic-free foundation for parsing single bytes.
-// TODO(tarcieri): encapsulate and remove from public API
-pub fn byte(bytes: &mut &[u8]) -> Result<u8> {
-    let byte = *bytes.get(0).ok_or(Error)?;
-    *bytes = &bytes[1..];
-    Ok(byte)
+/// Decode `OCTET STRING`
+pub fn octet_string<'a>(bytes: &mut &'a [u8]) -> Result<&'a [u8]> {
+    tagged(bytes, Tag::OctetString, Ok)
+}
+
+/// Decode `SEQUENCE`.
+pub fn sequence<'a, F, T>(bytes: &mut &'a [u8], f: F) -> Result<T>
+where
+    F: FnOnce(&'a [u8]) -> Result<T>,
+{
+    tagged(bytes, Tag::Sequence, f)
 }
 
 /// Parse DER-encoded length.
@@ -70,7 +106,7 @@ pub fn length(bytes: &mut &[u8]) -> Result<usize> {
             if len >= 0x80 {
                 Ok(len)
             } else {
-                Err(Error)
+                Err(Error::Noncanonical)
             }
         }
         0x82 => {
@@ -82,12 +118,12 @@ pub fn length(bytes: &mut &[u8]) -> Result<usize> {
             if len > 0xFF {
                 Ok(len)
             } else {
-                Err(Error)
+                Err(Error::Noncanonical)
             }
         }
         _ => {
             // We specialize to a maximum 3-byte length
-            Err(Error)
+            Err(Error::Overlength)
         }
     }
 }

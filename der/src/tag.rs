@@ -26,6 +26,21 @@ pub enum Tag {
     Sequence = 0x30,
 }
 
+impl Tag {
+    /// Expect a specific tag type, returning an error if the tag is not the
+    /// one we're expecting
+    pub fn expect(self, expected: Tag) -> Result<Tag> {
+        if self == expected {
+            Ok(self)
+        } else {
+            Err(Error::UnexpectedTag {
+                expected: Some(expected),
+                actual: self,
+            })
+        }
+    }
+}
+
 impl TryFrom<u8> for Tag {
     type Error = Error;
 
@@ -37,7 +52,7 @@ impl TryFrom<u8> for Tag {
             0x05 => Ok(Tag::Null),
             0x06 => Ok(Tag::ObjectIdentifier),
             0x30 => Ok(Tag::Sequence),
-            _ => Err(Error),
+            _ => Err(Error::UnknownTag { byte }),
         }
     }
 }

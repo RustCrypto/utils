@@ -8,7 +8,7 @@ use crate::ObjectIdentifier;
 /// Encode a tag and a length header
 pub fn header(buffer: &mut [u8], tag: Tag, len: usize) -> Result<usize> {
     byte(buffer, 0, tag as u8)?;
-    length(&mut buffer[1..], len).and_then(|len| len.checked_add(1).ok_or(Error))
+    length(&mut buffer[1..], len).and_then(|len| len.checked_add(1).ok_or(Error::Overflow))
 }
 
 /// Encode nested value (e.g. `OCTET STRING`, `SEQUENCE`).
@@ -16,11 +16,11 @@ pub fn nested(buffer: &mut [u8], tag: Tag, data: &[u8]) -> Result<usize> {
     let offset = header(buffer, tag, data.len())?;
 
     if buffer[offset..].len() < data.len() {
-        return Err(Error);
+        return Err(Error::Overlength);
     }
 
     buffer[offset..(offset + data.len())].copy_from_slice(data);
-    offset.checked_add(data.len()).ok_or(Error)
+    offset.checked_add(data.len()).ok_or(Error::Overflow)
 }
 
 /// Encode [`ObjectIdentifier`].
@@ -31,12 +31,15 @@ pub fn oid(buffer: &mut [u8], oid: ObjectIdentifier) -> Result<usize> {
 
     offset
         .checked_add(oid.write_ber(&mut buffer[offset..])?.len())
-        .ok_or(Error)
+        .ok_or(Error::Overflow)
 }
 
 /// Encode a single byte at the given offset
 fn byte(buffer: &mut [u8], offset: usize, byte: u8) -> Result<()> {
-    buffer.get_mut(offset).map(|b| *b = byte).ok_or(Error)
+    buffer
+        .get_mut(offset)
+        .map(|b| *b = byte)
+        .ok_or(Error::Overlength)
 }
 
 /// Encode length prefix.
@@ -59,6 +62,6 @@ fn length(buffer: &mut [u8], len: usize) -> Result<usize> {
             byte(buffer, 2, (len & 0xFF) as u8)?;
             Ok(3)
         }
-        _ => Err(Error),
+        _ => Err(Error::Overlength),
     }
 }

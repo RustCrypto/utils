@@ -44,32 +44,36 @@ pub struct PrivateKeyInfo<'a> {
 impl<'a> PrivateKeyInfo<'a> {
     /// Parse [`PrivateKeyInfo`] encoded as ASN.1 DER.
     pub fn from_der(mut input: &'a [u8]) -> Result<Self> {
-        let mut bytes = der::decode::nested(&mut input, der::Tag::Sequence)?;
+        let result = der::decode::sequence(&mut input, |mut bytes| {
+            // Parse `version` INTEGER
+            let version = der::decode::integer(&mut bytes)?;
 
-        if !input.is_empty() {
-            return Err(Error::Decode);
+            // RFC 5208 designates `0` as the only valid version for PKCS#8 documents
+            if version != 0 {
+                return Err(der::Error::Value {
+                    tag: der::Tag::Integer,
+                });
+            }
+
+            let algorithm = algorithm::decode_identifier(&mut bytes)?;
+            let private_key = der::decode::octet_string(&mut bytes)?;
+
+            // We currently don't support any trailing attribute data
+            if !bytes.is_empty() {
+                return Err(der::Error::Overlength);
+            }
+
+            Ok(Self {
+                algorithm,
+                private_key,
+            })
+        })?;
+
+        if input.is_empty() {
+            Ok(result)
+        } else {
+            Err(Error::Decode)
         }
-
-        // Parse `version` INTEGER
-        let version = der::decode::integer(&mut bytes)?;
-
-        // RFC 5208 designates `0` as the only valid version for PKCS#8 documents
-        if version != 0 {
-            return Err(Error::Decode);
-        }
-
-        let algorithm = algorithm::decode_identifier(&mut bytes)?;
-        let private_key = der::decode::nested(&mut bytes, der::Tag::OctetString)?;
-
-        // We currently don't support any trailing attribute data
-        if !bytes.is_empty() {
-            return Err(Error::Decode);
-        }
-
-        Ok(Self {
-            algorithm,
-            private_key,
-        })
     }
 
     /// Write ASN.1 DER-encoded [`PrivateKeyInfo`] to the provided
