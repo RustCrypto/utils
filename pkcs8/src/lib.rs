@@ -43,7 +43,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png",
-    html_root_url = "https://docs.rs/pkcs8/0.3.1"
+    html_root_url = "https://docs.rs/pkcs8/0.3.2"
 )]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
