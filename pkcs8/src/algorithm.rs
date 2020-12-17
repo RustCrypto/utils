@@ -35,6 +35,16 @@ impl AlgorithmIdentifier {
         }
     }
 
+    /// Get the `parameters` field as an [`ObjectIdentifier`].
+    ///
+    /// Returns `None` if it is absent or not an OID.
+    pub fn parameters_oid(&self) -> Option<ObjectIdentifier> {
+        match self.parameters {
+            Some(AlgorithmParameters::Oid(oid)) => Some(oid),
+            _ => None,
+        }
+    }
+
     /// Write ASN.1 DER-encoded [`AlgorithmIdentifier`] to the provided
     /// buffer, returning a slice containing the encoded data.
     pub fn write_der<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a [u8]> {
