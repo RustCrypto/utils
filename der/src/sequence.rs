@@ -27,7 +27,7 @@ impl<'a> Sequence<'a> {
 
     /// Obtain a [`Decoder`] for the data in this [`Sequence`]
     pub fn decoder(&self) -> Decoder<'a> {
-        self.inner
+        Decoder::new(self.inner)
     }
 }
 

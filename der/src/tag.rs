@@ -43,8 +43,7 @@ impl Tag {
 
 impl Decodable<'_> for Tag {
     fn decode(decoder: &mut Decoder<'_>) -> Result<Self> {
-        // TODO(tarcieri): move `decode::byte` to `Decoder`
-        crate::decoder::byte(decoder).and_then(Self::try_from)
+        decoder.byte().and_then(Self::try_from)
     }
 }
 

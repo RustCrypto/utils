@@ -34,14 +34,10 @@ pub struct SubjectPublicKeyInfo<'a> {
 
 impl<'a> SubjectPublicKeyInfo<'a> {
     /// Parse [`SubjectPublicKeyInfo`] encoded as ASN.1 DER.
-    pub fn from_der(mut bytes: &'a [u8]) -> Result<Self> {
-        let result = Self::decode(&mut bytes)?;
-
-        if bytes.is_empty() {
-            Ok(result)
-        } else {
-            Err(Error::Decode)
-        }
+    pub fn from_der(bytes: &'a [u8]) -> Result<Self> {
+        let mut decoder = der::Decoder::new(bytes);
+        let result = Self::decode(&mut decoder)?;
+        decoder.finish(result).map_err(|_| Error::Decode)
     }
 
     /// Write ASN.1 DER-encoded [`SubjectPublicKeyInfo`] to the provided
@@ -97,22 +93,19 @@ impl<'a> TryFrom<der::Any<'a>> for SubjectPublicKeyInfo<'a> {
     type Error = der::Error;
 
     fn try_from(any: der::Any<'a>) -> der::Result<SubjectPublicKeyInfo<'a>> {
-        let mut decoder = der::Sequence::try_from(any)?.decoder();
-        let algorithm = AlgorithmIdentifier::decode(&mut decoder)?;
-        let subject_public_key = der::BitString::decode(&mut decoder)?.as_bytes();
-
-        // TODO(tarcieri): decoder.finish()
-        if !decoder.is_empty() {
-            return Err(der::Error::Length {
-                tag: der::Tag::Sequence,
-            });
-        }
-
-        Ok(Self {
-            algorithm,
-            subject_public_key,
+        any.sequence(|mut decoder| {
+            let algorithm = decoder.decode()?;
+            let subject_public_key = decoder.bit_string()?.as_bytes();
+            decoder.finish(Self {
+                algorithm,
+                subject_public_key,
+            })
         })
     }
+}
+
+impl der::Tagged for SubjectPublicKeyInfo<'_> {
+    const TAG: der::Tag = der::Tag::Sequence;
 }
 
 /// Get the length of DER-encoded [`SubjectPublicKeyInfo`]
