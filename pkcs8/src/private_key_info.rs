@@ -2,12 +2,16 @@
 
 use crate::{algorithm, AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
+use der::Decodable;
 
 #[cfg(feature = "alloc")]
 use {crate::document::PrivateKeyDocument, zeroize::Zeroizing};
 
 #[cfg(feature = "pem")]
 use crate::pem;
+
+/// RFC 5208 designates `0` as the only valid version for PKCS#8 documents
+const VERSION: u8 = 0;
 
 /// PKCS#8 `PrivateKeyInfo`
 ///
@@ -43,33 +47,10 @@ pub struct PrivateKeyInfo<'a> {
 
 impl<'a> PrivateKeyInfo<'a> {
     /// Parse [`PrivateKeyInfo`] encoded as ASN.1 DER.
-    pub fn from_der(mut input: &'a [u8]) -> Result<Self> {
-        let result = der::decode::sequence(&mut input, |mut bytes| {
-            // Parse `version` INTEGER
-            let version = der::decode::integer(&mut bytes)?;
+    pub fn from_der(mut bytes: &'a [u8]) -> Result<Self> {
+        let result = Self::decode(&mut bytes)?;
 
-            // RFC 5208 designates `0` as the only valid version for PKCS#8 documents
-            if version != 0 {
-                return Err(der::Error::Value {
-                    tag: der::Tag::Integer,
-                });
-            }
-
-            let algorithm = algorithm::decode_identifier(&mut bytes)?;
-            let private_key = der::decode::octet_string(&mut bytes)?;
-
-            // We currently don't support any trailing attribute data
-            if !bytes.is_empty() {
-                return Err(der::Error::Overlength);
-            }
-
-            Ok(Self {
-                algorithm,
-                private_key,
-            })
-        })?;
-
-        if input.is_empty() {
+        if bytes.is_empty() {
             Ok(result)
         } else {
             Err(Error::Decode)
@@ -108,6 +89,36 @@ impl<'a> TryFrom<&'a [u8]> for PrivateKeyInfo<'a> {
 
     fn try_from(bytes: &'a [u8]) -> Result<Self> {
         Self::from_der(bytes)
+    }
+}
+
+impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
+    type Error = der::Error;
+
+    fn try_from(any: der::Any<'a>) -> der::Result<PrivateKeyInfo<'a>> {
+        let mut decoder = der::Sequence::try_from(any)?.decoder();
+
+        // Parse and validate `version` INTEGER.
+        if der::Integer::decode(&mut decoder)? != VERSION.into() {
+            return Err(der::Error::Value {
+                tag: der::Tag::Integer,
+            });
+        }
+
+        let algorithm = AlgorithmIdentifier::decode(&mut decoder)?;
+        let private_key = der::OctetString::decode(&mut decoder)?.as_bytes();
+
+        // TODO(tarcieri): decoder.finish()
+        if !decoder.is_empty() {
+            return Err(der::Error::Length {
+                tag: der::Tag::Sequence,
+            });
+        }
+
+        Ok(Self {
+            algorithm,
+            private_key,
+        })
     }
 }
 
@@ -153,9 +164,9 @@ fn encode_private_key_info(
         .ok_or(Error::Encode)?;
 
     let mut offset = der::encode::header(buffer, der::Tag::Sequence, sequence_len)?;
-    offset += der::encode::nested(&mut buffer[offset..], der::Tag::Integer, &[0])?;
+    offset += der::encode::any(&mut buffer[offset..], der::Tag::Integer, &[0])?;
     offset += algorithm::encode_identifier(&mut buffer[offset..], &private_key_info.algorithm)?;
-    offset += der::encode::nested(
+    offset += der::encode::any(
         &mut buffer[offset..],
         der::Tag::OctetString,
         private_key_info.private_key,

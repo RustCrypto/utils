@@ -14,13 +14,13 @@ categories = ["cryptography", "data-structures", "encoding", "no-std"]
 keywords = ["asn1", "crypto", "itu", "pkcs"]
 readme = "README.md"
 
-[dependencies.oid]
-package = "const-oid"
+[dependencies.const-oid]
 version = "0.4"
 optional = true
 path = "../const-oid"
 
 [features]
+oid = ["const-oid"]
 std = []
 
 [package.metadata.docs.rs]

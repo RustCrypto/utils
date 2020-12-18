@@ -11,8 +11,8 @@ pub fn header(buffer: &mut [u8], tag: Tag, len: usize) -> Result<usize> {
     length(&mut buffer[1..], len).and_then(|len| len.checked_add(1).ok_or(Error::Overflow))
 }
 
-/// Encode nested value (e.g. `OCTET STRING`, `SEQUENCE`).
-pub fn nested(buffer: &mut [u8], tag: Tag, data: &[u8]) -> Result<usize> {
+/// Encode `ANY` value
+pub fn any(buffer: &mut [u8], tag: Tag, data: &[u8]) -> Result<usize> {
     let offset = header(buffer, tag, data.len())?;
 
     if buffer[offset..].len() < data.len() {

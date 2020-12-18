@@ -2,6 +2,7 @@
 
 use crate::{algorithm, AlgorithmIdentifier, Error, Result};
 use core::convert::TryFrom;
+use der::Decodable;
 
 #[cfg(feature = "alloc")]
 use {crate::PublicKeyDocument, core::convert::TryInto};
@@ -33,22 +34,10 @@ pub struct SubjectPublicKeyInfo<'a> {
 
 impl<'a> SubjectPublicKeyInfo<'a> {
     /// Parse [`SubjectPublicKeyInfo`] encoded as ASN.1 DER.
-    pub fn from_der(mut input: &'a [u8]) -> Result<Self> {
-        let result = der::decode::sequence(&mut input, |mut bytes| {
-            let algorithm = algorithm::decode_identifier(&mut bytes)?;
-            let subject_public_key = der::decode::bit_string(&mut bytes)?;
+    pub fn from_der(mut bytes: &'a [u8]) -> Result<Self> {
+        let result = Self::decode(&mut bytes)?;
 
-            if !bytes.is_empty() {
-                return Err(der::Error::Overlength);
-            }
-
-            Ok(Self {
-                algorithm,
-                subject_public_key,
-            })
-        })?;
-
-        if input.is_empty() {
+        if bytes.is_empty() {
             Ok(result)
         } else {
             Err(Error::Decode)
@@ -68,7 +57,7 @@ impl<'a> SubjectPublicKeyInfo<'a> {
 
         let mut offset = der::encode::header(buffer, der::Tag::Sequence, sequence_len)?;
         offset += algorithm::encode_identifier(&mut buffer[offset..], &self.algorithm)?;
-        offset += der::encode::nested(
+        offset += der::encode::any(
             &mut buffer[offset..],
             der::Tag::BitString,
             self.subject_public_key,
@@ -101,6 +90,28 @@ impl<'a> TryFrom<&'a [u8]> for SubjectPublicKeyInfo<'a> {
 
     fn try_from(bytes: &'a [u8]) -> Result<Self> {
         Self::from_der(bytes)
+    }
+}
+
+impl<'a> TryFrom<der::Any<'a>> for SubjectPublicKeyInfo<'a> {
+    type Error = der::Error;
+
+    fn try_from(any: der::Any<'a>) -> der::Result<SubjectPublicKeyInfo<'a>> {
+        let mut decoder = der::Sequence::try_from(any)?.decoder();
+        let algorithm = AlgorithmIdentifier::decode(&mut decoder)?;
+        let subject_public_key = der::BitString::decode(&mut decoder)?.as_bytes();
+
+        // TODO(tarcieri): decoder.finish()
+        if !decoder.is_empty() {
+            return Err(der::Error::Length {
+                tag: der::Tag::Sequence,
+            });
+        }
+
+        Ok(Self {
+            algorithm,
+            subject_public_key,
+        })
     }
 }
 
