@@ -64,8 +64,8 @@ impl fmt::Display for Error {
 }
 
 #[cfg(feature = "oid")]
-impl From<oid::Error> for Error {
-    fn from(_: oid::Error) -> Error {
+impl From<const_oid::Error> for Error {
+    fn from(_: const_oid::Error) -> Error {
         Error::Oid
     }
 }

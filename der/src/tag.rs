@@ -1,6 +1,6 @@
 //! ASN.1 tags.
 
-use crate::{Error, Result};
+use crate::{Decodable, Decoder, Error, Result};
 use core::convert::TryFrom;
 
 /// ASN.1 tags.
@@ -38,6 +38,13 @@ impl Tag {
                 actual: self,
             })
         }
+    }
+}
+
+impl Decodable<'_> for Tag {
+    fn decode(decoder: &mut Decoder<'_>) -> Result<Self> {
+        // TODO(tarcieri): move `decode::byte` to `Decoder`
+        crate::decoder::byte(decoder).and_then(Self::try_from)
     }
 }
 

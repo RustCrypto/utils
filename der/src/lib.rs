@@ -27,15 +27,39 @@
 #[cfg(feature = "std")]
 extern crate std;
 
-pub mod decode;
-pub mod encode;
+mod any;
+mod bit_string;
 mod error;
-pub mod length;
+mod header;
+mod integer;
+pub mod length; // TODO(tarcieri): remove `pub` when possible
+mod null;
+mod octet_string;
+mod optional;
+mod sequence;
 mod tag;
+mod traits;
+
+// TODO(tarcieri): get rid of these
+mod decoder;
+pub mod encode;
+
+#[cfg(feature = "oid")]
+mod oid;
 
 pub use crate::{
+    any::Any,
+    bit_string::BitString,
+    decoder::Decoder,
     error::{Error, Result},
+    header::Header,
+    integer::Integer,
+    length::Length,
+    null::Null,
+    octet_string::OctetString,
+    sequence::Sequence,
     tag::Tag,
+    traits::{Decodable, Tagged},
 };
 
 #[cfg(feature = "oid")]

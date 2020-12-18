@@ -1,7 +1,8 @@
 //! X.509 `AlgorithmIdentifier`
 
 use crate::{Error, ObjectIdentifier, Result};
-use core::convert::TryFrom;
+use core::convert::{TryFrom, TryInto};
+use der::Decodable;
 
 #[cfg(feature = "alloc")]
 use crate::algorithm;
@@ -29,10 +30,10 @@ pub struct AlgorithmIdentifier {
 impl AlgorithmIdentifier {
     /// Parse [`AlgorithmIdentifier`] encoded as ASN.1 DER
     pub fn from_der(mut bytes: &[u8]) -> Result<Self> {
-        let algorithm_id = decode_identifier(&mut bytes)?;
+        let result = Self::decode(&mut bytes)?;
 
         if bytes.is_empty() {
-            Ok(algorithm_id)
+            Ok(result)
         } else {
             Err(Error::Decode)
         }
@@ -68,6 +69,25 @@ impl TryFrom<&[u8]> for AlgorithmIdentifier {
 
     fn try_from(bytes: &[u8]) -> Result<Self> {
         Self::from_der(bytes)
+    }
+}
+
+impl TryFrom<der::Any<'_>> for AlgorithmIdentifier {
+    type Error = der::Error;
+
+    fn try_from(any: der::Any<'_>) -> der::Result<AlgorithmIdentifier> {
+        let mut decoder = der::Sequence::try_from(any)?.decoder();
+        let oid = ObjectIdentifier::decode(&mut decoder)?;
+        let parameters = Option::decode(&mut decoder)?;
+
+        // TODO(tarcieri): decoder.finish()
+        if !decoder.is_empty() {
+            return Err(der::Error::Length {
+                tag: der::Tag::Sequence,
+            });
+        }
+
+        Ok(Self { oid, parameters })
     }
 }
 
@@ -112,38 +132,23 @@ impl AlgorithmParameters {
     }
 }
 
-/// Decode [`AlgorithmIdentifier`] from ASN.1 DER
-pub(crate) fn decode_identifier(input: &mut &[u8]) -> der::Result<AlgorithmIdentifier> {
-    der::decode::sequence(input, |mut bytes| {
-        let algorithm = der::decode::oid(&mut bytes)?;
-        let parameters = der::decode::optional(&mut bytes, |tag, param| match tag {
+impl TryFrom<der::Any<'_>> for AlgorithmParameters {
+    type Error = der::Error;
+
+    fn try_from(any: der::Any<'_>) -> der::Result<AlgorithmParameters> {
+        match any.tag() {
             der::Tag::Null => {
-                if param.is_empty() {
-                    Ok(AlgorithmParameters::Null)
-                } else {
-                    Err(der::Error::Length { tag })
-                }
+                // Ensure `NULL` is well-formed
+                der::Null::try_from(any)?;
+                Ok(AlgorithmParameters::Null)
             }
-            der::Tag::ObjectIdentifier => ObjectIdentifier::from_ber(param)
-                .map(AlgorithmParameters::Oid)
-                .map_err(|_| der::Error::Oid),
+            der::Tag::ObjectIdentifier => Ok(AlgorithmParameters::Oid(any.try_into()?)),
             _ => Err(der::Error::UnexpectedTag {
                 expected: None,
-                actual: tag,
+                actual: any.tag(),
             }),
-        })?;
-
-        if bytes.is_empty() {
-            Ok(AlgorithmIdentifier {
-                oid: algorithm,
-                parameters,
-            })
-        } else {
-            Err(der::Error::Length {
-                tag: der::Tag::Sequence,
-            })
         }
-    })
+    }
 }
 
 /// Encode an [`AlgorithmIdentifier`].
