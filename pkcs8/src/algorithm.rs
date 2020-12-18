@@ -115,62 +115,34 @@ impl AlgorithmParameters {
 /// Decode [`AlgorithmIdentifier`] from ASN.1 DER
 pub(crate) fn decode_identifier(input: &mut &[u8]) -> der::Result<AlgorithmIdentifier> {
     der::decode::sequence(input, |mut bytes| {
-        // Check OBJECT ID header
-        // TODO(tarcieri): use `der::decode::oid`
-        der::decode::tag(&mut bytes)?.expect(der::Tag::ObjectIdentifier)?;
-
-        let len = der::decode::length(&mut bytes)?;
-
-        if len > bytes.len() {
-            return Err(der::Error::Overlength);
-        }
-
-        let (alg_bytes, mut param_bytes) = bytes.split_at(len);
-        let algorithm = ObjectIdentifier::from_ber(alg_bytes).map_err(|_| der::Error::Oid)?;
-
-        let parameters = if param_bytes.is_empty() {
-            None
-        } else {
-            let tag = der::decode::tag(&mut param_bytes)?;
-
-            match tag {
-                der::Tag::Null => {
-                    if der::decode::length(&mut param_bytes)? != 0 {
-                        return Err(der::Error::Length { tag });
-                    }
-
-                    // Disallow any trailing data after the parameters
-                    if !param_bytes.is_empty() {
-                        return Err(der::Error::Overlength);
-                    }
-
-                    Some(AlgorithmParameters::Null)
-                }
-                der::Tag::ObjectIdentifier => {
-                    // TODO(tarcieri): use `der::decode::oid`
-                    let len = der::decode::length(&mut param_bytes)?;
-
-                    if len != param_bytes.len() {
-                        return Err(der::Error::Length { tag });
-                    }
-
-                    let oid =
-                        ObjectIdentifier::from_ber(param_bytes).map_err(|_| der::Error::Oid)?;
-                    Some(AlgorithmParameters::Oid(oid))
-                }
-                _ => {
-                    return Err(der::Error::UnexpectedTag {
-                        expected: None,
-                        actual: tag,
-                    })
+        let algorithm = der::decode::oid(&mut bytes)?;
+        let parameters = der::decode::optional(&mut bytes, |tag, param| match tag {
+            der::Tag::Null => {
+                if param.is_empty() {
+                    Ok(AlgorithmParameters::Null)
+                } else {
+                    Err(der::Error::Length { tag })
                 }
             }
-        };
+            der::Tag::ObjectIdentifier => ObjectIdentifier::from_ber(param)
+                .map(AlgorithmParameters::Oid)
+                .map_err(|_| der::Error::Oid),
+            _ => Err(der::Error::UnexpectedTag {
+                expected: None,
+                actual: tag,
+            }),
+        })?;
 
-        Ok(AlgorithmIdentifier {
-            oid: algorithm,
-            parameters,
-        })
+        if bytes.is_empty() {
+            Ok(AlgorithmIdentifier {
+                oid: algorithm,
+                parameters,
+            })
+        } else {
+            Err(der::Error::Length {
+                tag: der::Tag::Sequence,
+            })
+        }
     })
 }
 
