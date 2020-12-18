@@ -52,13 +52,12 @@ impl TryFrom<usize> for Length {
 
 impl Decodable<'_> for Length {
     fn decode(decoder: &mut Decoder<'_>) -> Result<Length> {
-        // TODO(tarcieri): move `decode::byte` to `Decoder`
-        match crate::decoder::byte(decoder)? {
+        match decoder.byte()? {
             // Note: per X.690 Section 8.1.3.6.1 the byte 0x80 encodes indefinite
             // lengths, which are not allowed in DER, so disallow that byte.
             len if len < 0x80 => Ok(len.into()),
             0x81 => {
-                let len = crate::decoder::byte(decoder)?;
+                let len = decoder.byte()?;
 
                 // X.690 Section 10.1: DER lengths must be encoded with a minimum
                 // number of octets
@@ -69,8 +68,8 @@ impl Decodable<'_> for Length {
                 }
             }
             0x82 => {
-                let len_hi = crate::decoder::byte(decoder)? as u16;
-                let len = (len_hi << 8) | (crate::decoder::byte(decoder)? as u16);
+                let len_hi = decoder.byte()? as u16;
+                let len = (len_hi << 8) | (decoder.byte()? as u16);
 
                 // X.690 Section 10.1: DER lengths must be encoded with a minimum
                 // number of octets

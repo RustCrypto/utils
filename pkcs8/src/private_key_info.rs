@@ -47,14 +47,10 @@ pub struct PrivateKeyInfo<'a> {
 
 impl<'a> PrivateKeyInfo<'a> {
     /// Parse [`PrivateKeyInfo`] encoded as ASN.1 DER.
-    pub fn from_der(mut bytes: &'a [u8]) -> Result<Self> {
-        let result = Self::decode(&mut bytes)?;
-
-        if bytes.is_empty() {
-            Ok(result)
-        } else {
-            Err(Error::Decode)
-        }
+    pub fn from_der(bytes: &'a [u8]) -> Result<Self> {
+        let mut decoder = der::Decoder::new(bytes);
+        let result = Self::decode(&mut decoder)?;
+        decoder.finish(result).map_err(|_| Error::Decode)
     }
 
     /// Write ASN.1 DER-encoded [`PrivateKeyInfo`] to the provided
@@ -96,30 +92,27 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
     type Error = der::Error;
 
     fn try_from(any: der::Any<'a>) -> der::Result<PrivateKeyInfo<'a>> {
-        let mut decoder = der::Sequence::try_from(any)?.decoder();
+        any.sequence(|mut decoder| {
+            // Parse and validate `version` INTEGER.
+            if decoder.integer()? != VERSION.into() {
+                return Err(der::Error::Value {
+                    tag: der::Tag::Integer,
+                });
+            }
 
-        // Parse and validate `version` INTEGER.
-        if der::Integer::decode(&mut decoder)? != VERSION.into() {
-            return Err(der::Error::Value {
-                tag: der::Tag::Integer,
-            });
-        }
+            let algorithm = decoder.decode()?;
+            let private_key = decoder.octet_string()?.as_bytes();
 
-        let algorithm = AlgorithmIdentifier::decode(&mut decoder)?;
-        let private_key = der::OctetString::decode(&mut decoder)?.as_bytes();
-
-        // TODO(tarcieri): decoder.finish()
-        if !decoder.is_empty() {
-            return Err(der::Error::Length {
-                tag: der::Tag::Sequence,
-            });
-        }
-
-        Ok(Self {
-            algorithm,
-            private_key,
+            decoder.finish(Self {
+                algorithm,
+                private_key,
+            })
         })
     }
+}
+
+impl der::Tagged for PrivateKeyInfo<'_> {
+    const TAG: der::Tag = der::Tag::Sequence;
 }
 
 impl<'a> fmt::Debug for PrivateKeyInfo<'a> {

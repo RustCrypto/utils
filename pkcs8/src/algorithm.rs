@@ -1,7 +1,7 @@
 //! X.509 `AlgorithmIdentifier`
 
 use crate::{Error, ObjectIdentifier, Result};
-use core::convert::{TryFrom, TryInto};
+use core::convert::TryFrom;
 use der::Decodable;
 
 #[cfg(feature = "alloc")]
@@ -29,14 +29,10 @@ pub struct AlgorithmIdentifier {
 
 impl AlgorithmIdentifier {
     /// Parse [`AlgorithmIdentifier`] encoded as ASN.1 DER
-    pub fn from_der(mut bytes: &[u8]) -> Result<Self> {
-        let result = Self::decode(&mut bytes)?;
-
-        if bytes.is_empty() {
-            Ok(result)
-        } else {
-            Err(Error::Decode)
-        }
+    pub fn from_der(bytes: &[u8]) -> Result<Self> {
+        let mut decoder = der::Decoder::new(bytes);
+        let result = Self::decode(&mut decoder)?;
+        decoder.finish(result).map_err(|_| Error::Decode)
     }
 
     /// Get the `parameters` field as an [`ObjectIdentifier`].
@@ -76,19 +72,16 @@ impl TryFrom<der::Any<'_>> for AlgorithmIdentifier {
     type Error = der::Error;
 
     fn try_from(any: der::Any<'_>) -> der::Result<AlgorithmIdentifier> {
-        let mut decoder = der::Sequence::try_from(any)?.decoder();
-        let oid = ObjectIdentifier::decode(&mut decoder)?;
-        let parameters = Option::decode(&mut decoder)?;
-
-        // TODO(tarcieri): decoder.finish()
-        if !decoder.is_empty() {
-            return Err(der::Error::Length {
-                tag: der::Tag::Sequence,
-            });
-        }
-
-        Ok(Self { oid, parameters })
+        any.sequence(|mut decoder| {
+            let oid = decoder.oid()?;
+            let parameters = decoder.optional()?;
+            decoder.finish(Self { oid, parameters })
+        })
     }
+}
+
+impl der::Tagged for AlgorithmIdentifier {
+    const TAG: der::Tag = der::Tag::Sequence;
 }
 
 /// The `parameters` field of `AlgorithmIdentifier`.
@@ -132,17 +125,25 @@ impl AlgorithmParameters {
     }
 }
 
+impl From<der::Null> for AlgorithmParameters {
+    fn from(_: der::Null) -> AlgorithmParameters {
+        AlgorithmParameters::Null
+    }
+}
+
+impl From<ObjectIdentifier> for AlgorithmParameters {
+    fn from(oid: ObjectIdentifier) -> AlgorithmParameters {
+        AlgorithmParameters::Oid(oid)
+    }
+}
+
 impl TryFrom<der::Any<'_>> for AlgorithmParameters {
     type Error = der::Error;
 
     fn try_from(any: der::Any<'_>) -> der::Result<AlgorithmParameters> {
         match any.tag() {
-            der::Tag::Null => {
-                // Ensure `NULL` is well-formed
-                der::Null::try_from(any)?;
-                Ok(AlgorithmParameters::Null)
-            }
-            der::Tag::ObjectIdentifier => Ok(AlgorithmParameters::Oid(any.try_into()?)),
+            der::Tag::Null => any.null().map(Into::into),
+            der::Tag::ObjectIdentifier => any.oid().map(Into::into),
             _ => Err(der::Error::UnexpectedTag {
                 expected: None,
                 actual: any.tag(),
