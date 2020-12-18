@@ -1,11 +1,14 @@
 //! X.509 `SubjectPublicKeyInfo`
 
-use crate::{algorithm, AlgorithmIdentifier, Error, Result};
+use crate::{AlgorithmIdentifier, Error, Result};
 use core::convert::TryFrom;
-use der::Decodable;
+use der::{Decodable, Encodable, Message};
 
 #[cfg(feature = "alloc")]
-use {crate::PublicKeyDocument, core::convert::TryInto};
+use {
+    crate::{error, PublicKeyDocument},
+    core::convert::TryInto,
+};
 
 #[cfg(feature = "pem")]
 use crate::pem;
@@ -43,33 +46,19 @@ impl<'a> SubjectPublicKeyInfo<'a> {
     /// Write ASN.1 DER-encoded [`SubjectPublicKeyInfo`] to the provided
     /// buffer, returning a slice containing the encoded data.
     pub fn write_der<'b>(&self, buffer: &'b mut [u8]) -> Result<&'b [u8]> {
-        let alg_id_len = algorithm::identifier_len(&self.algorithm)?;
-        let private_key_len = der::length::header(self.subject_public_key.len())?
-            .checked_add(self.subject_public_key.len())
-            .ok_or(Error::Encode)?;
-        let sequence_len = alg_id_len
-            .checked_add(private_key_len)
-            .ok_or(Error::Encode)?;
-
-        let mut offset = der::encode::header(buffer, der::Tag::Sequence, sequence_len)?;
-        offset += algorithm::encode_identifier(&mut buffer[offset..], &self.algorithm)?;
-        offset += der::encode::any(
-            &mut buffer[offset..],
-            der::Tag::BitString,
-            self.subject_public_key,
-        )?;
-
-        Ok(&buffer[..offset])
+        let mut encoder = der::Encoder::new(buffer);
+        self.encode(&mut encoder)?;
+        Ok(encoder.finish())
     }
 
     /// Encode this [`SubjectPublicKeyInfo] as ASN.1 DER.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn to_der(&self) -> PublicKeyDocument {
-        let len = spki_len(self).unwrap();
-        let mut buffer = vec![0u8; len];
-        self.write_der(&mut buffer).unwrap();
-        buffer.try_into().expect("malformed DER")
+        self.to_vec()
+            .ok()
+            .and_then(|buf| buf.try_into().ok())
+            .expect(error::DER_ENCODING_MSG)
     }
 
     /// Encode this [`SubjectPublicKeyInfo`] as PEM-encoded ASN.1 DER.
@@ -104,22 +93,14 @@ impl<'a> TryFrom<der::Any<'a>> for SubjectPublicKeyInfo<'a> {
     }
 }
 
-impl der::Tagged for SubjectPublicKeyInfo<'_> {
-    const TAG: der::Tag = der::Tag::Sequence;
-}
-
-/// Get the length of DER-encoded [`SubjectPublicKeyInfo`]
-#[cfg(feature = "alloc")]
-fn spki_len(spki: &SubjectPublicKeyInfo<'_>) -> Result<usize> {
-    let alg_id_len = algorithm::identifier_len(&spki.algorithm)?;
-    let public_key_len = der::length::header(spki.subject_public_key.len())?
-        .checked_add(spki.subject_public_key.len())
-        .ok_or(Error::Encode)?;
-    let sequence_len = alg_id_len
-        .checked_add(public_key_len)
-        .ok_or(Error::Encode)?;
-    der::length::header(sequence_len)
-        .ok()
-        .and_then(|n| n.checked_add(sequence_len))
-        .ok_or(Error::Encode)
+impl<'a> Message for SubjectPublicKeyInfo<'a> {
+    fn fields<F, T>(&self, f: F) -> der::Result<T>
+    where
+        F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
+    {
+        f(&[
+            &self.algorithm,
+            &der::BitString::new(self.subject_public_key)?,
+        ])
+    }
 }

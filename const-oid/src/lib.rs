@@ -329,6 +329,12 @@ impl TryFrom<&[u32]> for ObjectIdentifier {
     }
 }
 
+impl From<&ObjectIdentifier> for ObjectIdentifier {
+    fn from(oid: &ObjectIdentifier) -> ObjectIdentifier {
+        *oid
+    }
+}
+
 impl fmt::Debug for ObjectIdentifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ObjectIdentifier({})", self)
@@ -554,7 +560,7 @@ fn write_base128(bytes: &mut [u8], mut n: u32) -> Result<usize> {
 /// Compute the length of a value when encoded in base 128
 fn base128_len(n: u32) -> usize {
     match n {
-        0..=0x7f => 1usize,
+        0..=0x7f => 1,
         0x80..=0x3fff => 2,
         0x4000..=0x1fffff => 3,
         0x200000..=0x1fffffff => 4,

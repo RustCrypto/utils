@@ -1,20 +1,73 @@
 //! Length calculations for encoded ASN.1 DER values
 
-use crate::{Decodable, Decoder, Error, Result};
-use core::convert::TryFrom;
+use crate::{Decodable, Decoder, Encodable, Encoder, Error, Result};
+use core::{convert::TryFrom, ops::Add};
+
+/// Error message for when length invariants are violated.
+///
+/// This is intended to be passed directly to [`Result::expect`].
+pub(crate) const ERROR_MSG: &str = "length invariant violated";
 
 /// ASN.1-encoded length.
 ///
 /// # Limits
 ///
 /// Presently constrained to the range `0..=65535`
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub struct Length(u16);
 
 impl Length {
+    /// Return a length of `0`.
+    pub const fn zero() -> Self {
+        Length(0)
+    }
+
     /// Get the maximum length supported by this crate
     pub const fn max() -> usize {
         u16::MAX as usize
+    }
+}
+
+impl Add for Length {
+    type Output = Result<Self>;
+
+    fn add(self, other: Self) -> Result<Self> {
+        self.0
+            .checked_add(other.0)
+            .map(Length)
+            .ok_or(Error::Overflow)
+    }
+}
+
+impl Add<u8> for Length {
+    type Output = Result<Self>;
+
+    fn add(self, other: u8) -> Result<Self> {
+        self + Length::from(other)
+    }
+}
+
+impl Add<u16> for Length {
+    type Output = Result<Self>;
+
+    fn add(self, other: u16) -> Result<Self> {
+        self + Length::from(other)
+    }
+}
+
+impl Add<usize> for Length {
+    type Output = Result<Self>;
+
+    fn add(self, other: usize) -> Result<Self> {
+        self + Length::try_from(other)?
+    }
+}
+
+impl Add<Length> for Result<Length> {
+    type Output = Self;
+
+    fn add(self, other: Length) -> Self {
+        self? + other
     }
 }
 
@@ -87,27 +140,27 @@ impl Decodable<'_> for Length {
     }
 }
 
-#[cfg(feature = "oid")]
-use crate::ObjectIdentifier;
-
-/// Compute the length of a header including the tag byte.
-///
-/// This function supports `nested_len` values up to 65,535 bytes.
-pub fn header(nested_len: usize) -> Result<usize> {
-    match nested_len {
-        0..=0x7F => Ok(2),
-        0x80..=0xFF => Ok(3),
-        0x100..=0xFFFF => Ok(4),
-        _ => Err(Error::Overlength),
+impl Encodable for Length {
+    fn encoded_len(&self) -> Result<Length> {
+        match self.0 {
+            0..=0x7F => Ok(Length(1)),
+            0x80..=0xFF => Ok(Length(2)),
+            0x100..=0xFFFF => Ok(Length(3)),
+        }
     }
-}
 
-/// Get the length of a DER-encoded OID
-#[cfg(feature = "oid")]
-#[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
-pub fn oid(oid: ObjectIdentifier) -> Result<usize> {
-    let body_len = oid.ber_len();
-    header(body_len)?
-        .checked_add(body_len)
-        .ok_or(Error::Overflow)
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        match self.0 {
+            0..=0x7F => encoder.byte(self.0 as u8),
+            0x80..=0xFF => {
+                encoder.byte(0x81)?;
+                encoder.byte(self.0 as u8)
+            }
+            0x100..=0xFFFF => {
+                encoder.byte(0x82)?;
+                encoder.byte((self.0 >> 8) as u8)?;
+                encoder.byte((self.0 & 0xFF) as u8)
+            }
+        }
+    }
 }
