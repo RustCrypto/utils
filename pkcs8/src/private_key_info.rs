@@ -1,17 +1,20 @@
 //! PKCS#8 `PrivateKeyInfo`.
 
-use crate::{algorithm, AlgorithmIdentifier, Error, Result};
+use crate::{AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
-use der::Decodable;
+use der::{Decodable, Encodable, Message};
 
 #[cfg(feature = "alloc")]
-use {crate::document::PrivateKeyDocument, zeroize::Zeroizing};
+use {
+    crate::{error, PrivateKeyDocument},
+    core::convert::TryInto,
+};
 
 #[cfg(feature = "pem")]
-use crate::pem;
+use {crate::pem, zeroize::Zeroizing};
 
 /// RFC 5208 designates `0` as the only valid version for PKCS#8 documents
-const VERSION: u8 = 0;
+const VERSION: i8 = 0;
 
 /// PKCS#8 `PrivateKeyInfo`
 ///
@@ -56,18 +59,19 @@ impl<'a> PrivateKeyInfo<'a> {
     /// Write ASN.1 DER-encoded [`PrivateKeyInfo`] to the provided
     /// buffer, returning a slice containing the encoded data.
     pub fn write_der<'b>(&self, buffer: &'b mut [u8]) -> Result<&'b [u8]> {
-        let offset = encode_private_key_info(buffer, self)?;
-        Ok(&buffer[..offset])
+        let mut encoder = der::Encoder::new(buffer);
+        self.encode(&mut encoder)?;
+        Ok(encoder.finish())
     }
 
     /// Encode this [`PrivateKeyInfo`] as ASN.1 DER.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn to_der(&self) -> PrivateKeyDocument {
-        let len = private_key_info_len(self).unwrap();
-        let mut buffer = Zeroizing::new(vec![0u8; len]);
-        self.write_der(&mut buffer).unwrap();
-        PrivateKeyDocument::from_der(&buffer).expect("malformed DER")
+        self.to_vec()
+            .ok()
+            .and_then(|buf| buf.try_into().ok())
+            .expect(error::DER_ENCODING_MSG)
     }
 
     /// Encode this [`PrivateKeyInfo`] as PEM-encoded ASN.1 DER.
@@ -101,7 +105,7 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
             }
 
             let algorithm = decoder.decode()?;
-            let private_key = decoder.octet_string()?.as_bytes();
+            let private_key = decoder.octet_string()?.into();
 
             decoder.finish(Self {
                 algorithm,
@@ -111,8 +115,17 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
     }
 }
 
-impl der::Tagged for PrivateKeyInfo<'_> {
-    const TAG: der::Tag = der::Tag::Sequence;
+impl<'a> Message for PrivateKeyInfo<'a> {
+    fn fields<F, T>(&self, f: F) -> der::Result<T>
+    where
+        F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
+    {
+        f(&[
+            &der::Integer::from(VERSION),
+            &self.algorithm,
+            &der::OctetString::new(self.private_key)?,
+        ])
+    }
 }
 
 impl<'a> fmt::Debug for PrivateKeyInfo<'a> {
@@ -121,49 +134,4 @@ impl<'a> fmt::Debug for PrivateKeyInfo<'a> {
             .field("algorithm", &self.algorithm)
             .finish() // TODO(tarcieri): use `finish_non_exhaustive` when stable
     }
-}
-
-/// Get the length of DER-encoded [`PrivateKeyInfo`]
-#[cfg(feature = "alloc")]
-fn private_key_info_len(private_key_info: &PrivateKeyInfo<'_>) -> Result<usize> {
-    let alg_id_len = algorithm::identifier_len(&private_key_info.algorithm)?;
-    let version_len = 3;
-    let private_key_len = der::length::header(private_key_info.private_key.len())?
-        .checked_add(private_key_info.private_key.len())
-        .ok_or(Error::Encode)?;
-    let sequence_len = alg_id_len
-        .checked_add(version_len)
-        .and_then(|len| len.checked_add(private_key_len))
-        .ok_or(Error::Encode)?;
-    der::length::header(sequence_len)
-        .ok()
-        .and_then(|n| n.checked_add(sequence_len))
-        .ok_or(Error::Encode)
-}
-
-/// Encode [`PrivateKeyInfo`]
-fn encode_private_key_info(
-    buffer: &mut [u8],
-    private_key_info: &PrivateKeyInfo<'_>,
-) -> Result<usize> {
-    let alg_id_len = algorithm::identifier_len(&private_key_info.algorithm)?;
-    let version_len = 3;
-    let private_key_len = der::length::header(private_key_info.private_key.len())?
-        .checked_add(private_key_info.private_key.len())
-        .ok_or(Error::Encode)?;
-    let sequence_len = alg_id_len
-        .checked_add(version_len)
-        .and_then(|len| len.checked_add(private_key_len))
-        .ok_or(Error::Encode)?;
-
-    let mut offset = der::encode::header(buffer, der::Tag::Sequence, sequence_len)?;
-    offset += der::encode::any(&mut buffer[offset..], der::Tag::Integer, &[0])?;
-    offset += algorithm::encode_identifier(&mut buffer[offset..], &private_key_info.algorithm)?;
-    offset += der::encode::any(
-        &mut buffer[offset..],
-        der::Tag::OctetString,
-        private_key_info.private_key,
-    )?;
-
-    Ok(offset)
 }

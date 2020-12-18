@@ -20,8 +20,9 @@ optional = true
 path = "../const-oid"
 
 [features]
+alloc = []
 oid = ["const-oid"]
-std = []
+std = ["alloc"]
 
 [package.metadata.docs.rs]
 all-features = true

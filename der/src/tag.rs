@@ -1,6 +1,6 @@
 //! ASN.1 tags.
 
-use crate::{Decodable, Decoder, Error, Result};
+use crate::{Decodable, Decoder, Encodable, Encoder, Error, Length, Result};
 use core::convert::TryFrom;
 
 /// ASN.1 tags.
@@ -44,6 +44,16 @@ impl Tag {
 impl Decodable<'_> for Tag {
     fn decode(decoder: &mut Decoder<'_>) -> Result<Self> {
         decoder.byte().and_then(Self::try_from)
+    }
+}
+
+impl Encodable for Tag {
+    fn encoded_len(&self) -> Result<Length> {
+        Ok(1u8.into())
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        encoder.byte(*self as u8)
     }
 }
 

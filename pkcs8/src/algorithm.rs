@@ -2,10 +2,10 @@
 
 use crate::{Error, ObjectIdentifier, Result};
 use core::convert::TryFrom;
-use der::Decodable;
+use der::{Decodable, Encodable, Message};
 
 #[cfg(feature = "alloc")]
-use crate::algorithm;
+use {crate::error, alloc::vec::Vec};
 
 /// X.509 `AlgorithmIdentifier`
 ///
@@ -45,18 +45,16 @@ impl AlgorithmIdentifier {
     /// Write ASN.1 DER-encoded [`AlgorithmIdentifier`] to the provided
     /// buffer, returning a slice containing the encoded data.
     pub fn write_der<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a [u8]> {
-        let offset = encode_identifier(buffer, self)?;
-        Ok(&buffer[..offset])
+        let mut encoder = der::Encoder::new(buffer);
+        self.encode(&mut encoder)?;
+        Ok(encoder.finish())
     }
 
     /// Encode this [`AlgorithmIdentifier`] as ASN.1 DER
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    pub fn to_der(&self) -> alloc::vec::Vec<u8> {
-        let len = algorithm::identifier_len(self).unwrap();
-        let mut buffer = vec![0u8; len];
-        self.write_der(&mut buffer).unwrap();
-        buffer
+    pub fn to_der(&self) -> Vec<u8> {
+        self.to_vec().expect(error::DER_ENCODING_MSG)
     }
 }
 
@@ -73,15 +71,20 @@ impl TryFrom<der::Any<'_>> for AlgorithmIdentifier {
 
     fn try_from(any: der::Any<'_>) -> der::Result<AlgorithmIdentifier> {
         any.sequence(|mut decoder| {
-            let oid = decoder.oid()?;
-            let parameters = decoder.optional()?;
+            let oid = decoder.decode()?;
+            let parameters = decoder.decode()?;
             decoder.finish(Self { oid, parameters })
         })
     }
 }
 
-impl der::Tagged for AlgorithmIdentifier {
-    const TAG: der::Tag = der::Tag::Sequence;
+impl Message for AlgorithmIdentifier {
+    fn fields<F, T>(&self, f: F) -> der::Result<T>
+    where
+        F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
+    {
+        f(&[&self.oid, &self.parameters])
+    }
 }
 
 /// The `parameters` field of `AlgorithmIdentifier`.
@@ -152,46 +155,18 @@ impl TryFrom<der::Any<'_>> for AlgorithmParameters {
     }
 }
 
-/// Encode an [`AlgorithmIdentifier`].
-pub(crate) fn encode_identifier(
-    buffer: &mut [u8],
-    algorithm_id: &AlgorithmIdentifier,
-) -> Result<usize> {
-    let alg_oid_len = der::length::oid(algorithm_id.oid)?;
-    let params_len = parameters_len(algorithm_id)?;
-    let sequence_len = alg_oid_len.checked_add(params_len).unwrap();
-
-    let mut offset = der::encode::header(buffer, der::Tag::Sequence, sequence_len)?;
-    offset += der::encode::oid(&mut buffer[offset..], algorithm_id.oid)?;
-    offset += match algorithm_id.parameters {
-        Some(AlgorithmParameters::Null) => {
-            der::encode::header(&mut buffer[offset..], der::Tag::Null, 0)?
+impl Encodable for AlgorithmParameters {
+    fn encoded_len(&self) -> der::Result<der::Length> {
+        match self {
+            Self::Null => der::Null.encoded_len(),
+            Self::Oid(oid) => oid.encoded_len(),
         }
-        Some(AlgorithmParameters::Oid(oid)) => der::encode::oid(&mut buffer[offset..], oid)?,
-        None => 0,
-    };
+    }
 
-    Ok(offset)
-}
-
-/// Get the length of a DER-encoded [`AlgorithmIdentifier`]
-pub(crate) fn identifier_len(algorithm_id: &AlgorithmIdentifier) -> Result<usize> {
-    let alg_oid_len = der::length::oid(algorithm_id.oid)?;
-    let params_len = parameters_len(algorithm_id)?;
-    let sequence_len = alg_oid_len.checked_add(params_len).unwrap();
-
-    der::length::header(sequence_len)
-        .ok()
-        .and_then(|n| n.checked_add(sequence_len))
-        .ok_or(Error::Encode)
-}
-
-/// Get the length of the `parameters` field of a DER-encoded
-/// [`AlgorithmIdentifier`].
-fn parameters_len(algorithm_id: &AlgorithmIdentifier) -> Result<usize> {
-    match algorithm_id.parameters {
-        Some(AlgorithmParameters::Null) => Ok(2),
-        Some(AlgorithmParameters::Oid(oid)) => Ok(der::length::oid(oid)?),
-        None => Ok(0),
+    fn encode(&self, encoder: &mut der::Encoder<'_>) -> der::Result<()> {
+        match self {
+            Self::Null => encoder.null(),
+            Self::Oid(oid) => encoder.oid(*oid),
+        }
     }
 }

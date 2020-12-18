@@ -1,15 +1,15 @@
-//! ASN.1 `ANY` type
+//! ASN.1 `ANY` type.
 
 use crate::{
-    BitString, Decodable, Decoder, Error, Header, Integer, Length, Null, OctetString, Result,
-    Sequence, Tag,
+    length, BitString, Decodable, Decoder, Encodable, Encoder, Error, Header, Integer, Length,
+    Null, OctetString, Result, Sequence, Tag,
 };
 use core::convert::{TryFrom, TryInto};
 
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
 
-/// ASN.1 `ANY` type: represents any ASN.1 value
+/// ASN.1 `ANY` type: represents any explicitly tagged ASN.1 value.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Any<'a> {
     /// Tag representing the type of the encoded value
@@ -34,8 +34,19 @@ impl<'a> Any<'a> {
         self.tag
     }
 
-    /// Get the value for this [`Any`] type as a byte slice
-    pub fn value(self) -> &'a [u8] {
+    /// Get the [`Length`] of this [`Any`] type's value.
+    pub fn len(self) -> Length {
+        // Ensured to be in-range in constructor
+        self.value.len().try_into().expect(length::ERROR_MSG)
+    }
+
+    /// Is the value of this [`Any`] type empty?
+    pub fn is_empty(self) -> bool {
+        self.value.len() == 0
+    }
+
+    /// Get the raw value for this [`Any`] type as a byte slice
+    pub fn as_bytes(self) -> &'a [u8] {
         self.value
     }
 
@@ -74,6 +85,14 @@ impl<'a> Any<'a> {
     {
         Sequence::try_from(self).and_then(|seq| f(seq.decoder()))
     }
+
+    /// Get the ASN.1 DER [`Header`] for this [`Any`] value
+    pub(crate) fn header(self) -> Header {
+        Header {
+            tag: self.tag,
+            length: self.len(),
+        }
+    }
 }
 
 impl<'a> Decodable<'a> for Any<'a> {
@@ -83,5 +102,16 @@ impl<'a> Decodable<'a> for Any<'a> {
         let len = usize::from(header.length);
         let value = decoder.bytes(len).map_err(|_| Error::Length { tag })?;
         Self::new(tag, value)
+    }
+}
+
+impl<'a> Encodable for Any<'a> {
+    fn encoded_len(&self) -> Result<Length> {
+        self.header().encoded_len()? + self.len()
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        self.header().encode(encoder)?;
+        encoder.bytes(self.value)
     }
 }

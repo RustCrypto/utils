@@ -17,49 +17,49 @@ pub struct Decoder<'a> {
 }
 
 impl<'a> Decoder<'a> {
-    /// Create a new decoder for the given byte slice
+    /// Create a new decoder for the given byte slice.
     pub fn new(bytes: &'a [u8]) -> Self {
         Self { bytes, pos: 0 }
     }
 
-    /// Decode a value which impls the [`Decodable`] trait
+    /// Decode a value which impls the [`Decodable`] trait.
     pub fn decode<T: Decodable<'a>>(&mut self) -> Result<T> {
         T::decode(self)
     }
 
-    /// Attempt to decode an ASN.1 `ANY` value
+    /// Attempt to decode an ASN.1 `ANY` value.
     pub fn any(&mut self) -> Result<Any<'a>> {
         self.decode()
     }
 
-    /// Attempt to decode an ASN.1 `BIT STRING`
+    /// Attempt to decode an ASN.1 `BIT STRING`.
     pub fn bit_string(&mut self) -> Result<BitString<'a>> {
         self.decode()
     }
 
-    /// Attempt to decode an ASN.1 `INTEGER`
+    /// Attempt to decode an ASN.1 `INTEGER`.
     pub fn integer(&mut self) -> Result<Integer> {
         self.decode()
     }
 
-    /// Attempt to decode an ASN.1 `NULL` value
+    /// Attempt to decode an ASN.1 `NULL` value.
     pub fn null(&mut self) -> Result<Null> {
         self.decode()
     }
 
-    /// Attempt to decode an ASN.1 `OCTET STRING`
+    /// Attempt to decode an ASN.1 `OCTET STRING`.
     pub fn octet_string(&mut self) -> Result<OctetString<'a>> {
         self.decode()
     }
 
-    /// Attempt to decode an ASN.1 `OBJECT IDENTIFIER`
+    /// Attempt to decode an ASN.1 `OBJECT IDENTIFIER`.
     #[cfg(feature = "oid")]
     #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
     pub fn oid(&mut self) -> Result<ObjectIdentifier> {
         self.decode()
     }
 
-    /// Attempt to decode an ASN.1 `OPTIONAL` value
+    /// Attempt to decode an ASN.1 `OPTIONAL` value.
     pub fn optional<T: Decodable<'a>>(&mut self) -> Result<Option<T>> {
         self.decode()
     }
@@ -98,11 +98,7 @@ impl<'a> Decoder<'a> {
     /// Obtain a slice of bytes of the given length from the current cursor
     /// position, or return an error if we have insufficient data.
     pub(crate) fn bytes(&mut self, len: usize) -> Result<&'a [u8]> {
-        if len > self.remaining().len() {
-            return Err(Error::Truncated);
-        }
-
-        let result = &self.remaining()[..len];
+        let result = self.remaining().get(..len).ok_or(Error::Truncated)?;
         self.pos = self.pos.checked_add(len).ok_or(Error::Overflow)?;
         Ok(result)
     }

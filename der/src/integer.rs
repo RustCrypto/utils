@@ -1,27 +1,39 @@
-//! ASN.1 `INTEGER`
+//! ASN.1 `INTEGER` support.
 
-use crate::{Any, Error, Result, Tag, Tagged};
+use crate::{Any, Encodable, Encoder, Error, Header, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
-/// ASN.1 `INTEGER`
+/// ASN.1 `INTEGER` type.
 ///
 /// # Limits
 ///
-/// Presently constrained to 1-byte values!
+/// Presently constrained to `i8`.
 ///
-/// TODO: larger integers
+/// This is not a deliberate decision: the goal of this library is to
+/// eventually support other integer types, but they have not yet been
+/// implemented.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Integer(u8);
+pub struct Integer(i8);
 
-impl From<u8> for Integer {
-    fn from(i: u8) -> Integer {
-        Integer(i)
+impl Integer {
+    /// Get the ASN.1 DER [`Header`] for this [`Integer`] value
+    pub(crate) fn header(self) -> Header {
+        Header {
+            tag: Tag::Integer,
+            length: 1u8.into(), // TODO(tarcieri): larger integers
+        }
     }
 }
 
-impl From<Integer> for u8 {
-    fn from(i: Integer) -> u8 {
-        i.0
+impl From<i8> for Integer {
+    fn from(x: i8) -> Integer {
+        Integer(x)
+    }
+}
+
+impl From<Integer> for i8 {
+    fn from(x: Integer) -> i8 {
+        x.0
     }
 }
 
@@ -31,11 +43,22 @@ impl TryFrom<Any<'_>> for Integer {
     fn try_from(any: Any<'_>) -> Result<Integer> {
         let tag = any.tag().expect(Tag::Integer)?;
 
-        if any.value().len() == 1 {
-            Ok(any.value()[0].into())
+        if any.as_bytes().len() == 1 {
+            Ok(Integer(any.as_bytes()[0] as i8))
         } else {
             Err(Error::Length { tag })
         }
+    }
+}
+
+impl Encodable for Integer {
+    fn encoded_len(&self) -> Result<Length> {
+        self.header().encoded_len()? + 1u8
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        self.header().encode(encoder)?;
+        encoder.byte(self.0 as u8)
     }
 }
 

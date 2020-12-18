@@ -1,7 +1,19 @@
-//! ASN.1 `SEQUENCE`
+//! ASN.1 `SEQUENCE` support.
 
-use crate::{Any, Decoder, Error, Length, Result, Tag, Tagged};
+use crate::{length, Any, Decoder, Encodable, Encoder, Error, Header, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
+
+/// Obtain the length of an ASN.1 `SEQUENCE` of [`Encodable`] values when
+/// serialized as ASN.1 DER.
+pub fn encoded_len(encodables: &[&dyn Encodable]) -> Result<Length> {
+    let body_len = encodables
+        .iter()
+        .fold(Ok(Length::zero()), |sum, encodable| {
+            sum + encodable.encoded_len()?
+        })?;
+
+    Header::new(Tag::Sequence, body_len)?.encoded_len() + body_len
+}
 
 /// ASN.1 `SEQUENCE`
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -42,7 +54,23 @@ impl<'a> TryFrom<Any<'a>> for Sequence<'a> {
 
     fn try_from(any: Any<'a>) -> Result<Sequence<'a>> {
         any.tag().expect(Tag::Sequence)?;
-        Self::new(any.value())
+        Self::new(any.as_bytes())
+    }
+}
+
+impl<'a> From<Sequence<'a>> for Any<'a> {
+    fn from(seq: Sequence<'a>) -> Any<'a> {
+        Any::new(Tag::Sequence, seq.inner).expect(length::ERROR_MSG)
+    }
+}
+
+impl<'a> Encodable for Sequence<'a> {
+    fn encoded_len(&self) -> Result<Length> {
+        Any::from(*self).encoded_len()
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        Any::from(*self).encode(encoder)
     }
 }
 

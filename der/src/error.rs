@@ -1,6 +1,6 @@
 //! Error types.
 
-use crate::Tag;
+use crate::{Length, Tag};
 use core::fmt;
 
 /// Result type
@@ -10,7 +10,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Error {
-    /// Incorrect length
+    /// Incorrect length for a given field
     Length {
         /// Tag type of the value being decoded
         tag: Tag,
@@ -28,8 +28,18 @@ pub enum Error {
     /// Message is longer than this library's internal limits support
     Overlength,
 
-    /// Message is truncated
+    /// Unexpected end-of-message/nested field when decoding
     Truncated,
+
+    /// Encoded message is shorter than the expected length
+    /// (i.e. an `Encodable` impl on a particular type has a buggy `encoded_len`)
+    Underlength {
+        /// Expected length
+        expected: Length,
+
+        /// Actual length
+        actual: Length,
+    },
 
     /// Unexpected tag
     UnexpectedTag {

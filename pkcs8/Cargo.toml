@@ -35,7 +35,7 @@ features = ["alloc"]
 hex-literal = "0.3"
 
 [features]
-alloc = ["zeroize"]
+alloc = ["der/alloc", "zeroize"]
 pem = ["alloc", "subtle-encoding"]
 std = ["alloc"]
 

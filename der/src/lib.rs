@@ -24,25 +24,26 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 #[cfg(feature = "std")]
 extern crate std;
 
 mod any;
 mod bit_string;
+mod decoder;
+mod encoder;
 mod error;
 mod header;
 mod integer;
-pub mod length; // TODO(tarcieri): remove `pub` when possible
+mod length;
 mod null;
 mod octet_string;
 mod optional;
 mod sequence;
 mod tag;
 mod traits;
-
-// TODO(tarcieri): get rid of these
-mod decoder;
-pub mod encode;
 
 #[cfg(feature = "oid")]
 mod oid;
@@ -51,17 +52,19 @@ pub use crate::{
     any::Any,
     bit_string::BitString,
     decoder::Decoder,
+    encoder::Encoder,
     error::{Error, Result},
-    header::Header,
     integer::Integer,
     length::Length,
     null::Null,
     octet_string::OctetString,
     sequence::Sequence,
     tag::Tag,
-    traits::{Decodable, Tagged},
+    traits::{Decodable, Encodable, Message, Tagged},
 };
+
+pub(crate) use crate::header::Header;
 
 #[cfg(feature = "oid")]
 #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
-pub use oid::ObjectIdentifier;
+pub use const_oid::ObjectIdentifier;
