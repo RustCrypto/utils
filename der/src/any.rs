@@ -1,7 +1,7 @@
 //! ASN.1 `ANY` type.
 
 use crate::{
-    length, BitString, Decodable, Decoder, Encodable, Encoder, Error, Header, Integer, Length,
+    BitString, ByteSlice, Decodable, Decoder, Encodable, Encoder, Error, Header, Integer, Length,
     Null, OctetString, Result, Sequence, Tag,
 };
 use core::convert::{TryFrom, TryInto};
@@ -13,41 +13,39 @@ use crate::ObjectIdentifier;
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Any<'a> {
     /// Tag representing the type of the encoded value
-    tag: Tag,
+    pub(crate) tag: Tag,
 
     /// Inner value encoded as bytes
-    value: &'a [u8],
+    pub(crate) value: ByteSlice<'a>,
 }
 
 impl<'a> Any<'a> {
-    /// Create a new [`Any`] from the provided tag and slice
+    /// Create a new [`Any`] from the provided [`Tag`] and slice.
     pub fn new(tag: Tag, value: &'a [u8]) -> Result<Self> {
-        if value.len() <= Length::max() {
-            Ok(Self { tag, value })
-        } else {
-            Err(Error::Length { tag })
-        }
+        Ok(Self {
+            tag,
+            value: ByteSlice::new(value).map_err(|_| Error::Length { tag })?,
+        })
     }
 
-    /// Get the tag for this [`Any`] type
+    /// Get the tag for this [`Any`] type.
     pub fn tag(self) -> Tag {
         self.tag
     }
 
     /// Get the [`Length`] of this [`Any`] type's value.
     pub fn len(self) -> Length {
-        // Ensured to be in-range in constructor
-        self.value.len().try_into().expect(length::ERROR_MSG)
+        self.value.len()
     }
 
     /// Is the value of this [`Any`] type empty?
     pub fn is_empty(self) -> bool {
-        self.value.len() == 0
+        self.value.is_empty()
     }
 
     /// Get the raw value for this [`Any`] type as a byte slice
     pub fn as_bytes(self) -> &'a [u8] {
-        self.value
+        self.value.as_bytes()
     }
 
     /// Attempt to decode an ASN.1 `BIT STRING`
@@ -112,6 +110,6 @@ impl<'a> Encodable for Any<'a> {
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
         self.header().encode(encoder)?;
-        encoder.bytes(self.value)
+        encoder.bytes(self.as_bytes())
     }
 }

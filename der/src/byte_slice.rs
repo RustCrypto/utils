@@ -1,0 +1,50 @@
+//! Common handling for types backed by byte slices with enforcement of a
+//! library-level length limitation i.e. `Length::max()`.
+//!
+//! This limit is presently 65,535 bytes.
+
+use crate::{Length, Result};
+use core::convert::TryFrom;
+
+/// Byte slice newtype which respects the `Length::max()` limit.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub(crate) struct ByteSlice<'a> {
+    /// Inner value
+    inner: &'a [u8],
+
+    /// Precomputed `Length` (avoids possible panicking conversions)
+    length: Length,
+}
+
+impl<'a> ByteSlice<'a> {
+    /// Create a new [`ByteSlice`], ensuring that the provided `slice` value
+    /// is shorter than `Length::max()`.
+    pub fn new(slice: &'a [u8]) -> Result<Self> {
+        let length = Length::try_from(slice.len())?;
+        Ok(Self {
+            inner: slice,
+            length,
+        })
+    }
+
+    /// Borrow the inner byte slice
+    pub fn as_bytes(&self) -> &'a [u8] {
+        self.inner
+    }
+
+    /// Get the [`Length`] of this [`ByteSlice`]
+    pub fn len(self) -> Length {
+        self.length
+    }
+
+    /// Is this [`ByteSlice`] empty?
+    pub fn is_empty(self) -> bool {
+        self.len() == Length::zero()
+    }
+}
+
+impl AsRef<[u8]> for ByteSlice<'_> {
+    fn as_ref(&self) -> &[u8] {
+        self.as_bytes()
+    }
+}

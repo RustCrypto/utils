@@ -32,6 +32,7 @@ extern crate std;
 
 mod any;
 mod bit_string;
+mod byte_slice;
 mod decoder;
 mod encoder;
 mod error;
@@ -63,7 +64,7 @@ pub use crate::{
     traits::{Decodable, Encodable, Message, Tagged},
 };
 
-pub(crate) use crate::header::Header;
+pub(crate) use crate::{byte_slice::ByteSlice, header::Header};
 
 #[cfg(feature = "oid")]
 #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]

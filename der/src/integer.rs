@@ -41,7 +41,7 @@ impl TryFrom<Any<'_>> for Integer {
     type Error = Error;
 
     fn try_from(any: Any<'_>) -> Result<Integer> {
-        let tag = any.tag().expect(Tag::Integer)?;
+        let tag = any.tag().assert_eq(Tag::Integer)?;
 
         if any.as_bytes().len() == 1 {
             Ok(Integer(any.as_bytes()[0] as i8))

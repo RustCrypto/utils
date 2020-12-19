@@ -11,7 +11,7 @@ impl TryFrom<Any<'_>> for Null {
     type Error = Error;
 
     fn try_from(any: Any<'_>) -> Result<Null> {
-        let tag = any.tag().expect(Tag::Null)?;
+        let tag = any.tag().assert_eq(Tag::Null)?;
 
         if any.is_empty() {
             Ok(Null)

@@ -9,7 +9,7 @@ use {
     core::{convert::TryInto, iter},
 };
 
-/// Decoding trait
+/// Decoding trait.
 pub trait Decodable<'a>: Sized {
     /// Attempt to decode this message using the provided decoder.
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self>;
@@ -24,7 +24,7 @@ where
     }
 }
 
-/// Encoding trait
+/// Encoding trait.
 pub trait Encodable {
     /// Compute the length of this value in bytes when encoded as ASN.1 DER.
     fn encoded_len(&self) -> Result<Length>;
@@ -65,7 +65,7 @@ pub trait Encodable {
     }
 }
 
-/// Types with an associated ASN.1 tag
+/// Types with an associated ASN.1 [`Tag`].
 pub trait Tagged {
     /// ASN.1 tag
     const TAG: Tag;
@@ -81,6 +81,10 @@ pub trait Tagged {
 pub trait Message {
     /// Call the provided function with a slice of [`Encodable`] trait objects
     /// representing the fields of this message.
+    ///
+    /// This method uses a callback because structs with fields which aren't
+    /// directly [`Encodable`] may need to construct temporary values from
+    /// their fields prior to encoding.
     fn fields<F, T>(&self, f: F) -> Result<T>
     where
         F: FnOnce(&[&dyn Encodable]) -> Result<T>;

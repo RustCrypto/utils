@@ -1,4 +1,4 @@
-//! ASN.1 DER decoder.
+//! DER decoder.
 
 use crate::{
     Any, BitString, Decodable, Error, Integer, Length, Null, OctetString, Result, Sequence, Tagged,
@@ -7,7 +7,7 @@ use crate::{
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
 
-/// ASN.1 DER decoder.
+/// DER decoder.
 pub struct Decoder<'a> {
     /// Byte slice being decoded
     bytes: &'a [u8],

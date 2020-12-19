@@ -3,11 +3,6 @@
 use crate::{Decodable, Decoder, Encodable, Encoder, Error, Result};
 use core::{convert::TryFrom, ops::Add};
 
-/// Error message for when length invariants are violated.
-///
-/// This is intended to be passed directly to [`Result::expect`].
-pub(crate) const ERROR_MSG: &str = "length invariant violated";
-
 /// ASN.1-encoded length.
 ///
 /// # Limits
