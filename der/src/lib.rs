@@ -30,36 +30,25 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-mod any;
-mod bit_string;
+mod asn1;
 mod byte_slice;
 mod decoder;
 mod encoder;
 mod error;
 mod header;
-mod integer;
 mod length;
-mod null;
-mod octet_string;
-mod optional;
-mod sequence;
 mod tag;
 mod traits;
 
-#[cfg(feature = "oid")]
-mod oid;
-
 pub use crate::{
-    any::Any,
-    bit_string::BitString,
+    asn1::{
+        any::Any, bit_string::BitString, integer::Integer, null::Null, octet_string::OctetString,
+        sequence::Sequence,
+    },
     decoder::Decoder,
     encoder::Encoder,
     error::{Error, Result},
-    integer::Integer,
     length::Length,
-    null::Null,
-    octet_string::OctetString,
-    sequence::Sequence,
     tag::Tag,
     traits::{Decodable, Encodable, Message, Tagged},
 };

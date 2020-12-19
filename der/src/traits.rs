@@ -1,6 +1,6 @@
 //! Trait definitions
 
-use crate::{sequence, Any, Decoder, Encoder, Error, Length, Result, Tag};
+use crate::{asn1::sequence, Any, Decoder, Encoder, Error, Length, Result, Tag};
 use core::convert::TryFrom;
 
 #[cfg(feature = "alloc")]
