@@ -1,7 +1,7 @@
 //! ASN.1 DER decoder.
 
 use crate::{
-    Any, BitString, Decodable, Error, Integer, Null, OctetString, Result, Sequence, Tagged,
+    Any, BitString, Decodable, Error, Integer, Length, Null, OctetString, Result, Sequence, Tagged,
 };
 
 #[cfg(feature = "oid")]
@@ -13,13 +13,16 @@ pub struct Decoder<'a> {
     bytes: &'a [u8],
 
     /// Position within the decoded slice
-    pos: usize,
+    pos: Length,
 }
 
 impl<'a> Decoder<'a> {
     /// Create a new decoder for the given byte slice.
     pub fn new(bytes: &'a [u8]) -> Self {
-        Self { bytes, pos: 0 }
+        Self {
+            bytes,
+            pos: Length::zero(),
+        }
     }
 
     /// Decode a value which impls the [`Decodable`] trait.
@@ -90,23 +93,24 @@ impl<'a> Decoder<'a> {
 
     /// Decode a single byte, updating the internal cursor.
     pub(crate) fn byte(&mut self) -> Result<u8> {
-        let byte = *self.bytes.get(self.pos).ok_or(Error::Truncated)?;
-        self.pos = self.pos.checked_add(1).ok_or(Error::Overflow)?;
-        Ok(byte)
+        match self.bytes(1)? {
+            [byte] => Ok(*byte),
+            _ => Err(Error::Truncated),
+        }
     }
 
     /// Obtain a slice of bytes of the given length from the current cursor
     /// position, or return an error if we have insufficient data.
     pub(crate) fn bytes(&mut self, len: usize) -> Result<&'a [u8]> {
         let result = self.remaining().get(..len).ok_or(Error::Truncated)?;
-        self.pos = self.pos.checked_add(len).ok_or(Error::Overflow)?;
+        self.pos = (self.pos + len)?;
         Ok(result)
     }
 
     /// Obtain the remaining bytes in this decoder from the current cursor
     /// position.
     fn remaining(&self) -> &'a [u8] {
-        &self.bytes[self.pos..]
+        &self.bytes[self.pos.into()..]
     }
 }
 
