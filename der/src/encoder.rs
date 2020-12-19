@@ -12,13 +12,16 @@ pub struct Encoder<'a> {
     bytes: &'a mut [u8],
 
     /// Total number of bytes written to buffer so far
-    pos: usize,
+    pos: Length,
 }
 
 impl<'a> Encoder<'a> {
     /// Create a new encoder with the given byte slice as a backing buffer.
     pub fn new(bytes: &'a mut [u8]) -> Self {
-        Self { bytes, pos: 0 }
+        Self {
+            bytes,
+            pos: Length::zero(),
+        }
     }
 
     /// Encode a value which impls the [`Encodable`] trait.
@@ -108,14 +111,15 @@ impl<'a> Encoder<'a> {
     /// Finish encoding to the buffer, returning a slice containing the data
     /// written to the buffer.
     pub fn finish(self) -> &'a [u8] {
-        &self.bytes[..self.pos]
+        &self.bytes[..self.pos.into()]
     }
 
     /// Encode a single byte into the backing buffer.
     pub(crate) fn byte(&mut self, byte: u8) -> Result<()> {
-        let buf = self.reserve(1u8)?;
-        buf[0] = byte;
-        Ok(())
+        self.reserve(1u8)?
+            .first_mut()
+            .map(|b| *b = byte)
+            .ok_or(Error::Truncated)
     }
 
     /// Encode the provided byte slice into the backing buffer.
@@ -128,13 +132,10 @@ impl<'a> Encoder<'a> {
     /// position and returning a mutable slice.
     fn reserve(&mut self, len: impl TryInto<Length>) -> Result<&mut [u8]> {
         let len = len.try_into().map_err(|_| Error::Overflow)?;
-        let end = self
-            .pos
-            .checked_add(usize::from(len))
-            .ok_or(Error::Overflow)?;
-        let slice = self.bytes.get_mut(self.pos..end).ok_or(Error::Overlength)?;
-
-        self.pos = self.pos.checked_add(slice.len()).ok_or(Error::Overflow)?;
+        let end = (self.pos + len)?;
+        let range = self.pos.into()..end.into();
+        let slice = self.bytes.get_mut(range).ok_or(Error::Overlength)?;
+        self.pos = (self.pos + slice.len())?;
         Ok(slice)
     }
 }
