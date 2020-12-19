@@ -1,4 +1,4 @@
-//! ASN.1 DER encoder.
+//! DER encoder.
 
 use crate::{BitString, Encodable, Error, Header, Integer, Length, Null, OctetString, Result, Tag};
 use core::convert::TryInto;
@@ -6,7 +6,7 @@ use core::convert::TryInto;
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
 
-/// ASN.1 DER encoder.
+/// DER encoder.
 pub struct Encoder<'a> {
     /// Buffer that message is being encoded into
     bytes: &'a mut [u8],

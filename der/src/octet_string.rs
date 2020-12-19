@@ -1,30 +1,26 @@
 //! ASN.1 `OCTET STRING` support.
 
-use crate::{length, Any, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
+use crate::{Any, ByteSlice, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 /// ASN.1 `OCTET STRING` type.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct OctetString<'a> {
     /// Inner value
-    inner: &'a [u8],
+    inner: ByteSlice<'a>,
 }
 
 impl<'a> OctetString<'a> {
     /// Create a new [`OctetString`] from a slice
     pub fn new(slice: &'a [u8]) -> Result<Self> {
-        if slice.len() <= Length::max() {
-            Ok(Self { inner: slice })
-        } else {
-            Err(Error::Length {
-                tag: Tag::OctetString,
-            })
-        }
+        ByteSlice::new(slice)
+            .map(|inner| Self { inner })
+            .map_err(|_| Error::Length { tag: Self::TAG })
     }
 
     /// Borrow the inner byte sequence
     pub fn as_bytes(&self) -> &'a [u8] {
-        self.inner
+        self.inner.as_bytes()
     }
 }
 
@@ -44,20 +40,23 @@ impl<'a> TryFrom<Any<'a>> for OctetString<'a> {
     type Error = Error;
 
     fn try_from(any: Any<'a>) -> Result<OctetString<'a>> {
-        any.tag().expect(Tag::OctetString)?;
+        any.tag().assert_eq(Tag::OctetString)?;
         Self::new(any.as_bytes())
     }
 }
 
 impl<'a> From<OctetString<'a>> for Any<'a> {
-    fn from(string: OctetString<'a>) -> Any<'a> {
-        Any::new(Tag::OctetString, string.inner).expect(length::ERROR_MSG)
+    fn from(octet_string: OctetString<'a>) -> Any<'a> {
+        Any {
+            tag: Tag::OctetString,
+            value: octet_string.inner,
+        }
     }
 }
 
 impl<'a> From<OctetString<'a>> for &'a [u8] {
-    fn from(string: OctetString<'a>) -> &'a [u8] {
-        string.inner
+    fn from(octet_string: OctetString<'a>) -> &'a [u8] {
+        octet_string.as_bytes()
     }
 }
 

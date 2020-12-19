@@ -1,30 +1,26 @@
 //! ASN.1 `BIT STRING` support.
 
-use crate::{length, Any, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
+use crate::{Any, ByteSlice, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 /// ASN.1 `BIT STRING` type.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct BitString<'a> {
     /// Inner value
-    inner: &'a [u8],
+    inner: ByteSlice<'a>,
 }
 
 impl<'a> BitString<'a> {
     /// Create a new [`BitString`] from a slice
     pub fn new(slice: &'a [u8]) -> Result<Self> {
-        if slice.len() <= Length::max() {
-            Ok(Self { inner: slice })
-        } else {
-            Err(Error::Length {
-                tag: Tag::BitString,
-            })
-        }
+        ByteSlice::new(slice)
+            .map(|inner| Self { inner })
+            .map_err(|_| Error::Length { tag: Self::TAG })
     }
 
     /// Borrow the inner byte sequence
     pub fn as_bytes(&self) -> &'a [u8] {
-        self.inner
+        self.inner.as_bytes()
     }
 }
 
@@ -44,20 +40,23 @@ impl<'a> TryFrom<Any<'a>> for BitString<'a> {
     type Error = Error;
 
     fn try_from(any: Any<'a>) -> Result<BitString<'a>> {
-        any.tag().expect(Tag::BitString)?;
+        any.tag().assert_eq(Tag::BitString)?;
         Self::new(any.as_bytes())
     }
 }
 
 impl<'a> From<BitString<'a>> for Any<'a> {
     fn from(bit_string: BitString<'a>) -> Any<'a> {
-        Any::new(Tag::BitString, bit_string.inner).expect(length::ERROR_MSG)
+        Any {
+            tag: Tag::BitString,
+            value: bit_string.inner,
+        }
     }
 }
 
 impl<'a> From<BitString<'a>> for &'a [u8] {
-    fn from(string: BitString<'a>) -> &'a [u8] {
-        string.inner
+    fn from(bit_string: BitString<'a>) -> &'a [u8] {
+        bit_string.as_bytes()
     }
 }
 
