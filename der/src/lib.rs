@@ -42,8 +42,8 @@ mod traits;
 
 pub use crate::{
     asn1::{
-        any::Any, bit_string::BitString, integer::Integer, null::Null, octet_string::OctetString,
-        sequence::Sequence,
+        any::Any, bit_string::BitString, boolean::Boolean, integer::Integer, null::Null,
+        octet_string::OctetString, sequence::Sequence,
     },
     decoder::Decoder,
     encoder::Encoder,

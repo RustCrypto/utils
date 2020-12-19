@@ -4,6 +4,7 @@
 
 pub(crate) mod any;
 pub(crate) mod bit_string;
+pub(crate) mod boolean;
 pub(crate) mod integer;
 pub(crate) mod null;
 pub(crate) mod octet_string;
