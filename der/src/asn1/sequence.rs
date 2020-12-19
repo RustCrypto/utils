@@ -7,7 +7,7 @@ use core::convert::TryFrom;
 
 /// Obtain the length of an ASN.1 `SEQUENCE` of [`Encodable`] values when
 /// serialized as ASN.1 DER.
-pub fn encoded_len(encodables: &[&dyn Encodable]) -> Result<Length> {
+pub(crate) fn encoded_len(encodables: &[&dyn Encodable]) -> Result<Length> {
     let body_len = encodables
         .iter()
         .fold(Ok(Length::zero()), |sum, encodable| {
