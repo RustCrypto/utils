@@ -78,7 +78,7 @@ impl TryFrom<der::Any<'_>> for AlgorithmIdentifier {
     }
 }
 
-impl Message for AlgorithmIdentifier {
+impl<'a> Message<'a> for AlgorithmIdentifier {
     fn fields<F, T>(&self, f: F) -> der::Result<T>
     where
         F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,

@@ -115,7 +115,7 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
     }
 }
 
-impl<'a> Message for PrivateKeyInfo<'a> {
+impl<'a> Message<'a> for PrivateKeyInfo<'a> {
     fn fields<F, T>(&self, f: F) -> der::Result<T>
     where
         F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
