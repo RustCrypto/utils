@@ -6,15 +6,20 @@ use crate::{
 use core::convert::TryFrom;
 
 /// Obtain the length of an ASN.1 `SEQUENCE` of [`Encodable`] values when
-/// serialized as ASN.1 DER.
+/// serialized as ASN.1 DER, including the `SEQUENCE` tag and length prefix.
 pub(crate) fn encoded_len(encodables: &[&dyn Encodable]) -> Result<Length> {
-    let body_len = encodables
+    let inner_len = encoded_len_inner(encodables)?;
+    Header::new(Tag::Sequence, inner_len)?.encoded_len() + inner_len
+}
+
+/// Obtain the inner length of an ASN.1 `SEQUENCE` of [`Encodable`] values
+/// excluding the tag and length.
+pub(crate) fn encoded_len_inner(encodables: &[&dyn Encodable]) -> Result<Length> {
+    encodables
         .iter()
         .fold(Ok(Length::zero()), |sum, encodable| {
             sum + encodable.encoded_len()?
-        })?;
-
-    Header::new(Tag::Sequence, body_len)?.encoded_len() + body_len
+        })
 }
 
 /// ASN.1 `SEQUENCE` type.

@@ -1,6 +1,9 @@
 //! DER encoder.
 
-use crate::{BitString, Encodable, Error, Header, Integer, Length, Null, OctetString, Result, Tag};
+use crate::{
+    asn1::sequence, BitString, Encodable, Error, Header, Integer, Length, Null, OctetString,
+    Result, Tag,
+};
 use core::convert::TryInto;
 
 #[cfg(feature = "oid")]
@@ -85,12 +88,7 @@ impl<'a> Encoder<'a> {
 
     /// Encode a sequence of values which impl the [`Encodable`] trait.
     pub fn sequence(&mut self, encodables: &[&dyn Encodable]) -> Result<()> {
-        let expected_len = encodables
-            .iter()
-            .fold(Ok(Length::zero()), |sum, encodable| {
-                sum + encodable.encoded_len()?
-            })?;
-
+        let expected_len = sequence::encoded_len_inner(encodables)?;
         Header::new(Tag::Sequence, expected_len).and_then(|header| header.encode(self))?;
 
         let mut nested_encoder = Encoder::new(self.reserve(expected_len)?);
