@@ -93,7 +93,7 @@ impl<'a> TryFrom<der::Any<'a>> for SubjectPublicKeyInfo<'a> {
     }
 }
 
-impl<'a> Message for SubjectPublicKeyInfo<'a> {
+impl<'a> Message<'a> for SubjectPublicKeyInfo<'a> {
     fn fields<F, T>(&self, f: F) -> der::Result<T>
     where
         F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,

@@ -78,7 +78,7 @@ pub trait Tagged {
 /// Types which impl this trait receive blanket impls for the [`Decodable`],
 /// [`Encodable`], and [`Tagged`] traits.
 // TODO(tarcieri): ensure all `Message` types impl `Decodable`
-pub trait Message {
+pub trait Message<'a>: Decodable<'a> {
     /// Call the provided function with a slice of [`Encodable`] trait objects
     /// representing the fields of this message.
     ///
@@ -90,7 +90,10 @@ pub trait Message {
         F: FnOnce(&[&dyn Encodable]) -> Result<T>;
 }
 
-impl<M: Message> Encodable for M {
+impl<'a, M> Encodable for M
+where
+    M: Message<'a>,
+{
     fn encoded_len(&self) -> Result<Length> {
         self.fields(sequence::encoded_len)
     }
@@ -100,6 +103,9 @@ impl<M: Message> Encodable for M {
     }
 }
 
-impl<M: Message> Tagged for M {
+impl<'a, M> Tagged for M
+where
+    M: Message<'a>,
+{
     const TAG: Tag = Tag::Sequence;
 }
