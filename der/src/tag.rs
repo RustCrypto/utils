@@ -1,10 +1,10 @@
 //! ASN.1 tags.
 
 use crate::{Decodable, Decoder, Encodable, Encoder, Error, Length, Result};
-use core::convert::TryFrom;
+use core::{convert::TryFrom, fmt};
 
 /// ASN.1 tags.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Tag {
     /// `BOOLEAN` tag.
@@ -29,6 +29,23 @@ pub enum Tag {
     Sequence = 0x30,
 }
 
+impl TryFrom<u8> for Tag {
+    type Error = Error;
+
+    fn try_from(byte: u8) -> Result<Tag> {
+        match byte {
+            0x01 => Ok(Tag::Boolean),
+            0x02 => Ok(Tag::Integer),
+            0x03 => Ok(Tag::BitString),
+            0x04 => Ok(Tag::OctetString),
+            0x05 => Ok(Tag::Null),
+            0x06 => Ok(Tag::ObjectIdentifier),
+            0x30 => Ok(Tag::Sequence),
+            _ => Err(Error::UnknownTag { byte }),
+        }
+    }
+}
+
 impl Tag {
     /// Assert that this [`Tag`] matches the provided expected tag.
     ///
@@ -41,6 +58,19 @@ impl Tag {
                 expected: Some(expected),
                 actual: self,
             })
+        }
+    }
+
+    /// Names of ASN.1 type which corresponds to a given [`Tag`].
+    pub fn type_name(self) -> &'static str {
+        match self {
+            Self::Boolean => "BOOLEAN",
+            Self::Integer => "INTEGER",
+            Self::BitString => "BIT STRING",
+            Self::OctetString => "OCTET STRING",
+            Self::Null => "NULL",
+            Self::ObjectIdentifier => "OBJECT IDENTIFIER",
+            Self::Sequence => "SEQUENCE",
         }
     }
 }
@@ -61,19 +91,14 @@ impl Encodable for Tag {
     }
 }
 
-impl TryFrom<u8> for Tag {
-    type Error = Error;
+impl fmt::Display for Tag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.type_name())
+    }
+}
 
-    fn try_from(byte: u8) -> Result<Tag> {
-        match byte {
-            0x01 => Ok(Tag::Boolean),
-            0x02 => Ok(Tag::Integer),
-            0x03 => Ok(Tag::BitString),
-            0x04 => Ok(Tag::OctetString),
-            0x05 => Ok(Tag::Null),
-            0x06 => Ok(Tag::ObjectIdentifier),
-            0x30 => Ok(Tag::Sequence),
-            _ => Err(Error::UnknownTag { byte }),
-        }
+impl fmt::Debug for Tag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Tag(0x{:02x}: {})", *self as u8, self.type_name())
     }
 }

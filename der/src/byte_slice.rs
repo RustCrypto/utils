@@ -20,10 +20,9 @@ impl<'a> ByteSlice<'a> {
     /// Create a new [`ByteSlice`], ensuring that the provided `slice` value
     /// is shorter than `Length::max()`.
     pub fn new(slice: &'a [u8]) -> Result<Self> {
-        let length = Length::try_from(slice.len())?;
         Ok(Self {
             inner: slice,
-            length,
+            length: Length::try_from(slice.len())?,
         })
     }
 
