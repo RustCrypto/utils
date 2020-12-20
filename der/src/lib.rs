@@ -4,12 +4,17 @@
 //! # About
 //!
 //! This crate presently provides an implementation of a subset of ASN.1 DER
-//! necessary for decoding/encoding various cryptography-related formats as
-//! part of the [`RustCrypto`] project, and is used to implement the [`pkcs8`]
-//! crate.
+//! necessary for decoding/encoding various cryptography-related formats
+//! implemented as part of the [RustCrypto] project, e.g. the [`pkcs8`] crate.
 //!
-//! It avoids any heap usage, and is presently specialized for documents which
-//! are smaller than 64kB.
+//! The core implementation avoids any heap usage (with convenience methods
+//! that allocate gated under the off-by-default `alloc` feature).
+//!
+//! The implementation is presently specialized for documents which are smaller
+//! than 64kB, as that provides a safe bound for the current use cases.
+//! However, that may be revisited in the future depending on interest in
+//! support for larger documents. Please open a [GitHub Issue] if you find
+//! this limit constraining in practice.
 //!
 //! # Minimum Supported Rust Version
 //!
@@ -17,10 +22,10 @@
 //!
 //! # Usage
 //!
-//! The following example implements X.509's `AlgorithmIdentifier` as defined
-//! in [RFC 5280 Section 4.1.1.2].
+//! The following example implements X.509's `AlgorithmIdentifier` message type
+//! as defined in [RFC 5280 Section 4.1.1.2].
 //!
-//! The ASN.1 schema for `AlgorithmIdentifier` is as follows:
+//! The ASN.1 schema for this message type is as follows:
 //!
 //! ```text
 //!    AlgorithmIdentifier  ::=  SEQUENCE  {
@@ -28,7 +33,7 @@
 //!         parameters              ANY DEFINED BY algorithm OPTIONAL  }
 //! ```
 //!
-//! Structured ASN.1 messages typically use the `SEQUENCE` type, which
+//! Structured ASN.1 messages are typically encoded as a `SEQUENCE`, which
 //! this crate maps to a Rust struct using the [`Message`] trait. This
 //! trait is bounded on the [`Decodable`] trait and provides a blanket impl
 //! of the [`Encodable`] trait, so any type which impls [`Message`] can be
@@ -36,28 +41,29 @@
 //!
 //! The [`Decoder`] and [`Encoder`] types provide the decoding/encoding API
 //! respectively, and are designed to work in conjunction with concrete ASN.1
-//! message types which impl the [`Decodable`] and [`Encodable`] traits,
-//! including types which impl [`Message`].
+//! types which impl the [`Decodable`] and [`Encodable`] traits, including
+//! all types which impl the [`Message`] trait.
 //!
-//! The following code example shows how to define a struct which maps
-//! to the above schema, as well as implement the [`Message`] trait for that
-//! struct:
+//! The following code example shows how to define a struct which maps to the
+//! above schema, as well as impl the [`Message`] trait for that struct:
 //!
 //! ```
 //! # #[cfg(all(feature = "alloc", feature = "oid"))]
 //! # {
+//! // Note: the following example does not require the `std` feature at all.
+//! // It does leverage the `alloc` feature, but also provides instructions for
+//! // "heapless" usage when the `alloc` feature is disabled.
 //! use core::convert::{TryFrom, TryInto};
 //! use der::{Any, Decodable, Encodable, Message, ObjectIdentifier};
 //!
-//! /// X.509 `AlgorithmIdentifier`
+//! /// X.509 `AlgorithmIdentifier`.
 //! #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 //! pub struct AlgorithmIdentifier<'a> {
-//!     /// This field contains an ASN.1 `OBJECT IDENTIFIER`, a.k.a. OID
+//!     /// This field contains an ASN.1 `OBJECT IDENTIFIER`, a.k.a. OID.
 //!     pub algorithm: ObjectIdentifier,
 //!
 //!     /// This field is `OPTIONAL` and contains the ASN.1 `ANY` type, which
-//!     /// in this specific example allows for encoding algorithm-defined
-//!     /// parameters.
+//!     /// in this example allows arbitrary algorithm-defined parameters.
 //!     pub parameters: Option<Any<'a>>
 //! }
 //!
@@ -184,6 +190,7 @@
 //! [X.690]: https://www.itu.int/rec/T-REC-X.690/
 //! [RustCrypto]: https://github.com/rustcrypto
 //! [`pkcs8`]: https://docs.rs/pkcs8/
+//! [GitHub Issue]: https://github.com/RustCrypto/utils/issues
 //! [RFC 5280 Section 4.1.1.2]: https://tools.ietf.org/html/rfc5280#section-4.1.1.2
 
 #![no_std]
@@ -213,8 +220,13 @@ mod traits;
 
 pub use crate::{
     asn1::{
-        any::Any, bit_string::BitString, boolean::Boolean, integer::Integer, null::Null,
-        octet_string::OctetString, sequence::Sequence,
+        any::Any,
+        bit_string::BitString,
+        boolean::Boolean,
+        integer::{Integer, RawInteger},
+        null::Null,
+        octet_string::OctetString,
+        sequence::Sequence,
     },
     decoder::Decoder,
     encoder::Encoder,
