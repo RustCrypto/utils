@@ -1,8 +1,8 @@
 //! ASN.1 `ANY` type.
 
 use crate::{
-    BitString, ByteSlice, Decodable, Decoder, Encodable, Encoder, Error, Header, Integer, Length,
-    Null, OctetString, Result, Sequence, Tag,
+    BitString, ByteSlice, Decodable, Decoder, Encodable, Encoder, ErrorKind, Header, Integer,
+    Length, Null, OctetString, Result, Sequence, Tag,
 };
 use core::convert::{TryFrom, TryInto};
 
@@ -24,7 +24,7 @@ impl<'a> Any<'a> {
     pub fn new(tag: Tag, value: &'a [u8]) -> Result<Self> {
         Ok(Self {
             tag,
-            value: ByteSlice::new(value).map_err(|_| Error::Length { tag })?,
+            value: ByteSlice::new(value).map_err(|_| ErrorKind::Length { tag })?,
         })
     }
 
@@ -98,7 +98,7 @@ impl<'a> Decodable<'a> for Any<'a> {
         let header = Header::decode(decoder)?;
         let tag = header.tag;
         let len = usize::from(header.length);
-        let value = decoder.bytes(len).map_err(|_| Error::Length { tag })?;
+        let value = decoder.bytes(len).map_err(|_| ErrorKind::Length { tag })?;
         Self::new(tag, value)
     }
 }

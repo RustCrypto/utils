@@ -6,10 +6,79 @@ use core::fmt;
 /// Result type.
 pub type Result<T> = core::result::Result<T, Error>;
 
+/// Error type
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct Error {
+    /// Kind of error
+    kind: ErrorKind,
+
+    /// Position inside of message where error occurred
+    position: Option<Length>,
+}
+
+impl Error {
+    /// Create a new [`Error`]
+    pub fn new(kind: ErrorKind, position: Length) -> Error {
+        Error {
+            kind,
+            position: Some(position),
+        }
+    }
+
+    /// Get the [`ErrorKind`] which occurred.
+    pub fn kind(self) -> ErrorKind {
+        self.kind
+    }
+
+    /// Get the position inside of the message where the error occurred.
+    pub fn position(self) -> Option<Length> {
+        self.position
+    }
+
+    /// For errors occurring inside of a nested message, extend the position
+    /// count by the location where the nested message occurs.
+    pub fn nested(self, nested_position: Length) -> Self {
+        // TODO(tarcieri): better handle length overflows occurring in this calculation?
+        let position = (nested_position + self.position.unwrap_or_default()).ok();
+
+        Self {
+            kind: self.kind,
+            position,
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.kind)?;
+
+        if let Some(pos) = self.position {
+            write!(f, " at DER byte {}", pos)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl From<ErrorKind> for Error {
+    fn from(kind: ErrorKind) -> Error {
+        Error {
+            kind,
+            position: None,
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for ErrorKind {}
+
 /// Error type.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
-pub enum Error {
+pub enum ErrorKind {
+    /// Operation failed due to previous error
+    Failed,
+
     /// Incorrect length for a given field
     Length {
         /// Tag type of the value being decoded
@@ -66,19 +135,49 @@ pub enum Error {
     },
 }
 
-impl fmt::Display for Error {
+impl ErrorKind {
+    /// Annotate an [`ErrorKind`] with context about where it occurred,
+    /// returning an error.
+    pub fn at(self, position: Length) -> Error {
+        Error::new(self, position)
+    }
+}
+
+impl fmt::Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // TODO(tarcieri): real `Display` impl with good error messages
-        f.write_str("ASN.1 error")
+        match self {
+            ErrorKind::Failed => write!(f, "operation failed"),
+            ErrorKind::Length { tag } => write!(f, "incorrect length for {}", tag),
+            ErrorKind::Noncanonical => write!(f, "DER is not canonically encoded"),
+            ErrorKind::Oid => write!(f, "malformed OID"),
+            ErrorKind::Overflow => write!(f, "integer overflow"),
+            ErrorKind::Overlength => write!(f, "DER message is too long"),
+            ErrorKind::Truncated => write!(f, "DER message is truncated"),
+            ErrorKind::Underlength { expected, actual } => write!(
+                f,
+                "DER message too short: expected {}, got {}",
+                expected, actual
+            ),
+            ErrorKind::UnexpectedTag { expected, actual } => {
+                write!(f, "unexpected ASN.1 DER tag: ")?;
+
+                if let Some(tag) = expected {
+                    write!(f, "expected {}, ", tag)?;
+                }
+
+                write!(f, "got {}", actual)
+            }
+            ErrorKind::UnknownTag { byte } => {
+                write!(f, "unknown/unsupported ASN.1 DER tag: 0x{:02x}", byte)
+            }
+            ErrorKind::Value { tag } => write!(f, "malformed ASN.1 DER value for {}", tag),
+        }
     }
 }
 
 #[cfg(feature = "oid")]
 impl From<const_oid::Error> for Error {
     fn from(_: const_oid::Error) -> Error {
-        Error::Oid
+        ErrorKind::Oid.into()
     }
 }
-
-#[cfg(feature = "std")]
-impl std::error::Error for Error {}

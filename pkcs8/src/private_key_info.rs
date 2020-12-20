@@ -61,7 +61,7 @@ impl<'a> PrivateKeyInfo<'a> {
     pub fn write_der<'b>(&self, buffer: &'b mut [u8]) -> Result<&'b [u8]> {
         let mut encoder = der::Encoder::new(buffer);
         self.encode(&mut encoder)?;
-        Ok(encoder.finish())
+        Ok(encoder.finish()?)
     }
 
     /// Encode this [`PrivateKeyInfo`] as ASN.1 DER.
@@ -99,9 +99,10 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
         any.sequence(|mut decoder| {
             // Parse and validate `version` INTEGER.
             if decoder.integer()? != VERSION.into() {
-                return Err(der::Error::Value {
+                return Err(der::ErrorKind::Value {
                     tag: der::Tag::Integer,
-                });
+                }
+                .into());
             }
 
             let algorithm = decoder.decode()?;

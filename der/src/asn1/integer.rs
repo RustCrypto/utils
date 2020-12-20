@@ -1,6 +1,6 @@
 //! ASN.1 `INTEGER` support.
 
-use crate::{Any, Encodable, Encoder, Error, Header, Length, Result, Tag, Tagged};
+use crate::{Any, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 /// ASN.1 `INTEGER` type.
@@ -45,7 +45,7 @@ impl TryFrom<Any<'_>> for Integer {
 
         match any.as_bytes() {
             [x] => Ok(Integer(*x as i8)),
-            _ => Err(Error::Length { tag }),
+            _ => Err(ErrorKind::Length { tag }.into()),
         }
     }
 }

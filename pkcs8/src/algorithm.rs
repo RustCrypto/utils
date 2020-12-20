@@ -47,7 +47,7 @@ impl AlgorithmIdentifier {
     pub fn write_der<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a [u8]> {
         let mut encoder = der::Encoder::new(buffer);
         self.encode(&mut encoder)?;
-        Ok(encoder.finish())
+        Ok(encoder.finish()?)
     }
 
     /// Encode this [`AlgorithmIdentifier`] as ASN.1 DER
@@ -147,10 +147,11 @@ impl TryFrom<der::Any<'_>> for AlgorithmParameters {
         match any.tag() {
             der::Tag::Null => any.null().map(Into::into),
             der::Tag::ObjectIdentifier => any.oid().map(Into::into),
-            _ => Err(der::Error::UnexpectedTag {
+            _ => Err(der::ErrorKind::UnexpectedTag {
                 expected: None,
                 actual: any.tag(),
-            }),
+            }
+            .into()),
         }
     }
 }

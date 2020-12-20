@@ -1,6 +1,6 @@
 //! ASN.1 `NULL` support.
 
-use crate::{Any, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
+use crate::{Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 /// ASN.1 `NULL` type.
@@ -16,7 +16,7 @@ impl TryFrom<Any<'_>> for Null {
         if any.is_empty() {
             Ok(Null)
         } else {
-            Err(Error::Length { tag })
+            Err(ErrorKind::Length { tag }.into())
         }
     }
 }

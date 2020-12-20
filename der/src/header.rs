@@ -1,6 +1,6 @@
 //! ASN.1 DER headers.
 
-use crate::{Decodable, Decoder, Encodable, Encoder, Error, Length, Result, Tag};
+use crate::{Decodable, Decoder, Encodable, Encoder, ErrorKind, Length, Result, Tag};
 use core::convert::TryInto;
 
 /// ASN.1 DER headers: tag + length component of TLV-encoded values
@@ -18,7 +18,7 @@ impl Header {
     ///
     /// Returns [`Error`] if the length exceeds the limits of [`Length`]
     pub fn new(tag: Tag, length: impl TryInto<Length>) -> Result<Self> {
-        let length = length.try_into().map_err(|_| Error::Overflow)?;
+        let length = length.try_into().map_err(|_| ErrorKind::Overflow)?;
         Ok(Self { tag, length })
     }
 }
@@ -28,8 +28,8 @@ impl Decodable<'_> for Header {
         let tag = Tag::decode(decoder)?;
 
         let length = Length::decode(decoder).map_err(|e| {
-            if e == Error::Overlength {
-                Error::Length { tag }
+            if e.kind() == ErrorKind::Overlength {
+                ErrorKind::Length { tag }.into()
             } else {
                 e
             }
