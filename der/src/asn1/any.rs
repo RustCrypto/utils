@@ -1,8 +1,8 @@
 //! ASN.1 `ANY` type.
 
 use crate::{
-    BitString, ByteSlice, Decodable, Decoder, Encodable, Encoder, ErrorKind, Header, Integer,
-    Length, Null, OctetString, Result, Sequence, Tag,
+    BitString, ByteSlice, Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Header,
+    Integer, Length, Null, OctetString, Result, Sequence, Tag,
 };
 use core::convert::{TryFrom, TryInto};
 
@@ -111,5 +111,13 @@ impl<'a> Encodable for Any<'a> {
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
         self.header().encode(encoder)?;
         encoder.bytes(self.as_bytes())
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for Any<'a> {
+    type Error = Error;
+
+    fn try_from(bytes: &'a [u8]) -> Result<Any<'a>> {
+        Any::from_bytes(bytes)
     }
 }

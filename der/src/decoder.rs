@@ -2,8 +2,8 @@
 
 use crate::{
     Any, BitString, Decodable, ErrorKind, Integer, Length, Null, OctetString, Result, Sequence,
-    Tagged,
 };
+use core::convert::TryInto;
 
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
@@ -55,11 +55,15 @@ impl<'a> Decoder<'a> {
 
     /// Finish decoding, returning the given value if there is no
     /// remaining data, or an error otherwise
-    pub fn finish<T: Tagged>(self, value: T) -> Result<T> {
+    pub fn finish<T>(self, value: T) -> Result<T> {
         if self.is_failed() {
             Err(ErrorKind::Failed.at(self.position))
         } else if !self.is_finished() {
-            Err(ErrorKind::Length { tag: T::TAG }.at(self.position))
+            Err(ErrorKind::TrailingData {
+                decoded: self.position,
+                remaining: self.remaining_len()?,
+            }
+            .at(self.position))
         } else {
             Ok(value)
         }
@@ -150,6 +154,11 @@ impl<'a> Decoder<'a> {
         self.bytes
             .and_then(|b| b.get(self.position.into()..))
             .ok_or_else(|| ErrorKind::Truncated.at(self.position))
+    }
+
+    /// Get the number of bytes still remaining in the buffer.
+    fn remaining_len(&self) -> Result<Length> {
+        self.remaining()?.len().try_into()
     }
 }
 
