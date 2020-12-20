@@ -49,7 +49,7 @@ impl TryFrom<u8> for Tag {
 impl Tag {
     /// Assert that this [`Tag`] matches the provided expected tag.
     ///
-    /// On mismatch, returns [`Error::UnexpectedTag`].
+    /// On mismatch, returns an [`Error`] with [`ErrorKind::UnexpectedTag`].
     pub fn assert_eq(self, expected: Tag) -> Result<Tag> {
         if self == expected {
             Ok(self)

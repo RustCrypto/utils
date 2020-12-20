@@ -97,6 +97,15 @@ pub enum ErrorKind {
     /// Message is longer than this library's internal limits support
     Overlength,
 
+    /// Undecoded trailing data at end of message
+    TrailingData {
+        /// Length of the decoded data
+        decoded: Length,
+
+        /// Total length of the remaining data left in the buffer
+        remaining: Length,
+    },
+
     /// Unexpected end-of-message/nested field when decoding
     Truncated,
 
@@ -152,6 +161,13 @@ impl fmt::Display for ErrorKind {
             ErrorKind::Oid => write!(f, "malformed OID"),
             ErrorKind::Overflow => write!(f, "integer overflow"),
             ErrorKind::Overlength => write!(f, "DER message is too long"),
+            ErrorKind::TrailingData { decoded, remaining } => {
+                write!(
+                    f,
+                    "trailing data at end of DER message: decoded {} bytes, {} bytes remaining",
+                    decoded, remaining
+                )
+            }
             ErrorKind::Truncated => write!(f, "DER message is truncated"),
             ErrorKind::Underlength { expected, actual } => write!(
                 f,
