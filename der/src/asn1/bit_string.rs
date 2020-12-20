@@ -11,14 +11,14 @@ pub struct BitString<'a> {
 }
 
 impl<'a> BitString<'a> {
-    /// Create a new [`BitString`] from a slice
+    /// Create a new [`BitString`] from a byte slice.
     pub fn new(slice: &'a [u8]) -> Result<Self> {
         ByteSlice::new(slice)
             .map(|inner| Self { inner })
             .map_err(|_| ErrorKind::Length { tag: Self::TAG }.into())
     }
 
-    /// Borrow the inner byte sequence
+    /// Borrow the inner byte slice.
     pub fn as_bytes(&self) -> &'a [u8] {
         self.inner.as_bytes()
     }
