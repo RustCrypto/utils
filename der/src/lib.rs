@@ -47,7 +47,7 @@ pub use crate::{
     },
     decoder::Decoder,
     encoder::Encoder,
-    error::{Error, Result},
+    error::{Error, ErrorKind, Result},
     length::Length,
     tag::Tag,
     traits::{Decodable, Encodable, Message, Tagged},

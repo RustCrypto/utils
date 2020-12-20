@@ -1,14 +1,14 @@
 //! Length calculations for encoded ASN.1 DER values
 
-use crate::{Decodable, Decoder, Encodable, Encoder, Error, Result};
-use core::{convert::TryFrom, ops::Add};
+use crate::{Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Result};
+use core::{convert::TryFrom, fmt, ops::Add};
 
 /// ASN.1-encoded length.
 ///
 /// # Limits
 ///
 /// Presently constrained to the range `0..=65535`
-#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Length(u16);
 
 impl Length {
@@ -30,7 +30,7 @@ impl Add for Length {
         self.0
             .checked_add(other.0)
             .map(Length)
-            .ok_or(Error::Overflow)
+            .ok_or_else(|| ErrorKind::Overflow.into())
     }
 }
 
@@ -94,7 +94,9 @@ impl TryFrom<usize> for Length {
     type Error = Error;
 
     fn try_from(len: usize) -> Result<Length> {
-        u16::try_from(len).map(Length).map_err(|_| Error::Overflow)
+        u16::try_from(len)
+            .map(Length)
+            .map_err(|_| ErrorKind::Overflow.into())
     }
 }
 
@@ -112,7 +114,7 @@ impl Decodable<'_> for Length {
                 if len >= 0x80 {
                     Ok(len.into())
                 } else {
-                    Err(Error::Noncanonical)
+                    Err(ErrorKind::Noncanonical.into())
                 }
             }
             0x82 => {
@@ -124,12 +126,12 @@ impl Decodable<'_> for Length {
                 if len > 0xFF {
                     Ok(len.into())
                 } else {
-                    Err(Error::Noncanonical)
+                    Err(ErrorKind::Noncanonical.into())
                 }
             }
             _ => {
                 // We specialize to a maximum 3-byte length
-                Err(Error::Overlength)
+                Err(ErrorKind::Overlength.into())
             }
         }
     }
@@ -157,5 +159,11 @@ impl Encodable for Length {
                 encoder.byte((self.0 & 0xFF) as u8)
             }
         }
+    }
+}
+
+impl fmt::Display for Length {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
     }
 }

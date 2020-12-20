@@ -1,6 +1,6 @@
 //! ASN.1 `OCTET STRING` support.
 
-use crate::{Any, ByteSlice, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
+use crate::{Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 /// ASN.1 `OCTET STRING` type.
@@ -15,7 +15,7 @@ impl<'a> OctetString<'a> {
     pub fn new(slice: &'a [u8]) -> Result<Self> {
         ByteSlice::new(slice)
             .map(|inner| Self { inner })
-            .map_err(|_| Error::Length { tag: Self::TAG })
+            .map_err(|_| ErrorKind::Length { tag: Self::TAG }.into())
     }
 
     /// Borrow the inner byte sequence

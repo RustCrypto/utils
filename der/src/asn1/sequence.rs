@@ -1,7 +1,8 @@
 //! ASN.1 `SEQUENCE` support.
 
 use crate::{
-    Any, ByteSlice, Decoder, Encodable, Encoder, Error, Header, Length, Result, Tag, Tagged,
+    Any, ByteSlice, Decoder, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag,
+    Tagged,
 };
 use core::convert::TryFrom;
 
@@ -34,7 +35,7 @@ impl<'a> Sequence<'a> {
     pub fn new(slice: &'a [u8]) -> Result<Self> {
         ByteSlice::new(slice)
             .map(|inner| Self { inner })
-            .map_err(|_| Error::Length { tag: Self::TAG })
+            .map_err(|_| ErrorKind::Length { tag: Self::TAG }.into())
     }
 
     /// Borrow the inner byte sequence

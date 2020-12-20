@@ -48,7 +48,7 @@ impl<'a> SubjectPublicKeyInfo<'a> {
     pub fn write_der<'b>(&self, buffer: &'b mut [u8]) -> Result<&'b [u8]> {
         let mut encoder = der::Encoder::new(buffer);
         self.encode(&mut encoder)?;
-        Ok(encoder.finish())
+        Ok(encoder.finish()?)
     }
 
     /// Encode this [`SubjectPublicKeyInfo] as ASN.1 DER.

@@ -1,7 +1,8 @@
 //! DER decoder.
 
 use crate::{
-    Any, BitString, Decodable, Error, Integer, Length, Null, OctetString, Result, Sequence, Tagged,
+    Any, BitString, Decodable, ErrorKind, Integer, Length, Null, OctetString, Result, Sequence,
+    Tagged,
 };
 
 #[cfg(feature = "oid")]
@@ -9,25 +10,67 @@ use crate::ObjectIdentifier;
 
 /// DER decoder.
 pub struct Decoder<'a> {
-    /// Byte slice being decoded
-    bytes: &'a [u8],
+    /// Byte slice being decoded.
+    ///
+    /// In the event an error was previously encountered this will be set to
+    /// `None` to prevent further decoding while in a bad state.
+    bytes: Option<&'a [u8]>,
 
-    /// Position within the decoded slice
-    pos: Length,
+    /// Position within the decoded slice.
+    position: Length,
 }
 
 impl<'a> Decoder<'a> {
     /// Create a new decoder for the given byte slice.
     pub fn new(bytes: &'a [u8]) -> Self {
         Self {
-            bytes,
-            pos: Length::zero(),
+            bytes: Some(bytes),
+            position: Length::zero(),
         }
     }
 
     /// Decode a value which impls the [`Decodable`] trait.
     pub fn decode<T: Decodable<'a>>(&mut self) -> Result<T> {
-        T::decode(self)
+        if self.is_failed() {
+            self.error(ErrorKind::Failed)?;
+        }
+
+        T::decode(self).map_err(|e| {
+            self.bytes.take();
+            e.nested(self.position)
+        })
+    }
+
+    /// Return an error with the given [`ErrorKind`], annotating it with
+    /// context about where the error occurred.
+    pub fn error<T>(&mut self, kind: ErrorKind) -> Result<T> {
+        self.bytes.take();
+        Err(kind.at(self.position))
+    }
+
+    /// Did the decoding operation fail due to an error?
+    pub fn is_failed(&self) -> bool {
+        self.bytes.is_none()
+    }
+
+    /// Finish decoding, returning the given value if there is no
+    /// remaining data, or an error otherwise
+    pub fn finish<T: Tagged>(self, value: T) -> Result<T> {
+        if self.is_failed() {
+            Err(ErrorKind::Failed.at(self.position))
+        } else if !self.is_finished() {
+            Err(ErrorKind::Length { tag: T::TAG }.at(self.position))
+        } else {
+            Ok(value)
+        }
+    }
+
+    /// Have we decoded all of the bytes in this [`Decoder`]?
+    ///
+    /// Returns `false` if we're not finished decoding or if a fatal error
+    /// has occurred.
+    pub fn is_finished(&self) -> bool {
+        self.remaining().map(|rem| rem.is_empty()).unwrap_or(false)
     }
 
     /// Attempt to decode an ASN.1 `ANY` value.
@@ -73,44 +116,40 @@ impl<'a> Decoder<'a> {
     where
         F: FnOnce(Decoder<'a>) -> Result<T>,
     {
-        Sequence::decode(self).and_then(|seq| f(seq.decoder()))
-    }
-
-    /// Finish decoding, returning the given value if there is no
-    /// remaining data, or an error otherwise
-    pub fn finish<T: Tagged>(self, value: T) -> Result<T> {
-        if self.is_finished() {
-            Ok(value)
-        } else {
-            Err(Error::Length { tag: T::TAG })
-        }
-    }
-
-    /// Have we decoded all of the bytes in this [`Decoder`]?
-    pub fn is_finished(&self) -> bool {
-        self.remaining().is_empty()
+        Sequence::decode(self).and_then(|seq| {
+            f(seq.decoder()).map_err(|e| {
+                self.bytes.take();
+                e.nested(self.position)
+            })
+        })
     }
 
     /// Decode a single byte, updating the internal cursor.
     pub(crate) fn byte(&mut self) -> Result<u8> {
         match self.bytes(1)? {
             [byte] => Ok(*byte),
-            _ => Err(Error::Truncated),
+            _ => self.error(ErrorKind::Truncated),
         }
     }
 
     /// Obtain a slice of bytes of the given length from the current cursor
     /// position, or return an error if we have insufficient data.
     pub(crate) fn bytes(&mut self, len: usize) -> Result<&'a [u8]> {
-        let result = self.remaining().get(..len).ok_or(Error::Truncated)?;
-        self.pos = (self.pos + len)?;
+        if self.is_failed() {
+            self.error(ErrorKind::Failed)?;
+        }
+
+        let result = self.remaining()?.get(..len).ok_or(ErrorKind::Truncated)?;
+        self.position = (self.position + len)?;
         Ok(result)
     }
 
     /// Obtain the remaining bytes in this decoder from the current cursor
     /// position.
-    fn remaining(&self) -> &'a [u8] {
-        &self.bytes[self.pos.into()..]
+    fn remaining(&self) -> Result<&'a [u8]> {
+        self.bytes
+            .and_then(|b| b.get(self.position.into()..))
+            .ok_or_else(|| ErrorKind::Truncated.at(self.position))
     }
 }
 

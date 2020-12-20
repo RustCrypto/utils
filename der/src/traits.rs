@@ -5,6 +5,7 @@ use core::convert::TryFrom;
 
 #[cfg(feature = "alloc")]
 use {
+    crate::ErrorKind,
     alloc::vec::Vec,
     core::{convert::TryInto, iter},
 };
@@ -20,7 +21,9 @@ where
     T: TryFrom<Any<'a>, Error = Error>,
 {
     fn decode(decoder: &mut Decoder<'a>) -> Result<T> {
-        Any::decode(decoder).and_then(Self::try_from)
+        Any::decode(decoder)
+            .and_then(Self::try_from)
+            .or_else(|e| decoder.error(e.kind()))
     }
 }
 
@@ -36,23 +39,24 @@ pub trait Encodable {
     /// byte vector.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    fn encode_to_vec(&self, buf: &mut Vec<u8>) -> Result<usize> {
+    fn encode_to_vec(&self, buf: &mut Vec<u8>) -> Result<Length> {
         let expected_len = usize::from(self.encoded_len()?);
         buf.reserve(expected_len);
         buf.extend(iter::repeat(0).take(expected_len));
 
         let mut encoder = Encoder::new(buf);
         self.encode(&mut encoder)?;
-        let actual_len = encoder.finish().len();
+        let actual_len = encoder.finish()?.len();
 
         if expected_len != actual_len {
-            return Err(Error::Underlength {
+            return Err(ErrorKind::Underlength {
                 expected: expected_len.try_into()?,
                 actual: actual_len.try_into()?,
-            });
+            }
+            .into());
         }
 
-        Ok(actual_len)
+        actual_len.try_into()
     }
 
     /// Serialize this message as a byte vector.

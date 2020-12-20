@@ -1,6 +1,6 @@
 //! ASN.1 tags.
 
-use crate::{Decodable, Decoder, Encodable, Encoder, Error, Length, Result};
+use crate::{Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Length, Result};
 use core::{convert::TryFrom, fmt};
 
 /// ASN.1 tags.
@@ -41,7 +41,7 @@ impl TryFrom<u8> for Tag {
             0x05 => Ok(Tag::Null),
             0x06 => Ok(Tag::ObjectIdentifier),
             0x30 => Ok(Tag::Sequence),
-            _ => Err(Error::UnknownTag { byte }),
+            _ => Err(ErrorKind::UnknownTag { byte }.into()),
         }
     }
 }
@@ -54,10 +54,11 @@ impl Tag {
         if self == expected {
             Ok(self)
         } else {
-            Err(Error::UnexpectedTag {
+            Err(ErrorKind::UnexpectedTag {
                 expected: Some(expected),
                 actual: self,
-            })
+            }
+            .into())
         }
     }
 
