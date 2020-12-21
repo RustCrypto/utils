@@ -1,4 +1,4 @@
-# RustCrypto: ASN.1 DER
+# RustCrypto: DER Custom Derive Support
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -7,25 +7,9 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-Pure Rust embedded-friendly implementation of the Distinguished Encoding Rules (DER)
-for Abstract Syntax Notation One (ASN.1) as described in ITU X.690.
+Procedural macro for automatically deriving the `der` crate's `Message` trait.
 
 [Documentation][docs-link]
-
-# About
-
-This crate provides a `no_std`-friendly implementation of a subset of ASN.1 DER
-necessary  for decoding/encoding various cryptography-related formats
-implemented as part of the [RustCrypto] project, e.g. the [`pkcs8`] crate.
-
-The core implementation avoids any heap usage (with convenience methods
-that allocate gated under the off-by-default `alloc` feature).
-
-The implementation is presently specialized for documents which are smaller
-than 64kB, as that provides a safe bound for the current use cases.
-However, that may be revisited in the future depending on interest in
-support for larger documents. Please open a [GitHub Issue] if you find
-this limit constraining in practice.
 
 ## License
 
@@ -44,10 +28,10 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/der.svg
-[crate-link]: https://crates.io/crates/der
-[docs-image]: https://docs.rs/der/badge.svg
-[docs-link]: https://docs.rs/der/
+[crate-image]: https://img.shields.io/crates/v/der_derive.svg
+[crate-link]: https://crates.io/crates/der_derive
+[docs-image]: https://docs.rs/der_derive/badge.svg
+[docs-link]: https://docs.rs/der_derive/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.46+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg

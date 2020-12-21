@@ -8,6 +8,7 @@ members = [
     "cpuid-bool",
     "dbl",
     "der",
+    "der/derive",
     "hex-literal",
     "opaque-debug",
     "pkcs8"
