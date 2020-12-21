@@ -66,7 +66,7 @@ impl TryFrom<der::Any<'_>> for AlgorithmIdentifier {
     type Error = der::Error;
 
     fn try_from(any: der::Any<'_>) -> der::Result<AlgorithmIdentifier> {
-        any.sequence(|mut decoder| {
+        any.sequence(|decoder| {
             let oid = decoder.decode()?;
             let parameters = decoder.decode()?;
             Ok(Self { oid, parameters })

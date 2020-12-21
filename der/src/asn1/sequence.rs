@@ -43,9 +43,16 @@ impl<'a> Sequence<'a> {
         self.inner.as_bytes()
     }
 
-    /// Obtain a [`Decoder`] for the data in this [`Sequence`]
-    pub fn decoder(&self) -> Decoder<'a> {
-        Decoder::new(self.as_bytes())
+    /// Decode values nested within a sequence, creating a new [`Decoder`] for
+    /// the data contained in the sequence's body and passing it to the provided
+    /// [`FnOnce`].
+    pub fn decode_nested<F, T>(&self, f: F) -> Result<T>
+    where
+        F: FnOnce(&mut Decoder<'a>) -> Result<T>,
+    {
+        let mut seq_decoder = Decoder::new(self.as_bytes());
+        let result = f(&mut seq_decoder)?;
+        seq_decoder.finish(result)
     }
 }
 

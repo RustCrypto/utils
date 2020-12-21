@@ -114,15 +114,9 @@ impl<'a> Decoder<'a> {
     where
         F: FnOnce(&mut Decoder<'a>) -> Result<T>,
     {
-        Sequence::decode(self).and_then(|seq| {
-            let mut seq_decoder = seq.decoder();
-
-            let result = f(&mut seq_decoder).map_err(|e| {
-                self.bytes.take();
-                e.nested(self.position)
-            })?;
-
-            seq_decoder.finish(result)
+        Sequence::decode(self)?.decode_nested(f).map_err(|e| {
+            self.bytes.take();
+            e.nested(self.position)
         })
     }
 

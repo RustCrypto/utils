@@ -92,9 +92,9 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
     type Error = der::Error;
 
     fn try_from(any: der::Any<'a>) -> der::Result<PrivateKeyInfo<'a>> {
-        any.sequence(|mut decoder| {
+        any.sequence(|decoder| {
             // Parse and validate `version` INTEGER.
-            if i8::decode(&mut decoder)? != VERSION {
+            if i8::decode(decoder)? != VERSION {
                 return Err(der::ErrorKind::Value {
                     tag: der::Tag::Integer,
                 }
@@ -104,7 +104,7 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
             let algorithm = decoder.decode()?;
             let private_key = decoder.octet_string()?.into();
 
-            decoder.finish(Self {
+            Ok(Self {
                 algorithm,
                 private_key,
             })

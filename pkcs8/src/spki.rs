@@ -78,7 +78,7 @@ impl<'a> TryFrom<der::Any<'a>> for SubjectPublicKeyInfo<'a> {
     type Error = der::Error;
 
     fn try_from(any: der::Any<'a>) -> der::Result<SubjectPublicKeyInfo<'a>> {
-        any.sequence(|mut decoder| {
+        any.sequence(|decoder| {
             let algorithm = decoder.decode()?;
             let subject_public_key = decoder.bit_string()?.as_bytes();
             Ok(Self {

@@ -74,9 +74,9 @@ impl<'a> Any<'a> {
     /// nested [`Decoder`] and calling the provided argument with it.
     pub fn sequence<F, T>(self, f: F) -> Result<T>
     where
-        F: FnOnce(Decoder<'a>) -> Result<T>,
+        F: FnOnce(&mut Decoder<'a>) -> Result<T>,
     {
-        Sequence::try_from(self).and_then(|seq| f(seq.decoder()))
+        Sequence::try_from(self)?.decode_nested(f)
     }
 
     /// Get the ASN.1 DER [`Header`] for this [`Any`] value
