@@ -30,9 +30,7 @@ pub struct AlgorithmIdentifier {
 impl AlgorithmIdentifier {
     /// Parse [`AlgorithmIdentifier`] encoded as ASN.1 DER
     pub fn from_der(bytes: &[u8]) -> Result<Self> {
-        let mut decoder = der::Decoder::new(bytes);
-        let result = Self::decode(&mut decoder)?;
-        decoder.finish(result).map_err(|_| Error::Decode)
+        Ok(Self::from_bytes(bytes)?)
     }
 
     /// Get the `parameters` field as an [`ObjectIdentifier`].
@@ -45,9 +43,7 @@ impl AlgorithmIdentifier {
     /// Write ASN.1 DER-encoded [`AlgorithmIdentifier`] to the provided
     /// buffer, returning a slice containing the encoded data.
     pub fn write_der<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a [u8]> {
-        let mut encoder = der::Encoder::new(buffer);
-        self.encode(&mut encoder)?;
-        Ok(encoder.finish()?)
+        Ok(self.encode_to_slice(buffer)?)
     }
 
     /// Encode this [`AlgorithmIdentifier`] as ASN.1 DER

@@ -38,17 +38,13 @@ pub struct SubjectPublicKeyInfo<'a> {
 impl<'a> SubjectPublicKeyInfo<'a> {
     /// Parse [`SubjectPublicKeyInfo`] encoded as ASN.1 DER.
     pub fn from_der(bytes: &'a [u8]) -> Result<Self> {
-        let mut decoder = der::Decoder::new(bytes);
-        let result = Self::decode(&mut decoder)?;
-        decoder.finish(result).map_err(|_| Error::Decode)
+        Ok(Self::from_bytes(bytes)?)
     }
 
     /// Write ASN.1 DER-encoded [`SubjectPublicKeyInfo`] to the provided
     /// buffer, returning a slice containing the encoded data.
     pub fn write_der<'b>(&self, buffer: &'b mut [u8]) -> Result<&'b [u8]> {
-        let mut encoder = der::Encoder::new(buffer);
-        self.encode(&mut encoder)?;
-        Ok(encoder.finish()?)
+        Ok(self.encode_to_slice(buffer)?)
     }
 
     /// Encode this [`SubjectPublicKeyInfo] as ASN.1 DER.
