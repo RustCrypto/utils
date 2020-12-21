@@ -1,7 +1,7 @@
 //! Error types.
 
 use crate::{Length, Tag};
-use core::fmt;
+use core::{convert::Infallible, fmt};
 
 /// Result type.
 pub type Result<T> = core::result::Result<T, Error>;
@@ -66,6 +66,19 @@ impl From<ErrorKind> for Error {
             kind,
             position: None,
         }
+    }
+}
+
+impl From<core::convert::Infallible> for Error {
+    fn from(_: Infallible) -> Error {
+        unreachable!()
+    }
+}
+
+#[cfg(feature = "oid")]
+impl From<const_oid::Error> for Error {
+    fn from(_: const_oid::Error) -> Error {
+        ErrorKind::Oid.into()
     }
 }
 
@@ -188,12 +201,5 @@ impl fmt::Display for ErrorKind {
             }
             ErrorKind::Value { tag } => write!(f, "malformed ASN.1 DER value for {}", tag),
         }
-    }
-}
-
-#[cfg(feature = "oid")]
-impl From<const_oid::Error> for Error {
-    fn from(_: const_oid::Error) -> Error {
-        ErrorKind::Oid.into()
     }
 }
