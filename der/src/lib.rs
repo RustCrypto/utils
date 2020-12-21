@@ -219,7 +219,7 @@
 //! It can be used to automatically derive the code given in the above example:
 //!
 //! ```
-//! # #[cfg(feature = "derive")]
+//! # #[cfg(all(feature = "alloc", feature = "derive", feature = "oid"))]
 //! # {
 //! use der::{Any, Encodable, Decodable, Message, ObjectIdentifier};
 //! use core::convert::TryInto;
@@ -260,6 +260,40 @@
 //! # }
 //! ```
 //!
+//! For fields which don't directly impl [`Decodable`] and [`Encodable`],
+//! you can add annotations to convert to an intermediate ASN.1 type
+//! first, so long as that type impls `TryFrom` and `Into` for the
+//! ASN.1 type.
+//!
+//! For example, structs containing `&'a [u8]` fields may want them encoded
+//! as either a `BIT STRING` or `OCTET STRING`. By using the
+//! `#[asn1(type = "bit-string")]` annotation it's possible to select which
+//! ASN.1 type should be used.
+//!
+//! Building off the above example:
+//!
+//! ```rust
+//! # #[cfg(all(feature = "alloc", feature = "derive", feature = "oid"))]
+//! # {
+//! # use der::{Any, Message, ObjectIdentifier};
+//! #
+//! # #[derive(Copy, Clone, Debug, Eq, PartialEq, Message)]
+//! # pub struct AlgorithmIdentifier<'a> {
+//! #     pub algorithm: ObjectIdentifier,
+//! #     pub parameters: Option<Any<'a>>
+//! # }
+//! /// X.509 `SubjectPublicKeyInfo` (SPKI)
+//! #[derive(Copy, Clone, Debug, Eq, PartialEq, Message)]
+//! pub struct SubjectPublicKeyInfo<'a> {
+//!     /// X.509 `AlgorithmIdentifier`
+//!     pub algorithm: AlgorithmIdentifier<'a>,
+//!
+//!     /// Public key data
+//!     #[asn1(type = "bit-string")]
+//!     pub subject_public_key: &'a [u8],
+//! }
+//! # }
+//! ```
 //!
 //! [X.690]: https://www.itu.int/rec/T-REC-X.690/
 //! [RustCrypto]: https://github.com/rustcrypto
