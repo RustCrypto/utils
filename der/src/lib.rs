@@ -102,7 +102,7 @@
 //!         // The `der::Any::sequence` method asserts that a `der::Any` value
 //!         // contains an ASN.1 `SEQUENCE` then calls the provided `FnOnce`
 //!         // with a `der::Decoder` which can be used to decode it.
-//!         any.sequence(|mut decoder| {
+//!         any.sequence(|decoder| {
 //!             // The `der::Decoder::Decode` method can be used to decode any
 //!             // type which impls the `Decodable` trait, which is impl'd for
 //!             // all of the ASN.1 built-in types in the `der` crate.
@@ -210,6 +210,56 @@
 //! # }
 //! ```
 //!
+//! ## Custom derive support
+//!
+//! When the `derive` feature of this crate is enabled, a custom derive macro
+//! is available for the [`Message`] trait. See [`der_derive::Message`] for
+//! more information.
+//!
+//! It can be used to automatically derive the code given in the above example:
+//!
+//! ```
+//! # #[cfg(feature = "derive")]
+//! # {
+//! use der::{Any, Encodable, Decodable, Message, ObjectIdentifier};
+//! use core::convert::TryInto;
+//!
+//! /// X.509 `AlgorithmIdentifier` (same as above)
+//! #[derive(Copy, Clone, Debug, Eq, PartialEq, Message)] // NOTE: added `Message`
+//! pub struct AlgorithmIdentifier<'a> {
+//!     /// This field contains an ASN.1 `OBJECT IDENTIFIER`, a.k.a. OID.
+//!     pub algorithm: ObjectIdentifier,
+//!
+//!     /// This field is `OPTIONAL` and contains the ASN.1 `ANY` type, which
+//!     /// in this example allows arbitrary algorithm-defined parameters.
+//!     pub parameters: Option<Any<'a>>
+//! }
+//!
+//! // Example parameters value: OID for the NIST P-256 elliptic curve.
+//! let parameters = "1.2.840.10045.3.1.7".parse::<ObjectIdentifier>().unwrap();
+//! let der_encoded_parameters = parameters.to_vec().unwrap();
+//!
+//! let algorithm_identifier = AlgorithmIdentifier {
+//!     // OID for `id-ecPublicKey`, if you're curious
+//!     algorithm: "1.2.840.10045.2.1".parse().unwrap(),
+//!
+//!     // `der::Any<'a>` impls `TryFrom<&'a [u8]>`, which parses the provided
+//!     // slice as an ASN.1 DER-encoded message.
+//!     parameters: Some(der_encoded_parameters.as_slice().try_into().unwrap())
+//! };
+//!
+//! // Encode
+//! let der_encoded_algorithm_identifier = algorithm_identifier.to_vec().unwrap();
+//!
+//! // Decode
+//! let decoded_algorithm_identifier = AlgorithmIdentifier::from_bytes(
+//!     &der_encoded_algorithm_identifier
+//! ).unwrap();
+//!
+//! assert_eq!(algorithm_identifier, decoded_algorithm_identifier);
+//! # }
+//! ```
+//!
 //!
 //! [X.690]: https://www.itu.int/rec/T-REC-X.690/
 //! [RustCrypto]: https://github.com/rustcrypto
@@ -256,6 +306,10 @@ pub use crate::{
 };
 
 pub(crate) use crate::{byte_slice::ByteSlice, header::Header};
+
+#[cfg(feature = "derive")]
+#[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
+pub use der_derive::Message;
 
 #[cfg(feature = "oid")]
 #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
