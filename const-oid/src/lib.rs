@@ -176,7 +176,7 @@ impl ObjectIdentifier {
                 0, 0, 0, 0, 0
             ],
             4 => [
-                arcs[2], arcs[3], arcs[4], 0, 0,
+                arcs[2], arcs[3], 0, 0, 0,
                 0, 0, 0, 0, 0
             ],
             5 => [
