@@ -167,3 +167,66 @@ impl fmt::Display for Length {
         self.0.fmt(f)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Length;
+    use crate::{Decodable, Encodable};
+
+    #[test]
+    fn decode() {
+        assert_eq!(Length::zero(), Length::from_bytes(&[0x00]).unwrap());
+
+        assert_eq!(Length::from(0x7Fu8), Length::from_bytes(&[0x7F]).unwrap());
+
+        assert_eq!(
+            Length::from(0x80u8),
+            Length::from_bytes(&[0x81, 0x80]).unwrap()
+        );
+
+        assert_eq!(
+            Length::from(0xFFu8),
+            Length::from_bytes(&[0x81, 0xFF]).unwrap()
+        );
+
+        assert_eq!(
+            Length::from(0x100u16),
+            Length::from_bytes(&[0x82, 0x01, 0x00]).unwrap()
+        );
+    }
+
+    #[test]
+    fn encode() {
+        let mut buffer = [0u8; 3];
+
+        assert_eq!(
+            &[0x00],
+            Length::zero().encode_to_slice(&mut buffer).unwrap()
+        );
+
+        assert_eq!(
+            &[0x7F],
+            Length::from(0x7Fu8).encode_to_slice(&mut buffer).unwrap()
+        );
+
+        assert_eq!(
+            &[0x81, 0x80],
+            Length::from(0x80u8).encode_to_slice(&mut buffer).unwrap()
+        );
+
+        assert_eq!(
+            &[0x81, 0xFF],
+            Length::from(0xFFu8).encode_to_slice(&mut buffer).unwrap()
+        );
+
+        assert_eq!(
+            &[0x82, 0x01, 0x00],
+            Length::from(0x100u16).encode_to_slice(&mut buffer).unwrap()
+        );
+    }
+
+    #[test]
+    fn reject_indefinite_lengths() {
+        assert!(Length::from_bytes(&[0x80]).is_err());
+    }
+}

@@ -3,9 +3,9 @@
 //!
 //! # About
 //!
-//! This crate presently provides an implementation of a subset of ASN.1 DER
-//! necessary for decoding/encoding various cryptography-related formats
-//! implemented as part of the [RustCrypto] project, e.g. the [`pkcs8`] crate.
+//! This crate provides an implementation of a subset of ASN.1 DER necessary
+//! for decoding/encoding various cryptography-related formats implemented as
+//! part of the [RustCrypto] project, e.g. the [`pkcs8`] crate.
 //!
 //! The core implementation avoids any heap usage (with convenience methods
 //! that allocate gated under the off-by-default `alloc` feature).
@@ -220,13 +220,8 @@ mod traits;
 
 pub use crate::{
     asn1::{
-        any::Any,
-        bit_string::BitString,
-        boolean::Boolean,
-        integer::{Integer, RawInteger},
-        null::Null,
-        octet_string::OctetString,
-        sequence::Sequence,
+        any::Any, bit_string::BitString, integer::RawInteger, null::Null,
+        octet_string::OctetString, sequence::Sequence,
     },
     decoder::Decoder,
     encoder::Encoder,
