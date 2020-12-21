@@ -85,7 +85,7 @@ impl<'a> TryFrom<der::Any<'a>> for SubjectPublicKeyInfo<'a> {
         any.sequence(|mut decoder| {
             let algorithm = decoder.decode()?;
             let subject_public_key = decoder.bit_string()?.as_bytes();
-            decoder.finish(Self {
+            Ok(Self {
                 algorithm,
                 subject_public_key,
             })

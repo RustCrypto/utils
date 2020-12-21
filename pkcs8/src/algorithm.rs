@@ -73,7 +73,7 @@ impl TryFrom<der::Any<'_>> for AlgorithmIdentifier {
         any.sequence(|mut decoder| {
             let oid = decoder.decode()?;
             let parameters = decoder.decode()?;
-            decoder.finish(Self { oid, parameters })
+            Ok(Self { oid, parameters })
         })
     }
 }
