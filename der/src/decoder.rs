@@ -1,14 +1,13 @@
 //! DER decoder.
 
-use crate::{
-    Any, BitString, Decodable, ErrorKind, Integer, Length, Null, OctetString, Result, Sequence,
-};
+use crate::{Any, BitString, Decodable, ErrorKind, Length, Null, OctetString, Result, Sequence};
 use core::convert::TryInto;
 
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
 
 /// DER decoder.
+#[derive(Debug)]
 pub struct Decoder<'a> {
     /// Byte slice being decoded.
     ///
@@ -87,11 +86,6 @@ impl<'a> Decoder<'a> {
         self.decode()
     }
 
-    /// Attempt to decode an ASN.1 `INTEGER`.
-    pub fn integer(&mut self) -> Result<Integer> {
-        self.decode()
-    }
-
     /// Attempt to decode an ASN.1 `NULL` value.
     pub fn null(&mut self) -> Result<Null> {
         self.decode()
@@ -165,5 +159,44 @@ impl<'a> Decoder<'a> {
 impl<'a> From<&'a [u8]> for Decoder<'a> {
     fn from(bytes: &'a [u8]) -> Decoder<'a> {
         Decoder::new(bytes)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Decoder;
+    use crate::{Decodable, ErrorKind, Length, Tag};
+
+    #[test]
+    fn truncated_message() {
+        let mut decoder = Decoder::new(&[]);
+        let err = bool::decode(&mut decoder).err().unwrap();
+        assert_eq!(ErrorKind::Truncated, err.kind());
+        assert_eq!(Some(Length::zero()), err.position());
+    }
+
+    #[test]
+    fn invalid_field_length() {
+        let mut decoder = Decoder::new(&[0x02, 0x01]);
+        let err = i8::decode(&mut decoder).err().unwrap();
+        assert_eq!(ErrorKind::Length { tag: Tag::Integer }, err.kind());
+        assert_eq!(Some(Length::from(2u8)), err.position());
+    }
+
+    #[test]
+    fn trailing_data() {
+        let mut decoder = Decoder::new(&[0x02, 0x01, 0x2A, 0x00]);
+        let x = decoder.decode().unwrap();
+        assert_eq!(42i8, x);
+
+        let err = decoder.finish(x).err().unwrap();
+        assert_eq!(
+            ErrorKind::TrailingData {
+                decoded: 3u8.into(),
+                remaining: 1u8.into()
+            },
+            err.kind()
+        );
+        assert_eq!(Some(Length::from(3u8)), err.position());
     }
 }

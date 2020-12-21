@@ -42,6 +42,14 @@ pub trait Encodable {
     /// Encode this value as ASN.1 DER using the provided [`Encoder`].
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()>;
 
+    /// Encode this value to the provided byte slice, returning a sub-slice
+    /// containing the encoded message.
+    fn encode_to_slice<'a>(&self, buf: &'a mut [u8]) -> Result<&'a [u8]> {
+        let mut encoder = Encoder::new(buf);
+        self.encode(&mut encoder)?;
+        Ok(encoder.finish()?)
+    }
+
     /// Encode this message as ASN.1 DER, appending it to the provided
     /// byte vector.
     #[cfg(feature = "alloc")]

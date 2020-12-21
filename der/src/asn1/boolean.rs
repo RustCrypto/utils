@@ -12,58 +12,71 @@ const TRUE_OCTET: u8 = 0b11111111;
 /// Byte used to encode `false` in ASN.1 DER.
 const FALSE_OCTET: u8 = 0b00000000;
 
-/// ASN.1 `BOOLEAN` type.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Boolean(bool);
-
-impl Boolean {
-    /// Get the ASN.1 DER [`Header`] for this [`Boolean`] value
-    pub(crate) fn header(self) -> Header {
-        Header {
-            tag: Tag::Boolean,
-            length: 1u8.into(),
-        }
-    }
-}
-
-impl From<bool> for Boolean {
-    fn from(value: bool) -> Boolean {
-        Boolean(value)
-    }
-}
-
-impl From<Boolean> for bool {
-    fn from(value: Boolean) -> bool {
-        value.0
-    }
-}
-
-impl TryFrom<Any<'_>> for Boolean {
+impl TryFrom<Any<'_>> for bool {
     type Error = Error;
 
-    fn try_from(any: Any<'_>) -> Result<Boolean> {
+    fn try_from(any: Any<'_>) -> Result<bool> {
         any.tag().assert_eq(Tag::Boolean)?;
 
         match any.as_bytes() {
-            [FALSE_OCTET] => Ok(false.into()),
-            [TRUE_OCTET] => Ok(true.into()),
+            [FALSE_OCTET] => Ok(false),
+            [TRUE_OCTET] => Ok(true),
             _ => Err(ErrorKind::Noncanonical.into()),
         }
     }
 }
 
-impl Encodable for Boolean {
+impl Encodable for bool {
     fn encoded_len(&self) -> Result<Length> {
-        self.header().encoded_len()? + 1u8
+        Header {
+            tag: Tag::Boolean,
+            length: 1u8.into(),
+        }
+        .encoded_len()?
+            + 1u8
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        self.header().encode(encoder)?;
-        let byte = if self.0 { TRUE_OCTET } else { FALSE_OCTET };
+        Header {
+            tag: Tag::Boolean,
+            length: 1u8.into(),
+        }
+        .encode(encoder)?;
+
+        let byte = if *self { TRUE_OCTET } else { FALSE_OCTET };
         encoder.byte(byte)
     }
 }
 
-impl Tagged for Boolean {
+impl Tagged for bool {
     const TAG: Tag = Tag::Boolean;
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Decodable, Encodable};
+
+    #[test]
+    fn decode() {
+        assert_eq!(true, bool::from_bytes(&[0x01, 0x01, 0xFF]).unwrap());
+        assert_eq!(false, bool::from_bytes(&[0x01, 0x01, 0x00]).unwrap());
+    }
+
+    #[test]
+    fn encode() {
+        let mut buffer = [0u8; 3];
+        assert_eq!(
+            &[0x01, 0x01, 0xFF],
+            true.encode_to_slice(&mut buffer).unwrap()
+        );
+        assert_eq!(
+            &[0x01, 0x01, 0x00],
+            false.encode_to_slice(&mut buffer).unwrap()
+        );
+    }
+
+    #[test]
+    fn reject_non_canonical() {
+        assert!(bool::from_bytes(&[0x01, 0x01, 0x01]).is_err());
+    }
 }

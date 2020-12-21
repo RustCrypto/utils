@@ -1,8 +1,7 @@
 //! DER encoder.
 
 use crate::{
-    asn1::sequence, BitString, Encodable, ErrorKind, Header, Integer, Length, Null, OctetString,
-    Result, Tag,
+    asn1::sequence, BitString, Encodable, ErrorKind, Header, Length, Null, OctetString, Result, Tag,
 };
 use core::convert::TryInto;
 
@@ -10,6 +9,7 @@ use core::convert::TryInto;
 use crate::ObjectIdentifier;
 
 /// DER encoder.
+#[derive(Debug)]
 pub struct Encoder<'a> {
     /// Buffer into which DER-encoded message is written
     bytes: Option<&'a mut [u8]>,
@@ -73,14 +73,6 @@ impl<'a> Encoder<'a> {
                     tag: Tag::BitString,
                 })
             })
-            .and_then(|value| self.encode(&value))
-    }
-
-    /// Encode the provided value as an ASN.1 `INTEGER`.
-    pub fn integer(&mut self, value: impl TryInto<Integer>) -> Result<()> {
-        value
-            .try_into()
-            .or_else(|_| self.error(ErrorKind::Value { tag: Tag::Integer }))
             .and_then(|value| self.encode(&value))
     }
 
@@ -205,5 +197,20 @@ impl<'a> Encoder<'a> {
             .checked_sub(self.position.into())
             .ok_or_else(|| ErrorKind::Truncated.at(self.position))
             .and_then(TryInto::try_into)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Encoder;
+    use crate::{Encodable, ErrorKind, Length};
+
+    #[test]
+    fn overlength_message() {
+        let mut buffer = [];
+        let mut encoder = Encoder::new(&mut buffer);
+        let err = false.encode(&mut encoder).err().unwrap();
+        assert_eq!(err.kind(), ErrorKind::Overlength);
+        assert_eq!(err.position(), Some(Length::zero()));
     }
 }

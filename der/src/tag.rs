@@ -30,6 +30,7 @@ pub enum Tag {
     /// Note that the universal tag number for `SEQUENCE` is technically `0x10`
     /// however we presently only support the constructed form, which has the
     /// 6th bit (i.e. `0x20`) set.
+    // TODO(tarcieri): explicitly handle primitive vs constructed forms?
     Sequence = 0x30,
 }
 

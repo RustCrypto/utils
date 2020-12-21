@@ -40,3 +40,25 @@ impl Encodable for Null {
 impl Tagged for Null {
     const TAG: Tag = Tag::Integer;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::Null;
+    use crate::{Decodable, Encodable};
+
+    #[test]
+    fn decode() {
+        assert!(Null::from_bytes(&[0x05, 0x00]).is_ok());
+    }
+
+    #[test]
+    fn encode() {
+        let mut buffer = [0u8; 2];
+        assert_eq!(&[0x05, 0x00], Null.encode_to_slice(&mut buffer).unwrap())
+    }
+
+    #[test]
+    fn reject_non_canonical() {
+        assert!(Null::from_bytes(&[0x05, 0x81, 0x00]).is_err());
+    }
+}

@@ -1,8 +1,8 @@
 //! ASN.1 `ANY` type.
 
 use crate::{
-    BitString, ByteSlice, Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Header,
-    Integer, Length, Null, OctetString, Result, Sequence, Tag,
+    BitString, ByteSlice, Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Header, Length,
+    Null, OctetString, Result, Sequence, Tag,
 };
 use core::convert::{TryFrom, TryInto};
 
@@ -50,11 +50,6 @@ impl<'a> Any<'a> {
 
     /// Attempt to decode an ASN.1 `BIT STRING`
     pub fn bit_string(self) -> Result<BitString<'a>> {
-        self.try_into()
-    }
-
-    /// Attempt to decode an ASN.1 `INTEGER`
-    pub fn integer(self) -> Result<Integer> {
         self.try_into()
     }
 

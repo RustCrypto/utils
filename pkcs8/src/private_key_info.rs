@@ -98,7 +98,7 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
     fn try_from(any: der::Any<'a>) -> der::Result<PrivateKeyInfo<'a>> {
         any.sequence(|mut decoder| {
             // Parse and validate `version` INTEGER.
-            if decoder.integer()? != VERSION.into() {
+            if i8::decode(&mut decoder)? != VERSION {
                 return Err(der::ErrorKind::Value {
                     tag: der::Tag::Integer,
                 }
@@ -122,7 +122,7 @@ impl<'a> Message<'a> for PrivateKeyInfo<'a> {
         F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
     {
         f(&[
-            &der::Integer::from(VERSION),
+            &VERSION,
             &self.algorithm,
             &der::OctetString::new(self.private_key)?,
         ])
