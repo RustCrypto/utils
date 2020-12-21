@@ -100,12 +100,11 @@
 //!             // `decoder.optional()` method.
 //!             let parameters = decoder.decode()?;
 //!
-//!             // The `der::Decoder::finish` method asserts that the entire
-//!             // message has been consumed, and if so, returns the provided
-//!             // value which is in turn returned from the `any.sequence(...)`
-//!             // method above. Failure to consume the entire message will
-//!             // return an error instead.
-//!             decoder.finish(Self { algorithm, parameters })
+//!             // The value returned from the provided `FnOnce` will be
+//!             // returned from the `any.sequence(...)` call above.
+//!             // Note that the entire sequence body *MUST* be consumed
+//!             // or an error will be returned.
+//!             Ok(Self { algorithm, parameters })
 //!         })
 //!     }
 //! }

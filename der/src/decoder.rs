@@ -112,13 +112,17 @@ impl<'a> Decoder<'a> {
     /// [`Decoder`] and calling the provided argument with it.
     pub fn sequence<F, T>(&mut self, f: F) -> Result<T>
     where
-        F: FnOnce(Decoder<'a>) -> Result<T>,
+        F: FnOnce(&mut Decoder<'a>) -> Result<T>,
     {
         Sequence::decode(self).and_then(|seq| {
-            f(seq.decoder()).map_err(|e| {
+            let mut seq_decoder = seq.decoder();
+
+            let result = f(&mut seq_decoder).map_err(|e| {
                 self.bytes.take();
                 e.nested(self.position)
-            })
+            })?;
+
+            seq_decoder.finish(result)
         })
     }
 
