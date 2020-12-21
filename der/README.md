@@ -12,6 +12,21 @@ for Abstract Syntax Notation One (ASN.1) as described in ITU X.690.
 
 [Documentation][docs-link]
 
+# About
+
+This crate provides a `no_std`-friendly implementation of a subset of ASN.1 DER
+necessary  for decoding/encoding various cryptography-related formats
+implemented as part of the [RustCrypto] project, e.g. the [`pkcs8`] crate.
+
+The core implementation avoids any heap usage (with convenience methods
+that allocate gated under the off-by-default `alloc` feature).
+
+The implementation is presently specialized for documents which are smaller
+than 64kB, as that provides a safe bound for the current use cases.
+However, that may be revisited in the future depending on interest in
+support for larger documents. Please open a [GitHub Issue] if you find
+this limit constraining in practice.
+
 ## License
 
 Licensed under either of:
@@ -39,3 +54,9 @@ dual licensed as above, without any additional terms or conditions.
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
 [build-image]: https://github.com/RustCrypto/utils/workflows/der/badge.svg?branch=master&event=push
 [build-link]: https://github.com/RustCrypto/utils/actions
+
+[//]: # (general links)
+
+[RustCrypto]: https://github.com/rustcrypto
+[`pkcs8`]: https://docs.rs/pkcs8/
+[GitHub Issue]: https://github.com/RustCrypto/utils/issues

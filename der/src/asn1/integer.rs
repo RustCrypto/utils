@@ -49,9 +49,9 @@ impl Tagged for i8 {
 /// used for cryptographic keys. It can be used in order to convert them to the
 /// big integer representation of your choice.
 ///
-/// Note that the [`Decodable`] and [`Encodable`] traits are implemented for
-/// Rust's integer types ([`i8`] only for now) if you'd like to work directly
-/// with an integer value.
+/// Note that the [`Decodable`][`crate::Decodable`] and [`Encodable`] traits are
+/// impl'd for Rust's integer primitive types ([`i8`] only for now) if you'd like
+/// to work directly with an integer value rather than decoding it yourself.
 ///
 /// # ⚠️ Important Usage Notes ⚠️
 ///

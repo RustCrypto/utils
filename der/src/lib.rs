@@ -3,9 +3,9 @@
 //!
 //! # About
 //!
-//! This crate provides an implementation of a subset of ASN.1 DER necessary
-//! for decoding/encoding various cryptography-related formats implemented as
-//! part of the [RustCrypto] project, e.g. the [`pkcs8`] crate.
+//! This crate provides a `no_std`-friendly implementation of a subset of ASN.1
+//! DER necessary for decoding/encoding various cryptography-related formats
+//! implemented as part of the [RustCrypto] project, e.g. the [`pkcs8`] crate.
 //!
 //! The core implementation avoids any heap usage (with convenience methods
 //! that allocate gated under the off-by-default `alloc` feature).
@@ -21,6 +21,31 @@
 //! This crate requires **Rust 1.46** at a minimum.
 //!
 //! # Usage
+//!
+//! ## [`Decodable`] and [`Encodable`] traits
+//!
+//! The [`Decodable`] and [`Encodable`] traits (along with the [`Message`]
+//! supertrait which encompasses them both) are the core abstractions on
+//! which this crate is built and control what types can be (de)serialized
+//! as ASN.1 DER.
+//!
+//! The traits are impl'd for the following Rust core types:
+//!
+//! - [`bool`] (ASN.1 `BOOLEAN`)
+//! - [`i8`]  (ASN.1 `INTEGER`)
+//! - [`Option`] (ASN.1 `OPTIONAL`)
+//!
+//! The following ASN.1 types provided by this crate also impl these traits:
+//!
+//! - [`Any`] (ASN.1 `ANY`)
+//! - [`BitString`] (ASN.1 `BIT STRING`)
+//! - [`Null`] (ASN.1 `NULL`)
+//! - [`ObjectIdentifier`] (ASN.1 `OBJECT IDENTIFIER`)
+//! - [`OctetString`] (ASN.1 `OCTET STRING`)
+//! - [`RawInteger`] (ASN.1 `INTEGER` with raw access to encoded bytes)
+//! - [`Sequence`] (ASN.1 `SEQUENCE`)
+//!
+//! ## Example
 //!
 //! The following example implements X.509's `AlgorithmIdentifier` message type
 //! as defined in [RFC 5280 Section 4.1.1.2].
