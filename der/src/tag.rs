@@ -3,9 +3,17 @@
 use crate::{Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Length, Result};
 use core::{convert::TryFrom, fmt};
 
+/// Indicator bit for constructed form encoding (i.e. vs primitive form)
+const CONSTRUCTED_FLAG: u8 = 0b100000;
+
+/// Indicator bit for context-specific types
+const CONTEXT_SPECIFIC_FLAG: u8 = 0b10000000;
+
 /// ASN.1 tags.
 #[derive(Copy, Clone, Eq, PartialEq)]
+#[allow(clippy::identity_op)]
 #[non_exhaustive]
+#[repr(u8)]
 pub enum Tag {
     /// `BOOLEAN` tag.
     Boolean = 0x01,
@@ -30,8 +38,19 @@ pub enum Tag {
     /// Note that the universal tag number for `SEQUENCE` is technically `0x10`
     /// however we presently only support the constructed form, which has the
     /// 6th bit (i.e. `0x20`) set.
-    // TODO(tarcieri): explicitly handle primitive vs constructed forms?
-    Sequence = 0x30,
+    Sequence = 0x10 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (0) unique to a particular structure.
+    ContextSpecific0 = 0 | CONTEXT_SPECIFIC_FLAG | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (1) unique to a particular structure.
+    ContextSpecific1 = 1 | CONTEXT_SPECIFIC_FLAG | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (2) unique to a particular structure.
+    ContextSpecific2 = 2 | CONTEXT_SPECIFIC_FLAG | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (3) unique to a particular structure.
+    ContextSpecific3 = 3 | CONTEXT_SPECIFIC_FLAG | CONSTRUCTED_FLAG,
 }
 
 impl TryFrom<u8> for Tag {
@@ -46,6 +65,10 @@ impl TryFrom<u8> for Tag {
             0x05 => Ok(Tag::Null),
             0x06 => Ok(Tag::ObjectIdentifier),
             0x30 => Ok(Tag::Sequence),
+            0xA0 => Ok(Tag::ContextSpecific0),
+            0xA1 => Ok(Tag::ContextSpecific1),
+            0xA2 => Ok(Tag::ContextSpecific2),
+            0xA3 => Ok(Tag::ContextSpecific3),
             _ => Err(ErrorKind::UnknownTag { byte }.into()),
         }
     }
@@ -77,6 +100,10 @@ impl Tag {
             Self::Null => "NULL",
             Self::ObjectIdentifier => "OBJECT IDENTIFIER",
             Self::Sequence => "SEQUENCE",
+            Self::ContextSpecific0 => "Context Specific 0",
+            Self::ContextSpecific1 => "Context Specific 1",
+            Self::ContextSpecific2 => "Context Specific 2",
+            Self::ContextSpecific3 => "Context Specific 3",
         }
     }
 }
