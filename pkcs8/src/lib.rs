@@ -73,7 +73,7 @@ pub use crate::{
     spki::SubjectPublicKeyInfo,
     traits::{FromPrivateKey, FromPublicKey},
 };
-pub use der::ObjectIdentifier;
+pub use der::{self, ObjectIdentifier};
 
 #[cfg(feature = "alloc")]
 pub use crate::{
