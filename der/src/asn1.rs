@@ -11,4 +11,4 @@ pub(crate) mod octet_string;
 #[cfg(feature = "oid")]
 pub(crate) mod oid;
 pub(crate) mod optional;
-pub(crate) mod sequence;
+pub mod sequence;

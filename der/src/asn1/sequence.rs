@@ -8,7 +8,7 @@ use core::convert::TryFrom;
 
 /// Obtain the length of an ASN.1 `SEQUENCE` of [`Encodable`] values when
 /// serialized as ASN.1 DER, including the `SEQUENCE` tag and length prefix.
-pub(crate) fn encoded_len(encodables: &[&dyn Encodable]) -> Result<Length> {
+pub fn encoded_len(encodables: &[&dyn Encodable]) -> Result<Length> {
     let inner_len = encoded_len_inner(encodables)?;
     Header::new(Tag::Sequence, inner_len)?.encoded_len() + inner_len
 }

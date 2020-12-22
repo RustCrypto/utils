@@ -328,8 +328,12 @@ mod traits;
 
 pub use crate::{
     asn1::{
-        any::Any, bit_string::BitString, integer::RawInteger, null::Null,
-        octet_string::OctetString, sequence::Sequence,
+        any::Any,
+        bit_string::BitString,
+        integer::RawInteger,
+        null::Null,
+        octet_string::OctetString,
+        sequence::{self, Sequence},
     },
     decoder::Decoder,
     encoder::Encoder,
