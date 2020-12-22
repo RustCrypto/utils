@@ -21,6 +21,11 @@ impl Length {
     pub const fn max() -> usize {
         u16::MAX as usize
     }
+
+    /// Convert length to `usize`
+    pub fn to_usize(self) -> usize {
+        self.0.into()
+    }
 }
 
 impl Add for Length {

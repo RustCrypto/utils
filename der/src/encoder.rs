@@ -193,7 +193,8 @@ impl<'a> Encoder<'a> {
 
     /// Get the number of bytes still remaining in the buffer.
     fn remaining_len(&self) -> Result<Length> {
-        usize::from(self.buffer_len()?)
+        self.buffer_len()?
+            .to_usize()
             .checked_sub(self.position.into())
             .ok_or_else(|| ErrorKind::Truncated.at(self.position))
             .and_then(TryInto::try_into)

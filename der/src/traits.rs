@@ -55,7 +55,7 @@ pub trait Encodable {
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     fn encode_to_vec(&self, buf: &mut Vec<u8>) -> Result<Length> {
-        let expected_len = usize::from(self.encoded_len()?);
+        let expected_len = self.encoded_len()?.to_usize();
         buf.reserve(expected_len);
         buf.extend(iter::repeat(0).take(expected_len));
 
