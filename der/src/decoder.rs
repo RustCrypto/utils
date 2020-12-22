@@ -122,7 +122,7 @@ impl<'a> Decoder<'a> {
 
     /// Decode a single byte, updating the internal cursor.
     pub(crate) fn byte(&mut self) -> Result<u8> {
-        match self.bytes(1)? {
+        match self.bytes(1u8)? {
             [byte] => Ok(*byte),
             _ => self.error(ErrorKind::Truncated),
         }
@@ -130,12 +130,19 @@ impl<'a> Decoder<'a> {
 
     /// Obtain a slice of bytes of the given length from the current cursor
     /// position, or return an error if we have insufficient data.
-    pub(crate) fn bytes(&mut self, len: usize) -> Result<&'a [u8]> {
+    pub(crate) fn bytes(&mut self, len: impl TryInto<Length>) -> Result<&'a [u8]> {
         if self.is_failed() {
             self.error(ErrorKind::Failed)?;
         }
 
-        let result = self.remaining()?.get(..len).ok_or(ErrorKind::Truncated)?;
+        let len = len
+            .try_into()
+            .or_else(|_| self.error(ErrorKind::Overflow))?;
+        let result = self
+            .remaining()?
+            .get(..len.to_usize())
+            .ok_or(ErrorKind::Truncated)?;
+
         self.position = (self.position + len)?;
         Ok(result)
     }
