@@ -1,27 +1,36 @@
 #![no_std]
+#![feature(min_const_generics)]
+
 #[cfg(feature = "block-padding")]
 pub use block_padding;
-pub use generic_array;
 
 #[cfg(feature = "block-padding")]
 use block_padding::{PadError, Padding};
 use core::{convert::TryInto, slice};
-use generic_array::{ArrayLength, GenericArray};
 
 /// Buffer for block processing of data
-#[derive(Clone, Default)]
-pub struct BlockBuffer<BlockSize: ArrayLength<u8>> {
-    buffer: GenericArray<u8, BlockSize>,
+#[derive(Clone)]
+pub struct BlockBuffer<const BLOCK_SIZE: usize> {
+    buffer: [u8; BLOCK_SIZE],
     pos: usize,
 }
 
-impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
-    /// Process data in `input` in blocks of size `BlockSize` using function `f`.
+impl<const BLOCK_SIZE: usize> Default for BlockBuffer<BLOCK_SIZE> {
+    fn default() -> BlockBuffer<BLOCK_SIZE> {
+        BlockBuffer {
+            buffer: [0; BLOCK_SIZE],
+            pos: 0,
+        }
+    }
+}
+
+impl<const BLOCK_SIZE: usize> BlockBuffer<BLOCK_SIZE> {
+    /// Process data in `input` in blocks of size `BLOCK_SIZE` using function `f`.
     #[inline]
     pub fn input_block(
         &mut self,
         mut input: &[u8],
-        mut f: impl FnMut(&GenericArray<u8, BlockSize>),
+        mut f: impl FnMut(&[u8; BLOCK_SIZE]),
     ) {
         let r = self.remaining();
         if input.len() < r {
@@ -48,13 +57,13 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         self.pos = rem.len();
     }
 
-    /// Process data in `input` in blocks of size `BlockSize` using function `f`, which accepts
+    /// Process data in `input` in blocks of size `BLOCK_SIZE` using function `f`, which accepts
     /// slice of blocks.
     #[inline]
     pub fn input_blocks(
         &mut self,
         mut input: &[u8],
-        mut f: impl FnMut(&[GenericArray<u8, BlockSize>]),
+        mut f: impl FnMut(&[[u8; BLOCK_SIZE]]),
     ) {
         let r = self.remaining();
         if input.len() < r {
@@ -78,7 +87,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         // SAFETY: we guarantee that `blocks` does not point outside of `input`
         let blocks = unsafe {
             slice::from_raw_parts(
-                left.as_ptr() as *const GenericArray<u8, BlockSize>,
+                left.as_ptr() as *const [u8; BLOCK_SIZE],
                 n_blocks,
             )
         };
@@ -98,7 +107,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     pub fn input_lazy(
         &mut self,
         mut input: &[u8],
-        mut f: impl FnMut(&GenericArray<u8, BlockSize>),
+        mut f: impl FnMut(&[u8; BLOCK_SIZE]),
     ) {
         let r = self.remaining();
         if input.len() <= r {
@@ -128,7 +137,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// has at least `up_to` free bytes. All remaining bytes get
     /// zeroed-out.
     #[inline]
-    fn digest_pad(&mut self, up_to: usize, mut f: impl FnMut(&GenericArray<u8, BlockSize>)) {
+    fn digest_pad(&mut self, up_to: usize, mut f: impl FnMut(&[u8; BLOCK_SIZE])) {
         if self.pos == self.size() {
             f(&self.buffer);
             self.pos = 0;
@@ -150,7 +159,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     pub fn len64_padding_be(
         &mut self,
         data_len: u64,
-        mut f: impl FnMut(&GenericArray<u8, BlockSize>),
+        mut f: impl FnMut(&[u8; BLOCK_SIZE]),
     ) {
         self.digest_pad(8, &mut f);
         let b = data_len.to_be_bytes();
@@ -166,7 +175,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     pub fn len64_padding_le(
         &mut self,
         data_len: u64,
-        mut f: impl FnMut(&GenericArray<u8, BlockSize>),
+        mut f: impl FnMut(&[u8; BLOCK_SIZE]),
     ) {
         self.digest_pad(8, &mut f);
         let b = data_len.to_le_bytes();
@@ -182,7 +191,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     pub fn len128_padding_be(
         &mut self,
         data_len: u128,
-        mut f: impl FnMut(&GenericArray<u8, BlockSize>),
+        mut f: impl FnMut(&[u8; BLOCK_SIZE]),
     ) {
         self.digest_pad(16, &mut f);
         let b = data_len.to_be_bytes();
@@ -198,7 +207,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// `input_lazy` was used.
     #[cfg(feature = "block-padding")]
     #[inline]
-    pub fn pad_with<P: Padding>(&mut self) -> Result<&mut GenericArray<u8, BlockSize>, PadError> {
+    pub fn pad_with<P: Padding>(&mut self) -> Result<&mut [u8; BLOCK_SIZE], PadError> {
         P::pad_block(&mut self.buffer[..], self.pos)?;
         self.pos = 0;
         Ok(&mut self.buffer)
@@ -207,7 +216,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// Return size of the internall buffer in bytes
     #[inline]
     pub fn size(&self) -> usize {
-        BlockSize::to_usize()
+        BLOCK_SIZE
     }
 
     /// Return current cursor position
