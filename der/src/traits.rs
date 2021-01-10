@@ -96,7 +96,6 @@ pub trait Tagged {
 ///
 /// Types which impl this trait receive blanket impls for the [`Decodable`],
 /// [`Encodable`], and [`Tagged`] traits.
-// TODO(tarcieri): ensure all `Message` types impl `Decodable`
 pub trait Message<'a>: Decodable<'a> {
     /// Call the provided function with a slice of [`Encodable`] trait objects
     /// representing the fields of this message.
