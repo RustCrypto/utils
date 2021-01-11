@@ -1,6 +1,8 @@
 //! ASN.1 `BIT STRING` support.
 
-use crate::{Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
+use crate::{
+    Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged,
+};
 use core::convert::TryFrom;
 
 /// ASN.1 `BIT STRING` type.
@@ -22,6 +24,14 @@ impl<'a> BitString<'a> {
     pub fn as_bytes(&self) -> &'a [u8] {
         self.inner.as_bytes()
     }
+
+    /// Get the ASN.1 DER [`Header`] for this [`BitString`] value
+    fn header(self) -> Result<Header> {
+        Ok(Header {
+            tag: Tag::BitString,
+            length: (self.inner.len() + 1u16)?,
+        })
+    }
 }
 
 impl AsRef<[u8]> for BitString<'_> {
@@ -41,7 +51,18 @@ impl<'a> TryFrom<Any<'a>> for BitString<'a> {
 
     fn try_from(any: Any<'a>) -> Result<BitString<'a>> {
         any.tag().assert_eq(Tag::BitString)?;
-        Self::new(any.as_bytes())
+
+        if let Some(bs) = any.as_bytes().get(1..) {
+            // The first octet of a BIT STRING encodes the number of unused bits.
+            // We presently constrain this to 0.
+            if any.as_bytes()[0] == 0 {
+                return ByteSlice::new(bs)
+                    .map(|inner| Self { inner })
+                    .map_err(|_| ErrorKind::Length { tag: Self::TAG }.into());
+            }
+        }
+
+        Err(ErrorKind::Length { tag: Self::TAG }.into())
     }
 }
 
@@ -62,14 +83,61 @@ impl<'a> From<BitString<'a>> for &'a [u8] {
 
 impl<'a> Encodable for BitString<'a> {
     fn encoded_len(&self) -> Result<Length> {
-        Any::from(*self).encoded_len()
+        self.header()?.encoded_len()? + 1u16 + self.inner.len()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Any::from(*self).encode(encoder)
+        self.header()?.encode(encoder)?;
+        encoder.byte(0)?;
+        encoder.bytes(self.as_bytes())
     }
 }
 
 impl<'a> Tagged for BitString<'a> {
     const TAG: Tag = Tag::BitString;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Any, BitString, ErrorKind, Result, Tag};
+    use core::convert::TryInto;
+
+    /// Parse a `BitString` from an ASN.1 `Any` value to test decoding behaviors.
+    fn parse_bitstring_from_any(bytes: &[u8]) -> Result<BitString<'_>> {
+        Any::new(Tag::BitString, bytes)?.try_into()
+    }
+
+    #[test]
+    fn reject_non_prefixed_bitstring() {
+        let err = parse_bitstring_from_any(&[]).err().unwrap();
+        assert_eq!(
+            err.kind(),
+            ErrorKind::Length {
+                tag: Tag::BitString
+            }
+        );
+    }
+
+    #[test]
+    fn reject_non_zero_prefix() {
+        let err = parse_bitstring_from_any(&[1, 1, 2, 3]).err().unwrap();
+        assert_eq!(
+            err.kind(),
+            ErrorKind::Length {
+                tag: Tag::BitString
+            }
+        );
+    }
+
+    #[test]
+    fn decode_empty_bitstring() {
+        let bs = parse_bitstring_from_any(&[0]).unwrap();
+        assert_eq!(bs.as_ref(), &[]);
+    }
+
+    #[test]
+    fn decode_non_empty_bitstring() {
+        let bs = parse_bitstring_from_any(&[0, 1, 2, 3]).unwrap();
+        assert_eq!(bs.as_ref(), &[1, 2, 3]);
+    }
 }
