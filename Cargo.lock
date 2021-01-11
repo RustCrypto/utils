@@ -88,7 +88,7 @@ version = "0.3.0"
 
 [[package]]
 name = "pkcs8"
-version = "0.3.3"
+version = "0.4.0-pre"
 dependencies = [
  "der",
  "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
