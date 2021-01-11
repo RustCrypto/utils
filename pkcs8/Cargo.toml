@@ -15,7 +15,7 @@ keywords = ["crypto", "key", "private"]
 readme = "README.md"
 
 [dependencies.der]
-version = "0.1"
+version = "=0.2.0-pre"
 path = "../der"
 features = ["oid"]
 
