@@ -38,11 +38,11 @@
 //! The following ASN.1 types provided by this crate also impl these traits:
 //!
 //! - [`Any`] (ASN.1 `ANY`)
+//! - [`BigUInt`] (ASN.1 unsigned `INTEGER` with raw access to encoded bytes)
 //! - [`BitString`] (ASN.1 `BIT STRING`)
 //! - [`Null`] (ASN.1 `NULL`)
 //! - [`ObjectIdentifier`] (ASN.1 `OBJECT IDENTIFIER`)
 //! - [`OctetString`] (ASN.1 `OCTET STRING`)
-//! - [`RawInteger`] (ASN.1 `INTEGER` with raw access to encoded bytes)
 //! - [`Sequence`] (ASN.1 `SEQUENCE`)
 //!
 //! ## Example
@@ -330,7 +330,6 @@ pub use crate::{
     asn1::{
         any::Any,
         bit_string::BitString,
-        integer::RawInteger,
         null::Null,
         octet_string::OctetString,
         sequence::{self, Sequence},
@@ -344,6 +343,10 @@ pub use crate::{
 };
 
 pub(crate) use crate::{byte_slice::ByteSlice, header::Header};
+
+#[cfg(feature = "big-uint")]
+#[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
+pub use {crate::asn1::big_integer::BigUInt, typenum::consts};
 
 #[cfg(feature = "derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]

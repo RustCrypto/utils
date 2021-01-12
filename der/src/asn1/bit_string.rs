@@ -25,6 +25,16 @@ impl<'a> BitString<'a> {
         self.inner.as_bytes()
     }
 
+    /// Get the length of the inner byte slice.
+    pub fn len(&self) -> Length {
+        self.inner.len()
+    }
+
+    /// Is the inner byte slice empty?
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
     /// Get the ASN.1 DER [`Header`] for this [`BitString`] value
     fn header(self) -> Result<Header> {
         Ok(Header {
