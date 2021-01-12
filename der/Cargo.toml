@@ -14,19 +14,15 @@ categories = ["cryptography", "data-structures", "encoding", "no-std"]
 keywords = ["asn1", "crypto", "itu", "pkcs"]
 readme = "README.md"
 
-[dependencies.const-oid]
-version = "0.4"
-optional = true
-path = "../const-oid"
-
-[dependencies.der_derive]
-version = "0.1"
-optional = true
-path = "derive"
+[dependencies]
+const-oid = { version = "0.4", optional = true, path = "../const-oid" }
+der_derive = { version = "0.1", optional = true, path = "derive" }
+typenum = { version = "1", optional = true }
 
 [features]
 alloc = []
 derive = ["der_derive"]
+big-uint = ["typenum"]
 oid = ["const-oid"]
 std = ["alloc"]
 

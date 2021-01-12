@@ -22,6 +22,16 @@ impl<'a> OctetString<'a> {
     pub fn as_bytes(&self) -> &'a [u8] {
         self.inner.as_bytes()
     }
+
+    /// Get the length of the inner byte slice.
+    pub fn len(&self) -> Length {
+        self.inner.len()
+    }
+
+    /// Is the inner byte slice empty?
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
 }
 
 impl AsRef<[u8]> for OctetString<'_> {

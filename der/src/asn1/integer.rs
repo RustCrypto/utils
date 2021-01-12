@@ -1,8 +1,6 @@
 //! ASN.1 `INTEGER` support.
 
-use crate::{
-    Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged,
-};
+use crate::{Any, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 impl TryFrom<Any<'_>> for i8 {
@@ -39,87 +37,6 @@ impl Encodable for i8 {
 }
 
 impl Tagged for i8 {
-    const TAG: Tag = Tag::Integer;
-}
-
-/// Raw ASN.1 `INTEGER` type.
-///
-/// Provides direct access to the underlying DER-encoded bytes which comprise
-/// an integer value, intended for use cases like very large integers that are
-/// used for cryptographic keys. It can be used in order to convert them to the
-/// big integer representation of your choice.
-///
-/// Note that the [`Decodable`][`crate::Decodable`] and [`Encodable`] traits are
-/// impl'd for Rust's integer primitive types ([`i8`] only for now) if you'd like
-/// to work directly with an integer value rather than decoding it yourself.
-///
-/// # ⚠️ Important Usage Notes ⚠️
-///
-/// This type does *NOT* ensure the value is canonically encoded according to
-/// DER's rules. If it's important for your use case that the message is valid
-/// ASN.1 DER, you *MUST* validate the value is canonically encoded yourself.
-// TODO(tarcieri): implement generic validation rules for arbitrary-sized integers
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct RawInteger<'a> {
-    /// Inner value
-    inner: ByteSlice<'a>,
-}
-
-impl<'a> RawInteger<'a> {
-    /// Create a new [`RawInteger`] from a slice.
-    pub fn new(slice: &'a [u8]) -> Result<Self> {
-        ByteSlice::new(slice)
-            .map(|inner| Self { inner })
-            .map_err(|_| ErrorKind::Length { tag: Self::TAG }.into())
-    }
-
-    /// Borrow the inner byte slice.
-    pub fn as_bytes(&self) -> &'a [u8] {
-        self.inner.as_bytes()
-    }
-}
-
-impl AsRef<[u8]> for RawInteger<'_> {
-    fn as_ref(&self) -> &[u8] {
-        self.as_bytes()
-    }
-}
-
-impl<'a> From<&RawInteger<'a>> for RawInteger<'a> {
-    fn from(value: &RawInteger<'a>) -> RawInteger<'a> {
-        *value
-    }
-}
-
-impl<'a> TryFrom<Any<'a>> for RawInteger<'a> {
-    type Error = Error;
-
-    fn try_from(any: Any<'a>) -> Result<RawInteger<'a>> {
-        any.tag().assert_eq(Tag::Integer)?;
-        Self::new(any.as_bytes())
-    }
-}
-
-impl<'a> From<RawInteger<'a>> for Any<'a> {
-    fn from(integer: RawInteger<'a>) -> Any<'a> {
-        Any {
-            tag: Tag::Integer,
-            value: integer.inner,
-        }
-    }
-}
-
-impl<'a> Encodable for RawInteger<'a> {
-    fn encoded_len(&self) -> Result<Length> {
-        Any::from(*self).encoded_len()
-    }
-
-    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Any::from(*self).encode(encoder)
-    }
-}
-
-impl<'a> Tagged for RawInteger<'a> {
     const TAG: Tag = Tag::Integer;
 }
 
