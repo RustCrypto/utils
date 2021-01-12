@@ -19,8 +19,10 @@
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
-#![forbid(unsafe_code)]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
+)]
 #![warn(missing_docs, rust_2018_idioms)]
 
 #[cfg(feature = "alloc")]
@@ -30,90 +32,54 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-use core::{fmt, str};
+use core::str;
 
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
 
-/// Error message to use when performing encoding operations which we expect
-/// will never fail, i.e. the message passed to `expect()`.
-const ENCODING_ERROR: &str = "B64 encoding error";
+mod errors;
 
-/// "B64" encoding errors.
-///
-///<https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md#b64>
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Error {
-    /// Encoding error.
-    EncodingInvalid,
-
-    /// Invalid length.
-    LengthInvalid,
-
-    /// Trailing whitespace characters.
-    TrailingWhitespace,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        match self {
-            Self::EncodingInvalid => f.write_str("invalid B64 encoding"),
-            Self::LengthInvalid => f.write_str("B64 encoded data has invalid length"),
-            Self::TrailingWhitespace => f.write_str("B64 encoded data has trailing whitespace"),
-        }
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for Error {}
+pub use errors::{Error, InvalidLengthError, InvalidEncodingError};
 
 /// Encode the input byte slice as "B64", writing the result into the provided
 /// destination slice, and returning an ASCII-encoded string value.
-pub fn encode<'a>(src: &[u8], dst: &'a mut [u8]) -> Result<&'a str, Error> {
-    if encoded_len(src) > dst.len() {
-        return Err(Error::LengthInvalid);
+pub fn encode<'a>(src: &[u8], dst: &'a mut [u8]) -> Result<&'a str, InvalidLengthError> {
+    let elen = encoded_len(src);
+    if elen > dst.len() {
+        return Err(InvalidLengthError);
     }
+    let dst = &mut dst[..elen];
 
-    let mut src_offset: usize = 0;
-    let mut dst_offset: usize = 0;
-    let mut src_length: usize = src.len();
-
-    while src_length >= 3 {
-        encode_3bytes(
-            &src[src_offset..(src_offset + 3)],
-            &mut dst[dst_offset..(dst_offset + 4)],
-        );
-
-        src_offset += 3;
-        dst_offset += 4;
-        src_length -= 3;
+    let mut src_chunks = src.chunks_exact(3);
+    let mut dst_chunks = dst.chunks_exact_mut(4);
+    for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
+        encode_3bytes(s, d);
     }
+    let src_rem = src_chunks.remainder();
+    let dst_rem = dst_chunks.into_remainder();
 
-    if src_length > 0 {
-        let remaining = &src[src_offset..(src_offset + src_length)];
-        let mut tmp_in = [0u8; 3];
-        tmp_in[..src_length].copy_from_slice(remaining);
+    let mut tmp_in = [0u8; 3];
+    let mut tmp_out = [0u8; 4];
+    tmp_in[..src_rem.len()].copy_from_slice(src_rem);
+    encode_3bytes(&tmp_in, &mut tmp_out);
+    dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
 
-        let mut tmp_out = [0u8; 4];
-        encode_3bytes(&tmp_in, &mut tmp_out);
-
-        let len = encoded_len(remaining);
-        dst[dst_offset..(dst_offset + len)].copy_from_slice(&tmp_out[..len]);
-        dst_offset += len;
-    }
-
-    Ok(str::from_utf8(&dst[..dst_offset]).expect(ENCODING_ERROR))
+    debug_assert!(str::from_utf8(dst).is_ok());
+    // SAFETY: values written by `encode_3bytes` are valid one-byte UTF-8 chars
+    Ok(unsafe { str::from_utf8_unchecked(dst) })
 }
 
 /// Encode the input byte slice as a "B64"-encoded [`String`].
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn encode_string(input: &[u8]) -> String {
-    let expected_len = encoded_len(input);
-    let mut output = vec![0u8; expected_len];
-    let actual_len = encode(input, &mut output).expect(ENCODING_ERROR).len();
-    debug_assert_eq!(expected_len, actual_len);
-    String::from_utf8(output).expect(ENCODING_ERROR)
+    let elen = encoded_len(input);
+    let mut dst = vec![0u8; elen];
+    let res = encode(input, &mut dst);
+    debug_assert_eq!(elen, res.unwrap().len());
+    debug_assert!(str::from_utf8(&dst).is_ok());
+    // SAFETY: `dst` is fully written and contains only valid one-byte UTF-8 chars
+    unsafe { String::from_utf8_unchecked(dst) }
 }
 
 /// Get the "B64"-encoded length of the given byte slice.
@@ -126,66 +92,48 @@ pub const fn encoded_len(bytes: &[u8]) -> usize {
 /// "B64" decode the given source byte slice into the provided destination
 /// buffer.
 pub fn decode<'a>(src: &str, dst: &'a mut [u8]) -> Result<&'a [u8], Error> {
-    if decoded_len(src) > dst.len() {
-        return Err(Error::LengthInvalid);
+    let dlen = decoded_len(src);
+    if dlen > dst.len() {
+        return Err(Error::InvalidLength);
     }
-
     let src = src.as_bytes();
+    let dst = &mut dst[..dlen];
 
-    if !src.is_empty() && char::from(src[src.len() - 1]).is_whitespace() {
-        return Err(Error::TrailingWhitespace);
-    }
-
-    let mut src_offset: usize = 0;
-    let mut dst_offset: usize = 0;
-    let mut src_length: usize = src.len();
     let mut err: isize = 0;
 
-    while src_length > 4 {
-        err |= decode_3bytes(
-            &src[src_offset..(src_offset + 4)],
-            &mut dst[dst_offset..(dst_offset + 3)],
-        );
-        src_offset += 4;
-        dst_offset += 3;
-        src_length -= 4;
+    let mut src_chunks = src.chunks_exact(4);
+    let mut dst_chunks = dst.chunks_exact_mut(3);
+    for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
+        err |= decode_3bytes(s, d);
     }
+    let src_rem = src_chunks.remainder();
+    let dst_rem = dst_chunks.into_remainder();
 
-    if src_length > 0 {
-        let mut i = 0;
-        let mut tmp_out = [0u8; 3];
-        let mut tmp_in = [b'A'; 4];
-
-        while i < src_length {
-            tmp_in[i] = src[src_offset + i];
-            i += 1;
-        }
-
-        if i < 2 {
-            err = 1;
-        }
-
-        src_length = i - 1;
-        err |= decode_3bytes(&tmp_in, &mut tmp_out);
-        dst[dst_offset..(dst_offset + src_length)].copy_from_slice(&tmp_out[..src_length]);
-        dst_offset += i - 1;
-    }
+    err |= !(src_rem.is_empty() || src_rem.len() >= 2) as isize;
+    let mut tmp_out = [0u8; 3];
+    let mut tmp_in = [b'A'; 4];
+    tmp_in[..src_rem.len()].copy_from_slice(src_rem);
+    err |= decode_3bytes(&tmp_in, &mut tmp_out);
+    dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
 
     if err == 0 {
-        Ok(&dst[..dst_offset])
+        Ok(dst)
     } else {
-        Err(Error::EncodingInvalid)
+        Err(Error::InvalidEncoding)
     }
 }
 
 /// Decode a "B64"-encoded string into a byte vector.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
-    let expected_len = decoded_len(input);
-    let mut output = vec![0u8; expected_len];
-    let actual_len = decode(input, &mut output)?.len();
-    debug_assert_eq!(expected_len, actual_len);
+pub fn decode_vec(input: &str) -> Result<Vec<u8>, InvalidEncodingError> {
+    let dlen = decoded_len(input);
+    let mut output = vec![0u8; dlen];
+    match decode(input, &mut output) {
+        Ok(v) => debug_assert_eq!(dlen, v.len()),
+        Err(Error::InvalidEncoding) => return Err(InvalidEncodingError),
+        Err(Error::InvalidLength) => unreachable!(),
+    }
     Ok(output)
 }
 
@@ -198,7 +146,7 @@ pub const fn decoded_len(bytes: &str) -> usize {
 // [A-Z]      [a-z]      [0-9]      +     /
 // 0x41-0x5a, 0x61-0x7a, 0x30-0x39, 0x2b, 0x2f
 
-#[inline]
+#[inline(always)]
 fn encode_3bytes(src: &[u8], dst: &mut [u8]) {
     debug_assert_eq!(src.len(), 3);
     debug_assert!(dst.len() >= 4, "dst too short: {}", dst.len());
@@ -213,7 +161,7 @@ fn encode_3bytes(src: &[u8], dst: &mut [u8]) {
     dst[3] = encode_6bits(b2 & 63);
 }
 
-#[inline]
+#[inline(always)]
 fn encode_6bits(src: isize) -> u8 {
     let mut diff = 0x41isize;
 
@@ -232,7 +180,7 @@ fn encode_6bits(src: isize) -> u8 {
     (src + diff) as u8
 }
 
-#[inline]
+#[inline(always)]
 fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> isize {
     debug_assert_eq!(src.len(), 4);
     debug_assert!(dst.len() >= 3, "dst too short: {}", dst.len());
@@ -249,7 +197,7 @@ fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> isize {
     ((c0 | c1 | c2 | c3) >> 8) & 1
 }
 
-#[inline]
+#[inline(always)]
 fn decode_6bits(src: u8) -> isize {
     let ch = src as isize;
     let mut ret: isize = -1;
@@ -268,98 +216,4 @@ fn decode_6bits(src: u8) -> isize {
 
     // if (ch == 0x2f) ret += 63 + 1;
     ret + ((((46isize - ch) & (ch - 48isize)) >> 8) & 64)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// "B64" test vector
-    struct TestVector {
-        /// Raw bytes.
-        raw: &'static [u8],
-
-        /// "B64" encoded.
-        b64: &'static str,
-    }
-
-    const TEST_VECTORS: &[TestVector] = &[
-        TestVector { raw: b"", b64: "" },
-        TestVector {
-            raw: b"\0",
-            b64: "AA",
-        },
-        TestVector {
-            raw: b"***",
-            b64: "Kioq",
-        },
-        TestVector {
-            raw: b"\x01\x02\x03\x04",
-            b64: "AQIDBA",
-        },
-        TestVector {
-            raw: b"\xAD\xAD\xAD\xAD\xAD",
-            b64: "ra2tra0",
-        },
-        TestVector {
-            raw: b"\xFF\xFF\xFF\xFF\xFF",
-            b64: "//////8",
-        },
-        TestVector {
-            raw: b"\x40\xC1\x3F\xBD\x05\x4C\x72\x2A\xA3\xC2\xF2\x11\x73\xC0\x69\xEA\
-                   \x49\x7D\x35\x29\x6B\xCC\x24\x65\xF6\xF9\xD0\x41\x08\x7B\xD7\xA9",
-            b64: "QME/vQVMciqjwvIRc8Bp6kl9NSlrzCRl9vnQQQh716k",
-        },
-    ];
-
-    #[test]
-    fn encode_test_vectors() {
-        let mut buf = [0u8; 1024];
-
-        for vector in TEST_VECTORS {
-            let out = encode(vector.raw, &mut buf).unwrap();
-            assert_eq!(encoded_len(vector.raw), vector.b64.len());
-            assert_eq!(vector.b64, &out[..]);
-        }
-    }
-
-    #[test]
-    fn decode_test_vectors() {
-        let mut buf = [0u8; 1024];
-
-        for vector in TEST_VECTORS {
-            let out = decode(vector.b64, &mut buf).unwrap();
-            assert_eq!(decoded_len(vector.b64), out.len());
-            assert_eq!(vector.raw, &out[..]);
-        }
-    }
-
-    #[test]
-    fn encode_and_decode_various_lengths() {
-        let data = [b'X'; 64];
-        let mut inbuf = [0u8; 1024];
-        let mut outbuf = [0u8; 1024];
-
-        for i in 0..data.len() {
-            let encoded = encode(&data[..i], &mut inbuf).unwrap();
-
-            // Make sure it round trips
-            let decoded = decode(encoded, &mut outbuf).unwrap();
-            assert_eq!(decoded, &data[..i]);
-        }
-    }
-
-    #[test]
-    fn reject_trailing_equals() {
-        let input = "QME/vQVMciqjwvIRc8Bp6kl9NSlrzCRl9vnQQQh716k=";
-        let mut buf = [0u8; 1024];
-        assert_eq!(decode(input, &mut buf), Err(Error::EncodingInvalid));
-    }
-
-    #[test]
-    fn reject_trailing_whitespace() {
-        let input = "QME/vQVMciqjwvIRc8Bp6kl9NSlrzCRl9vnQQQh716k\n";
-        let mut buf = [0u8; 1024];
-        assert_eq!(decode(input, &mut buf), Err(Error::TrailingWhitespace));
-    }
 }
