@@ -20,7 +20,7 @@ use typenum::Unsigned;
 /// Currently supported sizes are 1 - 512 bytes.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
-pub struct BigUInt<'a, N: Size> {
+pub struct BigUInt<'a, N: BigUIntSize> {
     /// Inner value
     inner: ByteSlice<'a>,
 
@@ -28,7 +28,7 @@ pub struct BigUInt<'a, N: Size> {
     size: PhantomData<N>,
 }
 
-impl<'a, N: Size> BigUInt<'a, N> {
+impl<'a, N: BigUIntSize> BigUInt<'a, N> {
     /// Create a new [`BigUInt`] from a byte slice.
     ///
     /// Slice may be less than or equal to `N` bytes.
@@ -86,13 +86,13 @@ impl<'a, N: Size> BigUInt<'a, N> {
     }
 }
 
-impl<'a, N: Size> From<&BigUInt<'a, N>> for BigUInt<'a, N> {
+impl<'a, N: BigUIntSize> From<&BigUInt<'a, N>> for BigUInt<'a, N> {
     fn from(value: &BigUInt<'a, N>) -> BigUInt<'a, N> {
         *value
     }
 }
 
-impl<'a, N: Size> TryFrom<Any<'a>> for BigUInt<'a, N> {
+impl<'a, N: BigUIntSize> TryFrom<Any<'a>> for BigUInt<'a, N> {
     type Error = Error;
 
     fn try_from(any: Any<'a>) -> Result<BigUInt<'a, N>> {
@@ -128,7 +128,7 @@ impl<'a, N: Size> TryFrom<Any<'a>> for BigUInt<'a, N> {
     }
 }
 
-impl<'a, N: Size> Encodable for BigUInt<'a, N> {
+impl<'a, N: BigUIntSize> Encodable for BigUInt<'a, N> {
     fn encoded_len(&self) -> Result<Length> {
         self.header()?.encoded_len()? + self.inner_len()?
     }
@@ -145,16 +145,17 @@ impl<'a, N: Size> Encodable for BigUInt<'a, N> {
     }
 }
 
-impl<'a, N: Size> Tagged for BigUInt<'a, N> {
+impl<'a, N: BigUIntSize> Tagged for BigUInt<'a, N> {
     const TAG: Tag = Tag::Integer;
 }
 
-/// Marker trait for allowed integer sizes
-pub trait Size: Unsigned {}
+/// Marker trait for allowed [`BigUInt`] sizes.
+#[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
+pub trait BigUIntSize: Unsigned {}
 
 macro_rules! impl_size {
     ($($int:ident),+) => {
-        $(impl Size for typenum::consts::$int {})+
+        $(impl BigUIntSize for typenum::consts::$int {})+
     };
 }
 
