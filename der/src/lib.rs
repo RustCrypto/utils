@@ -32,7 +32,7 @@
 //! The traits are impl'd for the following Rust core types:
 //!
 //! - [`bool`] (ASN.1 `BOOLEAN`)
-//! - [`i8`]  (ASN.1 `INTEGER`)
+//! - [`i8`], [`i16`] (ASN.1 `INTEGER`)
 //! - [`Option`] (ASN.1 `OPTIONAL`)
 //!
 //! The following ASN.1 types provided by this crate also impl these traits:
