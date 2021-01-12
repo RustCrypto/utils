@@ -39,7 +39,7 @@ use alloc::{string::String, vec::Vec};
 
 mod errors;
 
-pub use errors::{Error, InvalidLengthError, InvalidEncodingError};
+pub use errors::{Error, InvalidEncodingError, InvalidLengthError};
 
 /// Encode the input byte slice as "B64", writing the result into the provided
 /// destination slice, and returning an ASCII-encoded string value.
