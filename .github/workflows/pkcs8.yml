@@ -3,6 +3,7 @@ name: pkcs8
 on:
   pull_request:
     paths:
+      - "b64ct/**"
       - "const-oid/**"
       - "der/**"
       - "pkcs8/**"

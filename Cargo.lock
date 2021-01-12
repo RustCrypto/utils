@@ -95,9 +95,9 @@ version = "0.3.0"
 name = "pkcs8"
 version = "0.4.0-pre"
 dependencies = [
+ "b64ct",
  "der",
  "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "subtle-encoding",
  "zeroize",
 ]
 
@@ -117,15 +117,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "991431c3519a3f36861882da93630ce66b52918dcf1b8e2fd66b397fc96f28df"
 dependencies = [
  "proc-macro2",
-]
-
-[[package]]
-name = "subtle-encoding"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dcb1ed7b8330c5eed5441052651dd7a12c75e2ed88f2ec024ae1fa3a5e59945"
-dependencies = [
- "zeroize",
 ]
 
 [[package]]
