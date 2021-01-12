@@ -19,7 +19,7 @@ pub struct InvalidEncodingError;
 
 impl fmt::Display for InvalidEncodingError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        f.write_str("insufficient output buffer length")
+        f.write_str("invalid B64 encoding")
     }
 }
 
@@ -37,10 +37,11 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        match self {
-            v @ Self::InvalidEncoding => v.fmt(f),
-            v @ Self::InvalidLength => v.fmt(f),
-        }
+        let s = match self {
+            Self::InvalidEncoding => "invalid B64 encoding",
+            Self::InvalidLength => "insufficient output buffer length",
+        };
+        f.write_str(s)
     }
 }
 
