@@ -2,8 +2,8 @@
 
 use crate::{Error, Result};
 use alloc::{borrow::ToOwned, string::String, vec::Vec};
+use b64ct as b64;
 use core::str;
-use subtle_encoding::base64;
 use zeroize::Zeroizing;
 
 /// Encapsulation boundaries
@@ -27,6 +27,10 @@ pub(crate) const PUBLIC_KEY_BOUNDARY: Boundary = Boundary {
     post: "\n-----END PUBLIC KEY-----",
 };
 
+/// Size of Base64 "chunks" i.e. how many Base64 encoded characters to include
+/// on a single line.
+const CHUNK_SIZE: usize = 64;
+
 /// Parse "PEM encoding" as described in RFC 7468:
 /// <https://tools.ietf.org/html/rfc7468>
 ///
@@ -42,11 +46,12 @@ pub(crate) fn decode(s: &str, boundary: Boundary) -> Result<Zeroizing<Vec<u8>>> 
     let s = s.strip_prefix(boundary.pre).ok_or(Error::Decode)?;
     let s = s.strip_suffix(boundary.post).ok_or(Error::Decode)?;
 
-    // TODO(tarcieri): fix subtle-encoding to tolerate whitespace
     let mut s = Zeroizing::new(s.to_owned());
-    s.retain(|c| !c.is_whitespace());
 
-    base64::decode(&*s)
+    // TODO(tarcieri): less lenient, constant-time implementation
+    s.retain(|c| c != '=' && !c.is_whitespace());
+
+    b64::decode_vec(&*s)
         .map_err(|_| Error::Decode)
         .map(Zeroizing::new)
 }
@@ -57,16 +62,22 @@ pub(crate) fn encode(data: &[u8], boundary: Boundary) -> String {
     let mut output = String::new();
     output.push_str(boundary.pre);
 
-    let b64 = Zeroizing::new(base64::encode(data));
-    let chunks = b64.chunks(64);
+    let b64 = Zeroizing::new(b64::encode_string(data));
+    let chunks = b64.as_bytes().chunks(CHUNK_SIZE);
     let nchunks = chunks.len();
 
     for (i, chunk) in chunks.enumerate() {
-        let line = str::from_utf8(chunk).expect("malformed base64");
+        let line = str::from_utf8(chunk).expect("malformed Base64");
         output.push_str(line);
 
-        if i < nchunks.checked_sub(1).expect("unexpected chunks") {
+        if i < nchunks.checked_sub(1).expect("unexpected Base64 chunks") {
+            // The final newline is expected to be part of `boundary.post`
             output.push('\n');
+        } else if line.len() % 4 != 0 {
+            // Add '=' padding (the `b64ct` crate doesn't handle this)
+            for _ in 0..(4 - (line.len() % 4)) {
+                output.push('=');
+            }
         }
     }
 
