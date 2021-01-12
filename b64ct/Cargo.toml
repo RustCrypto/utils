@@ -1,0 +1,24 @@
+[package]
+name = "b64ct"
+version = "0.0.0"
+description = """
+Pure Rust implementation of B64, a subset of the standard Base64 encoding
+(RFC 4648) used by the PHC string format. Implemented without data-dependent
+branches or lookup tables providing "best effort" constant-time operation.
+"""
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+edition = "2018"
+documentation = "https://docs.rs/pkcs8"
+repository = "https://github.com/RustCrypto/utils/tree/master/b64ct"
+categories = ["cryptography", "encoding", "no-std"]
+keywords = ["base64", "phc"]
+readme = "README.md"
+
+[features]
+alloc = []
+std = ["alloc"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

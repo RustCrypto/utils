@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "b64ct",
     "blobby",
     "block-buffer",
     "block-padding",
