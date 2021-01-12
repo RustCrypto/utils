@@ -4,7 +4,7 @@
 
 pub(crate) mod any;
 #[cfg(feature = "big-uint")]
-pub(crate) mod big_integer;
+pub(crate) mod big_uint;
 pub(crate) mod bit_string;
 pub(crate) mod boolean;
 pub(crate) mod integer;
