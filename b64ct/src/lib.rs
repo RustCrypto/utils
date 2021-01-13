@@ -208,7 +208,7 @@ pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
 pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
     let dlen = decoded_len(input);
     let mut output = vec![0u8; dlen];
-    let res =  decode(input, &mut output)?;
+    let res = decode(input, &mut output)?;
     debug_assert_eq!(dlen, res.len());
     Ok(output)
 }
