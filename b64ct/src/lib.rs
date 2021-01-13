@@ -124,7 +124,7 @@ pub fn decode<'a>(src: &str, dst: &'a mut [u8]) -> Result<&'a [u8], Error> {
 }
 
 /// Decode B64-encoded string in-place.
-pub fn decode_inplace<'a>(buf: &'a mut [u8]) -> Result<&'a [u8], InvalidEncodingError> {
+pub fn decode_inplace(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
     // TODO: make panic-free
     let mut err: isize = 0;
     let mut tmp_in = [0u8; 4];
