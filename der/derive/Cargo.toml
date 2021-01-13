@@ -7,7 +7,7 @@ Procedural macro for automatically deriving the `der` crate's `Message` trait
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 edition = "2018"
-documentation = "https://docs.rs/pkcs8"
+documentation = "https://docs.rs/der"
 repository = "https://github.com/RustCrypto/utils/tree/master/der"
 categories = ["cryptography", "data-structures", "encoding", "no-std"]
 keywords = ["asn1", "der", "crypto", "itu", "pkcs"]

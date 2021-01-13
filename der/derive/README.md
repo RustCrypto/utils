@@ -38,9 +38,3 @@ dual licensed as above, without any additional terms or conditions.
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
 [build-image]: https://github.com/RustCrypto/utils/workflows/der/badge.svg?branch=master&event=push
 [build-link]: https://github.com/RustCrypto/utils/actions?query=workflow:der
-
-[//]: # (general links)
-
-[RustCrypto]: https://github.com/rustcrypto
-[`pkcs8`]: https://docs.rs/pkcs8/
-[GitHub Issue]: https://github.com/RustCrypto/utils/issues
