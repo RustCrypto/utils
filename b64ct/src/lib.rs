@@ -93,7 +93,7 @@ pub fn encode_string(input: &[u8]) -> String {
 /// WARNING: this function will return 0 for lengths greater than `usize::MAX/4`!
 #[allow(clippy::manual_unwrap_or)]
 pub const fn encoded_len(bytes: &[u8]) -> usize {
-    // TODO: replace with `unwrap_or`
+    // TODO: replace with `unwrap_or` on stabilization
     match encoded_len_inner(bytes.len()) {
         Some(v) => v,
         None => 0,
@@ -101,10 +101,12 @@ pub const fn encoded_len(bytes: &[u8]) -> usize {
 }
 
 const fn encoded_len_inner(n: usize) -> Option<usize> {
-    // TODO: replace with `map`
-    match n.checked_mul(4) {
-        Some(q) => Some((q / 3) + (q % 3 != 0) as usize),
-        None => None,
+    // TODO: replace with `checked_mul` and `map` on stabilization
+    if n <= usize::MAX / 4 {
+        let q = 4 * n;
+        Some((q / 3) + (q % 3 != 0) as usize)
+    } else {
+        None
     }
 }
 
