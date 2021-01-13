@@ -1,4 +1,4 @@
-use b64ct::{decode, decode_in_place, decoded_len, encode, encoded_len, Error};
+use b64ct::*;
 
 /// "B64" test vector
 struct TestVector {
@@ -45,6 +45,12 @@ fn encode_test_vectors() {
         let out = encode(vector.raw, &mut buf).unwrap();
         assert_eq!(encoded_len(vector.raw), vector.b64.len());
         assert_eq!(vector.b64, &out[..]);
+
+        #[cfg(feature = "alloc")]
+        {
+            let out = encode_string(vector.raw);
+            assert_eq!(vector.b64, &out[..]);
+        }
     }
 }
 
@@ -61,6 +67,12 @@ fn decode_test_vectors() {
         buf[..n].copy_from_slice(vector.b64.as_bytes());
         let out = decode_in_place(&mut buf[..n]).unwrap();
         assert_eq!(vector.raw, out);
+
+        #[cfg(feature = "alloc")]
+        {
+            let out = decode_vec(vector.b64).unwrap();
+            assert_eq!(vector.raw, &out[..]);
+        }
     }
 }
 
@@ -81,6 +93,13 @@ fn encode_and_decode_various_lengths() {
         let buf = &mut inbuf[..elen];
         let decoded = decode_in_place(buf).unwrap();
         assert_eq!(decoded, &data[..i]);
+
+        #[cfg(feature = "alloc")]
+        {
+            let encoded = encode_string(&data[..i]);
+            let decoded = decode_vec(&encoded).unwrap();
+            assert_eq!(decoded, &data[..i]);
+        }
     }
 }
 

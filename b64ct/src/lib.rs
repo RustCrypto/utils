@@ -44,7 +44,10 @@ pub use errors::{Error, InvalidEncodingError, InvalidLengthError};
 /// Encode the input byte slice as "B64", writing the result into the provided
 /// destination slice, and returning an ASCII-encoded string value.
 pub fn encode<'a>(src: &[u8], dst: &'a mut [u8]) -> Result<&'a str, InvalidLengthError> {
-    let elen = encoded_len(src);
+    let elen = match encoded_len_inner(src.len()) {
+        Some(v) => v,
+        None => return Err(InvalidLengthError),
+    };
     if elen > dst.len() {
         return Err(InvalidLengthError);
     }
@@ -70,10 +73,13 @@ pub fn encode<'a>(src: &[u8], dst: &'a mut [u8]) -> Result<&'a str, InvalidLengt
 }
 
 /// Encode the input byte slice as a "B64"-encoded [`String`].
+///
+/// # Panics
+/// If `input` length is greater than `usize::MAX/4`.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn encode_string(input: &[u8]) -> String {
-    let elen = encoded_len(input);
+    let elen = encoded_len_inner(input.len()).expect("input is too big");
     let mut dst = vec![0u8; elen];
     let res = encode(input, &mut dst);
     debug_assert_eq!(elen, res.unwrap().len());
@@ -83,10 +89,26 @@ pub fn encode_string(input: &[u8]) -> String {
 }
 
 /// Get the "B64"-encoded length of the given byte slice.
+///
+/// WARNING: this function will return 0 for lengths greater than `usize::MAX/4`!
+// #[allow(clippy::manual_unwrap_or)]
 pub const fn encoded_len(bytes: &[u8]) -> usize {
-    let q = bytes.len() * 4;
-    let r = q % 3;
-    (q / 3) + (r != 0) as usize
+    // TODO: replace with `unwrap_or` on stabilization
+    match encoded_len_inner(bytes.len()) {
+        Some(v) => v,
+        None => 0,
+    }
+}
+
+#[inline(always)]
+const fn encoded_len_inner(n: usize) -> Option<usize> {
+    // TODO: replace with `checked_mul` and `map` on stabilization
+    if n <= usize::MAX / 4 {
+        let q = 4 * n;
+        Some((q / 3) + (q % 3 != 0) as usize)
+    } else {
+        None
+    }
 }
 
 /// "B64" decode the given source byte slice into the provided destination
@@ -183,14 +205,11 @@ pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
 /// Decode a "B64"-encoded string into a byte vector.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-pub fn decode_vec(input: &str) -> Result<Vec<u8>, InvalidEncodingError> {
+pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
     let dlen = decoded_len(input);
     let mut output = vec![0u8; dlen];
-    match decode(input, &mut output) {
-        Ok(v) => debug_assert_eq!(dlen, v.len()),
-        Err(Error::InvalidEncoding) => return Err(InvalidEncodingError),
-        Err(Error::InvalidLength) => unreachable!(),
-    }
+    let res = decode(input, &mut output)?;
+    debug_assert_eq!(dlen, res.len());
     Ok(output)
 }
 
@@ -199,8 +218,12 @@ pub const fn decoded_len(bytes: &str) -> usize {
     decoded_len_inner(bytes.len())
 }
 
+#[inline(always)]
 const fn decoded_len_inner(n: usize) -> usize {
-    (n * 3) / 4
+    // branchless, overflow-proof computation of `(3*n)/4`
+    let k = n / 4;
+    let l = n - 4 * k;
+    3 * k + (3 * l) / 4
 }
 
 // B64 character set:
