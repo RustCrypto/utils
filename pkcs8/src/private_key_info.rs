@@ -14,7 +14,7 @@ use {
 use {crate::pem, zeroize::Zeroizing};
 
 /// RFC 5208 designates `0` as the only valid version for PKCS#8 documents
-const VERSION: i8 = 0;
+const VERSION: u8 = 0;
 
 /// PKCS#8 `PrivateKeyInfo`
 ///
@@ -94,7 +94,7 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
     fn try_from(any: der::Any<'a>) -> der::Result<PrivateKeyInfo<'a>> {
         any.sequence(|decoder| {
             // Parse and validate `version` INTEGER.
-            if i8::decode(decoder)? != VERSION {
+            if u8::decode(decoder)? != VERSION {
                 return Err(der::ErrorKind::Value {
                     tag: der::Tag::Integer,
                 }
