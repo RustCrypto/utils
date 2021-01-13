@@ -205,14 +205,11 @@ pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
 /// Decode a "B64"-encoded string into a byte vector.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-pub fn decode_vec(input: &str) -> Result<Vec<u8>, InvalidEncodingError> {
+pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
     let dlen = decoded_len(input);
     let mut output = vec![0u8; dlen];
-    match decode(input, &mut output) {
-        Ok(v) => debug_assert_eq!(dlen, v.len()),
-        Err(Error::InvalidEncoding) => return Err(InvalidEncodingError),
-        Err(Error::InvalidLength) => unreachable!(),
-    }
+    let res =  decode(input, &mut output)?;
+    debug_assert_eq!(dlen, res.len());
     Ok(output)
 }
 
