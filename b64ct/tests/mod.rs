@@ -1,4 +1,4 @@
-use b64ct::{decode, decode_inplace, decoded_len, encode, encoded_len, Error};
+use b64ct::{decode, decode_in_place, decoded_len, encode, encoded_len, Error};
 
 /// "B64" test vector
 struct TestVector {
@@ -59,7 +59,7 @@ fn decode_test_vectors() {
 
         let n = vector.b64.len();
         buf[..n].copy_from_slice(vector.b64.as_bytes());
-        let out = decode_inplace(&mut buf[..n]).unwrap();
+        let out = decode_in_place(&mut buf[..n]).unwrap();
         assert_eq!(vector.raw, out);
     }
 }
@@ -79,7 +79,7 @@ fn encode_and_decode_various_lengths() {
 
         let elen = encode(&data[..i], &mut inbuf).unwrap().len();
         let buf = &mut inbuf[..elen];
-        let decoded = decode_inplace(buf).unwrap();
+        let decoded = decode_in_place(buf).unwrap();
         assert_eq!(decoded, &data[..i]);
     }
 }

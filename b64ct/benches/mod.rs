@@ -35,12 +35,12 @@ fn decode_bench(b: &mut Bencher) {
 }
 
 #[bench]
-fn decode_inplace_bench(b: &mut Bencher) {
+fn decode_in_place_bench(b: &mut Bencher) {
     let mut b64_data = get_b64_data().into_bytes();
     b.iter(|| {
         // since it works on the same buffer over and over,
         // almost always `out` will be an error
-        let out = b64ct::decode_inplace(&mut b64_data);
+        let out = b64ct::decode_in_place(&mut b64_data);
         let _ = test::black_box(out);
     });
     b.bytes = RAW_LEN as u64;
