@@ -130,18 +130,18 @@ pub fn decode_inplace<'a>(buf: &'a mut [u8]) -> Result<&'a [u8], InvalidEncoding
     let mut tmp_in = [0u8; 4];
     let mut tmp_out = [0u8; 3];
 
-    let full_chunks = buf.len()/4;
+    let full_chunks = buf.len() / 4;
 
     for chunk in 0..full_chunks {
-        tmp_in.copy_from_slice(&buf[4*chunk..][..4]);
+        tmp_in.copy_from_slice(&buf[4 * chunk..][..4]);
         err |= decode_3bytes(&tmp_in, &mut tmp_out);
-        buf[3*chunk..][..3].copy_from_slice(&tmp_out);
+        buf[3 * chunk..][..3].copy_from_slice(&tmp_out);
     }
 
     let dlen = decoded_len_inner(buf.len());
-    let src_rem_pos = 4*full_chunks;
+    let src_rem_pos = 4 * full_chunks;
     let src_rem_len = buf.len() - src_rem_pos;
-    let dst_rem_pos = 3*full_chunks;
+    let dst_rem_pos = 3 * full_chunks;
     let dst_rem_len = dlen - dst_rem_pos;
 
     err |= !(src_rem_len == 0 || src_rem_len >= 2) as isize;
