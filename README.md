@@ -1,4 +1,5 @@
-# RustCrypto: Utilities [![dependency status](https://deps.rs/repo/github/RustCrypto/utils/status.svg)](https://deps.rs/repo/github/RustCrypto/utils)
+# RustCrypto: Utilities [![Project Chat][chat-image]][chat-link] [![dependency status][deps-image]][deps]
+
 This repository contains various utility crates used in the RustCrypto project.
 
 ## License
@@ -15,3 +16,10 @@ at your option.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
+
+[//]: # (badges)
+
+[chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
+[chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
+[deps-image]: https://deps.rs/repo/github/RustCrypto/utils/status.svg
+[deps]: https://deps.rs/repo/github/RustCrypto/utils
