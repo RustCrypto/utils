@@ -123,6 +123,40 @@ pub fn decode<'a>(src: &str, dst: &'a mut [u8]) -> Result<&'a [u8], Error> {
     }
 }
 
+/// Decode B64-encoded string in-place.
+pub fn decode_inplace<'a>(buf: &'a mut [u8]) -> Result<&'a [u8], InvalidEncodingError> {
+    // TODO: make panic-free
+    let mut err: isize = 0;
+    let mut tmp_in = [0u8; 4];
+    let mut tmp_out = [0u8; 3];
+
+    let full_chunks = buf.len()/4;
+
+    for chunk in 0..full_chunks {
+        tmp_in.copy_from_slice(&buf[4*chunk..][..4]);
+        err |= decode_3bytes(&tmp_in, &mut tmp_out);
+        buf[3*chunk..][..3].copy_from_slice(&tmp_out);
+    }
+
+    let dlen = decoded_len_inner(buf.len());
+    let src_rem_pos = 4*full_chunks;
+    let src_rem_len = buf.len() - src_rem_pos;
+    let dst_rem_pos = 3*full_chunks;
+    let dst_rem_len = dlen - dst_rem_pos;
+
+    err |= !(src_rem_len == 0 || src_rem_len >= 2) as isize;
+    tmp_in = [b'A'; 4];
+    tmp_in[..src_rem_len].copy_from_slice(&buf[src_rem_pos..]);
+    err |= decode_3bytes(&tmp_in, &mut tmp_out);
+    buf[dst_rem_pos..][..dst_rem_len].copy_from_slice(&tmp_out[..dst_rem_len]);
+
+    if err == 0 {
+        Ok(&buf[..dlen])
+    } else {
+        Err(InvalidEncodingError)
+    }
+}
+
 /// Decode a "B64"-encoded string into a byte vector.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
@@ -139,7 +173,11 @@ pub fn decode_vec(input: &str) -> Result<Vec<u8>, InvalidEncodingError> {
 
 /// Get the length of the output from decoding the provided "B64"-encoded input.
 pub const fn decoded_len(bytes: &str) -> usize {
-    (bytes.len() * 3) / 4
+    decoded_len_inner(bytes.len())
+}
+
+const fn decoded_len_inner(n: usize) -> usize {
+    (n * 3) / 4
 }
 
 // B64 character set:
