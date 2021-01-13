@@ -3,7 +3,7 @@ extern crate test;
 use test::Bencher;
 
 const B64_LEN: usize = 100_002;
-const RAW_LEN: usize = (3*B64_LEN)/4;
+const RAW_LEN: usize = (3 * B64_LEN) / 4;
 
 #[inline(never)]
 fn get_raw_data() -> Vec<u8> {
