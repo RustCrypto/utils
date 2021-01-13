@@ -1,4 +1,4 @@
-# RustCrypto: Utilities
+# RustCrypto: Utilities [![dependency status](https://deps.rs/repo/github/RustCrypto/utils/status.svg)](https://deps.rs/repo/github/RustCrypto/utils)
 This repository contains various utility crates used in the RustCrypto project.
 
 ## License
