@@ -125,17 +125,26 @@ pub fn decode<'a>(src: &str, dst: &'a mut [u8]) -> Result<&'a [u8], Error> {
 
 /// Decode B64-encoded string in-place.
 pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
-    // TODO: make panic-free
+    // TODO: eliminate unsafe code when compiler will be smart enough to
+    // eliminate bound checks, see: https://github.com/rust-lang/rust/issues/80963
     let mut err: isize = 0;
-    let mut tmp_in = [0u8; 4];
-    let mut tmp_out = [0u8; 3];
-
     let full_chunks = buf.len() / 4;
 
     for chunk in 0..full_chunks {
-        tmp_in.copy_from_slice(&buf[4 * chunk..][..4]);
-        err |= decode_3bytes(&tmp_in, &mut tmp_out);
-        buf[3 * chunk..][..3].copy_from_slice(&tmp_out);
+        // SAFETY: `p3` and `p4` point inside `buf`, while they may overlap,
+        // read and write are clearly separated from each other and done via
+        // raw pointers.
+        unsafe {
+            debug_assert!(3 * chunk + 3 <= buf.len());
+            debug_assert!(4 * chunk + 4 <= buf.len());
+
+            let p3 = buf.as_mut_ptr().add(3 * chunk) as *mut [u8; 3];
+            let p4 = buf.as_ptr().add(4 * chunk) as *const [u8; 4];
+
+            let mut tmp_out = [0u8; 3];
+            err |= decode_3bytes(&*p4, &mut tmp_out);
+            *p3 = tmp_out;
+        }
     }
 
     let dlen = decoded_len_inner(buf.len());
@@ -145,13 +154,27 @@ pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
     let dst_rem_len = dlen - dst_rem_pos;
 
     err |= !(src_rem_len == 0 || src_rem_len >= 2) as isize;
-    tmp_in = [b'A'; 4];
+    let mut tmp_in = [b'A'; 4];
     tmp_in[..src_rem_len].copy_from_slice(&buf[src_rem_pos..]);
+    let mut tmp_out = [0u8; 3];
     err |= decode_3bytes(&tmp_in, &mut tmp_out);
-    buf[dst_rem_pos..][..dst_rem_len].copy_from_slice(&tmp_out[..dst_rem_len]);
 
     if err == 0 {
-        Ok(&buf[..dlen])
+        // SAFETY: `dst_rem_len` is always smaller than 4, so we don't
+        // read outside of `tmp_out`, write and the final slicing never go
+        // outside of `buf`.
+        unsafe {
+            debug_assert!(dst_rem_pos + dst_rem_len <= buf.len());
+            debug_assert!(dst_rem_len <= tmp_out.len());
+            debug_assert!(dlen <= buf.len());
+
+            core::ptr::copy_nonoverlapping(
+                tmp_out.as_ptr(),
+                buf.as_mut_ptr().add(dst_rem_pos),
+                dst_rem_len,
+            );
+            Ok(buf.get_unchecked(..dlen))
+        }
     } else {
         Err(InvalidEncodingError)
     }
