@@ -44,7 +44,10 @@ pub use errors::{Error, InvalidEncodingError, InvalidLengthError};
 /// Encode the input byte slice as "B64", writing the result into the provided
 /// destination slice, and returning an ASCII-encoded string value.
 pub fn encode<'a>(src: &[u8], dst: &'a mut [u8]) -> Result<&'a str, InvalidLengthError> {
-    let elen = encoded_len(src);
+    let elen = match encoded_len_inner(src.len()) {
+        Some(v) => v,
+        None => return Err(InvalidLengthError),
+    };
     if elen > dst.len() {
         return Err(InvalidLengthError);
     }
@@ -70,10 +73,13 @@ pub fn encode<'a>(src: &[u8], dst: &'a mut [u8]) -> Result<&'a str, InvalidLengt
 }
 
 /// Encode the input byte slice as a "B64"-encoded [`String`].
+///
+/// # Panics
+/// If `input` length is greater than `usize::MAX/4`.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn encode_string(input: &[u8]) -> String {
-    let elen = encoded_len(input);
+    let elen = encoded_len_inner(input.len()).expect("input is too big");
     let mut dst = vec![0u8; elen];
     let res = encode(input, &mut dst);
     debug_assert_eq!(elen, res.unwrap().len());
@@ -83,16 +89,31 @@ pub fn encode_string(input: &[u8]) -> String {
 }
 
 /// Get the "B64"-encoded length of the given byte slice.
+///
+/// WARNING: this function will return 0 for lengths greater than `usize::MAX/4`!
 pub const fn encoded_len(bytes: &[u8]) -> usize {
-    let q = bytes.len() * 4;
-    let r = q % 3;
-    (q / 3) + (r != 0) as usize
+    // TODO: replace with `unwrap_or`
+    match encoded_len_inner(bytes.len()) {
+        Some(v) => v,
+        None => 0,
+    }
+}
+
+const fn encoded_len_inner(n: usize) -> Option<usize> {
+    // TODO: replace with `map`
+    match n.checked_mul(4) {
+        Some(q) => Some((q / 3) + (q % 3 != 0) as usize),
+        None => None,
+    }
 }
 
 /// "B64" decode the given source byte slice into the provided destination
 /// buffer.
 pub fn decode<'a>(src: &str, dst: &'a mut [u8]) -> Result<&'a [u8], Error> {
-    let dlen = decoded_len(src);
+    let dlen = match decoded_len_inner(src.len()) {
+        Some(v) => v,
+        None => return Err(Error::InvalidLength),
+    };
     if dlen > dst.len() {
         return Err(Error::InvalidLength);
     }
@@ -127,6 +148,11 @@ pub fn decode<'a>(src: &str, dst: &'a mut [u8]) -> Result<&'a [u8], Error> {
 pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
     // TODO: eliminate unsafe code when compiler will be smart enough to
     // eliminate bound checks, see: https://github.com/rust-lang/rust/issues/80963
+    let dlen = match decoded_len_inner(buf.len()) {
+        Some(v) => v,
+        None => return Err(InvalidEncodingError),
+    };
+
     let mut err: isize = 0;
     let full_chunks = buf.len() / 4;
 
@@ -147,7 +173,6 @@ pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
         }
     }
 
-    let dlen = decoded_len_inner(buf.len());
     let src_rem_pos = 4 * full_chunks;
     let src_rem_len = buf.len() - src_rem_pos;
     let dst_rem_pos = 3 * full_chunks;
@@ -181,10 +206,13 @@ pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
 }
 
 /// Decode a "B64"-encoded string into a byte vector.
+///
+/// # Panics
+/// If `input` length is greater than `usize::MAX/3`.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn decode_vec(input: &str) -> Result<Vec<u8>, InvalidEncodingError> {
-    let dlen = decoded_len(input);
+    let dlen = decoded_len_inner(input.len()).expect("input is too big");
     let mut output = vec![0u8; dlen];
     match decode(input, &mut output) {
         Ok(v) => debug_assert_eq!(dlen, v.len()),
@@ -195,12 +223,22 @@ pub fn decode_vec(input: &str) -> Result<Vec<u8>, InvalidEncodingError> {
 }
 
 /// Get the length of the output from decoding the provided "B64"-encoded input.
+///
+/// WARNING: for values greater than `usize::MAX/3` it returns 0!
 pub const fn decoded_len(bytes: &str) -> usize {
-    decoded_len_inner(bytes.len())
+    // TODO: replace with `unwrap_or`
+    match decoded_len_inner(bytes.len()) {
+        Some(v) => v,
+        None => 0,
+    }
 }
 
-const fn decoded_len_inner(n: usize) -> usize {
-    (n * 3) / 4
+const fn decoded_len_inner(n: usize) -> Option<usize> {
+    // TODO: replace with `map`
+    match n.checked_mul(3) {
+        Some(v) => Some(v / 4),
+        None => None,
+    }
 }
 
 // B64 character set:
