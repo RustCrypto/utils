@@ -91,7 +91,7 @@ pub fn encode_string(input: &[u8]) -> String {
 /// Get the "B64"-encoded length of the given byte slice.
 ///
 /// WARNING: this function will return 0 for lengths greater than `usize::MAX/4`!
-#[allow(clippy::manual_unwrap_or)]
+// #[allow(clippy::manual_unwrap_or)]
 pub const fn encoded_len(bytes: &[u8]) -> usize {
     // TODO: replace with `unwrap_or` on stabilization
     match encoded_len_inner(bytes.len()) {
@@ -100,6 +100,7 @@ pub const fn encoded_len(bytes: &[u8]) -> usize {
     }
 }
 
+#[inline(always)]
 const fn encoded_len_inner(n: usize) -> Option<usize> {
     // TODO: replace with `checked_mul` and `map` on stabilization
     if n <= usize::MAX / 4 {
@@ -220,6 +221,7 @@ pub const fn decoded_len(bytes: &str) -> usize {
     decoded_len_inner(bytes.len())
 }
 
+#[inline(always)]
 const fn decoded_len_inner(n: usize) -> usize {
     #[cfg(target_pointer_width = "64")]
     type DoubleWord = u128;
