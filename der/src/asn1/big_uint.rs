@@ -197,38 +197,53 @@ impl_size!(
 #[cfg(test)]
 mod tests {
     use super::BigUInt;
-    use crate::{Any, ErrorKind, Result, Tag};
+    use crate::{asn1::integer::tests::*, traits::Decodable, Any, ErrorKind, Result, Tag};
     use core::convert::TryInto;
 
-    // TODO(tarcieri): tests for different integer sizes
-    type BigU1<'a> = BigUInt<'a, typenum::U1>;
+    // TODO(tarcieri): tests for more integer sizes
+    type BigU8<'a> = BigUInt<'a, typenum::U1>;
+    type BigU16<'a> = BigUInt<'a, typenum::U16>;
 
     /// Parse a `BitU1` from an ASN.1 `Any` value to test decoding behaviors.
-    fn parse_bigu1_from_any(bytes: &[u8]) -> Result<BigU1<'_>> {
+    fn parse_bigu8_from_any(bytes: &[u8]) -> Result<BigU8<'_>> {
         Any::new(Tag::Integer, bytes)?.try_into()
     }
 
     #[test]
     fn decode_empty() {
-        let x = parse_bigu1_from_any(&[]).unwrap();
+        let x = parse_bigu8_from_any(&[]).unwrap();
         assert_eq!(x.as_bytes(), &[]);
     }
 
     #[test]
-    fn decode_zero() {
-        let x = parse_bigu1_from_any(&[0]).unwrap();
-        assert_eq!(x.as_bytes(), &[]);
+    fn decode_bigu8() {
+        assert!(BigU8::from_bytes(I0_BYTES).unwrap().is_empty());
+        assert_eq!(&[127], BigU8::from_bytes(I127_BYTES).unwrap().as_bytes());
+        assert_eq!(&[128], BigU8::from_bytes(I128_BYTES).unwrap().as_bytes());
+        assert_eq!(&[255], BigU8::from_bytes(I255_BYTES).unwrap().as_bytes());
     }
 
     #[test]
-    fn decode_leading_extra_zero() {
-        let x = parse_bigu1_from_any(&[0x00, 0x81]).unwrap();
-        assert_eq!(x.as_bytes(), &[0x81]);
+    fn decode_bigu16() {
+        assert!(BigU16::from_bytes(I0_BYTES).unwrap().is_empty());
+        assert_eq!(&[127], BigU16::from_bytes(I127_BYTES).unwrap().as_bytes());
+        assert_eq!(&[128], BigU16::from_bytes(I128_BYTES).unwrap().as_bytes());
+        assert_eq!(&[255], BigU16::from_bytes(I255_BYTES).unwrap().as_bytes());
+
+        assert_eq!(
+            &[0x01, 0x00],
+            BigU16::from_bytes(I256_BYTES).unwrap().as_bytes()
+        );
+
+        assert_eq!(
+            &[0x7F, 0xFF],
+            BigU16::from_bytes(I32767_BYTES).unwrap().as_bytes()
+        );
     }
 
     #[test]
     fn reject_oversize_without_extra_zero() {
-        let err = parse_bigu1_from_any(&[0x81]).err().unwrap();
+        let err = parse_bigu8_from_any(&[0x81]).err().unwrap();
         assert_eq!(err.kind(), ErrorKind::Value { tag: Tag::Integer });
     }
 }
