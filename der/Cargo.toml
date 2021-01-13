@@ -8,7 +8,7 @@ for Abstract Syntax Notation One (ASN.1) as described in ITU X.690
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 edition = "2018"
-documentation = "https://docs.rs/pkcs8"
+documentation = "https://docs.rs/der"
 repository = "https://github.com/RustCrypto/utils/tree/master/der"
 categories = ["cryptography", "data-structures", "encoding", "no-std"]
 keywords = ["asn1", "crypto", "itu", "pkcs"]
