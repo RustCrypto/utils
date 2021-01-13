@@ -200,9 +200,6 @@ pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
 }
 
 /// Decode a "B64"-encoded string into a byte vector.
-///
-/// # Panics
-/// If `input` length is greater than `usize::MAX/3`.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn decode_vec(input: &str) -> Result<Vec<u8>, InvalidEncodingError> {
