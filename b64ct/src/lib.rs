@@ -223,18 +223,10 @@ pub const fn decoded_len(bytes: &str) -> usize {
 
 #[inline(always)]
 const fn decoded_len_inner(n: usize) -> usize {
-    #[cfg(target_pointer_width = "64")]
-    type DoubleWord = u128;
-    #[cfg(target_pointer_width = "32")]
-    type DoubleWord = u64;
-    #[cfg(target_pointer_width = "16")]
-    type DoubleWord = u32;
-
-    if n <= usize::MAX / 3 {
-        (3 * n) / 4
-    } else {
-        ((3 * (n as DoubleWord)) / 4) as usize
-    }
+    // branchless, overflow-proof computation of `(3*n)/4`
+    let k = n / 4;
+    let l = n - 4 * k;
+    3 * k + (3 * l) / 4
 }
 
 // B64 character set:
