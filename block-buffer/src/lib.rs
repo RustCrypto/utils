@@ -15,7 +15,9 @@ use block_padding::Padding;
 use core::{convert::TryInto, slice};
 use generic_array::{typenum::U1, ArrayLength, GenericArray};
 
+/// Block on which a `BlockBuffer` operates.
 pub type Block<BlockSize> = GenericArray<u8, BlockSize>;
+/// Blocks being acted over in parallel.
 pub type ParBlock<BlockSize, ParBlocks> = GenericArray<Block<BlockSize>, ParBlocks>;
 
 /// Buffer for block processing of data.
