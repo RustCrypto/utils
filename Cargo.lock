@@ -9,7 +9,7 @@ dependencies = [
 
 [[package]]
 name = "block-buffer"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "block-padding",
  "generic-array",
@@ -17,7 +17,10 @@ dependencies = [
 
 [[package]]
 name = "block-padding"
-version = "0.2.1"
+version = "0.3.0"
+dependencies = [
+ "generic-array",
+]
 
 [[package]]
 name = "collectable"
