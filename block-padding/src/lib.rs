@@ -4,108 +4,79 @@
 //! operations. Additionally several common padding schemes are available out
 //! of the box.
 #![no_std]
-#![doc(html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo_small.png")]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
+)]
+#![forbid(unsafe_code)]
+#![warn(missing_docs, rust_2018_idioms)]
 
-/// Error for indicating failed padding operation
-#[derive(Clone, Copy, Debug)]
-pub struct PadError;
+#[cfg(feature = "std")]
+extern crate std;
 
-/// Error for indicating failed unpadding operation
-#[derive(Clone, Copy, Debug)]
-pub struct UnpadError;
+use core::fmt;
+pub use generic_array;
+use generic_array::{ArrayLength, GenericArray};
+
+/// Block size.
+pub type Block<B> = GenericArray<u8, B>;
 
 /// Trait for padding messages divided into blocks
-pub trait Padding {
-    /// Pads `block` filled with data up to `pos`.
+pub trait Padding<BlockSize: ArrayLength<u8>> {
+    /// Pads `block` filled with data up to `pos` (i.e length of a message
+    /// stored in the block is equal to `pos`).
     ///
-    /// `pos` should be inside of the block and block must not be full, i.e.
-    /// `pos < block.len()` must be true. Otherwise method will return
-    /// `PadError`. Some potentially irreversible padding schemes can allow
-    /// padding of the full block, in this case aforementioned condition is
-    /// relaxed to `pos <= block.len()`.
-    fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError>;
+    /// # Panics
+    /// If `pos` is bigger than `BlockSize`. Most paddin algorithms also
+    /// panic if they are equal.
+    fn pad(block: &mut Block<BlockSize>, pos: usize);
 
-    /// Pads message with length `pos` in the provided buffer.
+    /// Unpad data in the `block`.
     ///
-    /// `&buf[..pos]` is perceived as the message, the buffer must contain
-    /// enough leftover space for padding: `block_size - (pos % block_size)`
-    /// extra bytes must be available. Otherwise method will return
-    /// `PadError`.
-    fn pad(buf: &mut [u8], pos: usize, block_size: usize) -> Result<&mut [u8], PadError> {
-        let bs = block_size * (pos / block_size);
-        if buf.len() < bs || buf.len() - bs < block_size {
-            Err(PadError)?
-        }
-        Self::pad_block(&mut buf[bs..bs + block_size], pos - bs)?;
-        Ok(&mut buf[..bs + block_size])
-    }
-
-    /// Unpad given `data` by truncating it according to the used padding.
-    /// In case of the malformed padding will return `UnpadError`
-    fn unpad(data: &[u8]) -> Result<&[u8], UnpadError>;
+    /// Returns `Err(UnpadError)` if the block containts malformed padding.
+    fn unpad(block: &Block<BlockSize>) -> Result<&[u8], UnpadError>;
 }
 
 /// Pad block with zeros.
 ///
 /// ```
 /// use block_padding::{ZeroPadding, Padding};
+/// use generic_array::{GenericArray, typenum::U8};
 ///
 /// let msg = b"test";
-/// let n = msg.len();
-/// let mut buffer = [0xff; 16];
-/// buffer[..n].copy_from_slice(msg);
-/// let padded_msg = ZeroPadding::pad(&mut buffer, n, 8).unwrap();
-/// assert_eq!(padded_msg, b"test\x00\x00\x00\x00");
-/// assert_eq!(ZeroPadding::unpad(&padded_msg).unwrap(), msg);
-/// ```
-/// ```
-/// # use block_padding::{ZeroPadding, Padding};
-/// # let msg = b"test";
-/// # let n = msg.len();
-/// # let mut buffer = [0xff; 16];
-/// # buffer[..n].copy_from_slice(msg);
-/// let padded_msg = ZeroPadding::pad(&mut buffer, n, 2).unwrap();
-/// assert_eq!(padded_msg, b"test");
-/// assert_eq!(ZeroPadding::unpad(&padded_msg).unwrap(), msg);
+/// let pos = msg.len();
+/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// block[..pos].copy_from_slice(msg);
+/// ZeroPadding::pad(&mut block, pos);
+/// assert_eq!(&block[..], b"test\x00\x00\x00\x00");
+/// let res = ZeroPadding::unpad(&mut block).unwrap();
+/// assert_eq!(res, msg);
 /// ```
 ///
-/// Note that zero padding may not be reversible if the original message ends
+/// Note that zero padding is not reversible for messages which end
 /// with one or more zero bytes.
 #[derive(Clone, Copy, Debug)]
-pub enum ZeroPadding {}
+pub struct ZeroPadding;
 
-impl Padding for ZeroPadding {
-    fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
-        if pos > block.len() {
-            Err(PadError)?
+impl<B: ArrayLength<u8>> Padding<B> for ZeroPadding {
+    #[inline]
+    fn pad(block: &mut Block<B>, pos: usize) {
+        if pos > B::USIZE {
+            panic!("`pos` is bigger than block size");
         }
-        set(&mut block[pos..], 0);
-        Ok(())
-    }
-
-    fn pad(buf: &mut [u8], pos: usize, block_size: usize) -> Result<&mut [u8], PadError> {
-        if pos % block_size == 0 {
-            Ok(&mut buf[..pos])
-        } else {
-            let bs = block_size * (pos / block_size);
-            let be = bs + block_size;
-            if buf.len() < be {
-                Err(PadError)?
-            }
-            Self::pad_block(&mut buf[bs..be], pos - bs)?;
-            Ok(&mut buf[..be])
+        for b in &mut block[pos..] {
+            *b = 0;
         }
     }
 
-    fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
-        let mut n = data.len() - 1;
-        while n != 0 {
-            if data[n] != 0 {
-                break;
+    #[inline]
+    fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
+        for i in (0..B::USIZE).rev() {
+            if block[i] != 0 {
+                return Ok(&block[..i + 1]);
             }
-            n -= 1;
         }
-        Ok(&data[..n + 1])
+        Ok(&block[..0])
     }
 }
 
@@ -115,70 +86,52 @@ impl Padding for ZeroPadding {
 ///
 /// ```
 /// use block_padding::{Pkcs7, Padding};
+/// use generic_array::{GenericArray, typenum::U8};
 ///
 /// let msg = b"test";
-/// let n = msg.len();
-/// let mut buffer = [0xff; 8];
-/// buffer[..n].copy_from_slice(msg);
-/// let padded_msg = Pkcs7::pad(&mut buffer, n, 8).unwrap();
-/// assert_eq!(padded_msg, b"test\x04\x04\x04\x04");
-/// assert_eq!(Pkcs7::unpad(&padded_msg).unwrap(), msg);
+/// let pos = msg.len();
+/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// block[..pos].copy_from_slice(msg);
+/// Pkcs7::pad(&mut block, pos);
+/// assert_eq!(&block[..], b"test\x04\x04\x04\x04");
+/// let res = Pkcs7::unpad(&block).unwrap();
+/// assert_eq!(res, msg);
 /// ```
-/// ```
-/// # use block_padding::{Pkcs7, Padding};
-/// # let msg = b"test";
-/// # let n = msg.len();
-/// # let mut buffer = [0xff; 8];
-/// # buffer[..n].copy_from_slice(msg);
-/// let padded_msg = Pkcs7::pad(&mut buffer, n, 2).unwrap();
-/// assert_eq!(padded_msg, b"test\x02\x02");
-/// assert_eq!(Pkcs7::unpad(&padded_msg).unwrap(), msg);
-/// ```
-/// ```
-/// # use block_padding::{Pkcs7, Padding};
-/// let mut buffer = [0xff; 5];
-/// assert!(Pkcs7::pad(&mut buffer, 4, 2).is_err());
-/// ```
-/// ```
-/// # use block_padding::{Pkcs7, Padding};
-/// # let buffer = [0xff; 16];
-/// assert!(Pkcs7::unpad(&buffer).is_err());
-/// ```
-///
-/// In addition to conditions stated in the `Padding` trait documentation,
-/// `pad_block` will return `PadError` if `block.len() > 255`, and in case of
-/// `pad` if `block_size > 255`.
 #[derive(Clone, Copy, Debug)]
-pub enum Pkcs7 {}
+pub struct Pkcs7;
 
-impl Padding for Pkcs7 {
-    fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
-        if block.len() > 255 {
-            Err(PadError)?
+impl<B: ArrayLength<u8>> Padding<B> for Pkcs7 {
+    #[inline]
+    fn pad(block: &mut Block<B>, pos: usize) {
+        // TODO: use bounds to check it at compile time
+        if B::USIZE > 255 {
+            panic!("block size is too big for PKCS#7");
         }
-        if pos >= block.len() {
-            Err(PadError)?
+        if pos >= B::USIZE {
+            panic!("`pos` is bigger or equal to block size");
         }
-        let n = block.len() - pos;
-        set(&mut block[pos..], n as u8);
-        Ok(())
+        let n = (B::USIZE - pos) as u8;
+        for b in &mut block[pos..] {
+            *b = n;
+        }
     }
 
-    fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
-        if data.is_empty() {
-            Err(UnpadError)?
+    #[inline]
+    fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
+        // TODO: use bounds to check it at compile time
+        if B::USIZE > 255 {
+            panic!("block size is too big for PKCS#7");
         }
-        let l = data.len();
-        let n = data[l - 1];
-        if n == 0 || n as usize > l {
-            Err(UnpadError)?
+        let bs = B::USIZE;
+        let n = block[bs - 1];
+        if n == 0 || n as usize > bs {
+            return Err(UnpadError);
         }
-        for v in &data[l - n as usize..l - 1] {
-            if *v != n {
-                Err(UnpadError)?
-            }
+        let s = bs - n as usize;
+        if block[s..bs - 1].iter().any(|&v| v != n) {
+            return Err(UnpadError);
         }
-        Ok(&data[..l - n as usize])
+        Ok(&block[..s])
     }
 }
 
@@ -187,66 +140,53 @@ impl Padding for Pkcs7 {
 ///
 /// ```
 /// use block_padding::{AnsiX923, Padding};
+/// use generic_array::{GenericArray, typenum::U8};
 ///
 /// let msg = b"test";
-/// let n = msg.len();
-/// let mut buffer = [0xff; 16];
-/// buffer[..n].copy_from_slice(msg);
-/// let padded_msg = AnsiX923::pad(&mut buffer, n, 8).unwrap();
-/// assert_eq!(padded_msg, b"test\x00\x00\x00\x04");
-/// assert_eq!(AnsiX923::unpad(&padded_msg).unwrap(), msg);
+/// let pos = msg.len();
+/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// block[..pos].copy_from_slice(msg);
+/// AnsiX923::pad(&mut block, pos);
+/// assert_eq!(&block[..], b"test\x00\x00\x00\x04");
+/// let res = AnsiX923::unpad(&block).unwrap();
+/// assert_eq!(res, msg);
 /// ```
-/// ```
-/// # use block_padding::{AnsiX923, Padding};
-/// # let msg = b"test";
-/// # let n = msg.len();
-/// # let mut buffer = [0xff; 16];
-/// # buffer[..n].copy_from_slice(msg);
-/// let padded_msg = AnsiX923::pad(&mut buffer, n, 2).unwrap();
-/// assert_eq!(padded_msg, b"test\x00\x02");
-/// assert_eq!(AnsiX923::unpad(&padded_msg).unwrap(), msg);
-/// ```
-/// ```
-/// # use block_padding::{AnsiX923, Padding};
-/// # let buffer = [0xff; 16];
-/// assert!(AnsiX923::unpad(&buffer).is_err());
-/// ```
-///
-/// In addition to conditions stated in the `Padding` trait documentation,
-/// `pad_block` will return `PadError` if `block.len() > 255`, and in case of
-/// `pad` if `block_size > 255`.
 #[derive(Clone, Copy, Debug)]
-pub enum AnsiX923 {}
+pub struct AnsiX923;
 
-impl Padding for AnsiX923 {
-    fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
-        if block.len() > 255 {
-            Err(PadError)?
+impl<B: ArrayLength<u8>> Padding<B> for AnsiX923 {
+    #[inline]
+    fn pad(block: &mut Block<B>, pos: usize) {
+        // TODO: use bounds to check it at compile time
+        if B::USIZE > 255 {
+            panic!("block size is too big for PKCS#7");
         }
-        if pos >= block.len() {
-            Err(PadError)?
+        if pos >= B::USIZE {
+            panic!("`pos` is bigger or equal to block size");
         }
-        let bs = block.len();
-        set(&mut block[pos..bs - 1], 0);
+        let bs = B::USIZE;
+        for b in &mut block[pos..bs - 1] {
+            *b = 0;
+        }
         block[bs - 1] = (bs - pos) as u8;
-        Ok(())
     }
 
-    fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
-        if data.is_empty() {
-            Err(UnpadError)?
+    #[inline]
+    fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
+        // TODO: use bounds to check it at compile time
+        if B::USIZE > 255 {
+            panic!("block size is too big for PKCS#7");
         }
-        let l = data.len();
-        let n = data[l - 1] as usize;
-        if n == 0 || n > l {
+        let bs = B::USIZE;
+        let n = block[bs - 1] as usize;
+        if n == 0 || n > bs {
             return Err(UnpadError);
         }
-        for v in &data[l - n..l - 1] {
-            if *v != 0 {
-                Err(UnpadError)?
-            }
+        let s = bs - n;
+        if block[s..bs - 1].iter().any(|&v| v != 0) {
+            return Err(UnpadError);
         }
-        Ok(&data[..l - n])
+        Ok(&block[..s])
     }
 }
 
@@ -254,110 +194,92 @@ impl Padding for AnsiX923 {
 ///
 /// ```
 /// use block_padding::{Iso7816, Padding};
+/// use generic_array::{GenericArray, typenum::U8};
 ///
 /// let msg = b"test";
-/// let n = msg.len();
-/// let mut buffer = [0xff; 16];
-/// buffer[..n].copy_from_slice(msg);
-/// let padded_msg = Iso7816::pad(&mut buffer, n, 8).unwrap();
-/// assert_eq!(padded_msg, b"test\x80\x00\x00\x00");
-/// assert_eq!(Iso7816::unpad(&padded_msg).unwrap(), msg);
-/// ```
-/// ```
-/// # use block_padding::{Iso7816, Padding};
-/// # let msg = b"test";
-/// # let n = msg.len();
-/// # let mut buffer = [0xff; 16];
-/// # buffer[..n].copy_from_slice(msg);
-/// let padded_msg = Iso7816::pad(&mut buffer, n, 2).unwrap();
-/// assert_eq!(padded_msg, b"test\x80\x00");
-/// assert_eq!(Iso7816::unpad(&padded_msg).unwrap(), msg);
+/// let pos = msg.len();
+/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// block[..pos].copy_from_slice(msg);
+/// Iso7816::pad(&mut block, pos);
+/// assert_eq!(&block[..], b"test\x80\x00\x00\x00");
+/// let res = Iso7816::unpad(&block).unwrap();
+/// assert_eq!(res, msg);
 /// ```
 #[derive(Clone, Copy, Debug)]
-pub enum Iso7816 {}
+pub struct Iso7816;
 
-impl Padding for Iso7816 {
-    fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
-        if pos >= block.len() {
-            Err(PadError)?
+impl<B: ArrayLength<u8>> Padding<B> for Iso7816 {
+    #[inline]
+    fn pad(block: &mut Block<B>, pos: usize) {
+        if pos >= B::USIZE {
+            panic!("`pos` is bigger or equal to block size");
         }
         block[pos] = 0x80;
-        set(&mut block[pos + 1..], 0);
-        Ok(())
+        for b in &mut block[pos + 1..] {
+            *b = 0;
+        }
     }
 
-    fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
-        if data.is_empty() {
-            Err(UnpadError)?
-        }
-        let mut n = data.len() - 1;
-        while n != 0 {
-            if data[n] != 0 {
-                break;
+    #[inline]
+    fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
+        for i in (0..B::USIZE).rev() {
+            match block[i] {
+                0x80 => return Ok(&block[..i]),
+                0x00 => continue,
+                _ => return Err(UnpadError),
             }
-            n -= 1;
         }
-        if data[n] != 0x80 {
-            Err(UnpadError)?
-        }
-        Ok(&data[..n])
+        Err(UnpadError)
     }
 }
 
-/// Don't pad the data. Useful for key wrapping. Padding will fail if the data cannot be
-/// fitted into blocks without padding.
+/// Don't pad the data. Useful for key wrapping.
 ///
 /// ```
 /// use block_padding::{NoPadding, Padding};
+/// use generic_array::{GenericArray, typenum::U8};
 ///
 /// let msg = b"test";
-/// let n = msg.len();
-/// let mut buffer = [0xff; 16];
-/// buffer[..n].copy_from_slice(msg);
-/// let padded_msg = NoPadding::pad(&mut buffer, n, 4).unwrap();
-/// assert_eq!(padded_msg, b"test");
-/// assert_eq!(NoPadding::unpad(&padded_msg).unwrap(), msg);
+/// let pos = msg.len();
+/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// block[..pos].copy_from_slice(msg);
+/// NoPadding::pad(&mut block, pos);
+/// assert_eq!(&block[..], b"test\xff\xff\xff\xff");
+/// let res = NoPadding::unpad(&block).unwrap();
+/// assert_eq!(res, b"test\xff\xff\xff\xff");
 /// ```
-/// ```
-/// # use block_padding::{NoPadding, Padding};
-/// # let msg = b"test";
-/// # let n = msg.len();
-/// # let mut buffer = [0xff; 16];
-/// # buffer[..n].copy_from_slice(msg);
-/// let padded_msg = NoPadding::pad(&mut buffer, n, 2).unwrap();
-/// assert_eq!(padded_msg, b"test");
-/// assert_eq!(NoPadding::unpad(&padded_msg).unwrap(), msg);
-/// ```
+///
+/// Note that even though the passed length of the message is equal to 4,
+/// the size of unpadded message is equal to the block size of 8 bytes.
+/// Also padded message contains "garbage" bytes stored in the block buffer.
+/// Thus `NoPadding` generally should not be used with data length of which
+/// is not multiple of block size.
 #[derive(Clone, Copy, Debug)]
-pub enum NoPadding {}
+pub struct NoPadding;
 
-impl Padding for NoPadding {
-    fn pad_block(block: &mut [u8], pos: usize) -> Result<(), PadError> {
-        if pos % block.len() != 0 {
-            Err(PadError)?
+impl<B: ArrayLength<u8>> Padding<B> for NoPadding {
+    #[inline]
+    fn pad(_block: &mut Block<B>, pos: usize) {
+        if pos > B::USIZE {
+            panic!("`pos` is bigger than block size");
         }
-        Ok(())
     }
 
-    fn pad(buf: &mut [u8], pos: usize, block_size: usize) -> Result<&mut [u8], PadError> {
-        if pos % block_size != 0 {
-            Err(PadError)?
-        }
-        Ok(&mut buf[..pos])
-    }
-
-    fn unpad(data: &[u8]) -> Result<&[u8], UnpadError> {
-        Ok(data)
+    #[inline]
+    fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
+        Ok(block)
     }
 }
 
-/// Sets all bytes in `dst` equal to `value`
-#[inline(always)]
-fn set(dst: &mut [u8], value: u8) {
-    // SAFETY: we overwrite valid memory behind `dst`
-    // note: loop is not used here because it produces
-    // unnecessary branch which tests for zero-length slices
-    unsafe {
-        core::ptr::write_bytes(dst.as_mut_ptr(), value, dst.len());
+/// Failed unpadding operation error.
+#[derive(Clone, Copy, Debug)]
+pub struct UnpadError;
+
+impl fmt::Display for UnpadError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        f.write_str("Unpad Error")
     }
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for UnpadError {}
