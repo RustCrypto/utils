@@ -15,10 +15,13 @@ use block_padding::Padding;
 use core::{convert::TryInto, slice};
 use generic_array::{typenum::U1, ArrayLength, GenericArray};
 
+pub type Block<BlockSize> = GenericArray<u8, BlockSize>;
+pub type ParBlock<BlockSize, ParBlocks> = GenericArray<Block<BlockSize>, ParBlocks>;
+
 /// Buffer for block processing of data.
 #[derive(Clone, Default)]
 pub struct BlockBuffer<BlockSize: ArrayLength<u8>> {
-    buffer: GenericArray<u8, BlockSize>,
+    buffer: Block<BlockSize>,
     pos: usize,
 }
 
@@ -26,11 +29,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// Digest data in `input` in blocks of size `BlockSize` using
     /// the `compress` function, which accepts a block reference.
     #[inline]
-    pub fn digest_block(
-        &mut self,
-        mut input: &[u8],
-        mut compress: impl FnMut(&GenericArray<u8, BlockSize>),
-    ) {
+    pub fn digest_block(&mut self, mut input: &[u8], mut compress: impl FnMut(&Block<BlockSize>)) {
         let pos = self.get_pos();
         let r = self.remaining();
         let n = input.len();
@@ -64,7 +63,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     pub fn digest_blocks(
         &mut self,
         mut input: &[u8],
-        mut compress: impl FnMut(&[GenericArray<u8, BlockSize>]),
+        mut compress: impl FnMut(&[Block<BlockSize>]),
     ) {
         let pos = self.get_pos();
         let r = self.remaining();
@@ -93,13 +92,13 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// Core method for `xor_data` and `set_data` methods.
     ///
     /// If `N` is equal to 1, the `gen_blocks` function is not used.
-    fn process_data<S, N: ArrayLength<GenericArray<u8, BlockSize>>>(
+    fn process_data<S, N: ArrayLength<Block<BlockSize>>>(
         &mut self,
         mut data: &mut [u8],
         state: &mut S,
         mut process: impl FnMut(&mut [u8], &[u8]),
-        mut gen_block: impl FnMut(&mut S) -> GenericArray<u8, BlockSize>,
-        mut gen_blocks: impl FnMut(&mut S) -> GenericArray<GenericArray<u8, BlockSize>, N>,
+        mut gen_block: impl FnMut(&mut S) -> Block<BlockSize>,
+        mut gen_blocks: impl FnMut(&mut S) -> ParBlock<BlockSize, N>,
     ) {
         let pos = self.get_pos();
         let r = self.remaining();
@@ -142,61 +141,37 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// This method is intended for stream cipher implementations. If `N` is
     /// equal to 1, the `gen_blocks` function is not used.
     #[inline]
-    pub fn par_xor_data<S, N: ArrayLength<GenericArray<u8, BlockSize>>>(
+    pub fn par_xor_data<S, N: ArrayLength<Block<BlockSize>>>(
         &mut self,
         data: &mut [u8],
         state: &mut S,
-        gen_block: impl FnMut(&mut S) -> GenericArray<u8, BlockSize>,
-        gen_blocks: impl FnMut(&mut S) -> GenericArray<GenericArray<u8, BlockSize>, N>,
+        gen_block: impl FnMut(&mut S) -> Block<BlockSize>,
+        gen_blocks: impl FnMut(&mut S) -> ParBlock<BlockSize, N>,
     ) {
         self.process_data(data, state, xor, gen_block, gen_blocks);
     }
 
     /// Simplified version of the [`par_xor_data`] method, with `N = 1`.
     #[inline]
-    pub fn xor_data(
-        &mut self,
-        data: &mut [u8],
-        mut gen_block: impl FnMut() -> GenericArray<u8, BlockSize>,
-    ) {
+    pub fn xor_data(&mut self, data: &mut [u8], mut gen_block: impl FnMut() -> Block<BlockSize>) {
         // note: the unrachable panic should be removed by compiler since
         // with `N = 1` the second closure is not used
-        self.process_data(
-            data,
-            &mut gen_block,
-            xor,
-            |f| f(),
-            |_| -> GenericArray<GenericArray<u8, BlockSize>, U1> { unreachable!() },
-        );
+        self.process_data(data, &mut gen_block, xor, |f| f(), unreachable);
     }
 
     /// Set `data` to generated blocks.
     #[inline]
-    pub fn set_data(
-        &mut self,
-        data: &mut [u8],
-        mut gen_block: impl FnMut() -> GenericArray<u8, BlockSize>,
-    ) {
+    pub fn set_data(&mut self, data: &mut [u8], mut gen_block: impl FnMut() -> Block<BlockSize>) {
         // note: the unrachable panic should be removed by compiler since
         // with `N = 1` the second closure is not used
-        self.process_data(
-            data,
-            &mut gen_block,
-            set,
-            |f| f(),
-            |_| -> GenericArray<GenericArray<u8, BlockSize>, U1> { unreachable!() },
-        );
+        self.process_data(data, &mut gen_block, set, |f| f(), unreachable);
     }
 
     /// Compress remaining data after padding it with `0x80`, zeros and
     /// the `suffix` bytes. If there is not enough unused space, `compress`
     /// will be called twice.
     #[inline(always)]
-    fn digest_pad(
-        &mut self,
-        suffix: &[u8],
-        mut compress: impl FnMut(&GenericArray<u8, BlockSize>),
-    ) {
+    fn digest_pad(&mut self, suffix: &[u8], mut compress: impl FnMut(&Block<BlockSize>)) {
         let pos = self.get_pos();
         self.buffer[pos] = 0x80;
         for b in &mut self.buffer[pos + 1..] {
@@ -206,7 +181,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         let n = self.size() - suffix.len();
         if self.size() - pos - 1 < suffix.len() {
             compress(&self.buffer);
-            let mut block: GenericArray<u8, BlockSize> = Default::default();
+            let mut block: Block<BlockSize> = Default::default();
             block[n..].copy_from_slice(suffix);
             compress(&block);
         } else {
@@ -219,40 +194,28 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// Pad message with 0x80, zeros and 64-bit message length using
     /// big-endian byte order.
     #[inline]
-    pub fn len64_padding_be(
-        &mut self,
-        data_len: u64,
-        compress: impl FnMut(&GenericArray<u8, BlockSize>),
-    ) {
+    pub fn len64_padding_be(&mut self, data_len: u64, compress: impl FnMut(&Block<BlockSize>)) {
         self.digest_pad(&data_len.to_be_bytes(), compress);
     }
 
     /// Pad message with 0x80, zeros and 64-bit message length using
     /// little-endian byte order.
     #[inline]
-    pub fn len64_padding_le(
-        &mut self,
-        data_len: u64,
-        compress: impl FnMut(&GenericArray<u8, BlockSize>),
-    ) {
+    pub fn len64_padding_le(&mut self, data_len: u64, compress: impl FnMut(&Block<BlockSize>)) {
         self.digest_pad(&data_len.to_le_bytes(), compress);
     }
 
     /// Pad message with 0x80, zeros and 128-bit message length using
     /// big-endian byte order.
     #[inline]
-    pub fn len128_padding_be(
-        &mut self,
-        data_len: u128,
-        compress: impl FnMut(&GenericArray<u8, BlockSize>),
-    ) {
+    pub fn len128_padding_be(&mut self, data_len: u128, compress: impl FnMut(&Block<BlockSize>)) {
         self.digest_pad(&data_len.to_be_bytes(), compress);
     }
 
     /// Pad message with a given padding `P`.
     #[cfg(feature = "block-padding")]
     #[inline]
-    pub fn pad_with<P: Padding<BlockSize>>(&mut self) -> &mut GenericArray<u8, BlockSize> {
+    pub fn pad_with<P: Padding<BlockSize>>(&mut self) -> &mut Block<BlockSize> {
         let pos = self.get_pos();
         P::pad(&mut self.buffer, pos);
         self.set_pos_unchecked(0);
@@ -292,7 +255,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     ///
     /// # Panics
     /// If `pos` is bigger or equal to block size.
-    pub fn set(&mut self, buf: GenericArray<u8, BlockSize>, pos: usize) {
+    pub fn set(&mut self, buf: Block<BlockSize>, pos: usize) {
         assert!(pos < BlockSize::USIZE);
         self.buffer = buf;
         self.pos = pos;
@@ -317,10 +280,10 @@ fn set(a: &mut [u8], b: &[u8]) {
 }
 
 #[inline(always)]
-fn to_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[GenericArray<u8, N>], &[u8]) {
+fn to_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[Block<N>], &[u8]) {
     let nb = data.len() / N::USIZE;
     let (left, right) = data.split_at(nb * N::USIZE);
-    let p = left.as_ptr() as *const GenericArray<u8, N>;
+    let p = left.as_ptr() as *const Block<N>;
     // SAFETY: we guarantee that `blocks` does not point outside of `data`
     let blocks = unsafe { slice::from_raw_parts(p, nb) };
     (blocks, right)
@@ -328,17 +291,9 @@ fn to_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[GenericArray<u8, N>], &[u8])
 
 #[allow(clippy::type_complexity)]
 #[inline(always)]
-fn to_blocks_mut<N, M>(
+fn to_blocks_mut<N: ArrayLength<u8>, M: ArrayLength<Block<N>>>(
     data: &mut [u8],
-) -> (
-    &mut [GenericArray<GenericArray<u8, N>, M>],
-    &mut [GenericArray<u8, N>],
-    &mut [u8],
-)
-where
-    N: ArrayLength<u8>,
-    M: ArrayLength<GenericArray<u8, N>>,
-{
+) -> (&mut [ParBlock<N, M>], &mut [Block<N>], &mut [u8]) {
     let b_size = N::USIZE;
     let pb_size = N::USIZE * M::USIZE;
     let npb = match M::USIZE {
@@ -348,8 +303,8 @@ where
     let (pb_slice, data) = data.split_at_mut(npb * pb_size);
     let nb = data.len() / b_size;
     let (b_slice, data) = data.split_at_mut(nb * b_size);
-    let pb_ptr = pb_slice.as_mut_ptr() as *mut GenericArray<GenericArray<u8, N>, M>;
-    let b_ptr = b_slice.as_mut_ptr() as *mut GenericArray<u8, N>;
+    let pb_ptr = pb_slice.as_mut_ptr() as *mut ParBlock<N, M>;
+    let b_ptr = b_slice.as_mut_ptr() as *mut Block<N>;
     // SAFETY: we guarantee that the resulting values do not overlap and do not
     // point outside of the input slice
     unsafe {
@@ -359,4 +314,8 @@ where
             data,
         )
     }
+}
+
+fn unreachable<S, B: ArrayLength<u8>>(_: &mut S) -> ParBlock<B, U1> {
+    unreachable!();
 }
