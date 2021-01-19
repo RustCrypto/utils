@@ -1,6 +1,6 @@
 [package]
 name = "cpuid-bool"
-version = "0.2.0"
+version = "0.2.0" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "A lightweight and efficient no-std compatible alternative to the is_x86_feature_detected macro"

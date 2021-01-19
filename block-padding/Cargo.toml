@@ -1,6 +1,6 @@
 [package]
 name = "block-padding"
-version = "0.3.0-pre"
+version = "0.3.0-pre" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Padding and unpadding of messages divided into blocks."
