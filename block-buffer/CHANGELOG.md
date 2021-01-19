@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade the `block-padding` dependency to v0.3. ([#113])
 
 ### Added
-- The `xor_data` method. ([#113])
+- `par_xor_data`, `xor_data`, and `set_data` methods. ([#113])
 
 ### Removed
 - The `input_lazy` method. ([#113])
