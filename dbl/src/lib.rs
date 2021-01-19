@@ -2,7 +2,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/dbl/0.3.0"
+    html_root_url = "https://docs.rs/dbl/0.3.1"
 )]
 
 extern crate generic_array;
@@ -16,7 +16,7 @@ const C64: u64 = 0b1_1011;
 const C128: u64 = 0b1000_0111;
 const C256: u64 = 0b100_0010_0101;
 
-/// Double and inverse double over GF(2^n). WARNING: block must be aligned!
+/// Double and inverse double over GF(2^n).
 ///
 /// This trait is implemented for 64, 128 and 256 bit block sizes. Big-endian
 /// order is used.
@@ -38,7 +38,7 @@ pub trait Dbl {
 
 impl Dbl for GenericArray<u8, U8> {
     fn dbl(self) -> Self {
-        let mut val: u64 = unsafe { mem::transmute(self) };
+        let mut val: u64 = unsafe { mem::transmute_copy(&self) };
         val = val.to_be();
         let a = val >> 63;
         val <<= 1;
@@ -47,7 +47,7 @@ impl Dbl for GenericArray<u8, U8> {
     }
 
     fn inv_dbl(self) -> Self {
-        let mut val: u64 = unsafe { mem::transmute(self) };
+        let mut val: u64 = unsafe { mem::transmute_copy(&self) };
         val = val.to_be();
 
         let a = val & 1;
@@ -67,7 +67,7 @@ fn to_be(val: &mut [u64]) {
 
 impl Dbl for GenericArray<u8, U16> {
     fn dbl(self) -> Self {
-        let mut val: [u64; 2] = unsafe { mem::transmute(self) };
+        let mut val: [u64; 2] = unsafe { mem::transmute_copy(&self) };
         to_be(&mut val);
 
         let b = val[1] >> 63;
@@ -83,7 +83,7 @@ impl Dbl for GenericArray<u8, U16> {
     }
 
     fn inv_dbl(self) -> Self {
-        let mut val: [u64; 2] = unsafe { mem::transmute(self) };
+        let mut val: [u64; 2] = unsafe { mem::transmute_copy(&self) };
         to_be(&mut val);
 
         let a = (val[0] & 1) << 63;
@@ -102,7 +102,7 @@ impl Dbl for GenericArray<u8, U16> {
 
 impl Dbl for GenericArray<u8, U32> {
     fn dbl(self) -> Self {
-        let mut val: [u64; 4] = unsafe { mem::transmute(self) };
+        let mut val: [u64; 4] = unsafe { mem::transmute_copy(&self) };
         to_be(&mut val);
 
         let a = val[0] >> 63;
@@ -124,7 +124,7 @@ impl Dbl for GenericArray<u8, U32> {
     }
 
     fn inv_dbl(self) -> Self {
-        let mut val: [u64; 4] = unsafe { mem::transmute(self) };
+        let mut val: [u64; 4] = unsafe { mem::transmute_copy(&self) };
         to_be(&mut val);
 
         let a = (val[0] & 1) << 63;
