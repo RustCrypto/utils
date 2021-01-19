@@ -1,4 +1,10 @@
 #![no_std]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_root_url = "https://docs.rs/dbl/0.3.0"
+)]
+
 extern crate generic_array;
 
 use generic_array::typenum::{U16, U32, U8};

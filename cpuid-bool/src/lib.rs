@@ -32,6 +32,12 @@
 //! After first call macro caches result and returns it in subsequent
 //! calls, thus runtime overhead for them is minimal.
 #![no_std]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_root_url = "https://docs.rs/cpuid-bool/0.2.0"
+)]
+
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 compile_error!("This crate works only on x86 and x86-64 targets.");
 

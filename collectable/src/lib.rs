@@ -4,6 +4,11 @@
 //! fixed-capacity containers, such as `heapless::Vec` or `tinyvec::Array`.
 
 #![no_std]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
+    html_root_url = "https://docs.rs/collectable/0.0.2"
+)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
