@@ -1,6 +1,6 @@
 [package]
 name = "b64ct"
-version = "0.1.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.2.0" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of B64, a subset of the standard Base64 encoding
 (RFC 4648) used by the PHC string format. Implemented without data-dependent
