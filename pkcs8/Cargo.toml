@@ -15,7 +15,7 @@ keywords = ["crypto", "key", "private"]
 readme = "README.md"
 
 [dependencies]
-b64ct = { version = "0.1", optional = true, features = ["alloc"], path = "../b64ct" }
+b64ct = { version = "0.2", optional = true, features = ["alloc"], path = "../b64ct" }
 der = { version = "=0.2.0-pre", features = ["oid"], path = "../der" }
 zeroize = { version = "1", optional = true, default-features = false, features = ["alloc"] }
 
