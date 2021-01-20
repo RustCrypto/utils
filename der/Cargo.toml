@@ -2,13 +2,13 @@
 name = "der"
 version = "0.2.0-pre" # Also update html_root_url in lib.rs when bumping this
 description = """
-Pure Rust embedded-friendly implementation of the Distinguished Encoding Rules (DER)
-for Abstract Syntax Notation One (ASN.1) as described in ITU X.690
+Pure Rust embedded-friendly implementation of the Distinguished Encoding Rules
+(DER) for Abstract Syntax Notation One (ASN.1) as described in ITU X.690 with
+full support for heapless no_std targets
 """
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 edition = "2018"
-documentation = "https://docs.rs/der"
 repository = "https://github.com/RustCrypto/utils/tree/master/der"
 categories = ["cryptography", "data-structures", "encoding", "no-std"]
 keywords = ["asn1", "crypto", "itu", "pkcs"]
