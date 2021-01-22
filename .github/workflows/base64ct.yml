@@ -1,16 +1,16 @@
-name: b64ct
+name: base64ct
 
 on:
   pull_request:
     paths:
-      - "b64ct/**"
+      - "base64ct/**"
       - "Cargo.*"
   push:
     branches: master
 
 defaults:
   run:
-    working-directory: b64ct
+    working-directory: base64ct
 
 env:
   CARGO_INCREMENTAL: 0

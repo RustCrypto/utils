@@ -1,5 +1,5 @@
 [package]
-name = "b64ct"
+name = "base64ct"
 version = "0.2.0" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of B64, a subset of the standard Base64 encoding
@@ -10,7 +10,7 @@ authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 edition = "2018"
 documentation = "https://docs.rs/pkcs8"
-repository = "https://github.com/RustCrypto/utils/tree/master/b64ct"
+repository = "https://github.com/RustCrypto/utils/tree/master/base64ct"
 categories = ["cryptography", "encoding", "no-std"]
 keywords = ["base64", "phc"]
 readme = "README.md"
