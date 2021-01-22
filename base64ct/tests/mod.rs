@@ -1,4 +1,4 @@
-use b64ct::*;
+use base64ct::*;
 
 /// "B64" test vector
 struct TestVector {
