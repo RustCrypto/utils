@@ -3,6 +3,9 @@
 use crate::{Any, BitString, Decodable, ErrorKind, Length, Null, OctetString, Result, Sequence};
 use core::convert::TryInto;
 
+#[cfg(feature = "big-uint")]
+use crate::{BigUInt, BigUIntSize};
+
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
 
@@ -81,6 +84,36 @@ impl<'a> Decoder<'a> {
         self.decode()
     }
 
+    /// Attempt to decode ASN.1 `INTEGER` as `i8`
+    pub fn int8(&mut self) -> Result<i8> {
+        self.decode()
+    }
+
+    /// Attempt to decode ASN.1 `INTEGER` as `i16`
+    pub fn int16(&mut self) -> Result<i16> {
+        self.decode()
+    }
+
+    /// Attempt to decode unsigned ASN.1 `INTEGER` as `u8`
+    pub fn uint8(&mut self) -> Result<u8> {
+        self.decode()
+    }
+
+    /// Attempt to decode unsigned ASN.1 `INTEGER` as `u16`
+    pub fn uint16(&mut self) -> Result<u16> {
+        self.decode()
+    }
+
+    /// Attempt to decode an ASN.1 `INTEGER` as a [`BigUint`].
+    #[cfg(feature = "big-uint")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
+    pub fn big_uint<N>(&mut self) -> Result<BigUInt<'a, N>>
+    where
+        N: BigUIntSize,
+    {
+        self.decode()
+    }
+
     /// Attempt to decode an ASN.1 `BIT STRING`.
     pub fn bit_string(&mut self) -> Result<BitString<'a>> {
         self.decode()
@@ -138,6 +171,7 @@ impl<'a> Decoder<'a> {
         let len = len
             .try_into()
             .or_else(|_| self.error(ErrorKind::Overflow))?;
+
         let result = self
             .remaining()?
             .get(..len.to_usize())
