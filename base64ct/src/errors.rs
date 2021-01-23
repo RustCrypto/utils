@@ -1,3 +1,5 @@
+//! Error types
+
 use core::fmt;
 
 /// Insufficient output buffer length.

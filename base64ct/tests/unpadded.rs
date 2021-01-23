@@ -1,10 +1,12 @@
-use base64ct::*;
+//! Unpadded Base64 tests
 
-/// "B64" test vector
+use base64ct::{decode, decode_in_place_unpadded, decoded_len, encode, encoded_len, Error};
+
+#[cfg(feature = "alloc")]
+use base64ct::{decode_vec, encode_string};
+
 struct TestVector {
-    /// Raw bytes.
     raw: &'static [u8],
-    /// "B64" encoded.
     b64: &'static str,
 }
 
@@ -42,13 +44,13 @@ fn encode_test_vectors() {
     let mut buf = [0u8; 1024];
 
     for vector in TEST_VECTORS {
-        let out = encode(vector.raw, &mut buf).unwrap();
-        assert_eq!(encoded_len(vector.raw), vector.b64.len());
+        let out = encode(vector.raw, &mut buf, false).unwrap();
+        assert_eq!(encoded_len(vector.raw, false), vector.b64.len());
         assert_eq!(vector.b64, &out[..]);
 
         #[cfg(feature = "alloc")]
         {
-            let out = encode_string(vector.raw);
+            let out = encode_string(vector.raw, false);
             assert_eq!(vector.b64, &out[..]);
         }
     }
@@ -59,18 +61,18 @@ fn decode_test_vectors() {
     let mut buf = [0u8; 1024];
 
     for vector in TEST_VECTORS {
-        let out = decode(vector.b64, &mut buf).unwrap();
-        assert_eq!(decoded_len(vector.b64), out.len());
+        let out = decode(vector.b64, &mut buf, false).unwrap();
+        assert_eq!(decoded_len(vector.b64, false), out.len());
         assert_eq!(vector.raw, &out[..]);
 
         let n = vector.b64.len();
         buf[..n].copy_from_slice(vector.b64.as_bytes());
-        let out = decode_in_place(&mut buf[..n]).unwrap();
+        let out = decode_in_place_unpadded(&mut buf[..n]).unwrap();
         assert_eq!(vector.raw, out);
 
         #[cfg(feature = "alloc")]
         {
-            let out = decode_vec(vector.b64).unwrap();
+            let out = decode_vec(vector.b64, false).unwrap();
             assert_eq!(vector.raw, &out[..]);
         }
     }
@@ -83,21 +85,21 @@ fn encode_and_decode_various_lengths() {
     let mut outbuf = [0u8; 1024];
 
     for i in 0..data.len() {
-        let encoded = encode(&data[..i], &mut inbuf).unwrap();
+        let encoded = encode(&data[..i], &mut inbuf, false).unwrap();
 
         // Make sure it round trips
-        let decoded = decode(encoded, &mut outbuf).unwrap();
+        let decoded = decode(encoded, &mut outbuf, false).unwrap();
         assert_eq!(decoded, &data[..i]);
 
-        let elen = encode(&data[..i], &mut inbuf).unwrap().len();
+        let elen = encode(&data[..i], &mut inbuf, false).unwrap().len();
         let buf = &mut inbuf[..elen];
-        let decoded = decode_in_place(buf).unwrap();
+        let decoded = decode_in_place_unpadded(buf).unwrap();
         assert_eq!(decoded, &data[..i]);
 
         #[cfg(feature = "alloc")]
         {
-            let encoded = encode_string(&data[..i]);
-            let decoded = decode_vec(&encoded).unwrap();
+            let encoded = encode_string(&data[..i], false);
+            let decoded = decode_vec(&encoded, false).unwrap();
             assert_eq!(decoded, &data[..i]);
         }
     }
@@ -107,12 +109,12 @@ fn encode_and_decode_various_lengths() {
 fn reject_trailing_equals() {
     let input = "QME/vQVMciqjwvIRc8Bp6kl9NSlrzCRl9vnQQQh716k=";
     let mut buf = [0u8; 1024];
-    assert_eq!(decode(input, &mut buf), Err(Error::InvalidEncoding));
+    assert_eq!(decode(input, &mut buf, false), Err(Error::InvalidEncoding));
 }
 
 #[test]
 fn reject_trailing_whitespace() {
     let input = "QME/vQVMciqjwvIRc8Bp6kl9NSlrzCRl9vnQQQh716k\n";
     let mut buf = [0u8; 1024];
-    assert_eq!(decode(input, &mut buf), Err(Error::InvalidEncoding));
+    assert_eq!(decode(input, &mut buf, false), Err(Error::InvalidEncoding));
 }
