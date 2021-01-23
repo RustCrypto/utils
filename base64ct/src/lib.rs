@@ -15,7 +15,7 @@
 //! [PHC string format]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md
 //! [RFC 4648, section 4]: https://tools.ietf.org/html/rfc4648#section-4
 
-#![no_std]
+//#![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
@@ -50,61 +50,41 @@ pub fn encode<'a>(
     dst: &'a mut [u8],
     padded: bool,
 ) -> Result<&'a str, InvalidLengthError> {
+    let elen = match encoded_len_inner(src.len(), padded) {
+        Some(v) => v,
+        None => return Err(InvalidLengthError),
+    };
+
+    if elen > dst.len() {
+        return Err(InvalidLengthError);
+    }
+
+    let dst = &mut dst[..elen];
+
     if padded {
-        if encoded_len(src, true) > dst.len() {
-            return Err(InvalidLengthError);
-        }
+        for (s, d) in src.chunks(3).zip(dst.chunks_mut(4)) {
+            if s.len() == 3 {
+                encode_3bytes(s, d);
+            } else {
+                let mut tmp = [0u8; 3];
+                tmp[..s.len()].copy_from_slice(&s);
+                encode_3bytes(&tmp, d);
 
-        let mut src_offset: usize = 0;
-        let mut dst_offset: usize = 0;
-        let mut src_length: usize = src.len();
+                d[3] = PAD;
 
-        while src_length >= 3 {
-            encode_3bytes(
-                &src[src_offset..(src_offset + 3)],
-                &mut dst[dst_offset..(dst_offset + 4)],
-            );
-
-            src_offset += 3;
-            dst_offset += 4;
-            src_length -= 3;
-        }
-
-        if src_length > 0 {
-            let mut tmp = [0u8; 3];
-            tmp[..src_length].copy_from_slice(&src[src_offset..(src_offset + src_length)]);
-            encode_3bytes(&tmp, &mut dst[dst_offset..]);
-
-            dst[dst_offset + 3] = PAD;
-
-            if src_length == 1 {
-                dst[dst_offset + 2] = PAD;
+                if s.len() == 1 {
+                    d[2] = PAD;
+                }
             }
-
-            dst_offset += 4;
         }
-
-        let dst = &dst[..dst_offset];
-        debug_assert!(str::from_utf8(dst).is_ok());
-        // SAFETY: values written by `encode_3bytes` are valid one-byte UTF-8 chars
-        Ok(unsafe { str::from_utf8_unchecked(dst) })
     } else {
-        let elen = match encoded_len_inner(src.len(), false) {
-            Some(v) => v,
-            None => return Err(InvalidLengthError),
-        };
-
-        if elen > dst.len() {
-            return Err(InvalidLengthError);
-        }
-
-        let dst = &mut dst[..elen];
-
         let mut src_chunks = src.chunks_exact(3);
         let mut dst_chunks = dst.chunks_exact_mut(4);
+
         for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
             encode_3bytes(s, d);
         }
+
         let src_rem = src_chunks.remainder();
         let dst_rem = dst_chunks.into_remainder();
 
@@ -113,11 +93,11 @@ pub fn encode<'a>(
         tmp_in[..src_rem.len()].copy_from_slice(src_rem);
         encode_3bytes(&tmp_in, &mut tmp_out);
         dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
-
-        debug_assert!(str::from_utf8(dst).is_ok());
-        // SAFETY: values written by `encode_3bytes` are valid one-byte UTF-8 chars
-        Ok(unsafe { str::from_utf8_unchecked(dst) })
     }
+
+    debug_assert!(str::from_utf8(dst).is_ok());
+    // SAFETY: values written by `encode_3bytes` are valid one-byte UTF-8 chars
+    Ok(unsafe { str::from_utf8_unchecked(dst) })
 }
 
 /// Encode the input byte slice as a Base64-encoded [`String`].
