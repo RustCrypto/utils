@@ -15,7 +15,7 @@
 //! [PHC string format]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md
 //! [RFC 4648, section 4]: https://tools.ietf.org/html/rfc4648#section-4
 
-//#![no_std]
+#![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
@@ -145,70 +145,39 @@ const fn encoded_len_inner(n: usize, padded: bool) -> Option<usize> {
 
 /// Decode the provided Base64 string into the provided destination buffer.
 pub fn decode<'a>(src: &str, dst: &'a mut [u8], padded: bool) -> Result<&'a [u8], Error> {
+    let dlen = decoded_len(src, padded);
+    if dlen > dst.len() {
+        return Err(Error::InvalidLength);
+    }
+    let src = src.as_bytes();
+    let dst = &mut dst[..dlen];
+    let mut err: isize = 0;
+
     if padded {
-        if let Some(c) = src.chars().last() {
-            if c.is_whitespace() {
-                return Err(Error::InvalidEncoding);
+        for (s, d) in src.chunks(4).zip(dst.chunks_mut(3)) {
+            if d.len() == 3 {
+                err |= decode_3bytes(s, d);
+            } else {
+                let mut i = 0;
+                let mut tmp_out = [0u8; 3];
+                let mut tmp_in = [b'A'; 4];
+
+                while i < s.len() && s[i] != PAD {
+                    tmp_in[i] = s[i];
+                    i += 1;
+                }
+
+                if i < 2 {
+                    err = 1;
+                }
+
+                let src_length = i - 1;
+                err |= decode_3bytes(&tmp_in, &mut tmp_out);
+
+                d[..src_length].copy_from_slice(&tmp_out[..src_length]);
             }
-        }
-
-        if decoded_len(src, true) > dst.len() {
-            return Err(Error::InvalidEncoding);
-        }
-
-        let src = src.as_bytes();
-
-        let mut src_offset: usize = 0;
-        let mut dst_offset: usize = 0;
-        let mut src_length: usize = src.len();
-        let mut err: isize = 0;
-
-        while src_length > 4 {
-            err |= decode_3bytes(
-                &src[src_offset..(src_offset + 4)],
-                &mut dst[dst_offset..(dst_offset + 3)],
-            );
-            src_offset += 4;
-            dst_offset += 3;
-            src_length -= 4;
-        }
-
-        if src_length > 0 {
-            let mut i = 0;
-            let mut tmp_out = [0u8; 3];
-            let mut tmp_in = [b'A'; 4];
-
-            while i < src_length && src[src_offset + i] != PAD {
-                tmp_in[i] = src[src_offset + i];
-                i += 1;
-            }
-
-            if i < 2 {
-                err = 1;
-            }
-
-            src_length = i - 1;
-            err |= decode_3bytes(&tmp_in, &mut tmp_out);
-
-            dst[dst_offset..(dst_offset + src_length)].copy_from_slice(&tmp_out[..src_length]);
-            dst_offset += i - 1;
-        }
-
-        if err == 0 {
-            Ok(&dst[..dst_offset])
-        } else {
-            Err(Error::InvalidEncoding)
         }
     } else {
-        let dlen = decoded_len(src, false);
-        if dlen > dst.len() {
-            return Err(Error::InvalidLength);
-        }
-        let src = src.as_bytes();
-        let dst = &mut dst[..dlen];
-
-        let mut err: isize = 0;
-
         let mut src_chunks = src.chunks_exact(4);
         let mut dst_chunks = dst.chunks_exact_mut(3);
         for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
@@ -223,12 +192,12 @@ pub fn decode<'a>(src: &str, dst: &'a mut [u8], padded: bool) -> Result<&'a [u8]
         tmp_in[..src_rem.len()].copy_from_slice(src_rem);
         err |= decode_3bytes(&tmp_in, &mut tmp_out);
         dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
+    }
 
-        if err == 0 {
-            Ok(dst)
-        } else {
-            Err(Error::InvalidEncoding)
-        }
+    if err == 0 {
+        Ok(dst)
+    } else {
+        Err(Error::InvalidEncoding)
     }
 }
 
