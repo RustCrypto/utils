@@ -51,7 +51,7 @@ pub(crate) fn decode(s: &str, boundary: Boundary) -> Result<Zeroizing<Vec<u8>>> 
     // TODO(tarcieri): less lenient, constant-time implementation
     s.retain(|c| c != '=' && !c.is_whitespace());
 
-    base64::decode_vec(&*s)
+    base64::decode_vec(&*s, true)
         .map_err(|_| Error::Decode)
         .map(Zeroizing::new)
 }
@@ -62,7 +62,7 @@ pub(crate) fn encode(data: &[u8], boundary: Boundary) -> String {
     let mut output = String::new();
     output.push_str(boundary.pre);
 
-    let b64 = Zeroizing::new(base64::encode_string(data));
+    let b64 = Zeroizing::new(base64::encode_string(data, true));
     let chunks = b64.as_bytes().chunks(CHUNK_SIZE);
     let nchunks = chunks.len();
 
