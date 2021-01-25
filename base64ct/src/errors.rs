@@ -15,29 +15,17 @@ impl fmt::Display for InvalidLengthError {
 #[cfg(feature = "std")]
 impl std::error::Error for InvalidLengthError {}
 
-/// Invalid encoding of provided "B64" string.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct InvalidEncodingError;
-
-impl fmt::Display for InvalidEncodingError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        f.write_str("invalid B64 encoding")
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for InvalidEncodingError {}
-
 /// Generic error, union of [`InvalidLengthError`] and [`InvalidEncodingError`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Error {
+pub enum DecodeError {
     /// Insufficient output buffer length.
     InvalidEncoding,
+
     /// Invalid encoding of provided "B64" string.
     InvalidLength,
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         let s = match self {
             Self::InvalidEncoding => "invalid B64 encoding",
@@ -47,19 +35,12 @@ impl fmt::Display for Error {
     }
 }
 
-impl From<InvalidEncodingError> for Error {
+impl From<InvalidLengthError> for DecodeError {
     #[inline]
-    fn from(_: InvalidEncodingError) -> Error {
-        Error::InvalidEncoding
-    }
-}
-
-impl From<InvalidLengthError> for Error {
-    #[inline]
-    fn from(_: InvalidLengthError) -> Error {
-        Error::InvalidLength
+    fn from(_: InvalidLengthError) -> DecodeError {
+        DecodeError::InvalidLength
     }
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {}
+impl std::error::Error for DecodeError {}

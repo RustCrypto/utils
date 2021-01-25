@@ -33,7 +33,7 @@ extern crate std;
 
 mod errors;
 
-pub use errors::{Error, InvalidEncodingError, InvalidLengthError};
+pub use errors::{DecodeError, InvalidLengthError};
 
 use core::str;
 
@@ -89,6 +89,7 @@ pub fn encode<'a>(
     }
 
     debug_assert!(str::from_utf8(dst).is_ok());
+
     // SAFETY: values written by `encode_3bytes` are valid one-byte UTF-8 chars
     Ok(unsafe { str::from_utf8_unchecked(dst) })
 }
@@ -103,8 +104,10 @@ pub fn encode_string(input: &[u8], padded: bool) -> String {
     let elen = encoded_len(input, padded);
     let mut dst = vec![0u8; elen];
     let res = encode(input, &mut dst, padded).expect("encoding error");
+
     debug_assert_eq!(elen, res.len());
     debug_assert!(str::from_utf8(&dst).is_ok());
+
     // SAFETY: `dst` is fully written and contains only valid one-byte UTF-8 chars
     unsafe { String::from_utf8_unchecked(dst) }
 }
@@ -138,64 +141,59 @@ const fn encoded_len_inner(n: usize, padded: bool) -> Option<usize> {
 }
 
 /// Decode the provided Base64 string into the provided destination buffer.
-#[inline]
-pub fn decode<'a>(src: &str, dst: &'a mut [u8], padded: bool) -> Result<&'a [u8], Error> {
-    let dlen = decoded_len(src, padded);
-    if dlen > dst.len() {
-        return Err(Error::InvalidLength);
-    }
-    let src = src.as_bytes();
-    let dst = &mut dst[..dlen];
-    let mut err: i16 = 0;
+pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u8], DecodeError> {
+    let mut src = src.as_ref();
+    let mut err = 0;
 
     if padded {
-        for (s, d) in src.chunks(4).zip(dst.chunks_mut(3)) {
-            if d.len() == 3 {
-                err |= decode_3bytes(s, d);
-            } else {
-                err |= decode_3bytes_padded(s, d);
-            }
-        }
-    } else {
-        let mut src_chunks = src.chunks_exact(4);
-        let mut dst_chunks = dst.chunks_exact_mut(3);
-        for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
-            err |= decode_3bytes(s, d);
-        }
-        let src_rem = src_chunks.remainder();
-        let dst_rem = dst_chunks.into_remainder();
+        err = validate_padding(src)?;
+        src = &src[..unpadded_len_ct(src)];
+    };
 
-        err |= !(src_rem.is_empty() || src_rem.len() >= 2) as i16;
-        let mut tmp_out = [0u8; 3];
-        let mut tmp_in = [b'A'; 4];
-        tmp_in[..src_rem.len()].copy_from_slice(src_rem);
-        err |= decode_3bytes(&tmp_in, &mut tmp_out);
-        dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
+    let dlen = decoded_len(src.len());
+
+    if dlen > dst.len() {
+        return Err(DecodeError::InvalidLength);
     }
+
+    let dst = &mut dst[..dlen];
+
+    let mut src_chunks = src.chunks_exact(4);
+    let mut dst_chunks = dst.chunks_exact_mut(3);
+    for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
+        err |= decode_3bytes(s, d);
+    }
+    let src_rem = src_chunks.remainder();
+    let dst_rem = dst_chunks.into_remainder();
+
+    err |= !(src_rem.is_empty() || src_rem.len() >= 2) as i16;
+    let mut tmp_out = [0u8; 3];
+    let mut tmp_in = [b'A'; 4];
+    tmp_in[..src_rem.len()].copy_from_slice(src_rem);
+    err |= decode_3bytes(&tmp_in, &mut tmp_out);
+    dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
 
     if err == 0 {
         Ok(dst)
     } else {
-        Err(Error::InvalidEncoding)
+        Err(DecodeError::InvalidEncoding)
     }
 }
 
 /// Decode Base64-encoded string in-place.
-#[inline]
-pub fn decode_in_place(buf: &mut [u8], padded: bool) -> Result<&[u8], InvalidEncodingError> {
+pub fn decode_in_place(mut buf: &mut [u8], padded: bool) -> Result<&[u8], DecodeError> {
     // TODO: eliminate unsafe code when compiler will be smart enough to
     // eliminate bound checks, see: https://github.com/rust-lang/rust/issues/80963
-    let mut err: i16 = 0;
-    let dlen = decoded_len(&buf, padded);
-    let full_chunks = if padded {
-        if buf.len() % 4 != 0 {
-            return Err(InvalidEncodingError);
-        }
+    let mut err = 0;
 
-        (buf.len() / 4).saturating_sub(1)
-    } else {
-        buf.len() / 4
+    if padded {
+        err = validate_padding(buf)?;
+        let unpadded_len = unpadded_len_ct(buf);
+        buf = &mut buf[..unpadded_len];
     };
+
+    let dlen = decoded_len(buf.len());
+    let full_chunks = buf.len() / 4;
 
     for chunk in 0..full_chunks {
         // SAFETY: `p3` and `p4` point inside `buf`, while they may overlap,
@@ -224,11 +222,7 @@ pub fn decode_in_place(buf: &mut [u8], padded: bool) -> Result<&[u8], InvalidEnc
     tmp_in[..src_rem_len].copy_from_slice(&buf[src_rem_pos..]);
     let mut tmp_out = [0u8; 3];
 
-    err |= if padded {
-        decode_3bytes_padded(&tmp_in, &mut tmp_out)
-    } else {
-        decode_3bytes(&tmp_in, &mut tmp_out)
-    };
+    err |= decode_3bytes(&tmp_in, &mut tmp_out);
 
     if err == 0 {
         // SAFETY: `dst_rem_len` is always smaller than 4, so we don't
@@ -247,40 +241,39 @@ pub fn decode_in_place(buf: &mut [u8], padded: bool) -> Result<&[u8], InvalidEnc
             Ok(buf.get_unchecked(..dlen))
         }
     } else {
-        Err(InvalidEncodingError)
+        Err(DecodeError::InvalidEncoding)
     }
 }
 
 /// Decode a Base64-encoded string into a byte vector.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-pub fn decode_vec(input: &str, padded: bool) -> Result<Vec<u8>, Error> {
-    let dlen = decoded_len(input, padded);
+pub fn decode_vec(input: &str, padded: bool) -> Result<Vec<u8>, DecodeError> {
+    let slen = if padded {
+        unpadded_len_ct(input.as_bytes())
+    } else {
+        input.as_bytes().len()
+    };
+
+    let dlen = decoded_len(slen);
+
     let mut output = vec![0u8; dlen];
     let res = decode(input, &mut output, padded)?;
     debug_assert_eq!(dlen, res.len());
     Ok(output)
 }
 
-/// Get the length of the output from decoding the provided Base64-encoded input.
+/// Get the length of the output from decoding the provided *unpadded*
+/// Base64-encoded input (use [`unpadded_len_ct`] to compute this value for
+/// a padded input)
 ///
 /// Note that this function does not fully validate the Base64 is well-formed
 /// and may return incorrect results for malformed Base64.
-///
-/// It is designed to be used in conjunction with [`decode`].
 #[inline]
-pub fn decoded_len(input: impl AsRef<[u8]>, padded: bool) -> usize {
-    let bytes = input.as_ref();
-
-    let n = if padded {
-        unpadded_len_ct(bytes)
-    } else {
-        bytes.len()
-    };
-
+const fn decoded_len(input_len: usize) -> usize {
     // overflow-proof computation of `(3*n)/4`
-    let k = n / 4;
-    let l = n - 4 * k;
+    let k = input_len / 4;
+    let l = input_len - 4 * k;
     3 * k + (3 * l) / 4
 }
 
@@ -355,26 +348,6 @@ fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> i16 {
 }
 
 #[inline(always)]
-fn decode_3bytes_padded(src: &[u8], dst: &mut [u8]) -> i16 {
-    let mut err = 0;
-    let mut tmp_out = [0u8; 3];
-    let mut tmp_in = [b'A'; 4];
-
-    let src_len = unpadded_len_ct(src);
-
-    if src_len < 2 {
-        err = 1;
-    }
-
-    tmp_in[..src_len].copy_from_slice(&src[..src_len]);
-
-    let dst_len = src_len - 1;
-    err |= decode_3bytes(&tmp_in, &mut tmp_out);
-    dst[..dst_len].copy_from_slice(&tmp_out[..dst_len]);
-    err
-}
-
-#[inline(always)]
 fn decode_6bits(src: u8) -> i16 {
     let mut res: i16 = -1;
 
@@ -415,5 +388,38 @@ fn unpadded_len_ct(input: &[u8]) -> usize {
             input.len() - pad_len as usize
         }
         _ => input.len(),
+    }
+}
+
+/// Validate padding is well-formed.
+///
+/// Returns length-related errors eagerly as a [`Result`]], and data-dependent
+/// errors (i.e. malformed padding bytes) as `i16` to be combined with other
+/// encoding-related errors prior to branching.
+fn validate_padding(input: &[u8]) -> Result<i16, DecodeError> {
+    if input.len() % 4 != 0 {
+        match input.last().cloned() {
+            // TODO(tarcieri): constant-time whitespace check
+            Some(byte) if char::from(byte).is_whitespace() => {
+                return Err(DecodeError::InvalidEncoding)
+            }
+            _ => return Err(DecodeError::InvalidLength),
+        }
+    }
+
+    let padding_len = input.len() - unpadded_len_ct(input);
+
+    match *input {
+        [.., b0] if padding_len == 1 => Ok(match_byte_ct(b0, PAD, 1) ^ 1),
+        [.., b0, b1] if padding_len == 2 => {
+            Ok((match_byte_ct(b0, PAD, 1) & match_byte_ct(b1, PAD, 1)) ^ 1)
+        }
+        _ => {
+            if padding_len == 0 {
+                Ok(0)
+            } else {
+                Err(DecodeError::InvalidLength)
+            }
+        }
     }
 }

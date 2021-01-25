@@ -1,6 +1,6 @@
 //! Base64 tests
 
-use base64ct::{decode, decode_in_place, decoded_len, encode, encoded_len, Error};
+use base64ct::{decode, decode_in_place, encode, encoded_len, DecodeError};
 
 #[cfg(feature = "alloc")]
 use base64ct::{decode_vec, encode_string};
@@ -94,7 +94,6 @@ fn decode_test_vectors() {
     for &(vectors, padded) in &[(PADDED_TEST_VECTORS, true), (UNPADDED_TEST_VECTORS, false)] {
         for vector in vectors {
             let out = decode(vector.b64, &mut buf, padded).unwrap();
-            assert_eq!(decoded_len(vector.b64, padded), out.len());
             assert_eq!(vector.raw, &out[..]);
 
             let n = vector.b64.len();
@@ -144,7 +143,10 @@ fn encode_and_decode_various_lengths() {
 fn unpadded_reject_trailing_equals() {
     let input = "QME/vQVMciqjwvIRc8Bp6kl9NSlrzCRl9vnQQQh716k=";
     let mut buf = [0u8; 1024];
-    assert_eq!(decode(input, &mut buf, false), Err(Error::InvalidEncoding));
+    assert_eq!(
+        decode(input, &mut buf, false),
+        Err(DecodeError::InvalidEncoding)
+    );
 }
 
 #[test]
@@ -152,6 +154,9 @@ fn reject_trailing_whitespace() {
     for &padded in &[false, true] {
         let input = "QME/vQVMciqjwvIRc8Bp6kl9NSlrzCRl9vnQQQh716k\n";
         let mut buf = [0u8; 1024];
-        assert_eq!(decode(input, &mut buf, padded), Err(Error::InvalidEncoding));
+        assert_eq!(
+            decode(input, &mut buf, padded),
+            Err(DecodeError::InvalidEncoding)
+        );
     }
 }
