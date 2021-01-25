@@ -146,7 +146,7 @@ pub fn decode<'a>(src: &str, dst: &'a mut [u8], padded: bool) -> Result<&'a [u8]
     }
     let src = src.as_bytes();
     let dst = &mut dst[..dlen];
-    let mut err: isize = 0;
+    let mut err: i16 = 0;
 
     if padded {
         for (s, d) in src.chunks(4).zip(dst.chunks_mut(3)) {
@@ -165,7 +165,7 @@ pub fn decode<'a>(src: &str, dst: &'a mut [u8], padded: bool) -> Result<&'a [u8]
         let src_rem = src_chunks.remainder();
         let dst_rem = dst_chunks.into_remainder();
 
-        err |= !(src_rem.is_empty() || src_rem.len() >= 2) as isize;
+        err |= !(src_rem.is_empty() || src_rem.len() >= 2) as i16;
         let mut tmp_out = [0u8; 3];
         let mut tmp_in = [b'A'; 4];
         tmp_in[..src_rem.len()].copy_from_slice(src_rem);
@@ -185,7 +185,7 @@ pub fn decode<'a>(src: &str, dst: &'a mut [u8], padded: bool) -> Result<&'a [u8]
 pub fn decode_in_place(buf: &mut [u8], padded: bool) -> Result<&[u8], InvalidEncodingError> {
     // TODO: eliminate unsafe code when compiler will be smart enough to
     // eliminate bound checks, see: https://github.com/rust-lang/rust/issues/80963
-    let mut err: isize = 0;
+    let mut err: i16 = 0;
     let dlen = decoded_len(&buf, padded);
     let full_chunks = if padded {
         if buf.len() % 4 != 0 {
@@ -219,7 +219,7 @@ pub fn decode_in_place(buf: &mut [u8], padded: bool) -> Result<&[u8], InvalidEnc
     let dst_rem_pos = 3 * full_chunks;
     let dst_rem_len = dlen - dst_rem_pos;
 
-    err |= !(src_rem_len == 0 || src_rem_len >= 2) as isize;
+    err |= !(src_rem_len == 0 || src_rem_len >= 2) as i16;
     let mut tmp_in = [b'A'; 4];
     tmp_in[..src_rem_len].copy_from_slice(&buf[src_rem_pos..]);
     let mut tmp_out = [0u8; 3];
@@ -263,34 +263,25 @@ pub fn decode_vec(input: &str, padded: bool) -> Result<Vec<u8>, Error> {
 }
 
 /// Get the length of the output from decoding the provided Base64-encoded input.
+///
+/// Note that this function does not fully validate the Base64 is well-formed
+/// and may return incorrect results for malformed Base64.
+///
+/// It is designed to be used in conjunction with [`decode`].
 #[inline]
 pub fn decoded_len(input: impl AsRef<[u8]>, padded: bool) -> usize {
-    if padded {
-        let bytes = input.as_ref();
+    let bytes = input.as_ref();
 
-        if bytes.is_empty() {
-            return 0;
-        }
-
-        let mut i = bytes.len() - 1;
-        let mut pad_count: usize = 0;
-
-        // TODO(tarcieri): reimplement this in a constant-time manner
-        // This loop presently uses a data-dependent branch
-        while i > 0 && bytes[i] == PAD {
-            pad_count += 1;
-            i -= 1;
-        }
-
-        // TODO(tarcieri): fix potential overflow
-        ((bytes.len() - pad_count) * 3) / 4
+    let n = if padded {
+        unpadded_len_ct(bytes)
     } else {
-        // branchless, overflow-proof computation of `(3*n)/4`
-        let n = input.as_ref().len();
-        let k = n / 4;
-        let l = n - 4 * k;
-        3 * k + (3 * l) / 4
-    }
+        bytes.len()
+    };
+
+    // overflow-proof computation of `(3*n)/4`
+    let k = n / 4;
+    let l = n - 4 * k;
+    3 * k + (3 * l) / 4
 }
 
 // Base64 character set:
@@ -304,9 +295,9 @@ fn encode_3bytes(src: &[u8], dst: &mut [u8]) {
     debug_assert_eq!(src.len(), 3);
     debug_assert!(dst.len() >= 4, "dst too short: {}", dst.len());
 
-    let b0 = src[0] as isize;
-    let b1 = src[1] as isize;
-    let b2 = src[2] as isize;
+    let b0 = src[0] as i16;
+    let b1 = src[1] as i16;
+    let b2 = src[2] as i16;
 
     dst[0] = encode_6bits(b0 >> 2);
     dst[1] = encode_6bits(((b0 << 4) | (b1 >> 4)) & 63);
@@ -328,26 +319,26 @@ fn encode_3bytes_padded(src: &[u8], dst: &mut [u8]) {
 }
 
 #[inline(always)]
-fn encode_6bits(src: isize) -> u8 {
-    let mut diff = 0x41isize;
+fn encode_6bits(src: i16) -> u8 {
+    let mut diff = 0x41i16;
 
     // if (in > 25) diff += 0x61 - 0x41 - 26; // 6
-    diff += ((25isize - src) >> 8) & 6;
+    diff += ((25i16 - src) >> 8) & 6;
 
     // if (in > 51) diff += 0x30 - 0x61 - 26; // -75
-    diff -= ((51isize - src) >> 8) & 75;
+    diff -= ((51i16 - src) >> 8) & 75;
 
     // if (in > 61) diff += 0x2b - 0x30 - 10; // -15
-    diff -= ((61isize - src) >> 8) & 15;
+    diff -= ((61i16 - src) >> 8) & 15;
 
     // if (in > 62) diff += 0x2f - 0x2b - 1; // 3
-    diff += ((62isize - src) >> 8) & 3;
+    diff += ((62i16 - src) >> 8) & 3;
 
     (src + diff) as u8
 }
 
 #[inline(always)]
-fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> isize {
+fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> i16 {
     debug_assert_eq!(src.len(), 4);
     debug_assert!(dst.len() >= 3, "dst too short: {}", dst.len());
 
@@ -364,44 +355,65 @@ fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> isize {
 }
 
 #[inline(always)]
-fn decode_3bytes_padded(src: &[u8], dst: &mut [u8]) -> isize {
-    let mut i = 0;
+fn decode_3bytes_padded(src: &[u8], dst: &mut [u8]) -> i16 {
     let mut err = 0;
     let mut tmp_out = [0u8; 3];
     let mut tmp_in = [b'A'; 4];
 
-    while i < src.len() && src[i] != PAD {
-        tmp_in[i] = src[i];
-        i += 1;
-    }
+    let src_len = unpadded_len_ct(src);
 
-    if i < 2 {
+    if src_len < 2 {
         err = 1;
     }
 
-    let len = i - 1;
+    tmp_in[..src_len].copy_from_slice(&src[..src_len]);
+
+    let dst_len = src_len - 1;
     err |= decode_3bytes(&tmp_in, &mut tmp_out);
-    dst[..len].copy_from_slice(&tmp_out[..len]);
+    dst[..dst_len].copy_from_slice(&tmp_out[..dst_len]);
     err
 }
 
 #[inline(always)]
-fn decode_6bits(src: u8) -> isize {
-    let ch = src as isize;
-    let mut ret: isize = -1;
+fn decode_6bits(src: u8) -> i16 {
+    let mut res: i16 = -1;
 
-    // if (ch > 0x40 && ch < 0x5b) ret += ch - 0x41 + 1; // -64
-    ret += (((64isize - ch) & (ch - 91isize)) >> 8) & (ch - 64isize);
+    // if (byte > 0x40 && byte < 0x5b) res += byte - 0x41 + 1; // -64
+    res += match_byte_range_ct(src, 0x40, 0x5b, src as i16 - 64);
 
-    // if (ch > 0x60 && ch < 0x7b) ret += ch - 0x61 + 26 + 1; // -70
-    ret += (((96isize - ch) & (ch - 123isize)) >> 8) & (ch - 70isize);
+    // if (byte > 0x60 && byte < 0x7b) res += byte - 0x61 + 26 + 1; // -70
+    res += match_byte_range_ct(src, 0x60, 0x7b, src as i16 - 70);
 
-    // if (ch > 0x2f && ch < 0x3a) ret += ch - 0x30 + 52 + 1; // 5
-    ret += (((47isize - ch) & (ch - 58isize)) >> 8) & (ch + 5isize);
+    // if (byte > 0x2f && byte < 0x3a) res += byte - 0x30 + 52 + 1; // 5
+    res += match_byte_range_ct(src, 0x2f, 0x3a, src as i16 + 5);
 
-    // if (ch == 0x2b) ret += 62 + 1;
-    ret += (((42isize - ch) & (ch - 44isize)) >> 8) & 63;
+    // if (byte == 0x2b) res += 62 + 1;
+    res += match_byte_ct(src, 0x2b, 63);
 
-    // if (ch == 0x2f) ret += 63 + 1;
-    ret + ((((46isize - ch) & (ch - 48isize)) >> 8) & 64)
+    // if (byte == 0x2f) res += 63 + 1;
+    res + match_byte_ct(src, 0x2f, 64)
+}
+
+/// Pseudo-branch operation
+#[inline(always)]
+fn match_byte_range_ct(input: u8, lo: u8, hi: u8, ret_on_match: i16) -> i16 {
+    (((lo as i16 - input as i16) & (input as i16 - hi as i16)) >> 8) & ret_on_match
+}
+
+/// Match a specific byte value
+#[inline(always)]
+fn match_byte_ct(input: u8, expected: u8, ret_on_match: i16) -> i16 {
+    match_byte_range_ct(input, expected - 1, expected + 1, ret_on_match)
+}
+
+/// Compute the length of the unpadded portion of a Base64-encoded string
+/// without data-dependent branches
+fn unpadded_len_ct(input: &[u8]) -> usize {
+    match *input {
+        [.., b0, b1] => {
+            let pad_len = match_byte_ct(b0, PAD, 1) + match_byte_ct(b1, PAD, 1);
+            input.len() - pad_len as usize
+        }
+        _ => input.len(),
+    }
 }
