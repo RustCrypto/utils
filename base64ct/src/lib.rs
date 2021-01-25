@@ -45,6 +45,7 @@ const PAD: u8 = b'=';
 
 /// Encode the input byte slice as Base64, writing the result into the provided
 /// destination slice, and returning an ASCII-encoded string value.
+#[inline]
 pub fn encode<'a>(
     src: &[u8],
     dst: &'a mut [u8],
@@ -66,15 +67,7 @@ pub fn encode<'a>(
             if s.len() == 3 {
                 encode_3bytes(s, d);
             } else {
-                let mut tmp = [0u8; 3];
-                tmp[..s.len()].copy_from_slice(&s);
-                encode_3bytes(&tmp, d);
-
-                d[3] = PAD;
-
-                if s.len() == 1 {
-                    d[2] = PAD;
-                }
+                encode_3bytes_padded(s, d);
             }
         }
     } else {
@@ -119,6 +112,7 @@ pub fn encode_string(input: &[u8], padded: bool) -> String {
 /// Get the Base64-encoded length of the given byte slice.
 ///
 /// WARNING: this function will return 0 for lengths greater than `usize::MAX/4`!
+#[inline]
 pub const fn encoded_len(bytes: &[u8], padded: bool) -> usize {
     // TODO: replace with `unwrap_or` on stabilization
     match encoded_len_inner(bytes.len(), padded) {
@@ -144,6 +138,7 @@ const fn encoded_len_inner(n: usize, padded: bool) -> Option<usize> {
 }
 
 /// Decode the provided Base64 string into the provided destination buffer.
+#[inline]
 pub fn decode<'a>(src: &str, dst: &'a mut [u8], padded: bool) -> Result<&'a [u8], Error> {
     let dlen = decoded_len(src, padded);
     if dlen > dst.len() {
@@ -158,23 +153,7 @@ pub fn decode<'a>(src: &str, dst: &'a mut [u8], padded: bool) -> Result<&'a [u8]
             if d.len() == 3 {
                 err |= decode_3bytes(s, d);
             } else {
-                let mut i = 0;
-                let mut tmp_out = [0u8; 3];
-                let mut tmp_in = [b'A'; 4];
-
-                while i < s.len() && s[i] != PAD {
-                    tmp_in[i] = s[i];
-                    i += 1;
-                }
-
-                if i < 2 {
-                    err = 1;
-                }
-
-                let src_length = i - 1;
-                err |= decode_3bytes(&tmp_in, &mut tmp_out);
-
-                d[..src_length].copy_from_slice(&tmp_out[..src_length]);
+                err |= decode_3bytes_padded(s, d);
             }
         }
     } else {
@@ -201,13 +180,22 @@ pub fn decode<'a>(src: &str, dst: &'a mut [u8], padded: bool) -> Result<&'a [u8]
     }
 }
 
-/// Decode unpadded Base64-encoded string in-place.
-// TODO(tarcieri): support for padded Base64
-pub fn decode_in_place_unpadded(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
+/// Decode Base64-encoded string in-place.
+#[inline]
+pub fn decode_in_place(buf: &mut [u8], padded: bool) -> Result<&[u8], InvalidEncodingError> {
     // TODO: eliminate unsafe code when compiler will be smart enough to
     // eliminate bound checks, see: https://github.com/rust-lang/rust/issues/80963
     let mut err: isize = 0;
-    let full_chunks = buf.len() / 4;
+    let dlen = decoded_len(&buf, padded);
+    let full_chunks = if padded {
+        if buf.len() % 4 != 0 {
+            return Err(InvalidEncodingError);
+        }
+
+        (buf.len() / 4).saturating_sub(1)
+    } else {
+        buf.len() / 4
+    };
 
     for chunk in 0..full_chunks {
         // SAFETY: `p3` and `p4` point inside `buf`, while they may overlap,
@@ -226,7 +214,6 @@ pub fn decode_in_place_unpadded(buf: &mut [u8]) -> Result<&[u8], InvalidEncoding
         }
     }
 
-    let dlen = decoded_len_inner_unpadded(buf.len());
     let src_rem_pos = 4 * full_chunks;
     let src_rem_len = buf.len() - src_rem_pos;
     let dst_rem_pos = 3 * full_chunks;
@@ -236,7 +223,12 @@ pub fn decode_in_place_unpadded(buf: &mut [u8]) -> Result<&[u8], InvalidEncoding
     let mut tmp_in = [b'A'; 4];
     tmp_in[..src_rem_len].copy_from_slice(&buf[src_rem_pos..]);
     let mut tmp_out = [0u8; 3];
-    err |= decode_3bytes(&tmp_in, &mut tmp_out);
+
+    err |= if padded {
+        decode_3bytes_padded(&tmp_in, &mut tmp_out)
+    } else {
+        decode_3bytes(&tmp_in, &mut tmp_out)
+    };
 
     if err == 0 {
         // SAFETY: `dst_rem_len` is always smaller than 4, so we don't
@@ -271,9 +263,10 @@ pub fn decode_vec(input: &str, padded: bool) -> Result<Vec<u8>, Error> {
 }
 
 /// Get the length of the output from decoding the provided Base64-encoded input.
-pub const fn decoded_len(input: &str, padded: bool) -> usize {
+#[inline]
+pub fn decoded_len(input: impl AsRef<[u8]>, padded: bool) -> usize {
     if padded {
-        let bytes = input.as_bytes();
+        let bytes = input.as_ref();
 
         if bytes.is_empty() {
             return 0;
@@ -282,23 +275,22 @@ pub const fn decoded_len(input: &str, padded: bool) -> usize {
         let mut i = bytes.len() - 1;
         let mut pad_count: usize = 0;
 
+        // TODO(tarcieri): reimplement this in a constant-time manner
+        // This loop presently uses a data-dependent branch
         while i > 0 && bytes[i] == PAD {
             pad_count += 1;
             i -= 1;
         }
 
+        // TODO(tarcieri): fix potential overflow
         ((bytes.len() - pad_count) * 3) / 4
     } else {
-        decoded_len_inner_unpadded(input.len())
+        // branchless, overflow-proof computation of `(3*n)/4`
+        let n = input.as_ref().len();
+        let k = n / 4;
+        let l = n - 4 * k;
+        3 * k + (3 * l) / 4
     }
-}
-
-#[inline(always)]
-const fn decoded_len_inner_unpadded(n: usize) -> usize {
-    // branchless, overflow-proof computation of `(3*n)/4`
-    let k = n / 4;
-    let l = n - 4 * k;
-    3 * k + (3 * l) / 4
 }
 
 // Base64 character set:
@@ -308,7 +300,7 @@ const fn decoded_len_inner_unpadded(n: usize) -> usize {
 // TODO(tarcieri): support for Base64url
 
 #[inline(always)]
-pub(crate) fn encode_3bytes(src: &[u8], dst: &mut [u8]) {
+fn encode_3bytes(src: &[u8], dst: &mut [u8]) {
     debug_assert_eq!(src.len(), 3);
     debug_assert!(dst.len() >= 4, "dst too short: {}", dst.len());
 
@@ -323,7 +315,20 @@ pub(crate) fn encode_3bytes(src: &[u8], dst: &mut [u8]) {
 }
 
 #[inline(always)]
-pub(crate) fn encode_6bits(src: isize) -> u8 {
+fn encode_3bytes_padded(src: &[u8], dst: &mut [u8]) {
+    let mut tmp = [0u8; 3];
+    tmp[..src.len()].copy_from_slice(&src);
+    encode_3bytes(&tmp, dst);
+
+    dst[3] = PAD;
+
+    if src.len() == 1 {
+        dst[2] = PAD;
+    }
+}
+
+#[inline(always)]
+fn encode_6bits(src: isize) -> u8 {
     let mut diff = 0x41isize;
 
     // if (in > 25) diff += 0x61 - 0x41 - 26; // 6
@@ -342,7 +347,7 @@ pub(crate) fn encode_6bits(src: isize) -> u8 {
 }
 
 #[inline(always)]
-pub(crate) fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> isize {
+fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> isize {
     debug_assert_eq!(src.len(), 4);
     debug_assert!(dst.len() >= 3, "dst too short: {}", dst.len());
 
@@ -359,7 +364,29 @@ pub(crate) fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> isize {
 }
 
 #[inline(always)]
-pub(crate) fn decode_6bits(src: u8) -> isize {
+fn decode_3bytes_padded(src: &[u8], dst: &mut [u8]) -> isize {
+    let mut i = 0;
+    let mut err = 0;
+    let mut tmp_out = [0u8; 3];
+    let mut tmp_in = [b'A'; 4];
+
+    while i < src.len() && src[i] != PAD {
+        tmp_in[i] = src[i];
+        i += 1;
+    }
+
+    if i < 2 {
+        err = 1;
+    }
+
+    let len = i - 1;
+    err |= decode_3bytes(&tmp_in, &mut tmp_out);
+    dst[..len].copy_from_slice(&tmp_out[..len]);
+    err
+}
+
+#[inline(always)]
+fn decode_6bits(src: u8) -> isize {
     let ch = src as isize;
     let mut ret: isize = -1;
 
