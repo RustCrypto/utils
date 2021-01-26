@@ -398,13 +398,7 @@ fn unpadded_len_ct(input: &[u8]) -> usize {
 /// encoding-related errors prior to branching.
 fn validate_padding(input: &[u8]) -> Result<i16, DecodeError> {
     if input.len() % 4 != 0 {
-        match input.last().cloned() {
-            // TODO(tarcieri): constant-time whitespace check
-            Some(byte) if char::from(byte).is_whitespace() => {
-                return Err(DecodeError::InvalidEncoding)
-            }
-            _ => return Err(DecodeError::InvalidLength),
-        }
+        return Err(DecodeError::InvalidEncoding);
     }
 
     let padding_len = input.len() - unpadded_len_ct(input);
