@@ -1,6 +1,6 @@
 //! Base64 tests
 
-use base64ct::{decode, decode_in_place, decoded_len, encode, encoded_len, Error};
+use base64ct::{decode, decode_in_place, encode, encoded_len, Error};
 
 #[cfg(feature = "alloc")]
 use base64ct::{decode_vec, encode_string};
@@ -94,7 +94,6 @@ fn decode_test_vectors() {
     for &(vectors, padded) in &[(PADDED_TEST_VECTORS, true), (UNPADDED_TEST_VECTORS, false)] {
         for vector in vectors {
             let out = decode(vector.b64, &mut buf, padded).unwrap();
-            assert_eq!(decoded_len(vector.b64, padded), out.len());
             assert_eq!(vector.raw, &out[..]);
 
             let n = vector.b64.len();

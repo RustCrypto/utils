@@ -48,12 +48,12 @@ pub(crate) fn decode(s: &str, boundary: Boundary) -> Result<Zeroizing<Vec<u8>>> 
 
     let mut s = Zeroizing::new(s.to_owned());
 
-    // TODO(tarcieri): less lenient, constant-time implementation
-    s.retain(|c| c != '=' && !c.is_whitespace());
+    // TODO(tarcieri): stricter constant-time whitespace trimming
+    s.retain(|c| !c.is_whitespace());
 
     base64::decode_vec(&*s, true)
-        .map_err(|_| Error::Decode)
         .map(Zeroizing::new)
+        .map_err(|_| Error::Decode)
 }
 
 /// Serialize "PEM encoding" as described in RFC 7468:

@@ -33,6 +33,7 @@ impl std::error::Error for InvalidEncodingError {}
 pub enum Error {
     /// Insufficient output buffer length.
     InvalidEncoding,
+
     /// Invalid encoding of provided "B64" string.
     InvalidLength,
 }
