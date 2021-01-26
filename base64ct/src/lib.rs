@@ -12,7 +12,6 @@
 //! Copyright (c) 2014 Steve "Sc00bz" Thomas (steve at tobtu dot com).
 //! Derived code is dual licensed MIT + Apache 2 (with permission from Sc00bz).
 //!
-//! [PHC string format]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md
 //! [RFC 4648, section 4]: https://tools.ietf.org/html/rfc4648#section-4
 
 #![no_std]
@@ -43,13 +42,248 @@ use alloc::{string::String, vec::Vec};
 /// Padding character
 const PAD: u8 = b'=';
 
+/// Standard encoding for bytes 62 and 63
+const STD_HI_BYTES: (u8, u8) = (b'+', b'/');
+
+/// Standard Base64 encoding with `=` padding.
+///
+/// ```text
+/// [A-Z]      [a-z]      [0-9]      +     /
+/// 0x41-0x5a, 0x61-0x7a, 0x30-0x39, 0x2b, 0x2f
+/// ```
+pub mod padded {
+    use crate::{Error, InvalidEncodingError, InvalidLengthError, STD_HI_BYTES};
+
+    #[cfg(feature = "alloc")]
+    use alloc::{string::String, vec::Vec};
+
+    /// Decode a standard Base64 with padding string into the provided
+    /// destination buffer.
+    pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error> {
+        crate::decode(src, dst, true, STD_HI_BYTES)
+    }
+
+    /// Decode a standard Base64 string with padding in-place.
+    pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
+        crate::decode_in_place(buf, true, STD_HI_BYTES)
+    }
+
+    /// Decode a standard Base64 string with padding into a byte vector.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
+        crate::decode_vec(input, true, STD_HI_BYTES)
+    }
+
+    /// Encode the input byte slice as standard Base64 with padding.
+    ///
+    /// Writes the result into the provided destination slice, returning an
+    /// ASCII-encoded Base64 string value.
+    pub fn encode<'a>(src: &[u8], dst: &'a mut [u8]) -> Result<&'a str, InvalidLengthError> {
+        crate::encode(src, dst, true, STD_HI_BYTES)
+    }
+
+    /// Encode input byte slice into a [`String`] containing standard Base64
+    /// with padding.
+    ///
+    /// # Panics
+    /// If `input` length is greater than `usize::MAX/4`.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    pub fn encode_string(input: &[u8]) -> String {
+        crate::encode_string(input, true, STD_HI_BYTES)
+    }
+
+    /// Get the length of padded Base64 produced by encoding the given bytes.
+    ///
+    /// WARNING: this function will return `0` for lengths greater than `usize::MAX/4`!
+    pub fn encoded_len(bytes: &[u8]) -> usize {
+        crate::encoded_len(bytes, true)
+    }
+}
+
+/// Standard Base64 encoding *without* padding.
+///
+/// ```text
+/// [A-Z]      [a-z]      [0-9]      +     /
+/// 0x41-0x5a, 0x61-0x7a, 0x30-0x39, 0x2b, 0x2f
+/// ```
+pub mod unpadded {
+    use crate::{Error, InvalidEncodingError, InvalidLengthError, STD_HI_BYTES};
+
+    #[cfg(feature = "alloc")]
+    use alloc::{string::String, vec::Vec};
+
+    /// Decode a standard Base64 string without padding into the provided
+    /// destination buffer.
+    pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error> {
+        crate::decode(src, dst, false, STD_HI_BYTES)
+    }
+
+    /// Decode a standard Base64 string without padding in-place.
+    pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
+        crate::decode_in_place(buf, false, STD_HI_BYTES)
+    }
+
+    /// Decode a standard Base64 string without padding into a byte vector.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
+        crate::decode_vec(input, false, STD_HI_BYTES)
+    }
+
+    /// Encode the input byte slice as standard Base64 with padding.
+    ///
+    /// Writes the result into the provided destination slice, returning an
+    /// ASCII-encoded Base64 string value.
+    pub fn encode<'a>(src: &[u8], dst: &'a mut [u8]) -> Result<&'a str, InvalidLengthError> {
+        crate::encode(src, dst, false, STD_HI_BYTES)
+    }
+
+    /// Encode input byte slice into a [`String`] containing standard Base64
+    /// without padding.
+    ///
+    /// # Panics
+    /// If `input` length is greater than `usize::MAX/4`.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    pub fn encode_string(input: &[u8]) -> String {
+        crate::encode_string(input, false, STD_HI_BYTES)
+    }
+
+    /// Get the length of unpadded Base64 produced by encoding the given bytes.
+    ///
+    /// WARNING: this function will return `0` for lengths greater than `usize::MAX/4`!
+    pub fn encoded_len(bytes: &[u8]) -> usize {
+        crate::encoded_len(bytes, false)
+    }
+}
+
+/// URL-safe Base64 encoding.
+///
+/// ```text
+/// [A-Z]      [a-z]      [0-9]      -     _
+/// 0x41-0x5a, 0x61-0x7a, 0x30-0x39, 0x2d, 0x5f
+/// ```
+pub mod url {
+    /// Encoding for bytes 62 and 63
+    const URL_HI_BYTES: (u8, u8) = (b'-', b'_');
+
+    /// URL-safe Base64 encoding with `=` padding.
+    pub mod padded {
+        use super::URL_HI_BYTES;
+        use crate::{Error, InvalidEncodingError, InvalidLengthError};
+
+        #[cfg(feature = "alloc")]
+        use alloc::{string::String, vec::Vec};
+
+        /// Decode a URL-safe Base64 with padding string into the provided
+        /// destination buffer.
+        pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error> {
+            crate::decode(src, dst, true, URL_HI_BYTES)
+        }
+
+        /// Decode a URL-safe Base64 string with padding in-place.
+        pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
+            crate::decode_in_place(buf, true, URL_HI_BYTES)
+        }
+
+        /// Decode a URL-safe Base64 string with padding into a byte vector.
+        #[cfg(feature = "alloc")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+        pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
+            crate::decode_vec(input, true, URL_HI_BYTES)
+        }
+
+        /// Encode the input byte slice as URL-safe Base64 with padding.
+        ///
+        /// Writes the result into the provided destination slice, returning an
+        /// ASCII-encoded Base64 string value.
+        pub fn encode<'a>(src: &[u8], dst: &'a mut [u8]) -> Result<&'a str, InvalidLengthError> {
+            crate::encode(src, dst, true, URL_HI_BYTES)
+        }
+
+        /// Encode input byte slice into a [`String`] containing URL-safe Base64
+        /// with padding.
+        ///
+        /// # Panics
+        /// If `input` length is greater than `usize::MAX/4`.
+        #[cfg(feature = "alloc")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+        pub fn encode_string(input: &[u8]) -> String {
+            crate::encode_string(input, true, URL_HI_BYTES)
+        }
+
+        /// Get the length of padded Base64 produced by encoding the given bytes.
+        ///
+        /// WARNING: this function will return `0` for lengths greater than `usize::MAX/4`!
+        pub fn encoded_len(bytes: &[u8]) -> usize {
+            crate::encoded_len(bytes, true)
+        }
+    }
+
+    /// URL-safe Base64 encoding *without* padding.
+    pub mod unpadded {
+        use super::URL_HI_BYTES;
+        use crate::{Error, InvalidEncodingError, InvalidLengthError};
+
+        #[cfg(feature = "alloc")]
+        use alloc::{string::String, vec::Vec};
+
+        /// Decode a URL-safe Base64 string without padding into the provided
+        /// destination buffer.
+        pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error> {
+            crate::decode(src, dst, false, URL_HI_BYTES)
+        }
+
+        /// Decode a URL-safe Base64 string without padding in-place.
+        pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
+            crate::decode_in_place(buf, false, URL_HI_BYTES)
+        }
+
+        /// Decode a URL-safe Base64 string without padding into a byte vector.
+        #[cfg(feature = "alloc")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+        pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
+            crate::decode_vec(input, false, URL_HI_BYTES)
+        }
+
+        /// Encode the input byte slice as URL-safe Base64 with padding.
+        ///
+        /// Writes the result into the provided destination slice, returning an
+        /// ASCII-encoded Base64 string value.
+        pub fn encode<'a>(src: &[u8], dst: &'a mut [u8]) -> Result<&'a str, InvalidLengthError> {
+            crate::encode(src, dst, false, URL_HI_BYTES)
+        }
+
+        /// Encode input byte slice into a [`String`] containing URL-safe Base64
+        /// without padding.
+        ///
+        /// # Panics
+        /// If `input` length is greater than `usize::MAX/4`.
+        #[cfg(feature = "alloc")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+        pub fn encode_string(input: &[u8]) -> String {
+            crate::encode_string(input, false, URL_HI_BYTES)
+        }
+
+        /// Get the length of unpadded Base64 produced by encoding the given bytes.
+        ///
+        /// WARNING: this function will return `0` for lengths greater than `usize::MAX/4`!
+        pub fn encoded_len(bytes: &[u8]) -> usize {
+            crate::encoded_len(bytes, false)
+        }
+    }
+}
+
 /// Encode the input byte slice as Base64, writing the result into the provided
 /// destination slice, and returning an ASCII-encoded string value.
 #[inline]
-pub fn encode<'a>(
+fn encode<'a>(
     src: &[u8],
     dst: &'a mut [u8],
     padded: bool,
+    hi_bytes: (u8, u8),
 ) -> Result<&'a str, InvalidLengthError> {
     let elen = match encoded_len_inner(src.len(), padded) {
         Some(v) => v,
@@ -65,9 +299,9 @@ pub fn encode<'a>(
     if padded {
         for (s, d) in src.chunks(3).zip(dst.chunks_mut(4)) {
             if s.len() == 3 {
-                encode_3bytes(s, d);
+                encode_3bytes(s, d, hi_bytes);
             } else {
-                encode_3bytes_padded(s, d);
+                encode_3bytes_padded(s, d, hi_bytes);
             }
         }
     } else {
@@ -75,7 +309,7 @@ pub fn encode<'a>(
         let mut dst_chunks = dst.chunks_exact_mut(4);
 
         for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
-            encode_3bytes(s, d);
+            encode_3bytes(s, d, hi_bytes);
         }
 
         let src_rem = src_chunks.remainder();
@@ -84,7 +318,7 @@ pub fn encode<'a>(
         let mut tmp_in = [0u8; 3];
         let mut tmp_out = [0u8; 4];
         tmp_in[..src_rem.len()].copy_from_slice(src_rem);
-        encode_3bytes(&tmp_in, &mut tmp_out);
+        encode_3bytes(&tmp_in, &mut tmp_out, hi_bytes);
         dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
     }
 
@@ -100,10 +334,10 @@ pub fn encode<'a>(
 /// If `input` length is greater than `usize::MAX/4`.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-pub fn encode_string(input: &[u8], padded: bool) -> String {
+fn encode_string(input: &[u8], padded: bool, hi_bytes: (u8, u8)) -> String {
     let elen = encoded_len(input, padded);
     let mut dst = vec![0u8; elen];
-    let res = encode(input, &mut dst, padded).expect("encoding error");
+    let res = encode(input, &mut dst, padded, hi_bytes).expect("encoding error");
 
     debug_assert_eq!(elen, res.len());
     debug_assert!(str::from_utf8(&dst).is_ok());
@@ -116,7 +350,7 @@ pub fn encode_string(input: &[u8], padded: bool) -> String {
 ///
 /// WARNING: this function will return 0 for lengths greater than `usize::MAX/4`!
 #[inline]
-pub const fn encoded_len(bytes: &[u8], padded: bool) -> usize {
+const fn encoded_len(bytes: &[u8], padded: bool) -> usize {
     // TODO: replace with `unwrap_or` on stabilization
     match encoded_len_inner(bytes.len(), padded) {
         Some(v) => v,
@@ -141,7 +375,12 @@ const fn encoded_len_inner(n: usize, padded: bool) -> Option<usize> {
 }
 
 /// Decode the provided Base64 string into the provided destination buffer.
-pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u8], Error> {
+fn decode(
+    src: impl AsRef<[u8]>,
+    dst: &mut [u8],
+    padded: bool,
+    hi_bytes: (u8, u8),
+) -> Result<&[u8], Error> {
     let mut src = src.as_ref();
 
     let mut err = if padded {
@@ -163,7 +402,7 @@ pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u
     let mut src_chunks = src.chunks_exact(4);
     let mut dst_chunks = dst.chunks_exact_mut(3);
     for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
-        err |= decode_3bytes(s, d);
+        err |= decode_3bytes(s, d, hi_bytes);
     }
     let src_rem = src_chunks.remainder();
     let dst_rem = dst_chunks.into_remainder();
@@ -172,7 +411,7 @@ pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u
     let mut tmp_out = [0u8; 3];
     let mut tmp_in = [b'A'; 4];
     tmp_in[..src_rem.len()].copy_from_slice(src_rem);
-    err |= decode_3bytes(&tmp_in, &mut tmp_out);
+    err |= decode_3bytes(&tmp_in, &mut tmp_out, hi_bytes);
     dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
 
     if err == 0 {
@@ -183,7 +422,11 @@ pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u
 }
 
 /// Decode Base64-encoded string in-place.
-pub fn decode_in_place(mut buf: &mut [u8], padded: bool) -> Result<&[u8], InvalidEncodingError> {
+fn decode_in_place(
+    mut buf: &mut [u8],
+    padded: bool,
+    hi_bytes: (u8, u8),
+) -> Result<&[u8], InvalidEncodingError> {
     // TODO: eliminate unsafe code when compiler will be smart enough to
     // eliminate bound checks, see: https://github.com/rust-lang/rust/issues/80963
     let mut err = if padded {
@@ -209,7 +452,7 @@ pub fn decode_in_place(mut buf: &mut [u8], padded: bool) -> Result<&[u8], Invali
             let p4 = buf.as_ptr().add(4 * chunk) as *const [u8; 4];
 
             let mut tmp_out = [0u8; 3];
-            err |= decode_3bytes(&*p4, &mut tmp_out);
+            err |= decode_3bytes(&*p4, &mut tmp_out, hi_bytes);
             *p3 = tmp_out;
         }
     }
@@ -224,7 +467,7 @@ pub fn decode_in_place(mut buf: &mut [u8], padded: bool) -> Result<&[u8], Invali
     tmp_in[..src_rem_len].copy_from_slice(&buf[src_rem_pos..]);
     let mut tmp_out = [0u8; 3];
 
-    err |= decode_3bytes(&tmp_in, &mut tmp_out);
+    err |= decode_3bytes(&tmp_in, &mut tmp_out, hi_bytes);
 
     if err == 0 {
         // SAFETY: `dst_rem_len` is always smaller than 4, so we don't
@@ -250,9 +493,9 @@ pub fn decode_in_place(mut buf: &mut [u8], padded: bool) -> Result<&[u8], Invali
 /// Decode a Base64-encoded string into a byte vector.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-pub fn decode_vec(input: &str, padded: bool) -> Result<Vec<u8>, Error> {
+fn decode_vec(input: &str, padded: bool, hi_bytes: (u8, u8)) -> Result<Vec<u8>, Error> {
     let mut output = vec![0u8; decoded_len(input.len())];
-    let len = decode(input, &mut output, padded)?.len();
+    let len = decode(input, &mut output, padded, hi_bytes)?.len();
 
     if len <= output.len() {
         output.truncate(len);
@@ -269,21 +512,15 @@ pub fn decode_vec(input: &str, padded: bool) -> Result<Vec<u8>, Error> {
 /// Note that this function does not fully validate the Base64 is well-formed
 /// and may return incorrect results for malformed Base64.
 #[inline]
-const fn decoded_len(input_len: usize) -> usize {
+fn decoded_len(input_len: usize) -> usize {
     // overflow-proof computation of `(3*n)/4`
     let k = input_len / 4;
     let l = input_len - 4 * k;
     3 * k + (3 * l) / 4
 }
 
-// Base64 character set:
-// [A-Z]      [a-z]      [0-9]      +     /
-// 0x41-0x5a, 0x61-0x7a, 0x30-0x39, 0x2b, 0x2f
-
-// TODO(tarcieri): support for Base64url
-
 #[inline(always)]
-fn encode_3bytes(src: &[u8], dst: &mut [u8]) {
+fn encode_3bytes(src: &[u8], dst: &mut [u8], hi_bytes: (u8, u8)) {
     debug_assert_eq!(src.len(), 3);
     debug_assert!(dst.len() >= 4, "dst too short: {}", dst.len());
 
@@ -291,17 +528,17 @@ fn encode_3bytes(src: &[u8], dst: &mut [u8]) {
     let b1 = src[1] as i16;
     let b2 = src[2] as i16;
 
-    dst[0] = encode_6bits(b0 >> 2);
-    dst[1] = encode_6bits(((b0 << 4) | (b1 >> 4)) & 63);
-    dst[2] = encode_6bits(((b1 << 2) | (b2 >> 6)) & 63);
-    dst[3] = encode_6bits(b2 & 63);
+    dst[0] = encode_6bits(b0 >> 2, hi_bytes);
+    dst[1] = encode_6bits(((b0 << 4) | (b1 >> 4)) & 63, hi_bytes);
+    dst[2] = encode_6bits(((b1 << 2) | (b2 >> 6)) & 63, hi_bytes);
+    dst[3] = encode_6bits(b2 & 63, hi_bytes);
 }
 
 #[inline(always)]
-fn encode_3bytes_padded(src: &[u8], dst: &mut [u8]) {
+fn encode_3bytes_padded(src: &[u8], dst: &mut [u8], hi_bytes: (u8, u8)) {
     let mut tmp = [0u8; 3];
     tmp[..src.len()].copy_from_slice(&src);
-    encode_3bytes(&tmp, dst);
+    encode_3bytes(&tmp, dst, hi_bytes);
 
     dst[3] = PAD;
 
@@ -311,33 +548,27 @@ fn encode_3bytes_padded(src: &[u8], dst: &mut [u8]) {
 }
 
 #[inline(always)]
-fn encode_6bits(src: i16) -> u8 {
+fn encode_6bits(src: i16, hi_bytes: (u8, u8)) -> u8 {
+    let hi_off = 0x1c + (hi_bytes.0 & 4);
     let mut diff = 0x41i16;
 
-    // if (in > 25) diff += 0x61 - 0x41 - 26; // 6
     diff += match_gt_ct(src, 25, 6);
-
-    // if (in > 51) diff += 0x30 - 0x61 - 26; // -75
     diff -= match_gt_ct(src, 51, 75);
-
-    // if (in > 61) diff += 0x2b - 0x30 - 10; // -15
-    diff -= match_gt_ct(src, 61, 15);
-
-    // if (in > 62) diff += 0x2f - 0x2b - 1; // 3
-    diff += match_gt_ct(src, 62, 3);
+    diff -= match_gt_ct(src, 61, hi_bytes.0 as i16 - hi_off as i16);
+    diff += match_gt_ct(src, 62, hi_bytes.1 as i16 - hi_bytes.0 as i16 - 1);
 
     (src + diff) as u8
 }
 
 #[inline(always)]
-fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> i16 {
+fn decode_3bytes(src: &[u8], dst: &mut [u8], hi_bytes: (u8, u8)) -> i16 {
     debug_assert_eq!(src.len(), 4);
     debug_assert!(dst.len() >= 3, "dst too short: {}", dst.len());
 
-    let c0 = decode_6bits(src[0]);
-    let c1 = decode_6bits(src[1]);
-    let c2 = decode_6bits(src[2]);
-    let c3 = decode_6bits(src[3]);
+    let c0 = decode_6bits(src[0], hi_bytes);
+    let c1 = decode_6bits(src[1], hi_bytes);
+    let c2 = decode_6bits(src[2], hi_bytes);
+    let c3 = decode_6bits(src[3], hi_bytes);
 
     dst[0] = ((c0 << 2) | (c1 >> 4)) as u8;
     dst[1] = ((c1 << 4) | (c2 >> 2)) as u8;
@@ -347,23 +578,13 @@ fn decode_3bytes(src: &[u8], dst: &mut [u8]) -> i16 {
 }
 
 #[inline(always)]
-fn decode_6bits(src: u8) -> i16 {
+fn decode_6bits(src: u8, hi_bytes: (u8, u8)) -> i16 {
     let mut res: i16 = -1;
-
-    // if (byte > 0x40 && byte < 0x5b) res += byte - 0x41 + 1; // -64
     res += match_range_ct(src, 0x41..0x5a, src as i16 - 64);
-
-    // if (byte > 0x60 && byte < 0x7b) res += byte - 0x61 + 26 + 1; // -70
     res += match_range_ct(src, 0x61..0x7a, src as i16 - 70);
-
-    // if (byte > 0x2f && byte < 0x3a) res += byte - 0x30 + 52 + 1; // 5
     res += match_range_ct(src, 0x30..0x39, src as i16 + 5);
-
-    // if (byte == 0x2b) res += 62 + 1;
-    res += match_eq_ct(src, 0x2b, 63);
-
-    // if (byte == 0x2f) res += 63 + 1;
-    res + match_eq_ct(src, 0x2f, 64)
+    res += match_eq_ct(src, hi_bytes.0, 63);
+    res + match_eq_ct(src, hi_bytes.1, 64)
 }
 
 /// Match that the given input is greater than the provided threshold.

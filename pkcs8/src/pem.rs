@@ -2,7 +2,7 @@
 
 use crate::{Error, Result};
 use alloc::{borrow::ToOwned, string::String, vec::Vec};
-use base64ct as base64;
+use base64ct::padded as base64;
 use core::str;
 use zeroize::Zeroizing;
 
@@ -51,7 +51,7 @@ pub(crate) fn decode(s: &str, boundary: Boundary) -> Result<Zeroizing<Vec<u8>>> 
     // TODO(tarcieri): stricter constant-time whitespace trimming
     s.retain(|c| !c.is_whitespace());
 
-    base64::decode_vec(&*s, true)
+    base64::decode_vec(&*s)
         .map(Zeroizing::new)
         .map_err(|_| Error::Decode)
 }
@@ -62,7 +62,7 @@ pub(crate) fn encode(data: &[u8], boundary: Boundary) -> String {
     let mut output = String::new();
     output.push_str(boundary.pre);
 
-    let b64 = Zeroizing::new(base64::encode_string(data, true));
+    let b64 = Zeroizing::new(base64::encode_string(data));
     let chunks = b64.as_bytes().chunks(CHUNK_SIZE);
     let nchunks = chunks.len();
 

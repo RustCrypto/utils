@@ -47,6 +47,4 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (general links)
 
-[B64]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md#b64
 [RFC 4648]: https://tools.ietf.org/html/rfc4648
-[PHC string format]: https://github.com/P-H-C/phc-string-format/blob/master/phc-sf-spec.md
