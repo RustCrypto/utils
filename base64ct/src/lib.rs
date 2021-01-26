@@ -33,7 +33,7 @@ extern crate std;
 
 mod errors;
 
-pub use errors::{DecodeError, InvalidLengthError};
+pub use errors::{Error, InvalidEncodingError, InvalidLengthError};
 
 use core::str;
 
@@ -141,7 +141,7 @@ const fn encoded_len_inner(n: usize, padded: bool) -> Option<usize> {
 }
 
 /// Decode the provided Base64 string into the provided destination buffer.
-pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u8], DecodeError> {
+pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u8], Error> {
     let mut src = src.as_ref();
     let mut err = 0;
 
@@ -153,7 +153,7 @@ pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u
     let dlen = decoded_len(src.len());
 
     if dlen > dst.len() {
-        return Err(DecodeError::InvalidLength);
+        return Err(Error::InvalidLength);
     }
 
     let dst = &mut dst[..dlen];
@@ -176,12 +176,12 @@ pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u
     if err == 0 {
         Ok(dst)
     } else {
-        Err(DecodeError::InvalidEncoding)
+        Err(Error::InvalidEncoding)
     }
 }
 
 /// Decode Base64-encoded string in-place.
-pub fn decode_in_place(mut buf: &mut [u8], padded: bool) -> Result<&[u8], DecodeError> {
+pub fn decode_in_place(mut buf: &mut [u8], padded: bool) -> Result<&[u8], InvalidEncodingError> {
     // TODO: eliminate unsafe code when compiler will be smart enough to
     // eliminate bound checks, see: https://github.com/rust-lang/rust/issues/80963
     let mut err = 0;
@@ -241,14 +241,14 @@ pub fn decode_in_place(mut buf: &mut [u8], padded: bool) -> Result<&[u8], Decode
             Ok(buf.get_unchecked(..dlen))
         }
     } else {
-        Err(DecodeError::InvalidEncoding)
+        Err(InvalidEncodingError)
     }
 }
 
 /// Decode a Base64-encoded string into a byte vector.
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-pub fn decode_vec(input: &str, padded: bool) -> Result<Vec<u8>, DecodeError> {
+pub fn decode_vec(input: &str, padded: bool) -> Result<Vec<u8>, Error> {
     let slen = if padded {
         unpadded_len_ct(input.as_bytes())
     } else {
@@ -396,9 +396,9 @@ fn unpadded_len_ct(input: &[u8]) -> usize {
 /// Returns length-related errors eagerly as a [`Result`]], and data-dependent
 /// errors (i.e. malformed padding bytes) as `i16` to be combined with other
 /// encoding-related errors prior to branching.
-fn validate_padding(input: &[u8]) -> Result<i16, DecodeError> {
+fn validate_padding(input: &[u8]) -> Result<i16, InvalidEncodingError> {
     if input.len() % 4 != 0 {
-        return Err(DecodeError::InvalidEncoding);
+        return Err(InvalidEncodingError);
     }
 
     let padding_len = input.len() - unpadded_len_ct(input);
@@ -412,7 +412,7 @@ fn validate_padding(input: &[u8]) -> Result<i16, DecodeError> {
             if padding_len == 0 {
                 Ok(0)
             } else {
-                Err(DecodeError::InvalidLength)
+                Err(InvalidEncodingError)
             }
         }
     }
