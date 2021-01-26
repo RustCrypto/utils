@@ -35,7 +35,7 @@ mod errors;
 
 pub use errors::{Error, InvalidEncodingError, InvalidLengthError};
 
-use core::str;
+use core::{ops::Range, str};
 
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
@@ -315,16 +315,16 @@ fn encode_6bits(src: i16) -> u8 {
     let mut diff = 0x41i16;
 
     // if (in > 25) diff += 0x61 - 0x41 - 26; // 6
-    diff += ((25i16 - src) >> 8) & 6;
+    diff += match_gt_ct(src, 25, 6);
 
     // if (in > 51) diff += 0x30 - 0x61 - 26; // -75
-    diff -= ((51i16 - src) >> 8) & 75;
+    diff -= match_gt_ct(src, 51, 75);
 
     // if (in > 61) diff += 0x2b - 0x30 - 10; // -15
-    diff -= ((61i16 - src) >> 8) & 15;
+    diff -= match_gt_ct(src, 61, 15);
 
     // if (in > 62) diff += 0x2f - 0x2b - 1; // 3
-    diff += ((62i16 - src) >> 8) & 3;
+    diff += match_gt_ct(src, 62, 3);
 
     (src + diff) as u8
 }
@@ -351,31 +351,41 @@ fn decode_6bits(src: u8) -> i16 {
     let mut res: i16 = -1;
 
     // if (byte > 0x40 && byte < 0x5b) res += byte - 0x41 + 1; // -64
-    res += match_byte_range_ct(src, 0x40, 0x5b, src as i16 - 64);
+    res += match_range_ct(src, 0x41..0x5a, src as i16 - 64);
 
     // if (byte > 0x60 && byte < 0x7b) res += byte - 0x61 + 26 + 1; // -70
-    res += match_byte_range_ct(src, 0x60, 0x7b, src as i16 - 70);
+    res += match_range_ct(src, 0x61..0x7a, src as i16 - 70);
 
     // if (byte > 0x2f && byte < 0x3a) res += byte - 0x30 + 52 + 1; // 5
-    res += match_byte_range_ct(src, 0x2f, 0x3a, src as i16 + 5);
+    res += match_range_ct(src, 0x30..0x39, src as i16 + 5);
 
     // if (byte == 0x2b) res += 62 + 1;
-    res += match_byte_ct(src, 0x2b, 63);
+    res += match_eq_ct(src, 0x2b, 63);
 
     // if (byte == 0x2f) res += 63 + 1;
-    res + match_byte_ct(src, 0x2f, 64)
+    res + match_eq_ct(src, 0x2f, 64)
 }
 
-/// Pseudo-branch operation
+/// Match that the given input is greater than the provided threshold.
 #[inline(always)]
-fn match_byte_range_ct(input: u8, lo: u8, hi: u8, ret_on_match: i16) -> i16 {
-    (((lo as i16 - input as i16) & (input as i16 - hi as i16)) >> 8) & ret_on_match
+fn match_gt_ct(input: i16, threshold: u8, ret_on_match: i16) -> i16 {
+    ((threshold as i16 - input) >> 8) & ret_on_match
 }
 
-/// Match a specific byte value
+/// Match that a byte falls within a provided range.
 #[inline(always)]
-fn match_byte_ct(input: u8, expected: u8, ret_on_match: i16) -> i16 {
-    match_byte_range_ct(input, expected - 1, expected + 1, ret_on_match)
+fn match_range_ct(input: u8, range: Range<u8>, ret_on_match: i16) -> i16 {
+    // Compute exclusive range from inclusive one
+    let start = range.start as i16 - 1;
+    let end = range.end as i16 + 1;
+
+    (((start - input as i16) & (input as i16 - end)) >> 8) & ret_on_match
+}
+
+/// Match a a byte equals a specified value.
+#[inline(always)]
+fn match_eq_ct(input: u8, expected: u8, ret_on_match: i16) -> i16 {
+    match_range_ct(input, expected..expected, ret_on_match)
 }
 
 /// Validate padding is well-formed and compute unpadded length.
@@ -390,7 +400,7 @@ fn decode_padding(input: &[u8]) -> Result<(usize, i16), InvalidEncodingError> {
 
     let unpadded_len = match *input {
         [.., b0, b1] => {
-            let pad_len = match_byte_ct(b0, PAD, 1) + match_byte_ct(b1, PAD, 1);
+            let pad_len = match_eq_ct(b0, PAD, 1) + match_eq_ct(b1, PAD, 1);
             input.len() - pad_len as usize
         }
         _ => input.len(),
@@ -399,10 +409,8 @@ fn decode_padding(input: &[u8]) -> Result<(usize, i16), InvalidEncodingError> {
     let padding_len = input.len() - unpadded_len;
 
     let err = match *input {
-        [.., b0] if padding_len == 1 => match_byte_ct(b0, PAD, 1) ^ 1,
-        [.., b0, b1] if padding_len == 2 => {
-            (match_byte_ct(b0, PAD, 1) & match_byte_ct(b1, PAD, 1)) ^ 1
-        }
+        [.., b0] if padding_len == 1 => match_eq_ct(b0, PAD, 1) ^ 1,
+        [.., b0, b1] if padding_len == 2 => (match_eq_ct(b0, PAD, 1) & match_eq_ct(b1, PAD, 1)) ^ 1,
         _ => {
             if padding_len == 0 {
                 0
