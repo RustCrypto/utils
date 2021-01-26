@@ -143,11 +143,13 @@ const fn encoded_len_inner(n: usize, padded: bool) -> Option<usize> {
 /// Decode the provided Base64 string into the provided destination buffer.
 pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u8], Error> {
     let mut src = src.as_ref();
-    let mut err = 0;
 
-    if padded {
-        err = validate_padding(src)?;
-        src = &src[..unpadded_len_ct(src)];
+    let mut err = if padded {
+        let (unpadded_len, e) = decode_padding(src)?;
+        src = &src[..unpadded_len];
+        e
+    } else {
+        0
     };
 
     let dlen = decoded_len(src.len());
@@ -184,12 +186,12 @@ pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8], padded: bool) -> Result<&[u
 pub fn decode_in_place(mut buf: &mut [u8], padded: bool) -> Result<&[u8], InvalidEncodingError> {
     // TODO: eliminate unsafe code when compiler will be smart enough to
     // eliminate bound checks, see: https://github.com/rust-lang/rust/issues/80963
-    let mut err = 0;
-
-    if padded {
-        err = validate_padding(buf)?;
-        let unpadded_len = unpadded_len_ct(buf);
+    let mut err = if padded {
+        let (unpadded_len, e) = decode_padding(buf)?;
         buf = &mut buf[..unpadded_len];
+        e
+    } else {
+        0
     };
 
     let dlen = decoded_len(buf.len());
@@ -249,18 +251,15 @@ pub fn decode_in_place(mut buf: &mut [u8], padded: bool) -> Result<&[u8], Invali
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub fn decode_vec(input: &str, padded: bool) -> Result<Vec<u8>, Error> {
-    let slen = if padded {
-        unpadded_len_ct(input.as_bytes())
+    let mut output = vec![0u8; decoded_len(input.len())];
+    let len = decode(input, &mut output, padded)?.len();
+
+    if len <= output.len() {
+        output.truncate(len);
+        Ok(output)
     } else {
-        input.as_bytes().len()
-    };
-
-    let dlen = decoded_len(slen);
-
-    let mut output = vec![0u8; dlen];
-    let res = decode(input, &mut output, padded)?;
-    debug_assert_eq!(dlen, res.len());
-    Ok(output)
+        Err(Error::InvalidLength)
+    }
 }
 
 /// Get the length of the output from decoding the provided *unpadded*
@@ -379,41 +378,39 @@ fn match_byte_ct(input: u8, expected: u8, ret_on_match: i16) -> i16 {
     match_byte_range_ct(input, expected - 1, expected + 1, ret_on_match)
 }
 
-/// Compute the length of the unpadded portion of a Base64-encoded string
-/// without data-dependent branches
-fn unpadded_len_ct(input: &[u8]) -> usize {
-    match *input {
+/// Validate padding is well-formed and compute unpadded length.
+///
+/// Returns length-related errors eagerly as a [`Result`], and data-dependent
+/// errors (i.e. malformed padding bytes) as `i16` to be combined with other
+/// encoding-related errors prior to branching.
+fn decode_padding(input: &[u8]) -> Result<(usize, i16), InvalidEncodingError> {
+    if input.len() % 4 != 0 {
+        return Err(InvalidEncodingError);
+    }
+
+    let unpadded_len = match *input {
         [.., b0, b1] => {
             let pad_len = match_byte_ct(b0, PAD, 1) + match_byte_ct(b1, PAD, 1);
             input.len() - pad_len as usize
         }
         _ => input.len(),
-    }
-}
+    };
 
-/// Validate padding is well-formed.
-///
-/// Returns length-related errors eagerly as a [`Result`]], and data-dependent
-/// errors (i.e. malformed padding bytes) as `i16` to be combined with other
-/// encoding-related errors prior to branching.
-fn validate_padding(input: &[u8]) -> Result<i16, InvalidEncodingError> {
-    if input.len() % 4 != 0 {
-        return Err(InvalidEncodingError);
-    }
+    let padding_len = input.len() - unpadded_len;
 
-    let padding_len = input.len() - unpadded_len_ct(input);
-
-    match *input {
-        [.., b0] if padding_len == 1 => Ok(match_byte_ct(b0, PAD, 1) ^ 1),
+    let err = match *input {
+        [.., b0] if padding_len == 1 => match_byte_ct(b0, PAD, 1) ^ 1,
         [.., b0, b1] if padding_len == 2 => {
-            Ok((match_byte_ct(b0, PAD, 1) & match_byte_ct(b1, PAD, 1)) ^ 1)
+            (match_byte_ct(b0, PAD, 1) & match_byte_ct(b1, PAD, 1)) ^ 1
         }
         _ => {
             if padding_len == 0 {
-                Ok(0)
+                0
             } else {
-                Err(InvalidEncodingError)
+                return Err(InvalidEncodingError);
             }
         }
-    }
+    };
+
+    Ok((unpadded_len, err))
 }
