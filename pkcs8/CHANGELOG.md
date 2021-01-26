@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 (2021-01-26)
+### Changed
+- Bump `der` crate dependency to v0.2 ([#224])
+- Use `base64ct` v0.1 for PEM encoding ([#232])
+
+[#224]: https://github.com/RustCrypto/utils/pull/224
+[#232]: https://github.com/RustCrypto/utils/pull/232
+
 ## 0.3.3 (2020-12-21)
 ### Changed
 - Use `der` crate for decoding/encoding ASN.1 DER ([#153], [#180])
