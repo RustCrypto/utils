@@ -397,7 +397,7 @@ fn encode<'a>(
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[inline(always)]
 fn encode_string(input: &[u8], padded: bool, hi_bytes: (u8, u8)) -> String {
-    let elen = encoded_len(input, padded);
+    let elen = encoded_len_inner(input.len(), padded).expect("input is too big");
     let mut dst = vec![0u8; elen];
     let res = encode(input, &mut dst, padded, hi_bytes).expect("encoding error");
 
