@@ -15,7 +15,7 @@ keywords = ["crypto", "key", "private"]
 readme = "README.md"
 
 [dependencies]
-base64ct = { version = "0.1", optional = true, features = ["alloc"], path = "../base64ct" }
+base64ct = { version = "=0.2.0-pre", optional = true, features = ["alloc"], path = "../base64ct" }
 der = { version = "0.2", features = ["oid"], path = "../der" }
 zeroize = { version = "1", optional = true, default-features = false, features = ["alloc"] }
 

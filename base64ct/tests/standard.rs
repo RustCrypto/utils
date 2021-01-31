@@ -6,7 +6,7 @@ mod common;
 /// Standard Base64 with `=` padding
 mod padded {
     use crate::common::*;
-    use base64ct::padded::*;
+    use base64ct::Base64;
 
     const TEST_VECTORS: &[TestVector] = &[
         TestVector { raw: b"", b64: "" },
@@ -47,20 +47,20 @@ mod padded {
         },
     ];
 
+    impl_tests!(Base64);
+
     #[test]
     fn reject_trailing_whitespace() {
         let input = "QME/vQVMciqjwvIRc8Bp6kl9NSlrzCRl9vnQQQh716k\n";
         let mut buf = [0u8; 1024];
-        assert_eq!(decode(input, &mut buf), Err(Error::InvalidEncoding));
+        assert_eq!(Base64::decode(input, &mut buf), Err(Error::InvalidEncoding));
     }
-
-    impl_tests!();
 }
 
 /// Standard Base64 *without* padding
 mod unpadded {
     use crate::common::*;
-    use base64ct::unpadded::*;
+    use base64ct::Base64Unpadded;
 
     const TEST_VECTORS: &[TestVector] = &[
         TestVector { raw: b"", b64: "" },
@@ -101,19 +101,25 @@ mod unpadded {
         },
     ];
 
+    impl_tests!(Base64Unpadded);
+
     #[test]
     fn reject_trailing_whitespace() {
         let input = "EA2zjEJAQWeXkj6FQw/duYZxBGZfn0FZxjbEEEVvpuY\n";
         let mut buf = [0u8; 1024];
-        assert_eq!(decode(input, &mut buf), Err(Error::InvalidEncoding));
+        assert_eq!(
+            Base64Unpadded::decode(input, &mut buf),
+            Err(Error::InvalidEncoding)
+        );
     }
 
     #[test]
     fn unpadded_reject_trailing_equals() {
         let input = "EA2zjEJAQWeXkj6FQw/duYZxBGZfn0FZxjbEEEVvpuY=";
         let mut buf = [0u8; 1024];
-        assert_eq!(decode(input, &mut buf), Err(Error::InvalidEncoding));
+        assert_eq!(
+            Base64Unpadded::decode(input, &mut buf),
+            Err(Error::InvalidEncoding)
+        );
     }
-
-    impl_tests!();
 }
