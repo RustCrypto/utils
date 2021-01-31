@@ -87,15 +87,17 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-pub mod url;
-
 mod decoder;
 mod encoder;
+mod encoding;
 mod errors;
-mod standard;
 
+pub use encoding::{
+    bcrypt,
+    standard::{padded, unpadded},
+    url,
+};
 pub use errors::{Error, InvalidEncodingError, InvalidLengthError};
-pub use standard::{padded, unpadded};
 
 /// Padding character
 const PAD: u8 = b'=';
