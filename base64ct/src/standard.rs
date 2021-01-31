@@ -1,42 +1,42 @@
-//! URL-safe Base64 encoding.
+//! Standard Base64 encoding with `=` padding.
 //!
 //! ```text
-//! [A-Z]      [a-z]      [0-9]      -     _
-//! 0x41-0x5a, 0x61-0x7a, 0x30-0x39, 0x2d, 0x5f
+//! [A-Z]      [a-z]      [0-9]      +     /
+//! 0x41-0x5a, 0x61-0x7a, 0x30-0x39, 0x2b, 0x2f
 //! ```
 
 use crate::encoder::match_gt_ct;
 
-/// Encoding for bytes 62 and 63
-const URL_HI_BYTES: (u8, u8) = (b'-', b'_');
+/// Standard encoding for bytes 62 and 63
+const STD_HI_BYTES: (u8, u8) = (b'+', b'/');
 
-/// URL-safe Base64 encoding with `=` padding.
+/// Standard Base64 encoding with `=` padding.
 pub mod padded {
-    use super::{encode_6bits, URL_HI_BYTES};
+    use super::{encode_6bits, STD_HI_BYTES};
     use crate::{decoder, encoder, Error, InvalidEncodingError, InvalidLengthError};
 
     #[cfg(feature = "alloc")]
     use alloc::{string::String, vec::Vec};
 
-    /// Decode a URL-safe Base64 with padding string into the provided
+    /// Decode a standard Base64 with padding string into the provided
     /// destination buffer.
     pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error> {
-        decoder::decode(src, dst, true, URL_HI_BYTES)
+        decoder::decode(src, dst, true, STD_HI_BYTES)
     }
 
-    /// Decode a URL-safe Base64 string with padding in-place.
+    /// Decode a standard Base64 string with padding in-place.
     pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
-        decoder::decode_in_place(buf, true, URL_HI_BYTES)
+        decoder::decode_in_place(buf, true, STD_HI_BYTES)
     }
 
-    /// Decode a URL-safe Base64 string with padding into a byte vector.
+    /// Decode a standard Base64 string with padding into a byte vector.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
-        decoder::decode_vec(input, true, URL_HI_BYTES)
+        decoder::decode_vec(input, true, STD_HI_BYTES)
     }
 
-    /// Encode the input byte slice as URL-safe Base64 with padding.
+    /// Encode the input byte slice as standard Base64 with padding.
     ///
     /// Writes the result into the provided destination slice, returning an
     /// ASCII-encoded Base64 string value.
@@ -44,7 +44,7 @@ pub mod padded {
         encoder::encode(src, dst, true, encode_6bits)
     }
 
-    /// Encode input byte slice into a [`String`] containing URL-safe Base64
+    /// Encode input byte slice into a [`String`] containing standard Base64
     /// with padding.
     ///
     /// # Panics
@@ -63,33 +63,33 @@ pub mod padded {
     }
 }
 
-/// URL-safe Base64 encoding *without* padding.
+/// Standard Base64 encoding *without* padding.
 pub mod unpadded {
-    use super::{encode_6bits, URL_HI_BYTES};
+    use super::{encode_6bits, STD_HI_BYTES};
     use crate::{decoder, encoder, Error, InvalidEncodingError, InvalidLengthError};
 
     #[cfg(feature = "alloc")]
     use alloc::{string::String, vec::Vec};
 
-    /// Decode a URL-safe Base64 string without padding into the provided
+    /// Decode a standard Base64 string without padding into the provided
     /// destination buffer.
     pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error> {
-        decoder::decode(src, dst, false, URL_HI_BYTES)
+        decoder::decode(src, dst, false, STD_HI_BYTES)
     }
 
-    /// Decode a URL-safe Base64 string without padding in-place.
+    /// Decode a standard Base64 string without padding in-place.
     pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
-        decoder::decode_in_place(buf, false, URL_HI_BYTES)
+        decoder::decode_in_place(buf, false, STD_HI_BYTES)
     }
 
-    /// Decode a URL-safe Base64 string without padding into a byte vector.
+    /// Decode a standard Base64 string without padding into a byte vector.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
-        decoder::decode_vec(input, false, URL_HI_BYTES)
+        decoder::decode_vec(input, false, STD_HI_BYTES)
     }
 
-    /// Encode the input byte slice as URL-safe Base64 with padding.
+    /// Encode the input byte slice as standard Base64 with padding.
     ///
     /// Writes the result into the provided destination slice, returning an
     /// ASCII-encoded Base64 string value.
@@ -97,7 +97,7 @@ pub mod unpadded {
         encoder::encode(src, dst, false, encode_6bits)
     }
 
-    /// Encode input byte slice into a [`String`] containing URL-safe Base64
+    /// Encode input byte slice into a [`String`] containing standard Base64
     /// without padding.
     ///
     /// # Panics
@@ -121,7 +121,7 @@ fn encode_6bits(src: i16) -> u8 {
     let mut diff = b'A' as i16;
     diff += match_gt_ct(src, 25, 6);
     diff -= match_gt_ct(src, 51, 75);
-    diff -= match_gt_ct(src, 61, b'-' as i16 - 0x20);
-    diff += match_gt_ct(src, 62, b'_' as i16 - b'-' as i16 - 1);
+    diff -= match_gt_ct(src, 61, b'+' as i16 - 0x1c);
+    diff += match_gt_ct(src, 62, b'/' as i16 - b'+' as i16 - 1);
     (src + diff) as u8
 }
