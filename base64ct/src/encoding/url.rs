@@ -5,14 +5,14 @@
 //! 0x41-0x5a, 0x61-0x7a, 0x30-0x39, 0x2d, 0x5f
 //! ```
 
-use crate::encoder::match_gt_ct;
-
-/// Encoding for bytes 62 and 63
-const URL_HI_BYTES: (u8, u8) = (b'-', b'_');
+use crate::{
+    decoder::{match_eq_ct, match_range_ct},
+    encoder::match_gt_ct,
+};
 
 /// URL-safe Base64 encoding with `=` padding.
 pub mod padded {
-    use super::{encode_6bits, URL_HI_BYTES};
+    use super::{decode_6bits, encode_6bits};
     use crate::{decoder, encoder, Error, InvalidEncodingError, InvalidLengthError};
 
     #[cfg(feature = "alloc")]
@@ -21,19 +21,19 @@ pub mod padded {
     /// Decode a URL-safe Base64 with padding string into the provided
     /// destination buffer.
     pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error> {
-        decoder::decode(src, dst, true, URL_HI_BYTES)
+        decoder::decode(src, dst, true, decode_6bits)
     }
 
     /// Decode a URL-safe Base64 string with padding in-place.
     pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
-        decoder::decode_in_place(buf, true, URL_HI_BYTES)
+        decoder::decode_in_place(buf, true, decode_6bits)
     }
 
     /// Decode a URL-safe Base64 string with padding into a byte vector.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
-        decoder::decode_vec(input, true, URL_HI_BYTES)
+        decoder::decode_vec(input, true, decode_6bits)
     }
 
     /// Encode the input byte slice as URL-safe Base64 with padding.
@@ -65,7 +65,7 @@ pub mod padded {
 
 /// URL-safe Base64 encoding *without* padding.
 pub mod unpadded {
-    use super::{encode_6bits, URL_HI_BYTES};
+    use super::{decode_6bits, encode_6bits};
     use crate::{decoder, encoder, Error, InvalidEncodingError, InvalidLengthError};
 
     #[cfg(feature = "alloc")]
@@ -74,19 +74,19 @@ pub mod unpadded {
     /// Decode a URL-safe Base64 string without padding into the provided
     /// destination buffer.
     pub fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error> {
-        decoder::decode(src, dst, false, URL_HI_BYTES)
+        decoder::decode(src, dst, false, decode_6bits)
     }
 
     /// Decode a URL-safe Base64 string without padding in-place.
     pub fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
-        decoder::decode_in_place(buf, false, URL_HI_BYTES)
+        decoder::decode_in_place(buf, false, decode_6bits)
     }
 
     /// Decode a URL-safe Base64 string without padding into a byte vector.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn decode_vec(input: &str) -> Result<Vec<u8>, Error> {
-        decoder::decode_vec(input, false, URL_HI_BYTES)
+        decoder::decode_vec(input, false, decode_6bits)
     }
 
     /// Encode the input byte slice as URL-safe Base64 with padding.
@@ -114,6 +114,16 @@ pub mod unpadded {
     pub fn encoded_len(bytes: &[u8]) -> usize {
         encoder::encoded_len(bytes, false)
     }
+}
+
+#[inline(always)]
+fn decode_6bits(src: u8) -> i16 {
+    let mut res: i16 = -1;
+    res += match_range_ct(src, b'A'..b'Z', src as i16 - 64);
+    res += match_range_ct(src, b'a'..b'z', src as i16 - 70);
+    res += match_range_ct(src, b'0'..b'9', src as i16 + 5);
+    res += match_eq_ct(src, b'-', 63);
+    res + match_eq_ct(src, b'_', 64)
 }
 
 #[inline(always)]

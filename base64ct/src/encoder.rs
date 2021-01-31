@@ -100,13 +100,13 @@ where
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[inline(always)]
-pub(crate) fn encode_string<F>(input: &[u8], padded: bool, f: F) -> String
+pub(crate) fn encode_string<F>(input: &[u8], padded: bool, encode_6bits: F) -> String
 where
     F: Fn(i16) -> u8 + Copy,
 {
     let elen = encoded_len_inner(input.len(), padded).expect("input is too big");
     let mut dst = vec![0u8; elen];
-    let res = encode(input, &mut dst, padded, f).expect("encoding error");
+    let res = encode(input, &mut dst, padded, encode_6bits).expect("encoding error");
 
     debug_assert_eq!(elen, res.len());
     debug_assert!(str::from_utf8(&dst).is_ok());
@@ -116,7 +116,7 @@ where
 }
 
 #[inline(always)]
-fn encode_3bytes<F>(src: &[u8], dst: &mut [u8], f: F)
+fn encode_3bytes<F>(src: &[u8], dst: &mut [u8], encode_6bits: F)
 where
     F: Fn(i16) -> u8 + Copy,
 {
@@ -127,10 +127,10 @@ where
     let b1 = src[1] as i16;
     let b2 = src[2] as i16;
 
-    dst[0] = f(b0 >> 2);
-    dst[1] = f(((b0 << 4) | (b1 >> 4)) & 63);
-    dst[2] = f(((b1 << 2) | (b2 >> 6)) & 63);
-    dst[3] = f(b2 & 63);
+    dst[0] = encode_6bits(b0 >> 2);
+    dst[1] = encode_6bits(((b0 << 4) | (b1 >> 4)) & 63);
+    dst[2] = encode_6bits(((b1 << 2) | (b2 >> 6)) & 63);
+    dst[3] = encode_6bits(b2 & 63);
 }
 
 /// Match that the given input is greater than the provided threshold.

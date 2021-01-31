@@ -8,12 +8,15 @@ use alloc::vec::Vec;
 
 /// Decode the provided Base64 string into the provided destination buffer.
 #[inline(always)]
-pub(crate) fn decode(
+pub(crate) fn decode<F>(
     src: impl AsRef<[u8]>,
     dst: &mut [u8],
     padded: bool,
-    hi_bytes: (u8, u8),
-) -> Result<&[u8], Error> {
+    decode_6bits: F,
+) -> Result<&[u8], Error>
+where
+    F: Fn(u8) -> i16 + Copy,
+{
     let mut src = src.as_ref();
 
     let mut err = if padded {
@@ -35,7 +38,7 @@ pub(crate) fn decode(
     let mut src_chunks = src.chunks_exact(4);
     let mut dst_chunks = dst.chunks_exact_mut(3);
     for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
-        err |= decode_3bytes(s, d, hi_bytes);
+        err |= decode_3bytes(s, d, decode_6bits);
     }
     let src_rem = src_chunks.remainder();
     let dst_rem = dst_chunks.into_remainder();
@@ -44,7 +47,7 @@ pub(crate) fn decode(
     let mut tmp_out = [0u8; 3];
     let mut tmp_in = [b'A'; 4];
     tmp_in[..src_rem.len()].copy_from_slice(src_rem);
-    err |= decode_3bytes(&tmp_in, &mut tmp_out, hi_bytes);
+    err |= decode_3bytes(&tmp_in, &mut tmp_out, decode_6bits);
     dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
 
     if err == 0 {
@@ -56,11 +59,14 @@ pub(crate) fn decode(
 
 /// Decode Base64-encoded string in-place.
 #[inline(always)]
-pub(crate) fn decode_in_place(
+pub(crate) fn decode_in_place<F>(
     mut buf: &mut [u8],
     padded: bool,
-    hi_bytes: (u8, u8),
-) -> Result<&[u8], InvalidEncodingError> {
+    decode_6bits: F,
+) -> Result<&[u8], InvalidEncodingError>
+where
+    F: Fn(u8) -> i16 + Copy,
+{
     // TODO: eliminate unsafe code when compiler will be smart enough to
     // eliminate bound checks, see: https://github.com/rust-lang/rust/issues/80963
     let mut err = if padded {
@@ -86,7 +92,7 @@ pub(crate) fn decode_in_place(
             let p4 = buf.as_ptr().add(4 * chunk) as *const [u8; 4];
 
             let mut tmp_out = [0u8; 3];
-            err |= decode_3bytes(&*p4, &mut tmp_out, hi_bytes);
+            err |= decode_3bytes(&*p4, &mut tmp_out, decode_6bits);
             *p3 = tmp_out;
         }
     }
@@ -101,7 +107,7 @@ pub(crate) fn decode_in_place(
     tmp_in[..src_rem_len].copy_from_slice(&buf[src_rem_pos..]);
     let mut tmp_out = [0u8; 3];
 
-    err |= decode_3bytes(&tmp_in, &mut tmp_out, hi_bytes);
+    err |= decode_3bytes(&tmp_in, &mut tmp_out, decode_6bits);
 
     if err == 0 {
         // SAFETY: `dst_rem_len` is always smaller than 4, so we don't
@@ -128,9 +134,12 @@ pub(crate) fn decode_in_place(
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[inline(always)]
-pub(crate) fn decode_vec(input: &str, padded: bool, hi_bytes: (u8, u8)) -> Result<Vec<u8>, Error> {
+pub(crate) fn decode_vec<F>(input: &str, padded: bool, decode_6bits: F) -> Result<Vec<u8>, Error>
+where
+    F: Fn(u8) -> i16 + Copy,
+{
     let mut output = vec![0u8; decoded_len(input.len())];
-    let len = decode(input, &mut output, padded, hi_bytes)?.len();
+    let len = decode(input, &mut output, padded, decode_6bits)?.len();
 
     if len <= output.len() {
         output.truncate(len);
@@ -138,6 +147,56 @@ pub(crate) fn decode_vec(input: &str, padded: bool, hi_bytes: (u8, u8)) -> Resul
     } else {
         Err(Error::InvalidLength)
     }
+}
+
+/// Get the length of the output from decoding the provided *unpadded*
+/// Base64-encoded input (use [`unpadded_len_ct`] to compute this value for
+/// a padded input)
+///
+/// Note that this function does not fully validate the Base64 is well-formed
+/// and may return incorrect results for malformed Base64.
+#[inline(always)]
+fn decoded_len(input_len: usize) -> usize {
+    // overflow-proof computation of `(3*n)/4`
+    let k = input_len / 4;
+    let l = input_len - 4 * k;
+    3 * k + (3 * l) / 4
+}
+
+#[inline(always)]
+fn decode_3bytes<F>(src: &[u8], dst: &mut [u8], decode_6bits: F) -> i16
+where
+    F: Fn(u8) -> i16 + Copy,
+{
+    debug_assert_eq!(src.len(), 4);
+    debug_assert!(dst.len() >= 3, "dst too short: {}", dst.len());
+
+    let c0 = decode_6bits(src[0]);
+    let c1 = decode_6bits(src[1]);
+    let c2 = decode_6bits(src[2]);
+    let c3 = decode_6bits(src[3]);
+
+    dst[0] = ((c0 << 2) | (c1 >> 4)) as u8;
+    dst[1] = ((c1 << 4) | (c2 >> 2)) as u8;
+    dst[2] = ((c2 << 6) | c3) as u8;
+
+    ((c0 | c1 | c2 | c3) >> 8) & 1
+}
+
+/// Match that a byte falls within a provided range.
+#[inline(always)]
+pub(crate) fn match_range_ct(input: u8, range: Range<u8>, ret_on_match: i16) -> i16 {
+    // Compute exclusive range from inclusive one
+    let start = range.start as i16 - 1;
+    let end = range.end as i16 + 1;
+
+    (((start - input as i16) & (input as i16 - end)) >> 8) & ret_on_match
+}
+
+/// Match a a byte equals a specified value.
+#[inline(always)]
+pub(crate) fn match_eq_ct(input: u8, expected: u8, ret_on_match: i16) -> i16 {
+    match_range_ct(input, expected..expected, ret_on_match)
 }
 
 /// Validate padding is well-formed and compute unpadded length.
@@ -174,61 +233,4 @@ fn decode_padding(input: &[u8]) -> Result<(usize, i16), InvalidEncodingError> {
     };
 
     Ok((unpadded_len, err))
-}
-
-/// Get the length of the output from decoding the provided *unpadded*
-/// Base64-encoded input (use [`unpadded_len_ct`] to compute this value for
-/// a padded input)
-///
-/// Note that this function does not fully validate the Base64 is well-formed
-/// and may return incorrect results for malformed Base64.
-#[inline(always)]
-fn decoded_len(input_len: usize) -> usize {
-    // overflow-proof computation of `(3*n)/4`
-    let k = input_len / 4;
-    let l = input_len - 4 * k;
-    3 * k + (3 * l) / 4
-}
-
-#[inline(always)]
-fn decode_3bytes(src: &[u8], dst: &mut [u8], hi_bytes: (u8, u8)) -> i16 {
-    debug_assert_eq!(src.len(), 4);
-    debug_assert!(dst.len() >= 3, "dst too short: {}", dst.len());
-
-    let c0 = decode_6bits(src[0], hi_bytes);
-    let c1 = decode_6bits(src[1], hi_bytes);
-    let c2 = decode_6bits(src[2], hi_bytes);
-    let c3 = decode_6bits(src[3], hi_bytes);
-
-    dst[0] = ((c0 << 2) | (c1 >> 4)) as u8;
-    dst[1] = ((c1 << 4) | (c2 >> 2)) as u8;
-    dst[2] = ((c2 << 6) | c3) as u8;
-
-    ((c0 | c1 | c2 | c3) >> 8) & 1
-}
-
-#[inline(always)]
-fn decode_6bits(src: u8, hi_bytes: (u8, u8)) -> i16 {
-    let mut res: i16 = -1;
-    res += match_range_ct(src, 0x41..0x5a, src as i16 - 64);
-    res += match_range_ct(src, 0x61..0x7a, src as i16 - 70);
-    res += match_range_ct(src, 0x30..0x39, src as i16 + 5);
-    res += match_eq_ct(src, hi_bytes.0, 63);
-    res + match_eq_ct(src, hi_bytes.1, 64)
-}
-
-/// Match that a byte falls within a provided range.
-#[inline(always)]
-fn match_range_ct(input: u8, range: Range<u8>, ret_on_match: i16) -> i16 {
-    // Compute exclusive range from inclusive one
-    let start = range.start as i16 - 1;
-    let end = range.end as i16 + 1;
-
-    (((start - input as i16) & (input as i16 - end)) >> 8) & ret_on_match
-}
-
-/// Match a a byte equals a specified value.
-#[inline(always)]
-fn match_eq_ct(input: u8, expected: u8, ret_on_match: i16) -> i16 {
-    match_range_ct(input, expected..expected, ret_on_match)
 }
