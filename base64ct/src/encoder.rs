@@ -37,12 +37,15 @@ const fn encoded_len_inner(n: usize, padded: bool) -> Option<usize> {
 /// Encode the input byte slice as Base64, writing the result into the provided
 /// destination slice, and returning an ASCII-encoded string value.
 #[inline(always)]
-pub(crate) fn encode<'a>(
+pub(crate) fn encode<'a, F>(
     src: &[u8],
     dst: &'a mut [u8],
     padded: bool,
-    hi_bytes: (u8, u8),
-) -> Result<&'a str, InvalidLengthError> {
+    f: F,
+) -> Result<&'a str, InvalidLengthError>
+where
+    F: Fn(i16) -> u8 + Copy,
+{
     let elen = match encoded_len_inner(src.len(), padded) {
         Some(v) => v,
         None => return Err(InvalidLengthError),
@@ -58,7 +61,7 @@ pub(crate) fn encode<'a>(
     let mut dst_chunks = dst.chunks_exact_mut(4);
 
     for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
-        encode_3bytes(s, d, hi_bytes);
+        encode_3bytes(s, d, f);
     }
 
     let src_rem = src_chunks.remainder();
@@ -67,7 +70,7 @@ pub(crate) fn encode<'a>(
         if let Some(dst_rem) = dst_chunks.next() {
             let mut tmp = [0u8; 3];
             tmp[..src_rem.len()].copy_from_slice(&src_rem);
-            encode_3bytes(&tmp, dst_rem, hi_bytes);
+            encode_3bytes(&tmp, dst_rem, f);
 
             let flag = src_rem.len() == 1;
             let mask = (flag as u8).wrapping_sub(1);
@@ -80,7 +83,7 @@ pub(crate) fn encode<'a>(
         let mut tmp_in = [0u8; 3];
         let mut tmp_out = [0u8; 4];
         tmp_in[..src_rem.len()].copy_from_slice(src_rem);
-        encode_3bytes(&tmp_in, &mut tmp_out, hi_bytes);
+        encode_3bytes(&tmp_in, &mut tmp_out, f);
         dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
     }
 
@@ -97,10 +100,13 @@ pub(crate) fn encode<'a>(
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 #[inline(always)]
-pub(crate) fn encode_string(input: &[u8], padded: bool, hi_bytes: (u8, u8)) -> String {
+pub(crate) fn encode_string<F>(input: &[u8], padded: bool, f: F) -> String
+where
+    F: Fn(i16) -> u8 + Copy,
+{
     let elen = encoded_len_inner(input.len(), padded).expect("input is too big");
     let mut dst = vec![0u8; elen];
-    let res = encode(input, &mut dst, padded, hi_bytes).expect("encoding error");
+    let res = encode(input, &mut dst, padded, f).expect("encoding error");
 
     debug_assert_eq!(elen, res.len());
     debug_assert!(str::from_utf8(&dst).is_ok());
@@ -110,7 +116,10 @@ pub(crate) fn encode_string(input: &[u8], padded: bool, hi_bytes: (u8, u8)) -> S
 }
 
 #[inline(always)]
-fn encode_3bytes(src: &[u8], dst: &mut [u8], hi_bytes: (u8, u8)) {
+fn encode_3bytes<F>(src: &[u8], dst: &mut [u8], f: F)
+where
+    F: Fn(i16) -> u8 + Copy,
+{
     debug_assert_eq!(src.len(), 3);
     debug_assert!(dst.len() >= 4, "dst too short: {}", dst.len());
 
@@ -118,27 +127,14 @@ fn encode_3bytes(src: &[u8], dst: &mut [u8], hi_bytes: (u8, u8)) {
     let b1 = src[1] as i16;
     let b2 = src[2] as i16;
 
-    dst[0] = encode_6bits(b0 >> 2, hi_bytes);
-    dst[1] = encode_6bits(((b0 << 4) | (b1 >> 4)) & 63, hi_bytes);
-    dst[2] = encode_6bits(((b1 << 2) | (b2 >> 6)) & 63, hi_bytes);
-    dst[3] = encode_6bits(b2 & 63, hi_bytes);
-}
-
-#[inline(always)]
-fn encode_6bits(src: i16, hi_bytes: (u8, u8)) -> u8 {
-    let hi_off = 0x1c + (hi_bytes.0 & 4);
-    let mut diff = 0x41i16;
-
-    diff += match_gt_ct(src, 25, 6);
-    diff -= match_gt_ct(src, 51, 75);
-    diff -= match_gt_ct(src, 61, hi_bytes.0 as i16 - hi_off as i16);
-    diff += match_gt_ct(src, 62, hi_bytes.1 as i16 - hi_bytes.0 as i16 - 1);
-
-    (src + diff) as u8
+    dst[0] = f(b0 >> 2);
+    dst[1] = f(((b0 << 4) | (b1 >> 4)) & 63);
+    dst[2] = f(((b1 << 2) | (b2 >> 6)) & 63);
+    dst[3] = f(b2 & 63);
 }
 
 /// Match that the given input is greater than the provided threshold.
 #[inline(always)]
-fn match_gt_ct(input: i16, threshold: u8, ret_on_match: i16) -> i16 {
+pub(crate) fn match_gt_ct(input: i16, threshold: u8, ret_on_match: i16) -> i16 {
     ((threshold as i16 - input) >> 8) & ret_on_match
 }
