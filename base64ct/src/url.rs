@@ -1,9 +1,6 @@
 //! URL-safe Base64 encoding.
 
-use crate::{
-    encoding::{match_eq_ct, match_gt_ct, match_range_ct},
-    variant::Variant,
-};
+use crate::variant::{Decode, Encode, Variant};
 
 /// URL-safe Base64 encoding with `=` padding.
 ///
@@ -15,16 +12,9 @@ pub struct Base64Url;
 
 impl Variant for Base64Url {
     const PADDED: bool = true;
-
-    #[inline]
-    fn decode_6bits(src: u8) -> i16 {
-        decode_6bits(src)
-    }
-
-    #[inline]
-    fn encode_6bits(src: i16) -> u8 {
-        encode_6bits(src)
-    }
+    const BASE: u8 = b'A';
+    const DECODER: &'static [Decode] = DECODER;
+    const ENCODER: &'static [Encode] = ENCODER;
 }
 
 /// URL-safe Base64 encoding *without* padding.
@@ -37,34 +27,24 @@ pub struct Base64UrlUnpadded;
 
 impl Variant for Base64UrlUnpadded {
     const PADDED: bool = false;
-
-    #[inline]
-    fn decode_6bits(src: u8) -> i16 {
-        decode_6bits(src)
-    }
-
-    #[inline]
-    fn encode_6bits(src: i16) -> u8 {
-        encode_6bits(src)
-    }
+    const BASE: u8 = b'A';
+    const DECODER: &'static [Decode] = DECODER;
+    const ENCODER: &'static [Encode] = ENCODER;
 }
 
-#[inline(always)]
-fn decode_6bits(src: u8) -> i16 {
-    let mut res: i16 = -1;
-    res += match_range_ct(src, b'A'..b'Z', src as i16 - 64);
-    res += match_range_ct(src, b'a'..b'z', src as i16 - 70);
-    res += match_range_ct(src, b'0'..b'9', src as i16 + 5);
-    res += match_eq_ct(src, b'-', 63);
-    res + match_eq_ct(src, b'_', 64)
-}
+/// URL-safe Base64 decoder
+const DECODER: &[Decode] = &[
+    Decode::Range(b'A'..b'Z', -64),
+    Decode::Range(b'a'..b'z', -70),
+    Decode::Range(b'0'..b'9', 5),
+    Decode::Eq(b'-', 63),
+    Decode::Eq(b'_', 64),
+];
 
-#[inline(always)]
-fn encode_6bits(src: i16) -> u8 {
-    let mut diff = b'A' as i16;
-    diff += match_gt_ct(src, 25, 6);
-    diff -= match_gt_ct(src, 51, 75);
-    diff -= match_gt_ct(src, 61, b'-' as i16 - 0x20);
-    diff += match_gt_ct(src, 62, b'_' as i16 - b'-' as i16 - 1);
-    (src + diff) as u8
-}
+/// URL-safe Base64 encoder
+const ENCODER: &[Encode] = &[
+    Encode::Diff(25, 6),
+    Encode::Diff(51, -75),
+    Encode::Diff(61, -(b'-' as i16 - 0x20)),
+    Encode::Diff(62, b'_' as i16 - b'-' as i16 - 1),
+];
