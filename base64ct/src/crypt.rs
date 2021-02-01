@@ -1,9 +1,6 @@
 //! `crypt(3)` Base64 encoding.
 
-use crate::{
-    encoding::{match_gt_ct, match_range_ct},
-    variant::Variant,
-};
+use crate::variant::{Decode, Encode, Variant};
 
 /// `crypt(3)` Base64 encoding.
 ///
@@ -15,20 +12,13 @@ pub struct Base64Crypt;
 
 impl Variant for Base64Crypt {
     const PADDED: bool = false;
+    const BASE: u8 = b'.';
 
-    #[inline]
-    fn decode_6bits(src: u8) -> i16 {
-        let mut res: i16 = -1;
-        res += match_range_ct(src, b'.'..b'9', src as i16 - 45);
-        res += match_range_ct(src, b'A'..b'Z', src as i16 - 52);
-        res + match_range_ct(src, b'a'..b'z', src as i16 - 58)
-    }
+    const DECODER: &'static [Decode] = &[
+        Decode::Range(b'.'..b'9', -45),
+        Decode::Range(b'A'..b'Z', -52),
+        Decode::Range(b'a'..b'z', -58),
+    ];
 
-    #[inline]
-    fn encode_6bits(mut src: i16) -> u8 {
-        src += 0x2e;
-        src += match_gt_ct(src, 0x39, 7);
-        src += match_gt_ct(src, 0x5a, 6);
-        src as u8
-    }
+    const ENCODER: &'static [Encode] = &[Encode::Apply(0x39, 7), Encode::Apply(0x5a, 6)];
 }

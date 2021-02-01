@@ -4,7 +4,7 @@ use crate::{
     errors::{Error, InvalidEncodingError, InvalidLengthError},
     variant::Variant,
 };
-use core::{ops::Range, str};
+use core::str;
 
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
@@ -68,7 +68,7 @@ impl<T: Variant> Encoding for T {
         let mut src_chunks = src.chunks_exact(4);
         let mut dst_chunks = dst.chunks_exact_mut(3);
         for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
-            err |= decode_3bytes(s, d, Self::decode_6bits);
+            err |= Self::decode_3bytes(s, d);
         }
         let src_rem = src_chunks.remainder();
         let dst_rem = dst_chunks.into_remainder();
@@ -77,7 +77,7 @@ impl<T: Variant> Encoding for T {
         let mut tmp_out = [0u8; 3];
         let mut tmp_in = [b'A'; 4];
         tmp_in[..src_rem.len()].copy_from_slice(src_rem);
-        err |= decode_3bytes(&tmp_in, &mut tmp_out, Self::decode_6bits);
+        err |= Self::decode_3bytes(&tmp_in, &mut tmp_out);
         dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
 
         if err == 0 {
@@ -114,7 +114,7 @@ impl<T: Variant> Encoding for T {
                 let p4 = buf.as_ptr().add(4 * chunk) as *const [u8; 4];
 
                 let mut tmp_out = [0u8; 3];
-                err |= decode_3bytes(&*p4, &mut tmp_out, Self::decode_6bits);
+                err |= Self::decode_3bytes(&*p4, &mut tmp_out);
                 *p3 = tmp_out;
             }
         }
@@ -129,7 +129,7 @@ impl<T: Variant> Encoding for T {
         tmp_in[..src_rem_len].copy_from_slice(&buf[src_rem_pos..]);
         let mut tmp_out = [0u8; 3];
 
-        err |= decode_3bytes(&tmp_in, &mut tmp_out, Self::decode_6bits);
+        err |= Self::decode_3bytes(&tmp_in, &mut tmp_out);
 
         if err == 0 {
             // SAFETY: `dst_rem_len` is always smaller than 4, so we don't
@@ -181,7 +181,7 @@ impl<T: Variant> Encoding for T {
         let mut dst_chunks = dst.chunks_exact_mut(4);
 
         for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
-            encode_3bytes(s, d, Self::encode_6bits);
+            Self::encode_3bytes(s, d);
         }
 
         let src_rem = src_chunks.remainder();
@@ -190,7 +190,7 @@ impl<T: Variant> Encoding for T {
             if let Some(dst_rem) = dst_chunks.next() {
                 let mut tmp = [0u8; 3];
                 tmp[..src_rem.len()].copy_from_slice(&src_rem);
-                encode_3bytes(&tmp, dst_rem, Self::encode_6bits);
+                Self::encode_3bytes(&tmp, dst_rem);
 
                 let flag = src_rem.len() == 1;
                 let mask = (flag as u8).wrapping_sub(1);
@@ -203,7 +203,7 @@ impl<T: Variant> Encoding for T {
             let mut tmp_in = [0u8; 3];
             let mut tmp_out = [0u8; 4];
             tmp_in[..src_rem.len()].copy_from_slice(src_rem);
-            encode_3bytes(&tmp_in, &mut tmp_out, Self::encode_6bits);
+            Self::encode_3bytes(&tmp_in, &mut tmp_out);
             dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
         }
 
@@ -249,27 +249,6 @@ fn decoded_len(input_len: usize) -> usize {
     3 * k + (3 * l) / 4
 }
 
-/// Decode 3 bytes of a Base64 message.
-#[inline(always)]
-fn decode_3bytes<F>(src: &[u8], dst: &mut [u8], decode_6bits: F) -> i16
-where
-    F: Fn(u8) -> i16 + Copy,
-{
-    debug_assert_eq!(src.len(), 4);
-    debug_assert!(dst.len() >= 3, "dst too short: {}", dst.len());
-
-    let c0 = decode_6bits(src[0]);
-    let c1 = decode_6bits(src[1]);
-    let c2 = decode_6bits(src[2]);
-    let c3 = decode_6bits(src[3]);
-
-    dst[0] = ((c0 << 2) | (c1 >> 4)) as u8;
-    dst[1] = ((c1 << 4) | (c2 >> 2)) as u8;
-    dst[2] = ((c2 << 6) | c3) as u8;
-
-    ((c0 | c1 | c2 | c3) >> 8) & 1
-}
-
 /// Validate padding is well-formed and compute unpadded length.
 ///
 /// Returns length-related errors eagerly as a [`Result`], and data-dependent
@@ -283,7 +262,7 @@ fn decode_padding(input: &[u8]) -> Result<(usize, i16), InvalidEncodingError> {
 
     let unpadded_len = match *input {
         [.., b0, b1] => {
-            let pad_len = match_eq_ct(b0, PAD, 1) + match_eq_ct(b1, PAD, 1);
+            let pad_len = is_pad_ct(b0) + is_pad_ct(b1);
             input.len() - pad_len as usize
         }
         _ => input.len(),
@@ -292,8 +271,8 @@ fn decode_padding(input: &[u8]) -> Result<(usize, i16), InvalidEncodingError> {
     let padding_len = input.len() - unpadded_len;
 
     let err = match *input {
-        [.., b0] if padding_len == 1 => match_eq_ct(b0, PAD, 1) ^ 1,
-        [.., b0, b1] if padding_len == 2 => (match_eq_ct(b0, PAD, 1) & match_eq_ct(b1, PAD, 1)) ^ 1,
+        [.., b0] if padding_len == 1 => is_pad_ct(b0) ^ 1,
+        [.., b0, b1] if padding_len == 2 => (is_pad_ct(b0) & is_pad_ct(b1)) ^ 1,
         _ => {
             if padding_len == 0 {
                 0
@@ -306,22 +285,10 @@ fn decode_padding(input: &[u8]) -> Result<(usize, i16), InvalidEncodingError> {
     Ok((unpadded_len, err))
 }
 
+/// Branchless match that a given byte is the `PAD` character
 #[inline(always)]
-fn encode_3bytes<F>(src: &[u8], dst: &mut [u8], encode_6bits: F)
-where
-    F: Fn(i16) -> u8 + Copy,
-{
-    debug_assert_eq!(src.len(), 3);
-    debug_assert!(dst.len() >= 4, "dst too short: {}", dst.len());
-
-    let b0 = src[0] as i16;
-    let b1 = src[1] as i16;
-    let b2 = src[2] as i16;
-
-    dst[0] = encode_6bits(b0 >> 2);
-    dst[1] = encode_6bits(((b0 << 4) | (b1 >> 4)) & 63);
-    dst[2] = encode_6bits(((b1 << 2) | (b2 >> 6)) & 63);
-    dst[3] = encode_6bits(b2 & 63);
+fn is_pad_ct(input: u8) -> i16 {
+    ((((PAD as i16 - 1) - input as i16) & (input as i16 - (PAD as i16 + 1))) >> 8) & 1
 }
 
 #[inline(always)]
@@ -338,26 +305,4 @@ const fn encoded_len_inner(n: usize, padded: bool) -> Option<usize> {
     } else {
         Some((q / 3) + (q % 3 != 0) as usize)
     }
-}
-
-/// Match a a byte equals a specified value.
-#[inline(always)]
-pub(crate) fn match_eq_ct(input: u8, expected: u8, ret_on_match: i16) -> i16 {
-    match_range_ct(input, expected..expected, ret_on_match)
-}
-
-/// Match that the given input is greater than the provided threshold.
-#[inline(always)]
-pub(crate) fn match_gt_ct(input: i16, threshold: u8, ret_on_match: i16) -> i16 {
-    ((threshold as i16 - input) >> 8) & ret_on_match
-}
-
-/// Match that a byte falls within a provided range.
-#[inline(always)]
-pub(crate) fn match_range_ct(input: u8, range: Range<u8>, ret_on_match: i16) -> i16 {
-    // Compute exclusive range from inclusive one
-    let start = range.start as i16 - 1;
-    let end = range.end as i16 + 1;
-
-    (((start - input as i16) & (input as i16 - end)) >> 8) & ret_on_match
 }
