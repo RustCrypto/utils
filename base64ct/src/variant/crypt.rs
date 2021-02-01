@@ -20,5 +20,5 @@ impl Variant for Base64Crypt {
         Decode::Range(b'a'..b'z', -58),
     ];
 
-    const ENCODER: &'static [Encode] = &[Encode::Apply(0x39, 7), Encode::Apply(0x5a, 6)];
+    const ENCODER: &'static [Encode] = &[Encode::Apply(b'9', 7), Encode::Apply(b'Z', 6)];
 }

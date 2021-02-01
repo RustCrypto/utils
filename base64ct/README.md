@@ -9,13 +9,20 @@
 
 Pure Rust implementation of Base64 ([RFC 4648]).
 
-Implemented without data-dependent branches or look up tables, thereby
-providing "best effort" constant-time operation.
+Implements multiple Base64 variants without data-dependent branches or lookup
+tables, thereby providing portable "best effort" constant-time operation.
 
 Supports `no_std` environments and avoids heap allocations in the core API
 (but also provides optional `alloc` support for convenience).
 
 [Documentation][docs-link]
+
+## Supported Base64 variants
+
+- Standard Base64: `[A-Z]`, `[a-z]`, `[0-9]`, `+`, `/`
+- URL-safe Base64: `[A-Z]`, `[a-z]`, `[0-9]`, `-`, `_`
+- bcrypt Base64: `.`, `/`, `[A-Z]`, `[a-z]`, `[0-9]`
+- `crypt(3)` Base64: `.`, `-`, `[0-9]`, `[A-Z]`, `[a-z]`
 
 ## License
 
