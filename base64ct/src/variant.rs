@@ -2,6 +2,11 @@
 
 use core::ops::Range;
 
+pub mod bcrypt;
+pub mod crypt;
+pub mod standard;
+pub mod url;
+
 /// Core encoder/decoder functions for a particular Base64 variant
 pub trait Variant {
     /// Is this encoding padded?

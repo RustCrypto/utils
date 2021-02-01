@@ -1,6 +1,6 @@
 //! bcrypt Base64 encoding.
 
-use crate::variant::{Decode, Encode, Variant};
+use super::{Decode, Encode, Variant};
 
 /// bcrypt Base64 encoding.
 ///

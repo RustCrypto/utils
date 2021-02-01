@@ -12,7 +12,10 @@ use alloc::{string::String, vec::Vec};
 /// Padding character
 const PAD: u8 = b'=';
 
-/// Base64 encoding
+/// Base64 encoding trait.
+///
+/// This trait must be imported to make use of any Base64 variant defined
+/// in this crate.
 pub trait Encoding {
     /// Decode a Base64 string into the provided destination buffer.
     fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error>;

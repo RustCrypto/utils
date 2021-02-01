@@ -1,6 +1,6 @@
 //! URL-safe Base64 encoding.
 
-use crate::variant::{Decode, Encode, Variant};
+use super::{Decode, Encode, Variant};
 
 /// URL-safe Base64 encoding with `=` padding.
 ///
