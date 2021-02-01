@@ -80,19 +80,17 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-mod bcrypt;
-mod crypt;
 mod encoding;
 mod errors;
-mod standard;
-mod url;
 mod variant;
 
 pub use crate::{
-    bcrypt::Base64Bcrypt,
-    crypt::Base64Crypt,
     encoding::Encoding,
     errors::{Error, InvalidEncodingError, InvalidLengthError},
-    standard::{Base64, Base64Unpadded},
-    url::{Base64Url, Base64UrlUnpadded},
+    variant::{
+        bcrypt::Base64Bcrypt,
+        crypt::Base64Crypt,
+        standard::{Base64, Base64Unpadded},
+        url::{Base64Url, Base64UrlUnpadded},
+    },
 };
