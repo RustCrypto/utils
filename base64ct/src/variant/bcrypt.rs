@@ -22,8 +22,8 @@ impl Variant for Base64Bcrypt {
     ];
 
     const ENCODER: &'static [Encode] = &[
-        Encode::Apply(0x2f, 17),
-        Encode::Apply(0x5a, 6),
-        Encode::Apply(0x7a, -75),
+        Encode::Apply(b'/', 17),
+        Encode::Apply(b'Z', 6),
+        Encode::Apply(b'z', -75),
     ];
 }
