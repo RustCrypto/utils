@@ -9,21 +9,21 @@ pub struct TestVector {
 /// Generate test suite for a particular Base64 flavor
 #[macro_export]
 macro_rules! impl_tests {
-    () => {
-        use base64ct::Error;
+    ($encoding:ty) => {
+        use base64ct::{Encoding, Error};
 
         #[test]
         fn encode_test_vectors() {
             let mut buf = [0u8; 1024];
 
             for vector in TEST_VECTORS {
-                let out = encode(vector.raw, &mut buf).unwrap();
-                assert_eq!(encoded_len(vector.raw), vector.b64.len());
+                let out = <$encoding>::encode(vector.raw, &mut buf).unwrap();
+                assert_eq!(<$encoding>::encoded_len(vector.raw), vector.b64.len());
                 assert_eq!(vector.b64, &out[..]);
 
                 #[cfg(feature = "alloc")]
                 {
-                    let out = encode_string(vector.raw);
+                    let out = <$encoding>::encode_string(vector.raw);
                     assert_eq!(vector.b64, &out[..]);
                 }
             }
@@ -34,17 +34,17 @@ macro_rules! impl_tests {
             let mut buf = [0u8; 1024];
 
             for vector in TEST_VECTORS {
-                let out = decode(vector.b64, &mut buf).unwrap();
+                let out = <$encoding>::decode(vector.b64, &mut buf).unwrap();
                 assert_eq!(vector.raw, &out[..]);
 
                 let n = vector.b64.len();
                 buf[..n].copy_from_slice(vector.b64.as_bytes());
-                let out = decode_in_place(&mut buf[..n]).unwrap();
+                let out = <$encoding>::decode_in_place(&mut buf[..n]).unwrap();
                 assert_eq!(vector.raw, out);
 
                 #[cfg(feature = "alloc")]
                 {
-                    let out = decode_vec(vector.b64).unwrap();
+                    let out = <$encoding>::decode_vec(vector.b64).unwrap();
                     assert_eq!(vector.raw, &out[..]);
                 }
             }
@@ -57,21 +57,21 @@ macro_rules! impl_tests {
             let mut outbuf = [0u8; 1024];
 
             for i in 0..data.len() {
-                let encoded = encode(&data[..i], &mut inbuf).unwrap();
+                let encoded = <$encoding>::encode(&data[..i], &mut inbuf).unwrap();
 
                 // Make sure it round trips
-                let decoded = decode(encoded, &mut outbuf).unwrap();
+                let decoded = <$encoding>::decode(encoded, &mut outbuf).unwrap();
                 assert_eq!(decoded, &data[..i]);
 
-                let elen = encode(&data[..i], &mut inbuf).unwrap().len();
+                let elen = <$encoding>::encode(&data[..i], &mut inbuf).unwrap().len();
                 let buf = &mut inbuf[..elen];
-                let decoded = decode_in_place(buf).unwrap();
+                let decoded = <$encoding>::decode_in_place(buf).unwrap();
                 assert_eq!(decoded, &data[..i]);
 
                 #[cfg(feature = "alloc")]
                 {
-                    let encoded = encode_string(&data[..i]);
-                    let decoded = decode_vec(&encoded).unwrap();
+                    let encoded = <$encoding>::encode_string(&data[..i]);
+                    let decoded = <$encoding>::decode_vec(&encoded).unwrap();
                     assert_eq!(decoded, &data[..i]);
                 }
             }

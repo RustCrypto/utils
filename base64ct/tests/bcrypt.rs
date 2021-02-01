@@ -4,7 +4,7 @@
 mod common;
 
 use crate::common::*;
-use base64ct::bcrypt::*;
+use base64ct::Base64Bcrypt;
 
 const TEST_VECTORS: &[TestVector] = &[
     TestVector { raw: b"", b64: "" },
@@ -45,18 +45,24 @@ const TEST_VECTORS: &[TestVector] = &[
     },
 ];
 
-impl_tests!();
+impl_tests!(Base64Bcrypt);
 
 #[test]
 fn reject_trailing_whitespace() {
     let input = "OKC9tOTKagohutGPa6/n4ij7LQjpxAPj7tlOOOf5z4i\n";
     let mut buf = [0u8; 1024];
-    assert_eq!(decode(input, &mut buf), Err(Error::InvalidEncoding));
+    assert_eq!(
+        Base64Bcrypt::decode(input, &mut buf),
+        Err(Error::InvalidEncoding)
+    );
 }
 
 #[test]
 fn unpadded_reject_trailing_equals() {
     let input = "OKC9tOTKagohutGPa6/n4ij7LQjpxAPj7tlOOOf5z4i=";
     let mut buf = [0u8; 1024];
-    assert_eq!(decode(input, &mut buf), Err(Error::InvalidEncoding));
+    assert_eq!(
+        Base64Bcrypt::decode(input, &mut buf),
+        Err(Error::InvalidEncoding)
+    );
 }

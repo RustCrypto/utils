@@ -3,14 +3,7 @@
 //!
 //! # About
 //!
-//! This crate implements the following Base64 variants in constant-time:
-//!
-//! - Standard Base64 encoding: `[A-Za-z0-9+/]`
-//!   - [`base64ct::padded`][`padded`]
-//!   - [`base64ct::unpadded`][`unpadded`]
-//! - URL-safe Base64: `[A-Za-z0-9\-_]`
-//!   - [`base64ct::url::padded`][`url::padded`]
-//!   - [`base64ct::url::unpadded`][`url::unpadded`]
+//! This crate implements several Base64 variants in constant-time.
 //!
 //! The padded variants require (`=`) padding. Unpadded variants expressly
 //! reject such padding.
@@ -24,13 +17,13 @@
 //! ```
 //! # #[cfg(feature = "alloc")]
 //! # {
-//! use base64ct::padded as base64;
+//! use base64ct::{Base64, Encoding};
 //!
 //! let bytes = b"example bytestring!";
-//! let encoded = base64::encode_string(bytes);
+//! let encoded = Base64::encode_string(bytes);
 //! assert_eq!(encoded, "ZXhhbXBsZSBieXRlc3RyaW5nIQ==");
 //!
-//! let decoded = base64::decode_vec(&encoded).unwrap();
+//! let decoded = Base64::decode_vec(&encoded).unwrap();
 //! assert_eq!(decoded, bytes);
 //! # }
 //! ```
@@ -38,19 +31,19 @@
 //! ## Heapless `no_std` usage
 //!
 //! ```
-//! use base64ct::padded as base64;
+//! use base64ct::{Base64, Encoding};
 //!
 //! const BUF_SIZE: usize = 128;
 //!
 //! let bytes = b"example bytestring!";
-//! assert!(base64::encoded_len(bytes) <= BUF_SIZE);
+//! assert!(Base64::encoded_len(bytes) <= BUF_SIZE);
 //!
 //! let mut enc_buf = [0u8; BUF_SIZE];
-//! let encoded = base64::encode(bytes, &mut enc_buf).unwrap();
+//! let encoded = Base64::encode(bytes, &mut enc_buf).unwrap();
 //! assert_eq!(encoded, "ZXhhbXBsZSBieXRlc3RyaW5nIQ==");
 //!
 //! let mut dec_buf = [0u8; BUF_SIZE];
-//! let decoded = base64::decode(encoded, &mut dec_buf).unwrap();
+//! let decoded = Base64::decode(encoded, &mut dec_buf).unwrap();
 //! assert_eq!(decoded, bytes);
 //! ```
 //!
@@ -87,17 +80,19 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-mod decoder;
-mod encoder;
+mod bcrypt;
+mod crypt;
 mod encoding;
 mod errors;
+mod standard;
+mod url;
+mod variant;
 
-pub use encoding::{
-    bcrypt, crypt,
-    standard::{padded, unpadded},
-    url,
+pub use crate::{
+    bcrypt::Base64Bcrypt,
+    crypt::Base64Crypt,
+    encoding::Encoding,
+    errors::{Error, InvalidEncodingError, InvalidLengthError},
+    standard::{Base64, Base64Unpadded},
+    url::{Base64Url, Base64UrlUnpadded},
 };
-pub use errors::{Error, InvalidEncodingError, InvalidLengthError};
-
-/// Padding character
-const PAD: u8 = b'=';
