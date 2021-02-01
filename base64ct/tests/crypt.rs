@@ -1,10 +1,10 @@
-//! bcrypt Base64 tests
+//! `crypt(3)` Base64 tests
 
 #[macro_use]
 mod common;
 
 use crate::common::*;
-use base64ct::bcrypt::*;
+use base64ct::crypt::*;
 
 const TEST_VECTORS: &[TestVector] = &[
     TestVector { raw: b"", b64: "" },
@@ -14,34 +14,34 @@ const TEST_VECTORS: &[TestVector] = &[
     },
     TestVector {
         raw: b"***",
-        b64: "Igmo",
+        b64: "8Wce",
     },
     TestVector {
         raw: b"\x01\x02\x03\x04",
-        b64: ".OGB/.",
+        b64: ".E61/.",
     },
     TestVector {
         raw: b"\xAD\xAD\xAD\xAD\xAD",
-        b64: "pY0rpYy",
+        b64: "fOqhfOo",
     },
     TestVector {
         raw: b"\xFF\xEF\xFE\xFF\xEF\xFE",
-        b64: "98989898",
+        b64: "zyzyzyzy",
     },
     TestVector {
         raw: b"\xFF\xFF\xFF\xFF\xFF",
-        b64: "9999996",
+        b64: "zzzzzzw",
     },
     TestVector {
         raw: b"\x40\xC1\x3F\xBD\x05\x4C\x72\x2A\xA3\xC2\xF2\x11\x73\xC0\x69\xEA\
                \x49\x7D\x35\x29\x6B\xCC\x24\x65\xF6\xF9\xD0\x41\x08\x7B\xD7\xA9",
-        b64: "OKC9tOTKagohutGPa6/n4ij7LQjpxAPj7tlOOOf5z4i",
+        b64: "EA2zjEJAQWeXkj6FQw/duYZxBGZfn0FZxjbEEEVvpuY",
     },
     TestVector {
         raw: b"\x00\x10\x83\x10Q\x87 \x92\x8B0\xD3\x8FA\x14\x93QU\x97a\x96\x9Bq\
                \xD7\x9F\x82\x18\xA3\x92Y\xA7\xA2\x9A\xAB\xB2\xDB\xAF\xC3\x1C\xB3\
                \xFB\xF0\x00",
-        b64: "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwx89..",
+        b64: "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnyz..",
     },
 ];
 
