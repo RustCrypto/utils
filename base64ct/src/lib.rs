@@ -93,7 +93,7 @@ mod encoding;
 mod errors;
 
 pub use encoding::{
-    bcrypt,
+    bcrypt, crypt,
     standard::{padded, unpadded},
     url,
 };

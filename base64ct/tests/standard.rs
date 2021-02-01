@@ -103,14 +103,14 @@ mod unpadded {
 
     #[test]
     fn reject_trailing_whitespace() {
-        let input = "QME/vQVMciqjwvIRc8Bp6kl9NSlrzCRl9vnQQQh716k\n";
+        let input = "EA2zjEJAQWeXkj6FQw/duYZxBGZfn0FZxjbEEEVvpuY\n";
         let mut buf = [0u8; 1024];
         assert_eq!(decode(input, &mut buf), Err(Error::InvalidEncoding));
     }
 
     #[test]
     fn unpadded_reject_trailing_equals() {
-        let input = "OKC9tOTKagohutGPa6/n4ij7LQjpxAPj7tlOOOf5z4i=";
+        let input = "EA2zjEJAQWeXkj6FQw/duYZxBGZfn0FZxjbEEEVvpuY=";
         let mut buf = [0u8; 1024];
         assert_eq!(decode(input, &mut buf), Err(Error::InvalidEncoding));
     }
