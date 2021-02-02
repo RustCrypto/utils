@@ -33,6 +33,12 @@ pub enum Tag {
     /// `OBJECT IDENTIFIER` tag.
     ObjectIdentifier = 0x06,
 
+    /// `UTF8String` tag.
+    Utf8String = 0x0C,
+
+    /// `PrintableString` tag.
+    PrintableString = 0x13,
+
     /// `SEQUENCE` tag.
     ///
     /// Note that the universal tag number for `SEQUENCE` is technically `0x10`
@@ -64,6 +70,8 @@ impl TryFrom<u8> for Tag {
             0x04 => Ok(Tag::OctetString),
             0x05 => Ok(Tag::Null),
             0x06 => Ok(Tag::ObjectIdentifier),
+            0x0C => Ok(Tag::Utf8String),
+            0x13 => Ok(Tag::PrintableString),
             0x30 => Ok(Tag::Sequence),
             0xA0 => Ok(Tag::ContextSpecific0),
             0xA1 => Ok(Tag::ContextSpecific1),
@@ -99,6 +107,8 @@ impl Tag {
             Self::OctetString => "OCTET STRING",
             Self::Null => "NULL",
             Self::ObjectIdentifier => "OBJECT IDENTIFIER",
+            Self::Utf8String => "UTF8String",
+            Self::PrintableString => "PrintableString",
             Self::Sequence => "SEQUENCE",
             Self::ContextSpecific0 => "Context Specific 0",
             Self::ContextSpecific1 => "Context Specific 1",

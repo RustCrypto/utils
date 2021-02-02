@@ -33,6 +33,7 @@
 //!
 //! - [`bool`] (ASN.1 `BOOLEAN`)
 //! - [`i8`], [`i16`], [`u8`], [`u16`] (ASN.1 `INTEGER`)
+//! - [`str`] (ASN.1 `UTF8String`, see also [`Utf8String`])
 //! - [`Option`] (ASN.1 `OPTIONAL`)
 //!
 //! The following ASN.1 types provided by this crate also impl these traits:
@@ -43,7 +44,9 @@
 //! - [`Null`] (ASN.1 `NULL`)
 //! - [`ObjectIdentifier`] (ASN.1 `OBJECT IDENTIFIER`)
 //! - [`OctetString`] (ASN.1 `OCTET STRING`)
+//! - [`PrintableString`] (ASN.1 `PrintableString` i.e. ASCII)
 //! - [`Sequence`] (ASN.1 `SEQUENCE`)
+//! - [`Utf8String`] (ASN.1 `UTF8String`)
 //!
 //! ## Example
 //!
@@ -324,6 +327,7 @@ mod encoder;
 mod error;
 mod header;
 mod length;
+mod str_slice;
 mod tag;
 mod traits;
 
@@ -333,7 +337,9 @@ pub use crate::{
         bit_string::BitString,
         null::Null,
         octet_string::OctetString,
+        printable_string::PrintableString,
         sequence::{self, Sequence},
+        utf8_string::Utf8String,
     },
     decoder::Decoder,
     encoder::Encoder,
