@@ -8,8 +8,28 @@ use core::{convert::TryFrom, fmt, str};
 
 /// ASN.1 `PrintableString` type.
 ///
-/// Supports only the ASCII character set. For UTF-8 support, use
+/// Supports a subset the ASCII character set. For UTF-8 support, use
 /// [`Utf8String`][`crate::Utf8String`].
+///
+/// # Supported characters
+///
+/// The following ASCII characters/ranges are supported:
+///
+/// - `A..Z`
+/// - `a..z`
+/// - `0..9`
+/// - "` `" (i.e. space)
+/// - `\`
+/// - `(`
+/// - `)`
+/// - `+`
+/// - `,`
+/// - `-`
+/// - `.`
+/// - `/`
+/// - `:`
+/// - `=`
+/// - `?`
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct PrintableString<'a> {
     /// Inner value
