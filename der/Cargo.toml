@@ -1,6 +1,6 @@
 [package]
 name = "der"
-version = "0.2.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.2.1" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust embedded-friendly implementation of the Distinguished Encoding Rules
 (DER) for Abstract Syntax Notation One (ASN.1) as described in ITU X.690 with
@@ -16,7 +16,7 @@ readme = "README.md"
 
 [dependencies]
 const-oid = { version = "0.4", optional = true, path = "../const-oid" }
-der_derive = { version = "0.1", optional = true, path = "derive" }
+der_derive = { version = "0.2", optional = true, path = "derive" }
 typenum = { version = "1", optional = true }
 
 [features]
