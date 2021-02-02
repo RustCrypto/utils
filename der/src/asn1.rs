@@ -13,4 +13,6 @@ pub(crate) mod octet_string;
 #[cfg(feature = "oid")]
 pub(crate) mod oid;
 pub(crate) mod optional;
+pub(crate) mod printable_string;
 pub mod sequence;
+pub(crate) mod utf8_string;

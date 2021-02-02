@@ -28,6 +28,8 @@ decl_derive!(
     ///
     /// - `bit-string`: performs an intermediate conversion to `der::BitString`
     /// - `octet-string`: performs an intermediate conversion to `der::OctetString`
+    /// - `printable-string`: performs an intermediate conversion to `der::PrintableString`
+    /// - `utf8-string`: performs an intermediate conversion to `der::Utf8String`
     ///
     /// Note: please open a GitHub Issue if you would like to request support
     /// for additional ASN.1 types.
@@ -90,6 +92,12 @@ impl DeriveStruct {
             Some(Asn1Type::OctetString) => {
                 quote! { let #field_name = decoder.octet_string()?.try_into()?; }
             }
+            Some(Asn1Type::PrintableString) => {
+                quote! { let #field_name = decoder.printable_string()?.try_into()?; }
+            }
+            Some(Asn1Type::Utf8String) => {
+                quote! { let #field_name = decoder.utf8_string()?.try_into()?; }
+            }
             None => quote! { let #field_name = decoder.decode()?; },
         };
         field_decoder.to_tokens(&mut self.decode_fields);
@@ -107,6 +115,12 @@ impl DeriveStruct {
             }
             Some(Asn1Type::OctetString) => {
                 quote!(&der::OctetString::new(&self.#field_name)?,)
+            }
+            Some(Asn1Type::PrintableString) => {
+                quote!(&der::PrintableString::new(&self.#field_name)?,)
+            }
+            Some(Asn1Type::Utf8String) => {
+                quote!(&der::Utf8String::new(&self.#field_name)?,)
             }
             None => quote!(&self.#field_name,),
         };
@@ -225,12 +239,19 @@ impl FieldAttrs {
 
 /// ASN.1 built-in types supported by the `#[asn1(type = "...")]` attribute
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[allow(clippy::enum_variant_names)]
 enum Asn1Type {
     /// ASN.1 `BIT STRING`
     BitString,
 
     /// ASN.1 `OCTET STRING`
     OctetString,
+
+    /// ASN.1 `PrintableString`
+    PrintableString,
+
+    /// ASN.1 `UTF8String`
+    Utf8String,
 }
 
 impl Asn1Type {
@@ -239,6 +260,8 @@ impl Asn1Type {
         match s {
             "bit-string" => Self::BitString,
             "octet-string" => Self::OctetString,
+            "printable-string" => Self::PrintableString,
+            "utf8-string" => Self::Utf8String,
             _ => panic!("unrecognized ASN.1 type: {}", s),
         }
     }

@@ -1,7 +1,8 @@
 //! DER encoder.
 
 use crate::{
-    asn1::sequence, BitString, Encodable, ErrorKind, Header, Length, Null, OctetString, Result, Tag,
+    asn1::sequence, BitString, Encodable, ErrorKind, Header, Length, Null, OctetString,
+    PrintableString, Result, Tag, Utf8String,
 };
 use core::convert::TryInto;
 
@@ -114,6 +115,30 @@ impl<'a> Encoder<'a> {
                 tag: Tag::ObjectIdentifier,
             })
         }
+    }
+
+    /// Encode the provided value as an ASN.1 `PrintableString`
+    pub fn printable_string(&mut self, value: impl TryInto<PrintableString<'a>>) -> Result<()> {
+        value
+            .try_into()
+            .or_else(|_| {
+                self.error(ErrorKind::Value {
+                    tag: Tag::PrintableString,
+                })
+            })
+            .and_then(|value| self.encode(&value))
+    }
+
+    /// Encode the provided value as an ASN.1 `Utf8String`
+    pub fn utf8_string(&mut self, value: impl TryInto<Utf8String<'a>>) -> Result<()> {
+        value
+            .try_into()
+            .or_else(|_| {
+                self.error(ErrorKind::Value {
+                    tag: Tag::Utf8String,
+                })
+            })
+            .and_then(|value| self.encode(&value))
     }
 
     /// Encode a sequence of values which impl the [`Encodable`] trait.

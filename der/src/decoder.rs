@@ -1,6 +1,9 @@
 //! DER decoder.
 
-use crate::{Any, BitString, Decodable, ErrorKind, Length, Null, OctetString, Result, Sequence};
+use crate::{
+    Any, BitString, Decodable, ErrorKind, Length, Null, OctetString, PrintableString, Result,
+    Sequence, Utf8String,
+};
 use core::convert::TryInto;
 
 #[cfg(feature = "big-uint")]
@@ -104,7 +107,7 @@ impl<'a> Decoder<'a> {
         self.decode()
     }
 
-    /// Attempt to decode an ASN.1 `INTEGER` as a [`BigUint`].
+    /// Attempt to decode an ASN.1 `INTEGER` as a [`BigUInt`].
     #[cfg(feature = "big-uint")]
     #[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
     pub fn big_uint<N>(&mut self) -> Result<BigUInt<'a, N>>
@@ -138,6 +141,16 @@ impl<'a> Decoder<'a> {
 
     /// Attempt to decode an ASN.1 `OPTIONAL` value.
     pub fn optional<T: Decodable<'a>>(&mut self) -> Result<Option<T>> {
+        self.decode()
+    }
+
+    /// Attempt to decode an ASN.1 `PrintableString`.
+    pub fn printable_string(&mut self) -> Result<PrintableString<'a>> {
+        self.decode()
+    }
+
+    /// Attempt to decode an ASN.1 `UTF8String`.
+    pub fn utf8_string(&mut self) -> Result<Utf8String<'a>> {
         self.decode()
     }
 

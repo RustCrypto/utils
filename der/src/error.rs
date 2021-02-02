@@ -1,5 +1,7 @@
 //! Error types.
 
+pub use core::str::Utf8Error;
+
 use crate::{Length, Tag};
 use core::{convert::Infallible, fmt};
 
@@ -72,6 +74,15 @@ impl From<ErrorKind> for Error {
 impl From<core::convert::Infallible> for Error {
     fn from(_: Infallible) -> Error {
         unreachable!()
+    }
+}
+
+impl From<Utf8Error> for Error {
+    fn from(err: Utf8Error) -> Error {
+        Error {
+            kind: ErrorKind::Utf8(err),
+            position: None,
+        }
     }
 }
 
@@ -150,6 +161,9 @@ pub enum ErrorKind {
         byte: u8,
     },
 
+    /// UTF-8 errors
+    Utf8(Utf8Error),
+
     /// Unexpected value
     Value {
         /// Tag of the unexpected value
@@ -199,6 +213,7 @@ impl fmt::Display for ErrorKind {
             ErrorKind::UnknownTag { byte } => {
                 write!(f, "unknown/unsupported ASN.1 DER tag: 0x{:02x}", byte)
             }
+            ErrorKind::Utf8(e) => write!(f, "{}", e),
             ErrorKind::Value { tag } => write!(f, "malformed ASN.1 DER value for {}", tag),
         }
     }
