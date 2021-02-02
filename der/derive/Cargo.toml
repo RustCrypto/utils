@@ -1,6 +1,6 @@
 [package]
 name = "der_derive"
-version = "0.1.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.2.0" # Also update html_root_url in lib.rs when bumping this
 description = """
 Procedural macro for automatically deriving the `der` crate's `Message` trait
 """
