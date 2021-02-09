@@ -174,7 +174,12 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// the `suffix` bytes. If there is not enough unused space, `compress`
     /// will be called twice.
     #[inline(always)]
-    pub fn digest_pad(&mut self, delim: u8, suffix: &[u8], mut compress: impl FnMut(&Block<BlockSize>)) {
+    pub fn digest_pad(
+        &mut self,
+        delim: u8,
+        suffix: &[u8],
+        mut compress: impl FnMut(&Block<BlockSize>),
+    ) {
         let pos = self.get_pos();
         self.buffer[pos] = delim;
         for b in &mut self.buffer[pos + 1..] {
