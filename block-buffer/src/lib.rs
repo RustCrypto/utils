@@ -170,13 +170,13 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         self.process_data(data, &mut gen_block, set, |f| f(), unreachable);
     }
 
-    /// Compress remaining data after padding it with `0x80`, zeros and
+    /// Compress remaining data after padding it with `delim`, zeros and
     /// the `suffix` bytes. If there is not enough unused space, `compress`
     /// will be called twice.
     #[inline(always)]
-    pub fn digest_pad(&mut self, suffix: &[u8], mut compress: impl FnMut(&Block<BlockSize>)) {
+    pub fn digest_pad(&mut self, delim: u8, suffix: &[u8], mut compress: impl FnMut(&Block<BlockSize>)) {
         let pos = self.get_pos();
-        self.buffer[pos] = 0x80;
+        self.buffer[pos] = delim;
         for b in &mut self.buffer[pos + 1..] {
             *b = 0;
         }
@@ -198,21 +198,21 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// big-endian byte order.
     #[inline]
     pub fn len64_padding_be(&mut self, data_len: u64, compress: impl FnMut(&Block<BlockSize>)) {
-        self.digest_pad(&data_len.to_be_bytes(), compress);
+        self.digest_pad(0x80, &data_len.to_be_bytes(), compress);
     }
 
     /// Pad message with 0x80, zeros and 64-bit message length using
     /// little-endian byte order.
     #[inline]
     pub fn len64_padding_le(&mut self, data_len: u64, compress: impl FnMut(&Block<BlockSize>)) {
-        self.digest_pad(&data_len.to_le_bytes(), compress);
+        self.digest_pad(0x80, &data_len.to_le_bytes(), compress);
     }
 
     /// Pad message with 0x80, zeros and 128-bit message length using
     /// big-endian byte order.
     #[inline]
     pub fn len128_padding_be(&mut self, data_len: u128, compress: impl FnMut(&Block<BlockSize>)) {
-        self.digest_pad(&data_len.to_be_bytes(), compress);
+        self.digest_pad(0x80, &data_len.to_be_bytes(), compress);
     }
 
     /// Pad message with a given padding `P`.
