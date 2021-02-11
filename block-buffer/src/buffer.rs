@@ -77,7 +77,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         self.process_data(data, state, xor, gen_block, gen_blocks);
     }
 
-    /// Simplified version of the [`par_xor_data`] method, with `N = 1`.
+    /// Simplified version of the [`par_xor_data`][BlockBuffer::par_xor_data] method, with `N = 1`.
     #[inline]
     pub fn xor_data(&mut self, data: &mut [u8], mut gen_block: impl FnMut() -> Block<BlockSize>) {
         // note: the unrachable panic should be removed by compiler since
