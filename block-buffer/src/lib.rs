@@ -25,6 +25,7 @@ pub type Block<BlockSize> = GenericArray<u8, BlockSize>;
 /// Blocks being acted over in parallel.
 pub type ParBlock<BlockSize, ParBlocks> = GenericArray<Block<BlockSize>, ParBlocks>;
 
+/// Trait which generalizes digest functionality of buffers.
 pub trait DigestBuffer<BlockSize: ArrayLength<u8>>: Default {
     /// Digest data in `input` in blocks of size `BlockSize` using
     /// the `compress` function, which accepts slice of blocks.
