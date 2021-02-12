@@ -35,17 +35,20 @@
 //! - [`i8`], [`i16`], [`u8`], [`u16`] (ASN.1 `INTEGER`)
 //! - [`str`] (ASN.1 `UTF8String`, see also [`Utf8String`])
 //! - [`Option`] (ASN.1 `OPTIONAL`)
+//! - [`SystemTime`][`std::time::SystemTime`] (ASN.1 `GeneralizedTime`, requires `std` feature)
 //!
 //! The following ASN.1 types provided by this crate also impl these traits:
 //!
 //! - [`Any`] (ASN.1 `ANY`)
 //! - [`BigUInt`] (ASN.1 unsigned `INTEGER` with raw access to encoded bytes)
 //! - [`BitString`] (ASN.1 `BIT STRING`)
+//! - [`GeneralizedTime`] (ASN.1 `GeneralizedTime`)
 //! - [`Null`] (ASN.1 `NULL`)
 //! - [`ObjectIdentifier`] (ASN.1 `OBJECT IDENTIFIER`)
 //! - [`OctetString`] (ASN.1 `OCTET STRING`)
 //! - [`PrintableString`] (ASN.1 `PrintableString` i.e. ASCII)
 //! - [`Sequence`] (ASN.1 `SEQUENCE`)
+//! - [`UtcTime`] (ASN.1 `UTCTime`)
 //! - [`Utf8String`] (ASN.1 `UTF8String`)
 //!
 //! ## Example
@@ -322,6 +325,7 @@ extern crate std;
 
 mod asn1;
 mod byte_slice;
+mod datetime;
 mod decoder;
 mod encoder;
 mod error;
@@ -335,10 +339,12 @@ pub use crate::{
     asn1::{
         any::Any,
         bit_string::BitString,
+        generalized_time::GeneralizedTime,
         null::Null,
         octet_string::OctetString,
         printable_string::PrintableString,
         sequence::{self, Sequence},
+        utc_time::UtcTime,
         utf8_string::Utf8String,
     },
     decoder::Decoder,
