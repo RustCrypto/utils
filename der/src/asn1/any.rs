@@ -1,8 +1,9 @@
 //! ASN.1 `ANY` type.
 
 use crate::{
-    BitString, ByteSlice, Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Header, Length,
-    Null, OctetString, Result, Sequence, Tag,
+    BitString, ByteSlice, Decodable, Decoder, Encodable, Encoder, Error, ErrorKind,
+    GeneralizedTime, Header, Length, Null, OctetString, PrintableString, Result, Sequence, Tag,
+    UtcTime, Utf8String,
 };
 use core::convert::{TryFrom, TryInto};
 
@@ -51,30 +52,40 @@ impl<'a> Any<'a> {
         self.value.is_empty()
     }
 
-    /// Get the raw value for this [`Any`] type as a byte slice
+    /// Get the raw value for this [`Any`] type as a byte slice.
     pub fn as_bytes(self) -> &'a [u8] {
         self.value.as_bytes()
     }
 
-    /// Attempt to decode an ASN.1 `BIT STRING`
+    /// Attempt to decode an ASN.1 `BIT STRING`.
     pub fn bit_string(self) -> Result<BitString<'a>> {
         self.try_into()
     }
 
-    /// Attempt to decode an ASN.1 `NULL` value
+    /// Attempt to decode an ASN.1 `GeneralizedTime`.
+    pub fn generalized_time(self) -> Result<GeneralizedTime> {
+        self.try_into()
+    }
+
+    /// Attempt to decode an ASN.1 `NULL` value.
     pub fn null(self) -> Result<Null> {
         self.try_into()
     }
 
-    /// Attempt to decode an ASN.1 `OCTET STRING`
+    /// Attempt to decode an ASN.1 `OCTET STRING`.
     pub fn octet_string(self) -> Result<OctetString<'a>> {
         self.try_into()
     }
 
-    /// Attempt to decode an ASN.1 `OBJECT IDENTIFIER`
+    /// Attempt to decode an ASN.1 `OBJECT IDENTIFIER`.
     #[cfg(feature = "oid")]
     #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
     pub fn oid(self) -> Result<ObjectIdentifier> {
+        self.try_into()
+    }
+
+    /// Attempt to decode an ASN.1 `PrintableString`.
+    pub fn printable_string(self) -> Result<PrintableString<'a>> {
         self.try_into()
     }
 
@@ -85,6 +96,16 @@ impl<'a> Any<'a> {
         F: FnOnce(&mut Decoder<'a>) -> Result<T>,
     {
         Sequence::try_from(self)?.decode_nested(f)
+    }
+
+    /// Attempt to decode an ASN.1 `UTCTime`.
+    pub fn utc_time(self) -> Result<UtcTime> {
+        self.try_into()
+    }
+
+    /// Attempt to decode an ASN.1 `UTF8String`.
+    pub fn utf8_string(self) -> Result<Utf8String<'a>> {
+        self.try_into()
     }
 
     /// Get the ASN.1 DER [`Header`] for this [`Any`] value

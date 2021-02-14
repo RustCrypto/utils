@@ -273,7 +273,7 @@
 //!
 //! For example, structs containing `&'a [u8]` fields may want them encoded
 //! as either a `BIT STRING` or `OCTET STRING`. By using the
-//! `#[asn1(type = "bit-string")]` annotation it's possible to select which
+//! `#[asn1(type = "BIT STRING")]` annotation it's possible to select which
 //! ASN.1 type should be used.
 //!
 //! Building off the above example:
@@ -295,7 +295,7 @@
 //!     pub algorithm: AlgorithmIdentifier<'a>,
 //!
 //!     /// Public key data
-//!     #[asn1(type = "bit-string")]
+//!     #[asn1(type = "BIT STRING")]
 //!     pub subject_public_key: &'a [u8],
 //! }
 //! # }
@@ -366,7 +366,7 @@ pub use {
 
 #[cfg(feature = "derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
-pub use der_derive::Message;
+pub use der_derive::{Decodable, Encodable, Message};
 
 #[cfg(feature = "oid")]
 #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
