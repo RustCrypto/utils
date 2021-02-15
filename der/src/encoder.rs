@@ -1,8 +1,8 @@
 //! DER encoder.
 
 use crate::{
-    asn1::sequence, BitString, Encodable, ErrorKind, Header, Length, Null, OctetString,
-    PrintableString, Result, Tag, Utf8String,
+    asn1::sequence, BitString, Encodable, ErrorKind, GeneralizedTime, Header, Length, Null,
+    OctetString, PrintableString, Result, Tag, UtcTime, Utf8String,
 };
 use core::convert::TryInto;
 
@@ -77,6 +77,18 @@ impl<'a> Encoder<'a> {
             .and_then(|value| self.encode(&value))
     }
 
+    /// Encode the provided value as an ASN.1 `GeneralizedTime`
+    pub fn generalized_time(&mut self, value: impl TryInto<GeneralizedTime>) -> Result<()> {
+        value
+            .try_into()
+            .or_else(|_| {
+                self.error(ErrorKind::Value {
+                    tag: Tag::GeneralizedTime,
+                })
+            })
+            .and_then(|value| self.encode(&value))
+    }
+
     /// Encode an ASN.1 `NULL` value.
     pub fn null(&mut self) -> Result<()> {
         self.encode(&Null)
@@ -126,6 +138,14 @@ impl<'a> Encoder<'a> {
                     tag: Tag::PrintableString,
                 })
             })
+            .and_then(|value| self.encode(&value))
+    }
+
+    /// Encode the provided value as an ASN.1 `UTCTime`
+    pub fn utc_time(&mut self, value: impl TryInto<UtcTime>) -> Result<()> {
+        value
+            .try_into()
+            .or_else(|_| self.error(ErrorKind::Value { tag: Tag::UtcTime }))
             .and_then(|value| self.encode(&value))
     }
 
