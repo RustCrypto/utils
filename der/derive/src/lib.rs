@@ -15,7 +15,7 @@
 //! This attribute can be used to specify the ASN.1 type for a particular
 //! enum variant or struct field.
 //!
-//! It's presently mandatory for all struct fields, even when using one of the
+//! It's presently mandatory for all enum variants, even when using one of the
 //! ASN.1 types defined by this crate.
 //!
 //! For structs, placing this attribute on a field makes it possible to
