@@ -99,7 +99,7 @@ decl_derive!(
     /// Derive the [`Encodable`][1] trait on an enum.
     ///
     /// This custom derive macro can be used to automatically impl the
-    /// `Decodable` trait for any enum representing a message which is
+    /// `Encodable` trait for any enum representing a message which is
     /// encoded as an ASN.1 `CHOICE`.
     ///
     /// See [toplevel documentation for the `der_derive` crate][2] for more
