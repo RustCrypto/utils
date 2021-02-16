@@ -12,5 +12,6 @@ members = [
     "der/derive",
     "hex-literal",
     "opaque-debug",
-    "pkcs8"
+    "pkcs8",
+    "spki",
 ]

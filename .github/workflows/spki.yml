@@ -1,4 +1,4 @@
-name: pkcs8
+name: spki
 
 on:
   pull_request:
@@ -6,7 +6,6 @@ on:
       - "base64ct/**"
       - "const-oid/**"
       - "der/**"
-      - "pkcs8/**"
       - "spki/**"
       - "Cargo.*"
   push:
@@ -14,7 +13,7 @@ on:
 
 defaults:
   run:
-    working-directory: pkcs8
+    working-directory: spki
 
 env:
   CARGO_INCREMENTAL: 0
@@ -40,8 +39,6 @@ jobs:
           target: ${{ matrix.target }}
           override: true
       - run: cargo build --release --target ${{ matrix.target }}
-      - run: cargo build --release --target ${{ matrix.target }} --features alloc
-      - run: cargo build --release --target ${{ matrix.target }} --features pem
 
   test:
     runs-on: ubuntu-latest
@@ -58,6 +55,4 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
       - run: cargo test --release
-      - run: cargo test --release --features alloc
-      - run: cargo test --release --features pem
       - run: cargo test --release --all-features

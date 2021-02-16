@@ -133,8 +133,8 @@ impl Encodable for UtcTime {
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
         self.header().encode(encoder)?;
 
-        let datetime = DateTime::from_unix_duration(self.0)
-            .ok_or_else(|| ErrorKind::Value { tag: Tag::UtcTime })?;
+        let datetime =
+            DateTime::from_unix_duration(self.0).ok_or(ErrorKind::Value { tag: Tag::UtcTime })?;
 
         debug_assert!((1950..2050).contains(&datetime.year()));
         datetime::encode_decimal(encoder, Tag::UtcTime, datetime.year() - 1900)?;

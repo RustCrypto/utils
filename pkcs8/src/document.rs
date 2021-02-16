@@ -1,12 +1,13 @@
 //! PKCS#8 documents: serialized PKCS#8 private keys and SPKI public keys
 // TODO(tarcieri): heapless support?
 
-use crate::{Error, PrivateKeyInfo, Result, SubjectPublicKeyInfo};
+use crate::{error, Error, PrivateKeyInfo, Result, SubjectPublicKeyInfo};
 use alloc::{borrow::ToOwned, vec::Vec};
 use core::{
     convert::{TryFrom, TryInto},
     fmt,
 };
+use der::Encodable;
 use zeroize::{Zeroize, Zeroizing};
 
 #[cfg(feature = "std")]
@@ -86,7 +87,7 @@ impl PrivateKeyDocument {
 
     /// Parse the [`PrivateKeyInfo`] contained in this [`PrivateKeyDocument`]
     pub fn private_key_info(&self) -> PrivateKeyInfo<'_> {
-        PrivateKeyInfo::from_der(self.0.as_ref()).expect("constructor failed to validate document")
+        PrivateKeyInfo::try_from(self.0.as_ref()).expect("constructor failed to validate document")
     }
 }
 
@@ -96,12 +97,28 @@ impl AsRef<[u8]> for PrivateKeyDocument {
     }
 }
 
+impl From<PrivateKeyInfo<'_>> for PrivateKeyDocument {
+    fn from(private_key_info: PrivateKeyInfo<'_>) -> PrivateKeyDocument {
+        PrivateKeyDocument::from(&private_key_info)
+    }
+}
+
+impl From<&PrivateKeyInfo<'_>> for PrivateKeyDocument {
+    fn from(private_key_info: &PrivateKeyInfo<'_>) -> PrivateKeyDocument {
+        private_key_info
+            .to_vec()
+            .ok()
+            .and_then(|buf| buf.try_into().ok())
+            .expect(error::DER_ENCODING_MSG)
+    }
+}
+
 impl TryFrom<&[u8]> for PrivateKeyDocument {
     type Error = Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self> {
         // Ensure document is well-formed
-        PrivateKeyInfo::from_der(bytes)?;
+        PrivateKeyInfo::try_from(bytes)?;
         Ok(Self(Zeroizing::new(bytes.to_owned())))
     }
 }
@@ -111,7 +128,7 @@ impl TryFrom<Vec<u8>> for PrivateKeyDocument {
 
     fn try_from(mut bytes: Vec<u8>) -> Result<Self> {
         // Ensure document is well-formed
-        if PrivateKeyInfo::from_der(&bytes).is_ok() {
+        if PrivateKeyInfo::try_from(bytes.as_slice()).is_ok() {
             Ok(Self(Zeroizing::new(bytes)))
         } else {
             bytes.zeroize();
@@ -210,7 +227,7 @@ impl PublicKeyDocument {
 
     /// Parse the [`SubjectPublicKeyInfo`] contained in this [`PublicKeyDocument`]
     pub fn spki(&self) -> SubjectPublicKeyInfo<'_> {
-        SubjectPublicKeyInfo::from_der(self.0.as_ref())
+        SubjectPublicKeyInfo::try_from(self.0.as_slice())
             .expect("constructor failed to validate document")
     }
 }
@@ -221,12 +238,27 @@ impl AsRef<[u8]> for PublicKeyDocument {
     }
 }
 
+impl From<SubjectPublicKeyInfo<'_>> for PublicKeyDocument {
+    fn from(spki: SubjectPublicKeyInfo<'_>) -> PublicKeyDocument {
+        PublicKeyDocument::from(&spki)
+    }
+}
+
+impl From<&SubjectPublicKeyInfo<'_>> for PublicKeyDocument {
+    fn from(spki: &SubjectPublicKeyInfo<'_>) -> PublicKeyDocument {
+        spki.to_vec()
+            .ok()
+            .and_then(|buf| buf.try_into().ok())
+            .expect(error::DER_ENCODING_MSG)
+    }
+}
+
 impl TryFrom<&[u8]> for PublicKeyDocument {
     type Error = Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self> {
         // Ensure document is well-formed
-        SubjectPublicKeyInfo::from_der(bytes)?;
+        SubjectPublicKeyInfo::try_from(bytes)?;
         Ok(Self(bytes.to_owned()))
     }
 }
@@ -236,7 +268,7 @@ impl TryFrom<Vec<u8>> for PublicKeyDocument {
 
     fn try_from(bytes: Vec<u8>) -> Result<Self> {
         // Ensure document is well-formed
-        SubjectPublicKeyInfo::from_der(&bytes)?;
+        SubjectPublicKeyInfo::try_from(bytes.as_slice())?;
         Ok(Self(bytes))
     }
 }
