@@ -8,7 +8,8 @@
 //! of a heap:
 //!
 //! - [`PrivateKeyInfo`]: algorithm identifier and data representing a private key.
-//! - [`SubjectPublicKeyInfo`]: algorithm identifier and data representing a public key.
+//! - [`SubjectPublicKeyInfo`]: algorithm identifier and data representing a public key
+//!   (re-exported from the [`spki`] crate)
 //!
 //! When the `alloc` feature is enabled, the following additional types are
 //! available which provide more convenient decoding/encoding support:
@@ -35,7 +36,7 @@
 //!
 //! # Minimum Supported Rust Version
 //!
-//! This crate requires **Rust 1.46** at a minimum.
+//! This crate requires **Rust 1.47** at a minimum.
 //!
 //! [RFC 5208]: https://tools.ietf.org/html/rfc5208
 
@@ -44,7 +45,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/pkcs8/0.4.1"
+    html_root_url = "https://docs.rs/pkcs8/0.5.0-pre"
 )]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
@@ -55,10 +56,8 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-mod algorithm;
 mod error;
 mod private_key_info;
-mod spki;
 mod traits;
 
 #[cfg(feature = "alloc")]
@@ -68,13 +67,12 @@ mod document;
 mod pem;
 
 pub use crate::{
-    algorithm::{AlgorithmIdentifier, AlgorithmParameters},
     error::{Error, Result},
     private_key_info::PrivateKeyInfo,
-    spki::SubjectPublicKeyInfo,
     traits::{FromPrivateKey, FromPublicKey},
 };
 pub use der::{self, ObjectIdentifier};
+pub use spki::{AlgorithmIdentifier, AlgorithmParameters, SubjectPublicKeyInfo};
 
 #[cfg(feature = "alloc")]
 pub use crate::{

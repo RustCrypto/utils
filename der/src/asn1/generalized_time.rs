@@ -135,7 +135,7 @@ impl Encodable for GeneralizedTime {
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
         self.header().encode(encoder)?;
 
-        let datetime = DateTime::from_unix_duration(self.0).ok_or_else(|| ErrorKind::Value {
+        let datetime = DateTime::from_unix_duration(self.0).ok_or(ErrorKind::Value {
             tag: Tag::GeneralizedTime,
         })?;
 

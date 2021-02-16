@@ -1,6 +1,6 @@
 [package]
 name = "pkcs8"
-version = "0.4.1" # Also update html_root_url in lib.rs when bumping this
+version = "0.5.0-pre" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #8:
 Private-Key Information Syntax Specification (RFC 5208)
@@ -17,6 +17,7 @@ readme = "README.md"
 [dependencies]
 base64ct = { version = "0.2", optional = true, features = ["alloc"], path = "../base64ct" }
 der = { version = "0.2", features = ["oid"], path = "../der" }
+spki = { version = "0", path = "../spki" }
 zeroize = { version = "1", optional = true, default-features = false, features = ["alloc"] }
 
 [dev-dependencies]

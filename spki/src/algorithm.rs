@@ -1,11 +1,7 @@
 //! X.509 `AlgorithmIdentifier`
 
-use crate::{Error, ObjectIdentifier, Result};
 use core::convert::TryFrom;
-use der::{Decodable, Encodable, Message};
-
-#[cfg(feature = "alloc")]
-use {crate::error, alloc::vec::Vec};
+use der::{Decodable, Encodable, Error, Message, Null, ObjectIdentifier, Result, Tag};
 
 /// X.509 `AlgorithmIdentifier`
 ///
@@ -28,29 +24,11 @@ pub struct AlgorithmIdentifier {
 }
 
 impl AlgorithmIdentifier {
-    /// Parse [`AlgorithmIdentifier`] encoded as ASN.1 DER
-    pub fn from_der(bytes: &[u8]) -> Result<Self> {
-        Ok(Self::from_bytes(bytes)?)
-    }
-
     /// Get the `parameters` field as an [`ObjectIdentifier`].
     ///
     /// Returns `None` if it is absent or not an OID.
     pub fn parameters_oid(&self) -> Option<ObjectIdentifier> {
         self.parameters.and_then(AlgorithmParameters::oid)
-    }
-
-    /// Write ASN.1 DER-encoded [`AlgorithmIdentifier`] to the provided
-    /// buffer, returning a slice containing the encoded data.
-    pub fn write_der<'a>(&self, buffer: &'a mut [u8]) -> Result<&'a [u8]> {
-        Ok(self.encode_to_slice(buffer)?)
-    }
-
-    /// Encode this [`AlgorithmIdentifier`] as ASN.1 DER
-    #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-    pub fn to_der(&self) -> Vec<u8> {
-        self.to_vec().expect(error::DER_ENCODING_MSG)
     }
 }
 
@@ -58,14 +36,14 @@ impl TryFrom<&[u8]> for AlgorithmIdentifier {
     type Error = Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self> {
-        Self::from_der(bytes)
+        Self::from_bytes(bytes)
     }
 }
 
 impl TryFrom<der::Any<'_>> for AlgorithmIdentifier {
-    type Error = der::Error;
+    type Error = Error;
 
-    fn try_from(any: der::Any<'_>) -> der::Result<AlgorithmIdentifier> {
+    fn try_from(any: der::Any<'_>) -> Result<AlgorithmIdentifier> {
         any.sequence(|decoder| {
             let oid = decoder.decode()?;
             let parameters = decoder.decode()?;
@@ -75,9 +53,9 @@ impl TryFrom<der::Any<'_>> for AlgorithmIdentifier {
 }
 
 impl<'a> Message<'a> for AlgorithmIdentifier {
-    fn fields<F, T>(&self, f: F) -> der::Result<T>
+    fn fields<F, T>(&self, f: F) -> Result<T>
     where
-        F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
+        F: FnOnce(&[&dyn Encodable]) -> Result<T>,
     {
         f(&[&self.oid, &self.parameters])
     }
@@ -124,8 +102,8 @@ impl AlgorithmParameters {
     }
 }
 
-impl From<der::Null> for AlgorithmParameters {
-    fn from(_: der::Null) -> AlgorithmParameters {
+impl From<Null> for AlgorithmParameters {
+    fn from(_: Null) -> AlgorithmParameters {
         AlgorithmParameters::Null
     }
 }
@@ -137,12 +115,12 @@ impl From<ObjectIdentifier> for AlgorithmParameters {
 }
 
 impl TryFrom<der::Any<'_>> for AlgorithmParameters {
-    type Error = der::Error;
+    type Error = Error;
 
-    fn try_from(any: der::Any<'_>) -> der::Result<AlgorithmParameters> {
+    fn try_from(any: der::Any<'_>) -> Result<AlgorithmParameters> {
         match any.tag() {
-            der::Tag::Null => any.null().map(Into::into),
-            der::Tag::ObjectIdentifier => any.oid().map(Into::into),
+            Tag::Null => any.null().map(Into::into),
+            Tag::ObjectIdentifier => any.oid().map(Into::into),
             _ => Err(der::ErrorKind::UnexpectedTag {
                 expected: None,
                 actual: any.tag(),
@@ -153,14 +131,14 @@ impl TryFrom<der::Any<'_>> for AlgorithmParameters {
 }
 
 impl Encodable for AlgorithmParameters {
-    fn encoded_len(&self) -> der::Result<der::Length> {
+    fn encoded_len(&self) -> Result<der::Length> {
         match self {
-            Self::Null => der::Null.encoded_len(),
+            Self::Null => Null.encoded_len(),
             Self::Oid(oid) => oid.encoded_len(),
         }
     }
 
-    fn encode(&self, encoder: &mut der::Encoder<'_>) -> der::Result<()> {
+    fn encode(&self, encoder: &mut der::Encoder<'_>) -> Result<()> {
         match self {
             Self::Null => encoder.null(),
             Self::Oid(oid) => encoder.oid(*oid),

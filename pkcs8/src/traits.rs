@@ -1,6 +1,7 @@
 //! Traits for parsing objects from PKCS#8 encoded documents
 
 use crate::{PrivateKeyInfo, Result, SubjectPublicKeyInfo};
+use core::convert::TryFrom;
 
 #[cfg(feature = "alloc")]
 use crate::{PrivateKeyDocument, PublicKeyDocument};
@@ -22,7 +23,7 @@ pub trait FromPrivateKey: Sized {
     /// Deserialize PKCS#8 private key from ASN.1 DER-encoded data
     /// (binary format).
     fn from_pkcs8_der(bytes: &[u8]) -> Result<Self> {
-        PrivateKeyInfo::from_der(bytes).and_then(Self::from_pkcs8_private_key_info)
+        Self::from_pkcs8_private_key_info(PrivateKeyInfo::try_from(bytes)?)
     }
 
     /// Deserialize PKCS#8 private key from a [`PrivateKeyDocument`].
@@ -70,7 +71,7 @@ pub trait FromPublicKey: Sized {
     /// Deserialize object from ASN.1 DER-encoded [`SubjectPublicKeyInfo`]
     /// (binary format).
     fn from_public_key_der(bytes: &[u8]) -> Result<Self> {
-        SubjectPublicKeyInfo::from_der(bytes).and_then(Self::from_spki)
+        Self::from_spki(SubjectPublicKeyInfo::try_from(bytes)?)
     }
 
     /// Deserialize PKCS#8 private key from a [`PrivateKeyDocument`].

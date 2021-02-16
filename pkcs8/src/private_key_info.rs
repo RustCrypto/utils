@@ -49,17 +49,6 @@ pub struct PrivateKeyInfo<'a> {
 }
 
 impl<'a> PrivateKeyInfo<'a> {
-    /// Parse [`PrivateKeyInfo`] encoded as ASN.1 DER.
-    pub fn from_der(bytes: &'a [u8]) -> Result<Self> {
-        Ok(Self::from_bytes(bytes)?)
-    }
-
-    /// Write ASN.1 DER-encoded [`PrivateKeyInfo`] to the provided
-    /// buffer, returning a slice containing the encoded data.
-    pub fn write_der<'b>(&self, buffer: &'b mut [u8]) -> Result<&'b [u8]> {
-        Ok(self.encode_to_slice(buffer)?)
-    }
-
     /// Encode this [`PrivateKeyInfo`] as ASN.1 DER.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
@@ -84,7 +73,7 @@ impl<'a> TryFrom<&'a [u8]> for PrivateKeyInfo<'a> {
     type Error = Error;
 
     fn try_from(bytes: &'a [u8]) -> Result<Self> {
-        Self::from_der(bytes)
+        Ok(Self::from_bytes(bytes)?)
     }
 }
 
