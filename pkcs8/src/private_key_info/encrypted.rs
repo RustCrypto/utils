@@ -14,14 +14,16 @@ use der::{Decodable, Encodable, Message};
 /// tl;dr: none yet!
 ///
 /// This crate does not (yet) support decrypting/encrypting private key data.
+/// However, support for the following may be added in future releases:
 ///
-/// [PKCS#5 v1.5] supports several password-based encryption algorithms,
-/// including `PBE-SHA1-3DES`.
+/// - [PKCS#5 v1.5] supports several password-based encryption algorithms,
+///   including `PBE-SHA1-3DES`.
+/// - [PKCS#5 v2] adds support for AES-CBC encryption with iterated PRFs
+///   such as `hmacWithSHA256`.
 ///
-/// [PKCS#5 v2] adds support for AES encryption with iterated PRFs
-/// such as `hmacWithSHA256`.
+/// Please see the following GitHub issue for tracking information:
 ///
-/// We may consider adding support for these in future releases of this crate.
+/// <https://github.com/RustCrypto/utils/issues/263>
 ///
 /// ## Schema
 /// Structure described in [RFC 5208 Section 6]:

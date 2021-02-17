@@ -35,6 +35,9 @@
 //! private keys.
 //!
 //! However, support for actually decrypting/encrypting them remains TBD.
+//! Please see the following GitHub issue for more information:
+//!
+//! <https://github.com/RustCrypto/utils/issues/263>
 //!
 //! # Minimum Supported Rust Version
 //!
