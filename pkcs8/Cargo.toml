@@ -8,25 +8,25 @@ Private-Key Information Syntax Specification (RFC 5208)
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 edition = "2018"
-documentation = "https://docs.rs/pkcs8"
 repository = "https://github.com/RustCrypto/utils/tree/master/pkcs8"
 categories = ["cryptography", "data-structures", "encoding", "no-std"]
 keywords = ["crypto", "key", "private"]
 readme = "README.md"
 
 [dependencies]
-base64ct = { version = "0.2", optional = true, features = ["alloc"], path = "../base64ct" }
 der = { version = "0.2", features = ["oid"], path = "../der" }
 spki = { version = "0.1", path = "../spki" }
+
+base64ct = { version = "0.2", optional = true, features = ["alloc"], path = "../base64ct" }
 zeroize = { version = "1", optional = true, default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
 hex-literal = "0.3"
 
 [features]
+std = ["alloc", "der/std"]
 alloc = ["der/alloc", "zeroize"]
 pem = ["alloc", "base64ct"]
-std = ["alloc", "der/std"]
 
 [package.metadata.docs.rs]
 all-features = true
