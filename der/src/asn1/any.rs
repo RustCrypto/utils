@@ -47,9 +47,14 @@ impl<'a> Any<'a> {
         self.value.len()
     }
 
-    /// Is the value of this [`Any`] type empty?
+    /// Is the body of this [`Any`] type empty?
     pub fn is_empty(self) -> bool {
         self.value.is_empty()
+    }
+
+    /// Is this value an ASN.1 NULL value?
+    pub fn is_null(self) -> bool {
+        Null::try_from(self).is_ok()
     }
 
     /// Get the raw value for this [`Any`] type as a byte slice.
@@ -68,6 +73,7 @@ impl<'a> Any<'a> {
     }
 
     /// Attempt to decode an ASN.1 `NULL` value.
+    #[deprecated(since = "0.2.4", note = "Please use the `is_null` function instead")]
     pub fn null(self) -> Result<Null> {
         self.try_into()
     }

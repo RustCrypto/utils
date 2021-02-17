@@ -16,7 +16,7 @@ use std::{fs, path::Path, str};
 #[cfg(feature = "pem")]
 use {crate::pem, alloc::string::String, core::str::FromStr};
 
-/// PKCS#8 private key document
+/// PKCS#8 private key document.
 ///
 /// This type provides storage for a PKCS#8 private key encoded as ASN.1 DER
 /// with the invariant that the contained-document is "well-formed", i.e. it
@@ -155,7 +155,7 @@ impl FromStr for PrivateKeyDocument {
     }
 }
 
-/// SPKI public key document
+/// SPKI public key document.
 ///
 /// This type provides storage for a SPKI public key encoded as ASN.1 DER with
 /// the invariant that the contained-document is "well-formed", i.e. it will

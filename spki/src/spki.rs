@@ -19,8 +19,8 @@ use der::{Decodable, Encodable, Error, Message, Result};
 /// ```
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct SubjectPublicKeyInfo<'a> {
-    /// X.509 [`AlgorithmIdentifier`]
-    pub algorithm: AlgorithmIdentifier,
+    /// X.509 [`AlgorithmIdentifier`] for the public key type
+    pub algorithm: AlgorithmIdentifier<'a>,
 
     /// Public key data
     pub subject_public_key: &'a [u8],
