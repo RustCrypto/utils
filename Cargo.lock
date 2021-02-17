@@ -97,7 +97,7 @@ version = "0.3.0"
 
 [[package]]
 name = "pkcs8"
-version = "0.5.0-pre"
+version = "0.5.0"
 dependencies = [
  "base64ct",
  "der",
