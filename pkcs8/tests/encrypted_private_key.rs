@@ -38,6 +38,8 @@ fn parse_ed25519_der_encrypted() {
     ); // PBES2
 
     // TODO(tarcieri): parse/extract params
+    let params = pk.encryption_algorithm.parameters_any().unwrap();
+    assert_eq!(params.tag(), der::Tag::Sequence);
 
     // Extracted with:
     // $  openssl asn1parse -in tests/examples/ed25519-priv-enc-v2.der -inform der
