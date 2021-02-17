@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 (2021-02-16)
+### Added
+- Initial `EncryptedPrivateKeyInfo` support ([#262])
+
+### Changed
+- Extract SPKI-related types into the `spki` crate ([#261], [#268])
+
+[#261]: https://github.com/RustCrypto/utils/pull/261
+[#262]: https://github.com/RustCrypto/utils/pull/262
+[#268]: https://github.com/RustCrypto/utils/pull/268
+
 ## 0.4.1 (2021-02-01)
 ### Changed
 - Bump `basec4ct` dependency to v0.2 ([#238], [#243])
