@@ -1,5 +1,7 @@
 //! PKCS#8 `PrivateKeyInfo`.
 
+pub(crate) mod encrypted;
+
 use crate::{AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
 use der::{Decodable, Encodable, Message};
@@ -16,13 +18,12 @@ use {crate::pem, zeroize::Zeroizing};
 /// RFC 5208 designates `0` as the only valid version for PKCS#8 documents
 const VERSION: u8 = 0;
 
-/// PKCS#8 `PrivateKeyInfo`
+/// PKCS#8 `PrivateKeyInfo`.
 ///
 /// ASN.1 structure containing an [`AlgorithmIdentifier`] and private key
 /// data in an algorithm specific format.
 ///
-/// Described in RFC 5208 Section 5:
-/// <https://tools.ietf.org/html/rfc5208#section-5>
+/// Described in [RFC 5208 Section 5]:
 ///
 /// ```text
 /// PrivateKeyInfo ::= SEQUENCE {
@@ -39,13 +40,18 @@ const VERSION: u8 = 0;
 ///
 /// Attributes ::= SET OF Attribute
 /// ```
-#[derive(Copy, Clone)]
+///
+/// [RFC 5208 Section 5]: https://tools.ietf.org/html/rfc5208#section-5
+#[derive(Clone)]
 pub struct PrivateKeyInfo<'a> {
-    /// X.509 [`AlgorithmIdentifier`]
-    pub algorithm: AlgorithmIdentifier,
+    /// X.509 [`AlgorithmIdentifier`] for the private key type
+    pub algorithm: AlgorithmIdentifier<'a>,
 
     /// Private key data
     pub private_key: &'a [u8],
+    // TODO(tarcieri): support for `Attributes` (are they used in practice?)
+    // PKCS#9 describes the possible attributes: https://tools.ietf.org/html/rfc2985
+    // Workaround for stripping attributes: https://stackoverflow.com/a/48039151
 }
 
 impl<'a> PrivateKeyInfo<'a> {

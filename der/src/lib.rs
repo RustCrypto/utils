@@ -315,7 +315,7 @@
     html_root_url = "https://docs.rs/der/0.2.3"
 )]
 #![forbid(unsafe_code)]
-#![warn(missing_docs, rust_2018_idioms)]
+#![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;

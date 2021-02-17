@@ -71,7 +71,7 @@ impl From<ErrorKind> for Error {
     }
 }
 
-impl From<core::convert::Infallible> for Error {
+impl From<Infallible> for Error {
     fn from(_: Infallible) -> Error {
         unreachable!()
     }
