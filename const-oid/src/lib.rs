@@ -103,15 +103,18 @@ impl std::error::Error for Error {}
 /// Result type
 pub type Result<T> = core::result::Result<T, Error>;
 
-/// Object identifier (OID)
+/// Object identifier (OID).
+///
+/// OIDs are hierarchical structures consisting of "arcs", i.e. integer
+/// identifiers.
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct ObjectIdentifier {
     /// Byte containing the first and second arcs of this OID, stored
     /// separately from the others to minimize this type's size.
     root_arcs: RootArcs,
 
-    /// Additional "lower" arcs beyond the first and second arcs, which are
-    /// stored as [`RootArcs`].
+    /// Additional "lower" arcs beyond the first and second arcs
+    /// (the latter are stored as [`RootArcs`]).
     lower_arcs: LowerArcs,
 }
 

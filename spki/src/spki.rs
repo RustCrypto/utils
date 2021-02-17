@@ -4,7 +4,7 @@ use crate::AlgorithmIdentifier;
 use core::convert::TryFrom;
 use der::{Decodable, Encodable, Error, Message, Result};
 
-/// X.509 `SubjectPublicKeyInfo` (SPKI)
+/// X.509 `SubjectPublicKeyInfo` (SPKI).
 ///
 /// ASN.1 structure containing an [`AlgorithmIdentifier`] and public key
 /// data in an algorithm specific format.
