@@ -120,15 +120,7 @@ impl<'a> AlgorithmParameters<'a> {
     /// OID or `NULL`.
     pub fn any(self) -> Option<Any<'a>> {
         match self {
-            AlgorithmParameters::Any(any) => Some(any),
-            _ => None,
-        }
-    }
-
-    /// Get the OID value if applicable
-    pub fn oid(self) -> Option<ObjectIdentifier> {
-        match self {
-            AlgorithmParameters::Oid(oid) => Some(oid),
+            Self::Any(any) => Some(any),
             _ => None,
         }
     }
@@ -143,7 +135,15 @@ impl<'a> AlgorithmParameters<'a> {
         self.oid().is_some()
     }
 
-    /// Get the ASN.1 DER [`Tag`] for these parameters
+    /// Get the OID value if applicable.
+    pub fn oid(self) -> Option<ObjectIdentifier> {
+        match self {
+            Self::Oid(oid) => Some(oid),
+            _ => None,
+        }
+    }
+
+    /// Get the ASN.1 DER [`Tag`] for these parameters.
     pub fn tag(self) -> Tag {
         match self {
             Self::Any(any) => any.tag(),
@@ -155,13 +155,13 @@ impl<'a> AlgorithmParameters<'a> {
 
 impl<'a> From<Null> for AlgorithmParameters<'a> {
     fn from(_: Null) -> AlgorithmParameters<'a> {
-        AlgorithmParameters::Null
+        Self::Null
     }
 }
 
 impl<'a> From<ObjectIdentifier> for AlgorithmParameters<'a> {
     fn from(oid: ObjectIdentifier) -> AlgorithmParameters<'a> {
-        AlgorithmParameters::Oid(oid)
+        Self::Oid(oid)
     }
 }
 
