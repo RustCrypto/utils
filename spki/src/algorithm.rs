@@ -27,18 +27,34 @@ pub struct AlgorithmIdentifier<'a> {
 impl<'a> AlgorithmIdentifier<'a> {
     /// Get the `parameters` field as an [`Any`].
     ///
-    /// This will be `None` if the parameters are an [`ObjectIdentifier`] or
-    /// [`Null`], so this method should be used for handling any other
-    /// ASN.1 type besides those two.
-    pub fn parameters_any(&self) -> Option<Any<'a>> {
-        self.parameters.and_then(AlgorithmParameters::any)
+    /// Returns an error if `parameters` are `None`, or if they are `Some`
+    /// but are an [`ObjectIdentifier`] or [`Null`], i.e. this method is
+    /// explicitly for handling cases other than those two.
+    pub fn parameters_any(&self) -> Result<Any<'a>> {
+        let params = self.parameters.ok_or(der::ErrorKind::Truncated)?;
+
+        params.any().ok_or_else(|| {
+            der::ErrorKind::UnexpectedTag {
+                expected: Some(der::Tag::Sequence),
+                actual: params.tag(),
+            }
+            .into()
+        })
     }
 
     /// Get the `parameters` field as an [`ObjectIdentifier`].
     ///
-    /// Returns `None` if it is absent or not an OID.
-    pub fn parameters_oid(&self) -> Option<ObjectIdentifier> {
-        self.parameters.and_then(AlgorithmParameters::oid)
+    /// Returns an error if it is absent or not an OID.
+    pub fn parameters_oid(&self) -> Result<ObjectIdentifier> {
+        let params = self.parameters.ok_or(der::ErrorKind::Truncated)?;
+
+        params.oid().ok_or_else(|| {
+            der::ErrorKind::UnexpectedTag {
+                expected: Some(der::Tag::Sequence),
+                actual: params.tag(),
+            }
+            .into()
+        })
     }
 }
 
@@ -125,6 +141,15 @@ impl<'a> AlgorithmParameters<'a> {
     /// Is this parameter value an OID?
     pub fn is_oid(self) -> bool {
         self.oid().is_some()
+    }
+
+    /// Get the ASN.1 DER [`Tag`] for these parameters
+    pub fn tag(self) -> Tag {
+        match self {
+            Self::Any(any) => any.tag(),
+            Self::Null => Tag::Null,
+            Self::Oid(_) => Tag::ObjectIdentifier,
+        }
     }
 }
 
