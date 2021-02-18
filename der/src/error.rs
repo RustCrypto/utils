@@ -5,21 +5,24 @@ pub use core::str::Utf8Error;
 use crate::{Length, Tag};
 use core::{convert::Infallible, fmt};
 
+#[cfg(feature = "oid")]
+use crate::ObjectIdentifier;
+
 /// Result type.
 pub type Result<T> = core::result::Result<T, Error>;
 
-/// Error type
+/// Error type.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Error {
-    /// Kind of error
+    /// Kind of error.
     kind: ErrorKind,
 
-    /// Position inside of message where error occurred
+    /// Position inside of message where error occurred.
     position: Option<Length>,
 }
 
 impl Error {
-    /// Create a new [`Error`]
+    /// Create a new [`Error`].
     pub fn new(kind: ErrorKind, position: Length) -> Error {
         Error {
             kind,
@@ -100,40 +103,50 @@ impl std::error::Error for ErrorKind {}
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum ErrorKind {
-    /// Operation failed due to previous error
+    /// Operation failed due to previous error.
     Failed,
 
-    /// Incorrect length for a given field
+    /// Incorrect length for a given field.
     Length {
-        /// Tag type of the value being decoded
+        /// Tag type of the value being decoded.
         tag: Tag,
     },
 
-    /// Message is not canonically encoded
+    /// Message is not canonically encoded.
     Noncanonical,
 
     /// Malformed OID
+    // TODO(tarcieri): rename this to `OidMalformed` in next breaking release
     Oid,
 
-    /// Integer overflow occurred (library bug!)
+    /// Invalid/unknown OID.
+    ///
+    /// This can be used by DER message parsers to report problems with a
+    /// specific OID in the event it prevents the parsing of a message.
+    #[cfg(feature = "oid")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
+    OidInvalid(ObjectIdentifier),
+
+    /// Integer overflow occurred (library bug!).
     Overflow,
 
-    /// Message is longer than this library's internal limits support
+    /// Message is longer than this library's internal limits support.
     Overlength,
 
-    /// Undecoded trailing data at end of message
+    /// Undecoded trailing data at end of message.
     TrailingData {
-        /// Length of the decoded data
+        /// Length of the decoded data.
         decoded: Length,
 
-        /// Total length of the remaining data left in the buffer
+        /// Total length of the remaining data left in the buffer.
         remaining: Length,
     },
 
-    /// Unexpected end-of-message/nested field when decoding
+    /// Unexpected end-of-message/nested field when decoding.
     Truncated,
 
-    /// Encoded message is shorter than the expected length
+    /// Encoded message is shorter than the expected length.
+    ///
     /// (i.e. an `Encodable` impl on a particular type has a buggy `encoded_len`)
     Underlength {
         /// Expected length
@@ -143,7 +156,7 @@ pub enum ErrorKind {
         actual: Length,
     },
 
-    /// Unexpected tag
+    /// Unexpected tag.
     UnexpectedTag {
         /// Tag the decoder was expecting (if there is a single such tag).
         ///
@@ -151,22 +164,22 @@ pub enum ErrorKind {
         /// does not match any of them.
         expected: Option<Tag>,
 
-        /// Actual tag encountered in the message
+        /// Actual tag encountered in the message.
         actual: Tag,
     },
 
-    /// Unknown/unsupported tag
+    /// Unknown/unsupported tag.
     UnknownTag {
-        /// Raw byte value of the tag
+        /// Raw byte value of the tag.
         byte: u8,
     },
 
-    /// UTF-8 errors
+    /// UTF-8 errors.
     Utf8(Utf8Error),
 
-    /// Unexpected value
+    /// Unexpected value.
     Value {
-        /// Tag of the unexpected value
+        /// Tag of the unexpected value.
         tag: Tag,
     },
 }
@@ -186,6 +199,8 @@ impl fmt::Display for ErrorKind {
             ErrorKind::Length { tag } => write!(f, "incorrect length for {}", tag),
             ErrorKind::Noncanonical => write!(f, "DER is not canonically encoded"),
             ErrorKind::Oid => write!(f, "malformed OID"),
+            #[cfg(feature = "oid")]
+            ErrorKind::OidInvalid(oid) => write!(f, "invalid/unknown OID: {}", oid),
             ErrorKind::Overflow => write!(f, "integer overflow"),
             ErrorKind::Overlength => write!(f, "DER message is too long"),
             ErrorKind::TrailingData { decoded, remaining } => {
