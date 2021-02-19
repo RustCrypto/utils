@@ -122,7 +122,7 @@ impl TryFrom<ObjectIdentifier> for EncryptionScheme {
             PBE_WITH_MD5_AND_RC2_CBC_OID => Ok(Self::PbeWithMd5AndRc2Cbc),
             PBE_WITH_SHA1_AND_DES_CBC_OID => Ok(Self::PbeWithSha1AndDesCbc),
             PBE_WITH_SHA1_AND_RC2_CBC_OID => Ok(Self::PbeWithSha1AndRc2Cbc),
-            _ => Err(ErrorKind::OidInvalid(oid).into()),
+            _ => Err(ErrorKind::UnknownOid { oid }.into()),
         }
     }
 }

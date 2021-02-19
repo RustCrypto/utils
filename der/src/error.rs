@@ -103,7 +103,11 @@ impl std::error::Error for ErrorKind {}
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum ErrorKind {
-    /// Operation failed due to previous error.
+    /// This error indicates a previous DER parsing operation resulted in
+    /// an error and tainted the state of a `Decoder` or `Encoder`.
+    ///
+    /// Once this occurs, the overall operation has failed and cannot be
+    /// subsequently resumed.
     Failed,
 
     /// Incorrect length for a given field.
@@ -116,16 +120,8 @@ pub enum ErrorKind {
     Noncanonical,
 
     /// Malformed OID
-    // TODO(tarcieri): rename this to `OidMalformed` in next breaking release
+    // TODO(tarcieri): rename this to `MalformedOid` in next breaking release
     Oid,
-
-    /// Invalid/unknown OID.
-    ///
-    /// This can be used by DER message parsers to report problems with a
-    /// specific OID in the event it prevents the parsing of a message.
-    #[cfg(feature = "oid")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
-    OidInvalid(ObjectIdentifier),
 
     /// Integer overflow occurred (library bug!).
     Overflow,
@@ -168,6 +164,21 @@ pub enum ErrorKind {
         actual: Tag,
     },
 
+    /// Unknown OID.
+    ///
+    /// This error is intended to be used by libraries which parse DER-based
+    /// formats which encounter unknown or unsupported OID libraries.
+    ///
+    /// It enables passing back the OID value to the caller, which allows them
+    /// to determine which OID(s) are causing the error (and then potentially
+    /// contribute upstream support for algorithms they care about).
+    #[cfg(feature = "oid")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
+    UnknownOid {
+        /// OID value that was unrecognized by a parser for a DER-based format.
+        oid: ObjectIdentifier,
+    },
+
     /// Unknown/unsupported tag.
     UnknownTag {
         /// Raw byte value of the tag.
@@ -199,8 +210,6 @@ impl fmt::Display for ErrorKind {
             ErrorKind::Length { tag } => write!(f, "incorrect length for {}", tag),
             ErrorKind::Noncanonical => write!(f, "DER is not canonically encoded"),
             ErrorKind::Oid => write!(f, "malformed OID"),
-            #[cfg(feature = "oid")]
-            ErrorKind::OidInvalid(oid) => write!(f, "invalid/unknown OID: {}", oid),
             ErrorKind::Overflow => write!(f, "integer overflow"),
             ErrorKind::Overlength => write!(f, "DER message is too long"),
             ErrorKind::TrailingData { decoded, remaining } => {
@@ -224,6 +233,10 @@ impl fmt::Display for ErrorKind {
                 }
 
                 write!(f, "got {}", actual)
+            }
+            #[cfg(feature = "oid")]
+            ErrorKind::UnknownOid { oid } => {
+                write!(f, "unknown/unsupported OID: {}", oid)
             }
             ErrorKind::UnknownTag { byte } => {
                 write!(f, "unknown/unsupported ASN.1 DER tag: 0x{:02x}", byte)

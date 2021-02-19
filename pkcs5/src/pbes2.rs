@@ -78,7 +78,7 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Kdf<'a> {
                 .parameters_any()
                 .and_then(TryFrom::try_from)
                 .map(Self::Pbkdf2),
-            _ => Err(ErrorKind::OidInvalid(alg.oid).into()),
+            oid => Err(ErrorKind::UnknownOid { oid }.into()),
         }
     }
 }
@@ -174,7 +174,7 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Pbkdf2Prf {
 
         match alg.oid {
             HMAC_WITH_SHA256_OID => Ok(Self::HmacWithSha256),
-            _ => Err(ErrorKind::OidInvalid(alg.oid).into()),
+            oid => Err(ErrorKind::UnknownOid { oid }.into()),
         }
     }
 }
@@ -208,7 +208,7 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for EncryptionScheme<'a> {
 
                 Ok(Self::Aes256Cbc { iv })
             }
-            _ => Err(ErrorKind::OidInvalid(alg.oid).into()),
+            oid => Err(ErrorKind::UnknownOid { oid }.into()),
         }
     }
 }
