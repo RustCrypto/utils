@@ -33,6 +33,9 @@ version = "0.0.2"
 [[package]]
 name = "const-oid"
 version = "0.4.1"
+dependencies = [
+ "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "cpuid-bool"

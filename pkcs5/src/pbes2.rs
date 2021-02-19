@@ -22,7 +22,7 @@ pub const HMAC_WITH_SHA256_OID: ObjectIdentifier =
 /// 256-bit Advanced Encryption Standard (AES) algorithm with Cipher-Block
 /// Chaining (CBC) mode of operation.
 pub const AES_256_CBC_OID: ObjectIdentifier =
-    ObjectIdentifier::new(&[2, 0, 840, 1, 101, 3, 4, 1, 42]);
+    ObjectIdentifier::new(&[2, 16, 840, 1, 101, 3, 4, 1, 42]);
 
 /// AES cipher block size
 const AES_BLOCK_SIZE: usize = 16;

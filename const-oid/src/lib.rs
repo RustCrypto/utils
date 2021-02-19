@@ -49,7 +49,7 @@
 #[macro_use]
 extern crate alloc;
 
-#[cfg(any(feature = "std", test))]
+#[cfg(feature = "std")]
 extern crate std;
 
 use core::{
@@ -169,7 +169,7 @@ impl ObjectIdentifier {
             "invalid second arc (must be 0-39)"
         );
 
-        let root_arcs = RootArcs((first_arc * (SECOND_ARC_MAX + 1)) as u8 | second_arc as u8);
+        let root_arcs = RootArcs((first_arc * (SECOND_ARC_MAX + 1)) as u8 + second_arc as u8);
 
         // TODO(tarcieri): use `const_mut_ref` when stable.
         // See: <https://github.com/rust-lang/rust/issues/57349>
@@ -278,7 +278,6 @@ impl ObjectIdentifier {
         }
 
         bytes[0] = self.root_arcs.into();
-
         let mut offset = 1;
 
         for &arc in self.lower_arcs.as_ref() {
@@ -395,7 +394,7 @@ impl RootArcs {
             return Err(Error);
         }
 
-        let byte = (first_arc * (SECOND_ARC_MAX + 1)) as u8 | second_arc as u8;
+        let byte = (first_arc * (SECOND_ARC_MAX + 1)) as u8 + second_arc as u8;
         Ok(Self(byte))
     }
 
@@ -416,7 +415,9 @@ impl TryFrom<u8> for RootArcs {
     fn try_from(octet: u8) -> Result<Self> {
         let first = octet as u32 / (SECOND_ARC_MAX + 1);
         let second = octet as u32 % (SECOND_ARC_MAX + 1);
-        Self::new(first, second)
+        let result = Self::new(first, second)?;
+        debug_assert_eq!(octet, result.0);
+        Ok(result)
     }
 }
 
@@ -569,102 +570,5 @@ fn base128_len(n: u32) -> usize {
         0x4000..=0x1fffff => 3,
         0x200000..=0x1fffffff => 4,
         _ => 5,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::ObjectIdentifier;
-    use std::{convert::TryFrom, string::ToString};
-
-    /// Example OID value
-    const EXAMPLE_OID: ObjectIdentifier = ObjectIdentifier::new(&[1, 2, 840, 10045, 2, 1]);
-
-    /// Example OID encoded as ASN.1 BER/DER
-    const EXAMPLE_OID_BER: &[u8] = &[42, 134, 72, 206, 61, 2, 1];
-
-    /// Example OID as a string
-    const EXAMPLE_OID_STRING: &str = "1.2.840.10045.2.1";
-
-    #[test]
-    fn display() {
-        assert_eq!(EXAMPLE_OID.to_string(), EXAMPLE_OID_STRING);
-    }
-
-    #[test]
-    fn from_ber() {
-        let oid = ObjectIdentifier::from_ber(EXAMPLE_OID_BER).unwrap();
-        assert_eq!(oid, EXAMPLE_OID);
-
-        // Empty
-        assert!(ObjectIdentifier::from_ber(&[]).is_err());
-
-        // Truncated
-        assert!(ObjectIdentifier::from_ber(&[42]).is_err());
-        assert!(ObjectIdentifier::from_ber(&[42, 134]).is_err());
-    }
-
-    #[test]
-    fn from_str() {
-        let oid = EXAMPLE_OID_STRING.parse::<ObjectIdentifier>().unwrap();
-        assert_eq!(oid, EXAMPLE_OID);
-
-        // Too short
-        assert!("1.2".parse::<ObjectIdentifier>().is_err());
-
-        // Truncated
-        assert!("1.2.840.10045.2.".parse::<ObjectIdentifier>().is_err());
-
-        // Invalid first arc
-        assert!("3.2.840.10045.2.1".parse::<ObjectIdentifier>().is_err());
-
-        // Invalid second arc
-        assert!("1.40.840.10045.2.1".parse::<ObjectIdentifier>().is_err());
-    }
-
-    #[test]
-    fn try_from_u32_slice() {
-        let oid = ObjectIdentifier::try_from([1, 2, 840, 10045, 2, 1].as_ref()).unwrap();
-        assert_eq!(EXAMPLE_OID, oid);
-
-        // Too short
-        assert!(ObjectIdentifier::try_from([1, 2].as_ref()).is_err());
-
-        // Invalid first arc
-        assert!(ObjectIdentifier::try_from([3, 2, 840, 10045, 3, 1, 7].as_ref()).is_err());
-
-        // Invalid second arc
-        assert!(ObjectIdentifier::try_from([1, 40, 840, 10045, 3, 1, 7].as_ref()).is_err());
-    }
-
-    #[test]
-    fn write_ber() {
-        let mut buffer = [0u8; 16];
-        let slice = EXAMPLE_OID.write_ber(&mut buffer).unwrap();
-        assert_eq!(slice, EXAMPLE_OID_BER);
-    }
-
-    #[cfg(feature = "alloc")]
-    #[test]
-    fn to_ber() {
-        assert_eq!(EXAMPLE_OID.to_ber(), EXAMPLE_OID_BER);
-    }
-
-    #[test]
-    #[should_panic]
-    fn new_too_short() {
-        ObjectIdentifier::new(&[1, 2]);
-    }
-
-    #[test]
-    #[should_panic]
-    fn new_invalid_first_arc() {
-        ObjectIdentifier::new(&[3, 2, 840, 10045, 3, 1, 7]);
-    }
-
-    #[test]
-    #[should_panic]
-    fn new_invalid_second_arc() {
-        ObjectIdentifier::new(&[1, 40, 840, 10045, 3, 1, 7]);
     }
 }
