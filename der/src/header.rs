@@ -5,7 +5,7 @@ use core::convert::TryInto;
 
 /// ASN.1 DER headers: tag + length component of TLV-encoded values
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Header {
+pub struct Header {
     /// Tag representing the type of the encoded value
     pub tag: Tag,
 
@@ -16,7 +16,7 @@ pub(crate) struct Header {
 impl Header {
     /// Create a new [`Header`] from a [`Tag`] and a specified length.
     ///
-    /// Returns [`Error`] if the length exceeds the limits of [`Length`]
+    /// Returns an error if the length exceeds the limits of [`Length`].
     pub fn new(tag: Tag, length: impl TryInto<Length>) -> Result<Self> {
         let length = length.try_into().map_err(|_| ErrorKind::Overflow)?;
         Ok(Self { tag, length })

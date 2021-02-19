@@ -355,12 +355,13 @@ pub use crate::{
     decoder::Decoder,
     encoder::Encoder,
     error::{Error, ErrorKind, Result},
+    header::Header,
     length::Length,
     tag::Tag,
     traits::{Decodable, Encodable, Message, Tagged},
 };
 
-pub(crate) use crate::{byte_slice::ByteSlice, header::Header};
+pub(crate) use crate::byte_slice::ByteSlice;
 
 #[cfg(feature = "big-uint")]
 #[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
