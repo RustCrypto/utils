@@ -15,7 +15,7 @@ readme = "README.md"
 
 [dependencies]
 der = { version = "0.2.5", features = ["oid"], path = "../der" }
-spki = { version = "0.1", path = "../spki" }
+spki = { version = "0.2", path = "../spki" }
 
 [dev-dependencies]
 hex-literal = "0.3"
