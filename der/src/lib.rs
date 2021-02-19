@@ -24,32 +24,32 @@
 //!
 //! ## [`Decodable`] and [`Encodable`] traits
 //!
-//! The [`Decodable`] and [`Encodable`] traits (along with the [`Message`]
-//! supertrait which encompasses them both) are the core abstractions on
+//! The [`Decodable`] and [`Encodable`] traits are the core abstractions on
 //! which this crate is built and control what types can be (de)serialized
 //! as ASN.1 DER.
 //!
 //! The traits are impl'd for the following Rust core types:
 //!
-//! - [`bool`] (ASN.1 `BOOLEAN`)
-//! - [`i8`], [`i16`], [`u8`], [`u16`] (ASN.1 `INTEGER`)
-//! - [`str`] (ASN.1 `UTF8String`, see also [`Utf8String`])
-//! - [`Option`] (ASN.1 `OPTIONAL`)
-//! - [`SystemTime`][`std::time::SystemTime`] (ASN.1 `GeneralizedTime`, requires `std` feature)
+//! - `()`: ASN.1 `NULL` (see also [`Null`])
+//! - [`bool`]: ASN.1 `BOOLEAN`
+//! - [`i8`], [`i16`], [`u8`], [`u16`]: ASN.1 `INTEGER`
+//! - [`str`]: ASN.1 `UTF8String` (see also [`Utf8String`])
+//! - [`Option`]: ASN.1 `OPTIONAL`
+//! - [`SystemTime`][`std::time::SystemTime`]: ASN.1 `GeneralizedTime` (requires `std` feature)
 //!
 //! The following ASN.1 types provided by this crate also impl these traits:
 //!
-//! - [`Any`] (ASN.1 `ANY`)
-//! - [`BigUInt`] (ASN.1 unsigned `INTEGER` with raw access to encoded bytes)
-//! - [`BitString`] (ASN.1 `BIT STRING`)
-//! - [`GeneralizedTime`] (ASN.1 `GeneralizedTime`)
-//! - [`Null`] (ASN.1 `NULL`)
-//! - [`ObjectIdentifier`] (ASN.1 `OBJECT IDENTIFIER`)
-//! - [`OctetString`] (ASN.1 `OCTET STRING`)
-//! - [`PrintableString`] (ASN.1 `PrintableString` i.e. ASCII)
-//! - [`Sequence`] (ASN.1 `SEQUENCE`)
-//! - [`UtcTime`] (ASN.1 `UTCTime`)
-//! - [`Utf8String`] (ASN.1 `UTF8String`)
+//! - [`Any`]: ASN.1 `ANY`
+//! - [`BigUInt`]: ASN.1 unsigned `INTEGER` with raw access to encoded bytes
+//! - [`BitString`]: ASN.1 `BIT STRING`
+//! - [`GeneralizedTime`]: ASN.1 `GeneralizedTime`
+//! - [`Null`]: ASN.1 `NULL`
+//! - [`ObjectIdentifier`]: ASN.1 `OBJECT IDENTIFIER`
+//! - [`OctetString`]: ASN.1 `OCTET STRING`
+//! - [`PrintableString`]: ASN.1 `PrintableString` (ASCII subset)
+//! - [`Sequence`]: ASN.1 `SEQUENCE`
+//! - [`UtcTime`]: ASN.1 `UTCTime`
+//! - [`Utf8String`]: ASN.1 `UTF8String`
 //!
 //! ## Example
 //!
@@ -59,9 +59,9 @@
 //! The ASN.1 schema for this message type is as follows:
 //!
 //! ```text
-//!    AlgorithmIdentifier  ::=  SEQUENCE  {
-//!         algorithm               OBJECT IDENTIFIER,
-//!         parameters              ANY DEFINED BY algorithm OPTIONAL  }
+//! AlgorithmIdentifier  ::=  SEQUENCE  {
+//!      algorithm               OBJECT IDENTIFIER,
+//!      parameters              ANY DEFINED BY algorithm OPTIONAL  }
 //! ```
 //!
 //! Structured ASN.1 messages are typically encoded as a `SEQUENCE`, which
@@ -218,11 +218,16 @@
 //!
 //! ## Custom derive support
 //!
-//! When the `derive` feature of this crate is enabled, a custom derive macro
-//! is available for the [`Message`] trait. See [`der_derive::Message`] for
-//! more information.
+//! When the `derive` feature of this crate is enabled, the following custom
+//! derive macros are available:
 //!
-//! It can be used to automatically derive the code given in the above example:
+//! - [`Decodable`]: derive for `CHOICE` enum (see [`der_derive::Decodable`])
+//! - [`Encodable`]: derive for `CHOICE` enum (see [`der_derive::Encodable`])
+//! - [`Message`]: derive for `SEQUENCE` struct (see [`der_derive::Message`])
+//!
+//! ### Derive [`Message`] for `SEQUENCE` struct
+//!
+//! The following is a code example of how to use the [`Message`] custom derive:
 //!
 //! ```
 //! # #[cfg(all(feature = "alloc", feature = "derive", feature = "oid"))]

@@ -41,6 +41,40 @@ impl Tagged for Null {
     const TAG: Tag = Tag::Integer;
 }
 
+impl TryFrom<Any<'_>> for () {
+    type Error = Error;
+
+    fn try_from(any: Any<'_>) -> Result<()> {
+        let tag = any.tag().assert_eq(Tag::Null)?;
+
+        if any.is_empty() {
+            Ok(())
+        } else {
+            Err(ErrorKind::Length { tag }.into())
+        }
+    }
+}
+
+impl<'a> From<()> for Any<'a> {
+    fn from(_: ()) -> Any<'a> {
+        Any::new(Tag::Null, &[]).unwrap()
+    }
+}
+
+impl Encodable for () {
+    fn encoded_len(&self) -> Result<Length> {
+        Any::from(()).encoded_len()
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        Any::from(()).encode(encoder)
+    }
+}
+
+impl Tagged for () {
+    const TAG: Tag = Tag::Null;
+}
+
 #[cfg(test)]
 mod tests {
     use super::Null;
@@ -54,7 +88,8 @@ mod tests {
     #[test]
     fn encode() {
         let mut buffer = [0u8; 2];
-        assert_eq!(&[0x05, 0x00], Null.encode_to_slice(&mut buffer).unwrap())
+        assert_eq!(&[0x05, 0x00], Null.encode_to_slice(&mut buffer).unwrap());
+        assert_eq!(&[0x05, 0x00], ().encode_to_slice(&mut buffer).unwrap());
     }
 
     #[test]
