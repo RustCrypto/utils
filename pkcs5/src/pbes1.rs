@@ -4,7 +4,7 @@
 
 use crate::{AlgorithmIdentifier, Error, ObjectIdentifier, Result};
 use core::convert::{TryFrom, TryInto};
-use der::ErrorKind;
+use der::{sequence, Any, Encodable, Encoder, ErrorKind, Header, Length, OctetString, Tag};
 
 /// `pbeWithMD2AndDES-CBC` Object Identifier (OID).
 pub const PBE_WITH_MD2_AND_DES_CBC_OID: ObjectIdentifier =
@@ -45,7 +45,7 @@ pub const SALT_LENGTH: usize = 8;
 /// parsed from the [`ObjectIdentifier`].
 ///
 /// [RFC 8018 Appendix A.3]: https://tools.ietf.org/html/rfc8018#appendix-A.3
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Parameters {
     /// Encryption scheme
     pub encryption: EncryptionScheme,
@@ -55,6 +55,21 @@ pub struct Parameters {
 
     /// Iteration count
     pub iteration_count: u16,
+}
+
+impl Parameters {
+    /// Get the [`ObjectIdentifier`] (a.k.a OID) for this algorithm.
+    pub fn oid(&self) -> ObjectIdentifier {
+        self.encryption.oid()
+    }
+}
+
+impl<'a> TryFrom<Any<'a>> for Parameters {
+    type Error = Error;
+
+    fn try_from(any: Any<'a>) -> Result<Self> {
+        AlgorithmIdentifier::try_from(any).and_then(TryInto::try_into)
+    }
 }
 
 impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Parameters {
@@ -84,6 +99,48 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Parameters {
                 iteration_count,
             })
         })
+    }
+}
+
+impl Encodable for Parameters {
+    fn encoded_len(&self) -> Result<Length> {
+        self.header()?.encoded_len()
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        self.header()?.encode(encoder)?;
+        let inner_len = self.inner_len()?;
+
+        // TODO(tarcieri): use nested `encoder.sequence` method once implemented
+        // See other todos in the `der` crate's `encoder.rs` for more background
+        let mut inner_encoder = Encoder::new(encoder.reserve(inner_len)?);
+        self.encryption.oid().encode(&mut inner_encoder)?;
+        inner_encoder.sequence(&[&self.salt_string()?, &self.iteration_count])?;
+
+        if inner_encoder.finish()?.len() == inner_len.into() {
+            Ok(())
+        } else {
+            encoder.error(ErrorKind::Length { tag: Tag::Sequence })
+        }
+    }
+}
+
+impl Parameters {
+    /// Get the DER [`Header`]
+    fn header(&self) -> Result<Header> {
+        Header::new(Tag::Sequence, self.inner_len()?)
+    }
+
+    /// Get the inner length of the encoded sequence
+    fn inner_len(&self) -> Result<Length> {
+        let oid_len = self.encryption.oid().encoded_len()?;
+        let params_len = sequence::encoded_len(&[&self.salt_string()?, &self.iteration_count])?;
+        oid_len + params_len
+    }
+
+    /// Get an [`OctetString`] wrapper for the salt
+    fn salt_string(&self) -> Result<OctetString<'_>> {
+        OctetString::new(&self.salt)
     }
 }
 
@@ -152,7 +209,7 @@ impl EncryptionScheme {
         }
     }
 
-    /// Get the Object Identifier (OID) for this algorithm.
+    /// Get the [`ObjectIdentifier`] (a.k.a OID) for this algorithm.
     pub fn oid(self) -> ObjectIdentifier {
         match self {
             Self::PbeWithMd2AndDesCbc => PBE_WITH_MD2_AND_DES_CBC_OID,
@@ -162,6 +219,16 @@ impl EncryptionScheme {
             Self::PbeWithSha1AndDesCbc => PBE_WITH_SHA1_AND_DES_CBC_OID,
             Self::PbeWithSha1AndRc2Cbc => PBE_WITH_SHA1_AND_RC2_CBC_OID,
         }
+    }
+}
+
+impl Encodable for EncryptionScheme {
+    fn encoded_len(&self) -> Result<Length> {
+        self.oid().encoded_len()
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        self.oid().encode(encoder)
     }
 }
 

@@ -162,6 +162,7 @@ impl<'a> Encoder<'a> {
     }
 
     /// Encode a sequence of values which impl the [`Encodable`] trait.
+    // TODO(tarcieri): rename this to `message`, add `sequence` which handles nested encoder
     pub fn sequence(&mut self, encodables: &[&dyn Encodable]) -> Result<()> {
         let expected_len = sequence::encoded_len_inner(encodables)?;
         Header::new(Tag::Sequence, expected_len).and_then(|header| header.encode(self))?;
@@ -175,32 +176,14 @@ impl<'a> Encoder<'a> {
         if nested_encoder.finish()?.len() == expected_len.into() {
             Ok(())
         } else {
-            self.error(ErrorKind::Length {
-                tag: Tag::ObjectIdentifier,
-            })
+            self.error(ErrorKind::Length { tag: Tag::Sequence })
         }
-    }
-
-    /// Encode a single byte into the backing buffer.
-    pub(crate) fn byte(&mut self, byte: u8) -> Result<()> {
-        match self.reserve(1u8)?.first_mut() {
-            Some(b) => {
-                *b = byte;
-                Ok(())
-            }
-            None => self.error(ErrorKind::Truncated),
-        }
-    }
-
-    /// Encode the provided byte slice into the backing buffer.
-    pub(crate) fn bytes(&mut self, slice: &[u8]) -> Result<()> {
-        self.reserve(slice.len())?.copy_from_slice(slice);
-        Ok(())
     }
 
     /// Reserve a portion of the internal buffer, updating the internal cursor
     /// position and returning a mutable slice.
-    fn reserve(&mut self, len: impl TryInto<Length>) -> Result<&mut [u8]> {
+    // TODO(tarcieri): make this private after implementing a nested `sequence` method
+    pub fn reserve(&mut self, len: impl TryInto<Length>) -> Result<&mut [u8]> {
         let len = len
             .try_into()
             .or_else(|_| self.error(ErrorKind::Overflow))?;
@@ -225,6 +208,23 @@ impl<'a> Encoder<'a> {
         *position = end;
 
         Ok(slice)
+    }
+
+    /// Encode a single byte into the backing buffer.
+    pub(crate) fn byte(&mut self, byte: u8) -> Result<()> {
+        match self.reserve(1u8)?.first_mut() {
+            Some(b) => {
+                *b = byte;
+                Ok(())
+            }
+            None => self.error(ErrorKind::Truncated),
+        }
+    }
+
+    /// Encode the provided byte slice into the backing buffer.
+    pub(crate) fn bytes(&mut self, slice: &[u8]) -> Result<()> {
+        self.reserve(slice.len())?.copy_from_slice(slice);
+        Ok(())
     }
 
     /// Get the size of the buffer in bytes.

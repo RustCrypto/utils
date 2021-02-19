@@ -1,6 +1,7 @@
 //! Password-Based Encryption Scheme 2 tests
 
 use core::convert::TryFrom;
+use der::Encodable;
 use hex_literal::hex;
 use pkcs5::pbes2;
 
@@ -16,11 +17,9 @@ const PBES2_PBKDF2_HMAC_SHA256_AES256_CBC_ALG_ID: &[u8] = &hex!(
 
 /// Decoding tests
 #[test]
-fn decode_pbes2_schemes() {
-    let params = pkcs5::Scheme::try_from(PBES2_PBKDF2_HMAC_SHA256_AES256_CBC_ALG_ID)
-        .ok()
-        .and_then(|s| s.pbes2())
-        .unwrap();
+fn decode_pbes2_scheme() {
+    let scheme = pkcs5::Scheme::try_from(PBES2_PBKDF2_HMAC_SHA256_AES256_CBC_ALG_ID).unwrap();
+    let params = scheme.pbes2().unwrap();
 
     let pbkdf2_params = params.kdf.pbkdf2().unwrap();
     assert_eq!(pbkdf2_params.salt, &hex!("79d982e70df91a88"));
@@ -34,4 +33,17 @@ fn decode_pbes2_schemes() {
         }
         other => panic!("unexpected encryption scheme: {:?}", other),
     }
+}
+
+/// Encoding tests
+#[test]
+fn encode_pbes2_scheme() {
+    let mut buffer = [0u8; 1024];
+
+    let scheme = pkcs5::Scheme::try_from(PBES2_PBKDF2_HMAC_SHA256_AES256_CBC_ALG_ID).unwrap();
+    let mut encoder = der::Encoder::new(&mut buffer);
+    scheme.encode(&mut encoder).unwrap();
+
+    let encoded_der = encoder.finish().unwrap();
+    assert_eq!(encoded_der, PBES2_PBKDF2_HMAC_SHA256_AES256_CBC_ALG_ID);
 }
