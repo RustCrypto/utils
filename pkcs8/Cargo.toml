@@ -24,9 +24,11 @@ zeroize = { version = "1", optional = true, default-features = false, features =
 hex-literal = "0.3"
 
 [features]
+default = ["pkcs5"]
 std = ["alloc", "der/std"]
 alloc = ["der/alloc", "zeroize"]
 pem = ["alloc", "base64ct"]
+pkcs5 = []
 
 [package.metadata.docs.rs]
 all-features = true

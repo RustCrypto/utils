@@ -1,5 +1,7 @@
 //! Encrypted PKCS#8 private key tests.
 
+#![cfg(feature = "pkcs5")]
+
 use core::convert::TryFrom;
 use hex_literal::hex;
 use pkcs8::EncryptedPrivateKeyInfo;

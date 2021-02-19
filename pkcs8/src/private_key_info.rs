@@ -1,5 +1,6 @@
 //! PKCS#8 `PrivateKeyInfo`.
 
+#[cfg(feature = "pkcs5")]
 pub(crate) mod encrypted;
 
 use crate::{AlgorithmIdentifier, Error, Result};
