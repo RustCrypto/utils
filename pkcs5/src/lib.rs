@@ -21,12 +21,13 @@ pub use der::{self, Error, ObjectIdentifier, Result};
 pub use spki::AlgorithmIdentifier;
 
 use core::convert::{TryFrom, TryInto};
+use der::{sequence, Any, Encodable, Encoder, Length};
 
 pub mod pbes1;
 pub mod pbes2;
 
 /// Supported PKCS#5 password-based encryption schemes.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 #[allow(clippy::large_enum_variant)]
 pub enum Scheme<'a> {
@@ -42,8 +43,16 @@ pub enum Scheme<'a> {
 }
 
 impl<'a> Scheme<'a> {
+    /// Get the [`ObjectIdentifier`] (a.k.a OID) for this algorithm.
+    pub fn oid(&self) -> ObjectIdentifier {
+        match self {
+            Self::Pbes1(params) => params.oid(),
+            Self::Pbes2(_) => pbes2::PBES2_OID,
+        }
+    }
+
     /// Get [`pbes1::Parameters`] if it is the selected algorithm.
-    pub fn pbes1(self) -> Option<pbes1::Parameters> {
+    pub fn pbes1(&self) -> Option<&pbes1::Parameters> {
         match self {
             Self::Pbes1(params) => Some(params),
             _ => None,
@@ -51,7 +60,7 @@ impl<'a> Scheme<'a> {
     }
 
     /// Get [`pbes2::Parameters`] if it is the selected algorithm.
-    pub fn pbes2(self) -> Option<pbes2::Parameters<'a>> {
+    pub fn pbes2(&self) -> Option<&pbes2::Parameters<'a>> {
         match self {
             Self::Pbes2(params) => Some(params),
             _ => None,
@@ -67,10 +76,10 @@ impl<'a> TryFrom<&'a [u8]> for Scheme<'a> {
     }
 }
 
-impl<'a> TryFrom<der::Any<'a>> for Scheme<'a> {
+impl<'a> TryFrom<Any<'a>> for Scheme<'a> {
     type Error = Error;
 
-    fn try_from(any: der::Any<'a>) -> Result<Scheme<'a>> {
+    fn try_from(any: Any<'a>) -> Result<Scheme<'a>> {
         AlgorithmIdentifier::try_from(any).and_then(TryInto::try_into)
     }
 }
@@ -95,5 +104,21 @@ impl<'a> From<pbes1::Parameters> for Scheme<'a> {
 impl<'a> From<pbes2::Parameters<'a>> for Scheme<'a> {
     fn from(params: pbes2::Parameters<'a>) -> Scheme<'a> {
         Self::Pbes2(params)
+    }
+}
+
+impl<'a> Encodable for Scheme<'a> {
+    fn encoded_len(&self) -> Result<Length> {
+        match self {
+            Self::Pbes1(pbes1) => pbes1.encoded_len(),
+            Self::Pbes2(pbes2) => sequence::encoded_len(&[&pbes2::PBES2_OID, pbes2]),
+        }
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        match self {
+            Self::Pbes1(pbes1) => pbes1.encode(encoder),
+            Self::Pbes2(pbes2) => encoder.sequence(&[&pbes2::PBES2_OID, pbes2]),
+        }
     }
 }
