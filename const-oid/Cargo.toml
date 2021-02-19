@@ -15,6 +15,9 @@ categories = ["cryptography", "data-structures", "encoding", "no-std"]
 keywords = ["iso", "iec", "itu", "oid"]
 readme = "README.md"
 
+[dev-dependencies]
+hex-literal = "0.3"
+
 [features]
 alloc = []
 std = ["alloc"]
