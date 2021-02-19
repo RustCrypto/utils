@@ -39,9 +39,9 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
           override: true
-      - run: cargo build --release --target ${{ matrix.target }}
-      - run: cargo build --release --target ${{ matrix.target }} --features alloc
-      - run: cargo build --release --target ${{ matrix.target }} --features pem
+      - run: cargo build --release --target ${{ matrix.target }} --no-default-features
+      - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features alloc
+      - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features pem
 
   test:
     runs-on: ubuntu-latest
@@ -57,6 +57,7 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
+      - run: cargo test --release --no-default-features
       - run: cargo test --release
       - run: cargo test --release --features alloc
       - run: cargo test --release --features pem

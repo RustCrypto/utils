@@ -73,7 +73,7 @@ mod pem;
 
 pub use crate::{
     error::{Error, Result},
-    private_key_info::{encrypted::EncryptedPrivateKeyInfo, PrivateKeyInfo},
+    private_key_info::PrivateKeyInfo,
     traits::{FromPrivateKey, FromPublicKey},
 };
 pub use der::{self, ObjectIdentifier};
@@ -84,3 +84,6 @@ pub use crate::{
     document::{PrivateKeyDocument, PublicKeyDocument},
     traits::{ToPrivateKey, ToPublicKey},
 };
+
+#[cfg(feature = "pkcs5")]
+pub use crate::private_key_info::encrypted::EncryptedPrivateKeyInfo;

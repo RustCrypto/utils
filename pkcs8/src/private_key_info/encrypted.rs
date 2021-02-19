@@ -41,6 +41,7 @@ use der::{Decodable, Encodable, Message};
 /// [RFC 5208 Section 6]: https://tools.ietf.org/html/rfc5208#section-6
 /// [PKCS#5 v1.5]: https://tools.ietf.org/html/rfc2898
 /// [PKCS#5 v2]: https://tools.ietf.org/html/rfc8018
+#[cfg_attr(docsrs, doc(cfg(feature = "pkcs5")))]
 #[derive(Copy, Clone)]
 pub struct EncryptedPrivateKeyInfo<'a> {
     /// [`AlgorithmIdentifier`] for the symmetric encryption algorithm used to
