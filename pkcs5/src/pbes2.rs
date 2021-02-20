@@ -13,12 +13,19 @@ use spki::AlgorithmParameters;
 pub const PBES2_OID: ObjectIdentifier = ObjectIdentifier::new(&[1, 2, 840, 113549, 1, 5, 13]);
 
 /// Password-Based Key Derivation Function (PBKDF2) OID.
-// TODO(tarcieri): move this to the `pbkdf2` crate?
 pub const PBKDF2_OID: ObjectIdentifier = ObjectIdentifier::new(&[1, 2, 840, 113549, 1, 5, 12]);
 
-/// HMAC-SHA-256 message authentication scheme (RFC 4231 and RFC8018)
+/// HMAC-SHA1 (for use with PBKDF2)
+pub const HMAC_WITH_SHA1_OID: ObjectIdentifier = ObjectIdentifier::new(&[1, 2, 840, 113549, 2, 7]);
+
+/// HMAC-SHA-256 (for use with PBKDF2)
 pub const HMAC_WITH_SHA256_OID: ObjectIdentifier =
     ObjectIdentifier::new(&[1, 2, 840, 113549, 2, 9]);
+
+/// 128-bit Advanced Encryption Standard (AES) algorithm with Cipher-Block
+/// Chaining (CBC) mode of operation.
+pub const AES_128_CBC_OID: ObjectIdentifier =
+    ObjectIdentifier::new(&[2, 16, 840, 1, 101, 3, 4, 1, 2]);
 
 /// 256-bit Advanced Encryption Standard (AES) algorithm with Cipher-Block
 /// Chaining (CBC) mode of operation.
@@ -133,7 +140,8 @@ impl<'a> Message<'a> for Kdf<'a> {
     }
 }
 
-/// Password-Based Encryption Scheme 2 parameters as defined in [RFC 8018 Appendix A.2].
+/// Password-Based Key Derivation Scheme 2 parameters as defined in
+/// [RFC 8018 Appendix A.2].
 ///
 /// ```text
 /// PBKDF2-params ::= SEQUENCE {
@@ -178,13 +186,13 @@ impl<'a> TryFrom<Any<'a>> for Pbkdf2Params<'a> {
             // TODO(tarcieri): support OPTIONAL key length field
             // Blocked on: https://github.com/RustCrypto/utils/issues/271
             let key_length = None;
-            let prf = AlgorithmIdentifier::decode(params)?;
+            let prf: Option<AlgorithmIdentifier<'_>> = params.optional()?;
 
             Ok(Self {
                 salt: salt.as_bytes(),
                 iteration_count,
                 key_length,
-                prf: prf.try_into()?,
+                prf: prf.map(TryInto::try_into).transpose()?.unwrap_or_default(),
             })
         })
     }
@@ -195,20 +203,30 @@ impl<'a> Message<'a> for Pbkdf2Params<'a> {
     where
         F: FnOnce(&[&dyn Encodable]) -> Result<T>,
     {
-        f(&[
-            &OctetString::new(self.salt)?,
-            &self.iteration_count,
-            &self.key_length,
-            &self.prf,
-        ])
+        if self.prf == Pbkdf2Prf::default() {
+            f(&[
+                &OctetString::new(self.salt)?,
+                &self.iteration_count,
+                &self.key_length,
+            ])
+        } else {
+            f(&[
+                &OctetString::new(self.salt)?,
+                &self.iteration_count,
+                &self.key_length,
+                &self.prf,
+            ])
+        }
     }
 }
 
 /// Pseudo-random function used by PBKDF2.
-// TODO(tarcieri): add all PRFs specified in RFC 8018, e.g. `algid-hmacWithSHA1`
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Pbkdf2Prf {
+    /// HMAC with SHA1
+    HmacWithSha1,
+
     /// HMAC with SHA-256
     HmacWithSha256,
 }
@@ -217,8 +235,23 @@ impl Pbkdf2Prf {
     /// Get the [`ObjectIdentifier`] (a.k.a OID) for this algorithm.
     pub fn oid(self) -> ObjectIdentifier {
         match self {
+            Self::HmacWithSha1 => HMAC_WITH_SHA1_OID,
             Self::HmacWithSha256 => HMAC_WITH_SHA256_OID,
         }
+    }
+}
+
+/// Default PRF as specified in RFC 8018 Appendix A.2:
+///
+/// ```text
+/// prf AlgorithmIdentifier {{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1
+/// ```
+///
+/// Note that modern usage should avoid the use of SHA-1, despite it being
+/// the "default" here.
+impl Default for Pbkdf2Prf {
+    fn default() -> Self {
+        Self::HmacWithSha1
     }
 }
 
@@ -234,8 +267,8 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Pbkdf2Prf {
     type Error = Error;
 
     fn try_from(alg: AlgorithmIdentifier<'a>) -> Result<Self> {
-        // TODO(tarcieri): support non-NULL parameters?
         if let Some(params) = alg.parameters {
+            // TODO(tarcieri): support non-NULL parameters?
             if !params.is_null() {
                 return Err(ErrorKind::Value { tag: params.tag() }.into());
             }
@@ -245,6 +278,7 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Pbkdf2Prf {
         }
 
         match alg.oid {
+            HMAC_WITH_SHA1_OID => Ok(Self::HmacWithSha1),
             HMAC_WITH_SHA256_OID => Ok(Self::HmacWithSha256),
             oid => Err(ErrorKind::UnknownOid { oid }.into()),
         }
@@ -274,10 +308,15 @@ impl Encodable for Pbkdf2Prf {
 }
 
 /// Symmetric encryption scheme used by PBES2.
-// TODO(tarcieri): add all ciphers specified in RFC 8018
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum EncryptionScheme<'a> {
+    /// AES-128 in CBC mode
+    Aes128Cbc {
+        /// Initialization vector
+        iv: &'a [u8; AES_BLOCK_SIZE],
+    },
+
     /// AES-256 in CBC mode
     Aes256Cbc {
         /// Initialization vector
@@ -289,6 +328,7 @@ impl<'a> EncryptionScheme<'a> {
     /// Get the [`ObjectIdentifier`] (a.k.a OID) for this algorithm.
     pub fn oid(self) -> ObjectIdentifier {
         match self {
+            Self::Aes128Cbc { .. } => AES_128_CBC_OID,
             Self::Aes256Cbc { .. } => AES_256_CBC_OID,
         }
     }
@@ -306,19 +346,19 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for EncryptionScheme<'a> {
     type Error = Error;
 
     fn try_from(alg: AlgorithmIdentifier<'a>) -> Result<Self> {
-        match alg.oid {
-            AES_256_CBC_OID => {
-                let iv = alg
-                    .parameters_any()?
-                    .octet_string()?
-                    .as_bytes()
-                    .try_into()
-                    .map_err(|_| ErrorKind::Value {
-                        tag: der::Tag::OctetString,
-                    })?;
+        // TODO(tarcieri): support for non-AES algorithms?
+        let iv = alg
+            .parameters_any()?
+            .octet_string()?
+            .as_bytes()
+            .try_into()
+            .map_err(|_| ErrorKind::Value {
+                tag: der::Tag::OctetString,
+            })?;
 
-                Ok(Self::Aes256Cbc { iv })
-            }
+        match alg.oid {
+            AES_128_CBC_OID => Ok(Self::Aes128Cbc { iv }),
+            AES_256_CBC_OID => Ok(Self::Aes256Cbc { iv }),
             oid => Err(ErrorKind::UnknownOid { oid }.into()),
         }
     }
@@ -329,6 +369,7 @@ impl<'a> TryFrom<EncryptionScheme<'a>> for AlgorithmIdentifier<'a> {
 
     fn try_from(scheme: EncryptionScheme<'a>) -> Result<Self> {
         let parameters = match scheme {
+            EncryptionScheme::Aes128Cbc { iv } => Any::from(OctetString::new(iv)?),
             EncryptionScheme::Aes256Cbc { iv } => Any::from(OctetString::new(iv)?),
         };
 
