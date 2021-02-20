@@ -28,7 +28,7 @@ const PBES2_PBKDF2_SHA256_AES256CBC_ALG_ID: &[u8] = &hex!(
 /// Decoding tests
 #[test]
 fn decode_pbes2_pbkdf2_sha1_aes128cbc() {
-    let scheme = pkcs5::Scheme::try_from(PBES2_PBKDF2_SHA1_AES128CBC_ALG_ID).unwrap();
+    let scheme = pkcs5::EncryptionScheme::try_from(PBES2_PBKDF2_SHA1_AES128CBC_ALG_ID).unwrap();
     let params = scheme.pbes2().unwrap();
 
     let pbkdf2_params = params.kdf.pbkdf2().unwrap();
@@ -48,7 +48,7 @@ fn decode_pbes2_pbkdf2_sha1_aes128cbc() {
 /// Decoding tests
 #[test]
 fn decode_pbes2_pbkdf2_sha256_aes256cbc() {
-    let scheme = pkcs5::Scheme::try_from(PBES2_PBKDF2_SHA256_AES256CBC_ALG_ID).unwrap();
+    let scheme = pkcs5::EncryptionScheme::try_from(PBES2_PBKDF2_SHA256_AES256CBC_ALG_ID).unwrap();
     let params = scheme.pbes2().unwrap();
 
     let pbkdf2_params = params.kdf.pbkdf2().unwrap();
@@ -70,7 +70,7 @@ fn decode_pbes2_pbkdf2_sha256_aes256cbc() {
 fn encode_pbes2_pbkdf2_sha1_aes128cbc() {
     let mut buffer = [0u8; 1024];
 
-    let scheme = pkcs5::Scheme::try_from(PBES2_PBKDF2_SHA1_AES128CBC_ALG_ID).unwrap();
+    let scheme = pkcs5::EncryptionScheme::try_from(PBES2_PBKDF2_SHA1_AES128CBC_ALG_ID).unwrap();
     let mut encoder = der::Encoder::new(&mut buffer);
     scheme.encode(&mut encoder).unwrap();
 
@@ -83,7 +83,7 @@ fn encode_pbes2_pbkdf2_sha1_aes128cbc() {
 fn encode_pbes2_pbkdf2_sha256_aes256cbc() {
     let mut buffer = [0u8; 1024];
 
-    let scheme = pkcs5::Scheme::try_from(PBES2_PBKDF2_SHA256_AES256CBC_ALG_ID).unwrap();
+    let scheme = pkcs5::EncryptionScheme::try_from(PBES2_PBKDF2_SHA256_AES256CBC_ALG_ID).unwrap();
     let mut encoder = der::Encoder::new(&mut buffer);
     scheme.encode(&mut encoder).unwrap();
 

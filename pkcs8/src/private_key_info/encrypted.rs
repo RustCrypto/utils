@@ -1,26 +1,21 @@
 //! PKCS#8 `EncryptedPrivateKeyInfo`
 
-use crate::{AlgorithmIdentifier, Error, Result};
+use crate::{Error, Result};
 use core::convert::TryFrom;
 use der::{Decodable, Encodable, Message};
+use pkcs5::EncryptionScheme;
 
 /// PKCS#8 `EncryptedPrivateKeyInfo`.
 ///
-/// ASN.1 structure containing an [`AlgorithmIdentifier`] identifying a
-/// symmetric encryption scheme and encrypted private key data.
+/// ASN.1 structure containing a PKCS#5 [`EncryptionScheme`] identifier for a
+/// password-based symmetric encryption scheme and encrypted private key data.
 ///
 /// ## Encryption algorithm support
 ///
 /// tl;dr: none yet!
 ///
 /// This crate does not (yet) support decrypting/encrypting private key data.
-/// However, support for the following may be added in future releases:
-///
-/// - [PKCS#5 v1.5] supports several password-based encryption algorithms,
-///   including `PBE-SHA1-3DES`.
-/// - [PKCS#5 v2] adds support for AES-CBC encryption with iterated PRFs
-///   such as `hmacWithSHA256`.
-///
+/// However, support for the following may be added in future releases.
 /// Please see the following GitHub issue for tracking information:
 ///
 /// <https://github.com/RustCrypto/utils/issues/263>
@@ -39,14 +34,12 @@ use der::{Decodable, Encodable, Message};
 /// ```
 ///
 /// [RFC 5208 Section 6]: https://tools.ietf.org/html/rfc5208#section-6
-/// [PKCS#5 v1.5]: https://tools.ietf.org/html/rfc2898
-/// [PKCS#5 v2]: https://tools.ietf.org/html/rfc8018
 #[cfg_attr(docsrs, doc(cfg(feature = "pkcs5")))]
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct EncryptedPrivateKeyInfo<'a> {
-    /// [`AlgorithmIdentifier`] for the symmetric encryption algorithm used to
-    /// encrypt the `encrypted_data` field.
-    pub encryption_algorithm: AlgorithmIdentifier<'a>,
+    /// Algorithm identifier describing a password-based symmetric encryption
+    /// scheme used to encrypt the `encrypted_data` field.
+    pub encryption_algorithm: EncryptionScheme<'a>,
 
     /// Private key data
     pub encrypted_data: &'a [u8],

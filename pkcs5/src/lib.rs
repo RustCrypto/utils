@@ -6,6 +6,13 @@
 //!
 //! This crate requires **Rust 1.47** at a minimum.
 //!
+//! # Usage
+//!
+//! The main API for this crate is the [`EncryptionScheme`] enum, which impls
+//! the [`Decodable`][`der::Decodable`] and [`Encodable`] traits from the
+//! [`der`] crate, and can be used for decoding/encoding PKCS#5
+//! [`AlgorithmIdentifier`] fields.
+//!
 //! [RFC 8018]: https://tools.ietf.org/html/rfc8018
 
 #![no_std]
@@ -31,7 +38,7 @@ pub mod pbes2;
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 #[allow(clippy::large_enum_variant)]
-pub enum Scheme<'a> {
+pub enum EncryptionScheme<'a> {
     /// Password-Based Encryption Scheme 1 as defined in [RFC 8018 Section 6.1].
     ///
     /// [RFC 8018 Section 6.1]: https://tools.ietf.org/html/rfc8018#section-6.1
@@ -43,7 +50,7 @@ pub enum Scheme<'a> {
     Pbes2(pbes2::Parameters<'a>),
 }
 
-impl<'a> Scheme<'a> {
+impl<'a> EncryptionScheme<'a> {
     /// Get the [`ObjectIdentifier`] (a.k.a OID) for this algorithm.
     pub fn oid(&self) -> ObjectIdentifier {
         match self {
@@ -69,26 +76,26 @@ impl<'a> Scheme<'a> {
     }
 }
 
-impl<'a> TryFrom<&'a [u8]> for Scheme<'a> {
+impl<'a> TryFrom<&'a [u8]> for EncryptionScheme<'a> {
     type Error = Error;
 
-    fn try_from(bytes: &'a [u8]) -> Result<Scheme<'a>> {
+    fn try_from(bytes: &'a [u8]) -> Result<EncryptionScheme<'a>> {
         AlgorithmIdentifier::try_from(bytes).and_then(TryInto::try_into)
     }
 }
 
-impl<'a> TryFrom<Any<'a>> for Scheme<'a> {
+impl<'a> TryFrom<Any<'a>> for EncryptionScheme<'a> {
     type Error = Error;
 
-    fn try_from(any: Any<'a>) -> Result<Scheme<'a>> {
+    fn try_from(any: Any<'a>) -> Result<EncryptionScheme<'a>> {
         AlgorithmIdentifier::try_from(any).and_then(TryInto::try_into)
     }
 }
 
-impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Scheme<'a> {
+impl<'a> TryFrom<AlgorithmIdentifier<'a>> for EncryptionScheme<'a> {
     type Error = Error;
 
-    fn try_from(alg: AlgorithmIdentifier<'a>) -> Result<Scheme<'_>> {
+    fn try_from(alg: AlgorithmIdentifier<'a>) -> Result<EncryptionScheme<'_>> {
         match alg.oid {
             pbes2::PBES2_OID => pbes2::Parameters::try_from(alg.parameters_any()?).map(Into::into),
             _ => pbes1::Parameters::try_from(alg).map(Into::into),
@@ -96,19 +103,19 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Scheme<'a> {
     }
 }
 
-impl<'a> From<pbes1::Parameters> for Scheme<'a> {
-    fn from(params: pbes1::Parameters) -> Scheme<'a> {
+impl<'a> From<pbes1::Parameters> for EncryptionScheme<'a> {
+    fn from(params: pbes1::Parameters) -> EncryptionScheme<'a> {
         Self::Pbes1(params)
     }
 }
 
-impl<'a> From<pbes2::Parameters<'a>> for Scheme<'a> {
-    fn from(params: pbes2::Parameters<'a>) -> Scheme<'a> {
+impl<'a> From<pbes2::Parameters<'a>> for EncryptionScheme<'a> {
+    fn from(params: pbes2::Parameters<'a>) -> EncryptionScheme<'a> {
         Self::Pbes2(params)
     }
 }
 
-impl<'a> Encodable for Scheme<'a> {
+impl<'a> Encodable for EncryptionScheme<'a> {
     fn encoded_len(&self) -> Result<Length> {
         match self {
             Self::Pbes1(pbes1) => pbes1.encoded_len(),

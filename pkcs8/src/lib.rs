@@ -88,3 +88,5 @@ pub use crate::{
 
 #[cfg(feature = "pkcs5")]
 pub use crate::private_key_info::encrypted::EncryptedPrivateKeyInfo;
+#[cfg(feature = "pkcs5")]
+pub use pkcs5;
