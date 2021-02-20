@@ -4,7 +4,7 @@
 
 use core::convert::TryFrom;
 use hex_literal::hex;
-use pkcs8::EncryptedPrivateKeyInfo;
+use pkcs8::{pkcs5::pbes2, EncryptedPrivateKeyInfo};
 
 /// Ed25519 PKCS#8 encrypted private key (PBES2 + AES-128-CBC + PBKDF2-SHA1) encoded as ASN.1 DER.
 ///
@@ -35,13 +35,24 @@ fn parse_ed25519_der_encrypted_aes128_sha1() {
     let pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES128_SHA1_EXAMPLE).unwrap();
 
     assert_eq!(
-        pk.encryption_algorithm.oid,
+        pk.encryption_algorithm.oid(),
         "1.2.840.113549.1.5.13".parse().unwrap()
     ); // PBES2
 
-    // TODO(tarcieri): parse/extract params
-    let params = pk.encryption_algorithm.parameters_any().unwrap();
-    assert_eq!(params.tag(), der::Tag::Sequence);
+    let pbes2_params = pk.encryption_algorithm.pbes2().unwrap();
+    let pbkdf2_params = pbes2_params.kdf.pbkdf2().unwrap();
+
+    assert_eq!(pbkdf2_params.salt, hex!("e8765e01e43b6bad"));
+    assert_eq!(pbkdf2_params.iteration_count, 2048);
+    assert_eq!(pbkdf2_params.key_length, None);
+    assert_eq!(pbkdf2_params.prf, pbes2::Pbkdf2Prf::HmacWithSha1);
+
+    match pbes2_params.encryption {
+        pbes2::EncryptionScheme::Aes128Cbc { iv } => {
+            assert_eq!(iv, &hex!("223080a71bcd2b9a256d876c924979d2"));
+        }
+        other => panic!("unexpected encryption scheme: {:?}", other),
+    }
 
     // Extracted with:
     // $ openssl asn1parse -inform der -in tests/examples/ed25519-encpriv-aes128-sha1.der
@@ -56,13 +67,24 @@ fn parse_ed25519_der_encrypted_aes256_sha256() {
     let pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES256_SHA256_EXAMPLE).unwrap();
 
     assert_eq!(
-        pk.encryption_algorithm.oid,
+        pk.encryption_algorithm.oid(),
         "1.2.840.113549.1.5.13".parse().unwrap()
     ); // PBES2
 
-    // TODO(tarcieri): parse/extract params
-    let params = pk.encryption_algorithm.parameters_any().unwrap();
-    assert_eq!(params.tag(), der::Tag::Sequence);
+    let pbes2_params = pk.encryption_algorithm.pbes2().unwrap();
+    let pbkdf2_params = pbes2_params.kdf.pbkdf2().unwrap();
+
+    assert_eq!(pbkdf2_params.salt, hex!("79d982e70df91a88"));
+    assert_eq!(pbkdf2_params.iteration_count, 2048);
+    assert_eq!(pbkdf2_params.key_length, None);
+    assert_eq!(pbkdf2_params.prf, pbes2::Pbkdf2Prf::HmacWithSha256);
+
+    match pbes2_params.encryption {
+        pbes2::EncryptionScheme::Aes256Cbc { iv } => {
+            assert_eq!(iv, &hex!("b2d02d78b2efd9dff694cf8e0af40925"));
+        }
+        other => panic!("unexpected encryption scheme: {:?}", other),
+    }
 
     // Extracted with:
     // $ openssl asn1parse -inform der -in tests/examples/ed25519-encpriv-aes256-sha256.der
