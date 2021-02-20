@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.5.1 (2021-02-18)
+## 0.5.2 (2021-02-20)
+### Changed
+- Use `pkcs5` crate ([#290])
+
+[#290]: https://github.com/RustCrypto/utils/pull/290
+
+## 0.5.1 (2021-02-18) [YANKED]
 ### Added
 - `pkcs5` feature ([#278])
 
@@ -14,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#277]: https://github.com/RustCrypto/utils/pull/277
 [#278]: https://github.com/RustCrypto/utils/pull/278
 
-## 0.5.0 (2021-02-16)
+## 0.5.0 (2021-02-16) [YANKED]
 ### Added
 - Initial `EncryptedPrivateKeyInfo` support ([#262])
 
