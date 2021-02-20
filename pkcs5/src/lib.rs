@@ -1,4 +1,5 @@
-//! Pure Rust implementation of  Public-Key Cryptography Standards (PKCS) #5:
+//! Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #5:
+//!
 //! Password-Based Cryptography Specification Version 2.1 ([RFC 8018])
 //!
 //! # Minimum Supported Rust Version

@@ -1,4 +1,5 @@
 //! Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #8:
+//!
 //! Private-Key Information Syntax Specification (as defined in [RFC 5208]).
 //!
 //! # About
