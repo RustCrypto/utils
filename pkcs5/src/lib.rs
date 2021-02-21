@@ -4,7 +4,7 @@
 //!
 //! # Minimum Supported Rust Version
 //!
-//! This crate requires **Rust 1.47** at a minimum.
+//! This crate requires **Rust 1.49** at a minimum.
 //!
 //! # Usage
 //!
@@ -25,7 +25,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
-pub use der::{self, Error, ObjectIdentifier, Result};
+pub use der::{self, Error, ObjectIdentifier};
 pub use spki::AlgorithmIdentifier;
 
 use core::convert::{TryFrom, TryInto};
@@ -33,6 +33,10 @@ use der::{sequence, Any, Encodable, Encoder, Length};
 
 pub mod pbes1;
 pub mod pbes2;
+
+/// Cryptographic errors
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct CryptoError;
 
 /// Supported PKCS#5 password-based encryption schemes.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -51,6 +55,41 @@ pub enum EncryptionScheme<'a> {
 }
 
 impl<'a> EncryptionScheme<'a> {
+    /// Encrypt the given ciphertext in-place using a key derived from the
+    /// provided password and this scheme's parameters.
+    #[cfg(feature = "pbes2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pbes2")))]
+    pub fn encrypt_in_place<'b>(
+        &self,
+        password: impl AsRef<[u8]>,
+        buffer: &'b mut [u8],
+        pos: usize,
+    ) -> Result<&'b [u8], CryptoError> {
+        match self {
+            Self::Pbes2(params) => params.encrypt_in_place(password, buffer, pos),
+            _ => Err(CryptoError),
+        }
+    }
+
+    /// Attempt to decrypt the given ciphertext in-place using a key derived
+    /// from the provided password and this scheme's parameters.
+    ///
+    /// Returns an error if the algorithm specified in this scheme's parameters
+    /// is unsupported, or if the ciphertext is malformed (e.g. not a multiple
+    /// of a block mode's padding)
+    #[cfg(feature = "pbes2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pbes2")))]
+    pub fn decrypt_in_place<'b>(
+        &self,
+        password: impl AsRef<[u8]>,
+        buffer: &'b mut [u8],
+    ) -> Result<&'b [u8], CryptoError> {
+        match self {
+            Self::Pbes2(params) => params.decrypt_in_place(password, buffer),
+            _ => Err(CryptoError),
+        }
+    }
+
     /// Get the [`ObjectIdentifier`] (a.k.a OID) for this algorithm.
     pub fn oid(&self) -> ObjectIdentifier {
         match self {
@@ -79,7 +118,7 @@ impl<'a> EncryptionScheme<'a> {
 impl<'a> TryFrom<&'a [u8]> for EncryptionScheme<'a> {
     type Error = Error;
 
-    fn try_from(bytes: &'a [u8]) -> Result<EncryptionScheme<'a>> {
+    fn try_from(bytes: &'a [u8]) -> der::Result<EncryptionScheme<'a>> {
         AlgorithmIdentifier::try_from(bytes).and_then(TryInto::try_into)
     }
 }
@@ -87,7 +126,7 @@ impl<'a> TryFrom<&'a [u8]> for EncryptionScheme<'a> {
 impl<'a> TryFrom<Any<'a>> for EncryptionScheme<'a> {
     type Error = Error;
 
-    fn try_from(any: Any<'a>) -> Result<EncryptionScheme<'a>> {
+    fn try_from(any: Any<'a>) -> der::Result<EncryptionScheme<'a>> {
         AlgorithmIdentifier::try_from(any).and_then(TryInto::try_into)
     }
 }
@@ -95,7 +134,7 @@ impl<'a> TryFrom<Any<'a>> for EncryptionScheme<'a> {
 impl<'a> TryFrom<AlgorithmIdentifier<'a>> for EncryptionScheme<'a> {
     type Error = Error;
 
-    fn try_from(alg: AlgorithmIdentifier<'a>) -> Result<EncryptionScheme<'_>> {
+    fn try_from(alg: AlgorithmIdentifier<'a>) -> der::Result<EncryptionScheme<'_>> {
         match alg.oid {
             pbes2::PBES2_OID => pbes2::Parameters::try_from(alg.parameters_any()?).map(Into::into),
             _ => pbes1::Parameters::try_from(alg).map(Into::into),
@@ -116,14 +155,14 @@ impl<'a> From<pbes2::Parameters<'a>> for EncryptionScheme<'a> {
 }
 
 impl<'a> Encodable for EncryptionScheme<'a> {
-    fn encoded_len(&self) -> Result<Length> {
+    fn encoded_len(&self) -> der::Result<Length> {
         match self {
             Self::Pbes1(pbes1) => pbes1.encoded_len(),
             Self::Pbes2(pbes2) => sequence::encoded_len(&[&pbes2::PBES2_OID, pbes2]),
         }
     }
 
-    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+    fn encode(&self, encoder: &mut Encoder<'_>) -> der::Result<()> {
         match self {
             Self::Pbes1(pbes1) => pbes1.encode(encoder),
             Self::Pbes2(pbes2) => encoder.sequence(&[&pbes2::PBES2_OID, pbes2]),

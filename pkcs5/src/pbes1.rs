@@ -2,9 +2,9 @@
 //!
 //! [RFC 8018 Section 6.1]: https://tools.ietf.org/html/rfc8018#section-6.1
 
-use crate::{AlgorithmIdentifier, Error, ObjectIdentifier, Result};
+use crate::{AlgorithmIdentifier, Error, ObjectIdentifier};
 use core::convert::{TryFrom, TryInto};
-use der::{sequence, Any, Encodable, Encoder, ErrorKind, Header, Length, OctetString, Tag};
+use der::{sequence, Any, Encodable, Encoder, ErrorKind, Header, Length, OctetString, Result, Tag};
 
 /// `pbeWithMD2AndDES-CBC` Object Identifier (OID).
 pub const PBE_WITH_MD2_AND_DES_CBC_OID: ObjectIdentifier =

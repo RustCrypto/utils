@@ -2,7 +2,10 @@
 //!
 //! [RFC 8018 Section 6.2]: https://tools.ietf.org/html/rfc8018#section-6.2
 
-use crate::{AlgorithmIdentifier, ObjectIdentifier, Result};
+#[cfg(feature = "pbes2")]
+mod encryption;
+
+use crate::{AlgorithmIdentifier, CryptoError, ObjectIdentifier};
 use core::convert::{TryFrom, TryInto};
 use der::{Any, Decodable, Encodable, Encoder, Error, ErrorKind, Length, Message, OctetString};
 use spki::AlgorithmParameters;
@@ -53,10 +56,65 @@ pub struct Parameters<'a> {
     pub encryption: EncryptionScheme<'a>,
 }
 
+impl<'a> Parameters<'a> {
+    /// Initialize PBES2 parameters using PBKDF2-SHA256 as the password-based
+    /// key derivation algorithm and AES-128-CBC as the symmetric cipher.
+    pub fn pbkdf2_sha256_aes128cbc(
+        pbkdf2_iterations: u16,
+        pbkdf2_salt: &'a [u8],
+        aes_iv: &'a [u8; AES_BLOCK_SIZE],
+    ) -> Result<Self, CryptoError> {
+        let kdf = Pbkdf2Params::hmac_with_sha256(pbkdf2_iterations, pbkdf2_salt)?.into();
+        let encryption = EncryptionScheme::Aes128Cbc { iv: aes_iv };
+        Ok(Self { kdf, encryption })
+    }
+
+    /// Initialize PBES2 parameters using PBKDF2-SHA256 as the password-based
+    /// key derivation algorithm and AES-128-CBC as the symmetric cipher.
+    pub fn pbkdf2_sha256_aes256cbc(
+        pbkdf2_iterations: u16,
+        pbkdf2_salt: &'a [u8],
+        aes_iv: &'a [u8; AES_BLOCK_SIZE],
+    ) -> Result<Self, CryptoError> {
+        let kdf = Pbkdf2Params::hmac_with_sha256(pbkdf2_iterations, pbkdf2_salt)?.into();
+        let encryption = EncryptionScheme::Aes256Cbc { iv: aes_iv };
+        Ok(Self { kdf, encryption })
+    }
+
+    /// Encrypt the given ciphertext in-place using a key derived from the
+    /// provided password and this scheme's parameters.
+    #[cfg(feature = "pbes2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pbes2")))]
+    pub fn encrypt_in_place<'b>(
+        &self,
+        password: impl AsRef<[u8]>,
+        buffer: &'b mut [u8],
+        pos: usize,
+    ) -> Result<&'b [u8], CryptoError> {
+        encryption::encrypt_in_place(self, password, buffer, pos)
+    }
+
+    /// Attempt to decrypt the given ciphertext in-place using a key derived
+    /// from the provided password and this scheme's parameters.
+    ///
+    /// Returns an error if the algorithm specified in this scheme's parameters
+    /// is unsupported, or if the ciphertext is malformed (e.g. not a multiple
+    /// of a block mode's padding)
+    #[cfg(feature = "pbes2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pbes2")))]
+    pub fn decrypt_in_place<'b>(
+        &self,
+        password: impl AsRef<[u8]>,
+        buffer: &'b mut [u8],
+    ) -> Result<&'b [u8], CryptoError> {
+        encryption::decrypt_in_place(self, password, buffer)
+    }
+}
+
 impl<'a> TryFrom<Any<'a>> for Parameters<'a> {
     type Error = Error;
 
-    fn try_from(any: Any<'a>) -> Result<Self> {
+    fn try_from(any: Any<'a>) -> der::Result<Self> {
         any.sequence(|params| {
             let kdf = AlgorithmIdentifier::decode(params)?;
             let encryption = AlgorithmIdentifier::decode(params)?;
@@ -70,9 +128,9 @@ impl<'a> TryFrom<Any<'a>> for Parameters<'a> {
 }
 
 impl<'a> Message<'a> for Parameters<'a> {
-    fn fields<F, T>(&self, f: F) -> Result<T>
+    fn fields<F, T>(&self, f: F) -> der::Result<T>
     where
-        F: FnOnce(&[&dyn Encodable]) -> Result<T>,
+        F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
     {
         f(&[&self.kdf, &self.encryption])
     }
@@ -107,10 +165,16 @@ impl<'a> Kdf<'a> {
     }
 }
 
+impl<'a> From<Pbkdf2Params<'a>> for Kdf<'a> {
+    fn from(params: Pbkdf2Params<'a>) -> Self {
+        Kdf::Pbkdf2(params)
+    }
+}
+
 impl<'a> TryFrom<Any<'a>> for Kdf<'a> {
     type Error = Error;
 
-    fn try_from(any: Any<'a>) -> Result<Self> {
+    fn try_from(any: Any<'a>) -> der::Result<Self> {
         AlgorithmIdentifier::try_from(any).and_then(TryInto::try_into)
     }
 }
@@ -118,7 +182,7 @@ impl<'a> TryFrom<Any<'a>> for Kdf<'a> {
 impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Kdf<'a> {
     type Error = Error;
 
-    fn try_from(alg: AlgorithmIdentifier<'a>) -> Result<Self> {
+    fn try_from(alg: AlgorithmIdentifier<'a>) -> der::Result<Self> {
         match alg.oid {
             PBKDF2_OID => alg
                 .parameters_any()
@@ -130,9 +194,9 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Kdf<'a> {
 }
 
 impl<'a> Message<'a> for Kdf<'a> {
-    fn fields<F, T>(&self, f: F) -> Result<T>
+    fn fields<F, T>(&self, f: F) -> der::Result<T>
     where
-        F: FnOnce(&[&dyn Encodable]) -> Result<T>,
+        F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
     {
         match self {
             Self::Pbkdf2(params) => f(&[&self.oid(), params]),
@@ -174,10 +238,22 @@ pub struct Pbkdf2Params<'a> {
     pub prf: Pbkdf2Prf,
 }
 
+impl<'a> Pbkdf2Params<'a> {
+    /// Initialize PBKDF2-SHA256 with the given iteration count and salt
+    pub fn hmac_with_sha256(iteration_count: u16, salt: &'a [u8]) -> Result<Self, CryptoError> {
+        Ok(Self {
+            salt,
+            iteration_count,
+            key_length: None,
+            prf: Pbkdf2Prf::HmacWithSha256,
+        })
+    }
+}
+
 impl<'a> TryFrom<Any<'a>> for Pbkdf2Params<'a> {
     type Error = Error;
 
-    fn try_from(any: Any<'a>) -> Result<Self> {
+    fn try_from(any: Any<'a>) -> der::Result<Self> {
         any.sequence(|params| {
             // TODO(tarcieri): support salt `CHOICE` w\ `AlgorithmIdentifier`
             let salt = params.octet_string()?;
@@ -199,9 +275,9 @@ impl<'a> TryFrom<Any<'a>> for Pbkdf2Params<'a> {
 }
 
 impl<'a> Message<'a> for Pbkdf2Params<'a> {
-    fn fields<F, T>(&self, f: F) -> Result<T>
+    fn fields<F, T>(&self, f: F) -> der::Result<T>
     where
-        F: FnOnce(&[&dyn Encodable]) -> Result<T>,
+        F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
     {
         if self.prf == Pbkdf2Prf::default() {
             f(&[
@@ -258,7 +334,7 @@ impl Default for Pbkdf2Prf {
 impl<'a> TryFrom<Any<'a>> for Pbkdf2Prf {
     type Error = Error;
 
-    fn try_from(any: Any<'a>) -> Result<Self> {
+    fn try_from(any: Any<'a>) -> der::Result<Self> {
         AlgorithmIdentifier::try_from(any).and_then(TryInto::try_into)
     }
 }
@@ -266,7 +342,7 @@ impl<'a> TryFrom<Any<'a>> for Pbkdf2Prf {
 impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Pbkdf2Prf {
     type Error = Error;
 
-    fn try_from(alg: AlgorithmIdentifier<'a>) -> Result<Self> {
+    fn try_from(alg: AlgorithmIdentifier<'a>) -> der::Result<Self> {
         if let Some(params) = alg.parameters {
             // TODO(tarcieri): support non-NULL parameters?
             if !params.is_null() {
@@ -298,11 +374,11 @@ impl<'a> From<Pbkdf2Prf> for AlgorithmIdentifier<'a> {
 }
 
 impl Encodable for Pbkdf2Prf {
-    fn encoded_len(&self) -> Result<Length> {
+    fn encoded_len(&self) -> der::Result<Length> {
         AlgorithmIdentifier::try_from(*self)?.encoded_len()
     }
 
-    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+    fn encode(&self, encoder: &mut Encoder<'_>) -> der::Result<()> {
         AlgorithmIdentifier::try_from(*self)?.encode(encoder)
     }
 }
@@ -325,8 +401,16 @@ pub enum EncryptionScheme<'a> {
 }
 
 impl<'a> EncryptionScheme<'a> {
+    /// Get the size of a key used by this algorithm.
+    pub fn key_size(&self) -> usize {
+        match self {
+            Self::Aes128Cbc { .. } => 16,
+            Self::Aes256Cbc { .. } => 32,
+        }
+    }
+
     /// Get the [`ObjectIdentifier`] (a.k.a OID) for this algorithm.
-    pub fn oid(self) -> ObjectIdentifier {
+    pub fn oid(&self) -> ObjectIdentifier {
         match self {
             Self::Aes128Cbc { .. } => AES_128_CBC_OID,
             Self::Aes256Cbc { .. } => AES_256_CBC_OID,
@@ -337,7 +421,7 @@ impl<'a> EncryptionScheme<'a> {
 impl<'a> TryFrom<Any<'a>> for EncryptionScheme<'a> {
     type Error = Error;
 
-    fn try_from(any: Any<'a>) -> Result<Self> {
+    fn try_from(any: Any<'a>) -> der::Result<Self> {
         AlgorithmIdentifier::try_from(any).and_then(TryInto::try_into)
     }
 }
@@ -345,7 +429,7 @@ impl<'a> TryFrom<Any<'a>> for EncryptionScheme<'a> {
 impl<'a> TryFrom<AlgorithmIdentifier<'a>> for EncryptionScheme<'a> {
     type Error = Error;
 
-    fn try_from(alg: AlgorithmIdentifier<'a>) -> Result<Self> {
+    fn try_from(alg: AlgorithmIdentifier<'a>) -> der::Result<Self> {
         // TODO(tarcieri): support for non-AES algorithms?
         let iv = alg
             .parameters_any()?
@@ -367,7 +451,7 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for EncryptionScheme<'a> {
 impl<'a> TryFrom<EncryptionScheme<'a>> for AlgorithmIdentifier<'a> {
     type Error = Error;
 
-    fn try_from(scheme: EncryptionScheme<'a>) -> Result<Self> {
+    fn try_from(scheme: EncryptionScheme<'a>) -> der::Result<Self> {
         let parameters = match scheme {
             EncryptionScheme::Aes128Cbc { iv } => Any::from(OctetString::new(iv)?),
             EncryptionScheme::Aes256Cbc { iv } => Any::from(OctetString::new(iv)?),
@@ -381,11 +465,11 @@ impl<'a> TryFrom<EncryptionScheme<'a>> for AlgorithmIdentifier<'a> {
 }
 
 impl<'a> Encodable for EncryptionScheme<'a> {
-    fn encoded_len(&self) -> Result<Length> {
+    fn encoded_len(&self) -> der::Result<Length> {
         AlgorithmIdentifier::try_from(*self)?.encoded_len()
     }
 
-    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+    fn encode(&self, encoder: &mut Encoder<'_>) -> der::Result<()> {
         AlgorithmIdentifier::try_from(*self)?.encode(encoder)
     }
 }
