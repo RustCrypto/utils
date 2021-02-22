@@ -1,6 +1,6 @@
 [package]
 name = "spki"
-version = "0.2.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.2.1" # Also update html_root_url in lib.rs when bumping this
 description = """
 X.509 Subject Public Key Info (RFC5280) describing public keys as well as their
 associated AlgorithmIdentifiers (i.e. OIDs)
