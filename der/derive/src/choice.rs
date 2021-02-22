@@ -5,21 +5,27 @@
 use crate::{Asn1Attrs, Asn1Type};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{DataEnum, Lifetime};
+use syn::{DataEnum, Ident, Lifetime, Variant};
 use synstructure::{Structure, VariantInfo};
+
+/// Registry of `CHOICE` alternatives for a given enum
+type Alternatives = std::collections::BTreeMap<Asn1Type, Alternative>;
 
 /// Derive the `Choice` trait for an enum.
 pub(crate) struct DeriveChoice {
-    /// Tags included in the impl body for `der::Choice`
+    /// `CHOICE` alternatives for this enum.
+    alternatives: Alternatives,
+
+    /// Tags included in the impl body for `der::Choice`.
     choice_body: TokenStream,
 
-    /// Enum match arms for the impl body for `TryFrom<der::Any<'_>>`
+    /// Enum match arms for the impl body for `TryFrom<der::Any<'_>>`.
     decode_body: TokenStream,
 
-    /// Enum match arms for the impl body for `der::Encodable::encode`
+    /// Enum match arms for the impl body for `der::Encodable::encode`.
     encode_body: TokenStream,
 
-    /// Enum match arms for the impl body for `der::Encodable::encoded_len`
+    /// Enum match arms for the impl body for `der::Encodable::encoded_len`.
     encoded_len_body: TokenStream,
 }
 
@@ -33,6 +39,7 @@ impl DeriveChoice {
         );
 
         let mut state = Self {
+            alternatives: Default::default(),
             choice_body: TokenStream::new(),
             decode_body: TokenStream::new(),
             encode_body: TokenStream::new(),
@@ -47,6 +54,7 @@ impl DeriveChoice {
                 )
             });
 
+            Alternative::register(&mut state.alternatives, asn1_type, variant);
             state.derive_variant_choice(asn1_type);
             state.derive_variant_decoder(asn1_type);
 
@@ -148,6 +156,7 @@ impl DeriveChoice {
             decode_body,
             encode_body,
             encoded_len_body,
+            ..
         } = self;
 
         s.gen_impl(quote! {
@@ -192,5 +201,32 @@ impl DeriveChoice {
                 }
             }
         })
+    }
+}
+
+/// ASN.1 `CHOICE` alternative: one of the ASN.1 types comprising the `CHOICE`
+/// which maps to an enum variant.
+struct Alternative {
+    /// ASN.1 type for this alternative.
+    pub asn1_type: Asn1Type,
+
+    /// [`Ident`] for the corresponding enum variant.
+    pub ident: Ident,
+}
+
+impl Alternative {
+    /// Register a `CHOICE` alternative for a variant
+    pub fn register(alternatives: &mut Alternatives, asn1_type: Asn1Type, variant: &Variant) {
+        let alternative = Self {
+            asn1_type,
+            ident: variant.ident.clone(),
+        };
+
+        if let Some(duplicate) = alternatives.insert(asn1_type, alternative) {
+            panic!(
+                "duplicate ASN.1 type `{}` for enum variants `{}` and `{}`",
+                asn1_type, duplicate.ident, variant.ident
+            );
+        }
     }
 }
