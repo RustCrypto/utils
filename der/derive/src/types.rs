@@ -6,7 +6,7 @@ use quote::quote;
 
 /// ASN.1 built-in types supported by the `#[asn1(type = "...")]` attribute
 // TODO(tarcieri): support all ASN.1 types specified in `der::Tag`
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub(crate) enum Asn1Type {
     /// ASN.1 `BIT STRING`
     BitString,
