@@ -2,7 +2,8 @@
 
 use core::convert::TryFrom;
 use der::{
-    Any, Decodable, Encodable, Encoder, Error, Length, Message, Null, ObjectIdentifier, Result, Tag,
+    Any, Choice, Decodable, Encodable, Encoder, Error, Length, Message, Null, ObjectIdentifier,
+    Result, Tag,
 };
 
 /// X.509 `AlgorithmIdentifier` as defined in [RFC 5280 Section 4.1.1.2].
@@ -174,6 +175,12 @@ impl<'a> TryFrom<Any<'a>> for AlgorithmParameters<'a> {
             Tag::ObjectIdentifier => any.oid().map(Into::into),
             _ => Ok(Self::Any(any)),
         }
+    }
+}
+
+impl<'a> Choice<'a> for AlgorithmParameters<'a> {
+    fn can_decode(_: Tag) -> bool {
+        true
     }
 }
 

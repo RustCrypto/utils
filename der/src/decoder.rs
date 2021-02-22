@@ -1,7 +1,7 @@
 //! DER decoder.
 
 use crate::{
-    Any, BitString, Decodable, ErrorKind, GeneralizedTime, Length, Null, OctetString,
+    Any, BitString, Choice, Decodable, ErrorKind, GeneralizedTime, Length, Null, OctetString,
     PrintableString, Result, Sequence, UtcTime, Utf8String,
 };
 use core::convert::TryInto;
@@ -145,7 +145,7 @@ impl<'a> Decoder<'a> {
     }
 
     /// Attempt to decode an ASN.1 `OPTIONAL` value.
-    pub fn optional<T: Decodable<'a>>(&mut self) -> Result<Option<T>> {
+    pub fn optional<T: Choice<'a>>(&mut self) -> Result<Option<T>> {
         self.decode()
     }
 
@@ -202,6 +202,13 @@ impl<'a> Decoder<'a> {
 
         self.position = (self.position + len)?;
         Ok(result)
+    }
+
+    /// Peek at the next byte in the decoder without modifying the cursor.
+    pub(crate) fn peek(&self) -> Option<u8> {
+        self.remaining()
+            .ok()
+            .and_then(|bytes| bytes.get(0).cloned())
     }
 
     /// Obtain the remaining bytes in this decoder from the current cursor
