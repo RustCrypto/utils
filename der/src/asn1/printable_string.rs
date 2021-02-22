@@ -163,7 +163,7 @@ impl<'a> fmt::Debug for PrintableString<'a> {
 #[cfg(test)]
 mod tests {
     use super::PrintableString;
-    use crate::traits::Decodable;
+    use crate::Decodable;
 
     #[test]
     fn parse_bytes() {

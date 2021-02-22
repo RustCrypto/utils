@@ -331,14 +331,16 @@ extern crate std;
 mod asn1;
 mod byte_slice;
 mod datetime;
+mod decodable;
 mod decoder;
+mod encodable;
 mod encoder;
 mod error;
 mod header;
 mod length;
+mod message;
 mod str_slice;
 mod tag;
-mod traits;
 
 pub use crate::{
     asn1::{
@@ -352,13 +354,15 @@ pub use crate::{
         utc_time::UtcTime,
         utf8_string::Utf8String,
     },
+    decodable::Decodable,
     decoder::Decoder,
+    encodable::Encodable,
     encoder::Encoder,
     error::{Error, ErrorKind, Result},
     header::Header,
     length::Length,
-    tag::Tag,
-    traits::{Decodable, Encodable, Message, Tagged},
+    message::Message,
+    tag::{Tag, Tagged},
 };
 
 pub(crate) use crate::byte_slice::ByteSlice;
