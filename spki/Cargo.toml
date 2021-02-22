@@ -14,7 +14,7 @@ keywords = ["crypto", "x509"]
 readme = "README.md"
 
 [dependencies]
-der = { version = "0.2", features = ["oid"], path = "../der" }
+der = { version = "0.2.8", features = ["oid"], path = "../der" }
 
 [features]
 std = ["der/std"]
