@@ -3,9 +3,8 @@
 //! This crate contains custom derive macros intended to be used in the
 //! following way:
 //!
-//! - [`Decodable`][`derive@Decodable`] and [`Encodable`][`derive@Encodable`]:
-//!   for representing ASN.1 `CHOICE` as a Rust enum
-//! - [`Message`][`derive@Message`]: for representing ASN.1 `SEQUENCE` as a Rust struct
+//! - [`Choice`][`derive@Choice`]: map ASN.1 `CHOICE` to a Rust enum.
+//! - [`Message`][`derive@Message`]: map ASN.1 `SEQUENCE` to a Rust struct.
 //!
 //! Note that this crate shouldn't be used directly, but instead accessed
 //! by using the `derive` feature of the `der` crate.
@@ -30,23 +29,6 @@
 //! - `UTCTime`: performs an intermediate conversion to [`der::UtcTime`]
 //! - `UTF8String`: performs an intermediate conversion to [`der::Utf8String`]
 //!
-//! Example:
-//!
-//! ```ignore
-//! // NOTE: requires the `derive` feature of `der`
-//! use der::{Decodable, Encodable};
-//!
-//! /// `Time` as defined in RFC 5280
-//! #[derive(Decodable, Encodable)]
-//! pub enum Time {
-//!     #[asn1(type = "UTCTime")]
-//!     UtcTime(UtcTime),
-//!
-//!     #[asn1(type = "GeneralizedTime")]
-//!     GeneralTime(GeneralizedTime),
-//! }
-//! ```
-//!
 //! Note: please open a GitHub Issue if you would like to request support
 //! for additional ASN.1 types.
 //!
@@ -63,51 +45,50 @@
 
 mod attributes;
 mod choice;
-mod sequence;
+mod message;
 mod types;
 
-use crate::{
-    attributes::Asn1Attrs,
-    choice::{DeriveDecodableForEnum, DeriveEncodableForEnum},
-    sequence::DeriveMessageForStruct,
-    types::Asn1Type,
-};
+use crate::{attributes::Asn1Attrs, choice::DeriveChoice, message::DeriveMessage, types::Asn1Type};
 use proc_macro2::TokenStream;
 use syn::{Generics, Lifetime};
 use synstructure::{decl_derive, Structure};
 
 decl_derive!(
-    [Decodable, attributes(asn1)] =>
+    [Choice, attributes(asn1)] =>
 
-    /// Derive the [`Decodable`][1] trait on an enum.
+    /// Derive the [`Choice`][1] trait on an enum.
     ///
     /// This custom derive macro can be used to automatically impl the
-    /// `Decodable` trait for any enum representing a message which is
-    /// encoded as an ASN.1 `CHOICE`.
+    /// [`Decodable`][2] and [`Encodable`][3] traits along with the
+    /// [`Choice`][1] supertrait for any enum representing an ASN.1 `CHOICE`.
     ///
-    /// See [toplevel documentation for the `der_derive` crate][2] for more
-    /// information about how to use this macro.
+    /// # Usage
     ///
-    /// [1]: https://docs.rs/der/latest/der/trait.Decodable.html
-    /// [2]: https://docs.rs/der_derive/
-    derive_decodable
-);
-
-decl_derive!(
-    [Encodable, attributes(asn1)] =>
-
-    /// Derive the [`Encodable`][1] trait on an enum.
+    /// ```ignore
+    /// // NOTE: requires the `derive` feature of `der`
+    /// use der::Choice;
     ///
-    /// This custom derive macro can be used to automatically impl the
-    /// `Encodable` trait for any enum representing a message which is
-    /// encoded as an ASN.1 `CHOICE`.
+    /// /// `Time` as defined in RFC 5280
+    /// #[derive(Choice)]
+    /// pub enum Time {
+    ///     #[asn1(type = "UTCTime")]
+    ///     UtcTime(UtcTime),
     ///
-    /// See [toplevel documentation for the `der_derive` crate][2] for more
-    /// information about how to use this macro.
+    ///     #[asn1(type = "GeneralizedTime")]
+    ///     GeneralTime(GeneralizedTime),
+    /// }
+    /// ```
     ///
-    /// [1]: https://docs.rs/der/latest/der/trait.Encodable.html
-    /// [2]: https://docs.rs/der_derive/
-    derive_encodable
+    /// # `#[asn1(type = "...")]` attribute
+    ///
+    /// See [toplevel documentation for the `der_derive` crate][4] for more
+    /// information about the `#[asn1]` attribute.
+    ///
+    /// [1]: https://docs.rs/der/latest/der/trait.Choice.html
+    /// [2]: https://docs.rs/der/latest/der/trait.Decodable.html
+    /// [3]: https://docs.rs/der/latest/der/trait.Encodable.html
+    /// [4]: https://docs.rs/der_derive/
+    derive_choice
 );
 
 decl_derive!(
@@ -119,32 +100,41 @@ decl_derive!(
     /// `Message` trait for any struct representing a message which is
     /// encoded as an ASN.1 `SEQUENCE`.
     ///
+    /// # Usage
+    ///
+    /// ```ignore
+    /// use der::{Any, Message, ObjectIdentifier};
+    ///
+    /// /// X.509 `AlgorithmIdentifier`
+    /// #[derive(Message)]
+    /// pub struct AlgorithmIdentifier<'a> {
+    ///     /// This field contains an ASN.1 `OBJECT IDENTIFIER`, a.k.a. OID.
+    ///     pub algorithm: ObjectIdentifier,
+    ///
+    ///     /// This field is `OPTIONAL` and contains the ASN.1 `ANY` type, which
+    ///     /// in this example allows arbitrary algorithm-defined parameters.
+    ///     pub parameters: Option<Any<'a>>
+    /// }
+    /// ```
+    ///
+    /// # `#[asn1(type = "...")]` attribute
+    ///
     /// See [toplevel documentation for the `der_derive` crate][2] for more
-    /// information about how to use this macro.
+    /// information about the `#[asn1]` attribute.
     ///
     /// [1]: https://docs.rs/der/latest/der/trait.Message.html
     /// [2]: https://docs.rs/der_derive/
     derive_message
 );
 
-/// Custom derive for `der::Decodable`
-fn derive_decodable(s: Structure<'_>) -> TokenStream {
+/// Custom derive for `der::Choice`
+fn derive_choice(s: Structure<'_>) -> TokenStream {
     let ast = s.ast();
     let lifetime = parse_lifetime(&ast.generics);
 
     match &ast.data {
-        syn::Data::Enum(data) => DeriveDecodableForEnum::derive(s, data, lifetime),
-        other => panic!("can't derive `Decodable` on: {:?}", other),
-    }
-}
-
-/// Custom derive for `der::Encodable`
-fn derive_encodable(s: Structure<'_>) -> TokenStream {
-    let ast = s.ast();
-
-    match &ast.data {
-        syn::Data::Enum(data) => DeriveEncodableForEnum::derive(s, data),
-        other => panic!("can't derive `Encodable` on: {:?}", other),
+        syn::Data::Enum(data) => DeriveChoice::derive(s, data, lifetime),
+        other => panic!("can't derive `Choice` on: {:?}", other),
     }
 }
 
@@ -154,7 +144,7 @@ fn derive_message(s: Structure<'_>) -> TokenStream {
     let lifetime = parse_lifetime(&ast.generics);
 
     match &ast.data {
-        syn::Data::Struct(data) => DeriveMessageForStruct::derive(s, data, lifetime),
+        syn::Data::Struct(data) => DeriveMessage::derive(s, data, lifetime),
         other => panic!("can't derive `Message` on: {:?}", other),
     }
 }

@@ -8,13 +8,22 @@ use quote::{quote, ToTokens};
 use syn::{DataEnum, Lifetime};
 use synstructure::{Structure, VariantInfo};
 
-/// Derive `Decodable` for an enum.
-pub(crate) struct DeriveDecodableForEnum {
+/// Derive the `Choice` trait for an enum.
+pub(crate) struct DeriveChoice {
+    /// Tags included in the impl body for `der::Choice`
+    choice_body: TokenStream,
+
     /// Enum match arms for the impl body for `TryFrom<der::Any<'_>>`
     decode_body: TokenStream,
+
+    /// Enum match arms for the impl body for `der::Encodable::encode`
+    encode_body: TokenStream,
+
+    /// Enum match arms for the impl body for `der::Encodable::encoded_len`
+    encoded_len_body: TokenStream,
 }
 
-impl DeriveDecodableForEnum {
+impl DeriveChoice {
     /// Derive `Decodable` on an enum.
     pub fn derive(s: Structure<'_>, data: &DataEnum, lifetime: Option<&Lifetime>) -> TokenStream {
         assert_eq!(
@@ -24,10 +33,13 @@ impl DeriveDecodableForEnum {
         );
 
         let mut state = Self {
+            choice_body: TokenStream::new(),
             decode_body: TokenStream::new(),
+            encode_body: TokenStream::new(),
+            encoded_len_body: TokenStream::new(),
         };
 
-        for variant in &data.variants {
+        for (variant_info, variant) in s.variants().iter().zip(&data.variants) {
             let asn1_type = Asn1Attrs::new(&variant.attrs).asn1_type.unwrap_or_else(|| {
                 panic!(
                     "no #[asn1(type=...)] specified for enum variant: {}",
@@ -35,10 +47,35 @@ impl DeriveDecodableForEnum {
                 )
             });
 
+            state.derive_variant_choice(asn1_type);
             state.derive_variant_decoder(asn1_type);
+
+            match variant_info.bindings().len() {
+                // TODO(tarcieri): handle 0 bindings for ASN.1 NULL
+                1 => {
+                    state.derive_variant_encoder(&variant_info, asn1_type);
+                    state.derive_variant_encoded_len(&variant_info);
+                }
+                other => panic!(
+                    "unsupported number of ASN.1 variant bindings for {}: {}",
+                    asn1_type, other
+                ),
+            }
         }
 
         state.finish(s, lifetime)
+    }
+
+    /// Derive the body of `Choice::can_decode
+    fn derive_variant_choice(&mut self, asn1_type: Asn1Type) {
+        let tag = asn1_type.tag();
+
+        if self.choice_body.is_empty() {
+            tag
+        } else {
+            quote!(| #tag)
+        }
+        .to_tokens(&mut self.choice_body);
     }
 
     /// Derive a match arm of the impl body for `TryFrom<der::Any<'_>>`.
@@ -64,84 +101,6 @@ impl DeriveDecodableForEnum {
             }
         }
         .to_tokens(&mut self.decode_body);
-    }
-
-    /// Finish deriving an enum
-    fn finish(self, s: Structure<'_>, lifetime: Option<&Lifetime>) -> TokenStream {
-        let lifetime = match lifetime {
-            Some(lifetime) => quote!(#lifetime),
-            None => quote!('_),
-        };
-
-        let decode_body = self.decode_body;
-
-        s.gen_impl(quote! {
-            gen impl core::convert::TryFrom<der::Any<#lifetime>> for @Self {
-                type Error = der::Error;
-
-                fn try_from(any: der::Any<#lifetime>) -> der::Result<Self> {
-                    #[allow(unused_imports)]
-                    use core::convert::TryInto;
-
-                    match any.tag() {
-                        #decode_body
-                        actual => Err(der::ErrorKind::UnexpectedTag {
-                            expected: None,
-                            actual
-                        }
-                        .into()),
-                    }
-                }
-            }
-        })
-    }
-}
-
-/// Derive `Encodable` for an enum.
-pub(crate) struct DeriveEncodableForEnum {
-    /// Enum match arms for the impl body for `der::Encodable::encode`
-    encode_body: TokenStream,
-
-    /// Enum match arms for the impl body for `der::Encodable::encoded_len`
-    encoded_len_body: TokenStream,
-}
-
-impl DeriveEncodableForEnum {
-    /// Derive `Encodable` on an enum.
-    pub fn derive(s: Structure<'_>, data: &DataEnum) -> TokenStream {
-        assert_eq!(
-            s.variants().len(),
-            data.variants.len(),
-            "enum variant count mismatch"
-        );
-
-        let mut state = Self {
-            encode_body: TokenStream::new(),
-            encoded_len_body: TokenStream::new(),
-        };
-
-        for (variant_info, variant) in s.variants().iter().zip(&data.variants) {
-            let asn1_type = Asn1Attrs::new(&variant.attrs).asn1_type.unwrap_or_else(|| {
-                panic!(
-                    "no #[asn1(type=...)] specified for enum variant: {}",
-                    variant.ident
-                )
-            });
-
-            match variant_info.bindings().len() {
-                // TODO(tarcieri): handle 0 bindings for ASN.1 NULL
-                1 => {
-                    state.derive_variant_encoder(&variant_info, asn1_type);
-                    state.derive_variant_encoded_len(&variant_info);
-                }
-                other => panic!(
-                    "unsupported number of ASN.1 variant bindings for {}: {}",
-                    asn1_type, other
-                ),
-            }
-        }
-
-        state.finish(s)
     }
 
     /// Derive a match arm for the impl body for `der::Encodable::encode`.
@@ -178,11 +137,44 @@ impl DeriveEncodableForEnum {
     }
 
     /// Finish deriving an enum
-    fn finish(self, s: Structure<'_>) -> TokenStream {
-        let encode_body = self.encode_body;
-        let encoded_len_body = self.encoded_len_body;
+    fn finish(self, s: Structure<'_>, lifetime: Option<&Lifetime>) -> TokenStream {
+        let lifetime = match lifetime {
+            Some(lifetime) => quote!(#lifetime),
+            None => quote!('_),
+        };
+
+        let Self {
+            choice_body,
+            decode_body,
+            encode_body,
+            encoded_len_body,
+        } = self;
 
         s.gen_impl(quote! {
+            gen impl ::der::Choice<#lifetime> for @Self {
+                fn can_decode(tag: ::der::Tag) -> bool {
+                    matches!(tag, #choice_body)
+                }
+            }
+
+            gen impl core::convert::TryFrom<der::Any<#lifetime>> for @Self {
+                type Error = der::Error;
+
+                fn try_from(any: der::Any<#lifetime>) -> der::Result<Self> {
+                    #[allow(unused_imports)]
+                    use core::convert::TryInto;
+
+                    match any.tag() {
+                        #decode_body
+                        actual => Err(der::ErrorKind::UnexpectedTag {
+                            expected: None,
+                            actual
+                        }
+                        .into()),
+                    }
+                }
+            }
+
             gen impl ::der::Encodable for @Self {
                 fn encode(&self, encoder: &mut ::der::Encoder<'_>) -> ::der::Result<()> {
                     #[allow(unused_imports)]

@@ -3,11 +3,13 @@
 
 #![cfg(feature = "derive")]
 
-use der::{Decodable, Encodable, Encoder, GeneralizedTime, UtcTime};
+use der::{Choice, Decodable, Encodable, Encoder, GeneralizedTime, UtcTime};
 use hex_literal::hex;
 use std::time::Duration;
 
-/// `Time` as defined in RFC 5280:
+/// Custom derive test case for the `Choice` mcaro.
+///
+/// Based on `Time` as defined in RFC 5280:
 /// <https://tools.ietf.org/html/rfc5280#page-117>
 ///
 /// ```text
@@ -15,7 +17,7 @@ use std::time::Duration;
 ///      utcTime        UTCTime,
 ///      generalTime    GeneralizedTime }
 /// ```
-#[derive(Copy, Clone, Debug, Decodable, Encodable)]
+#[derive(Choice)]
 pub enum Time {
     #[asn1(type = "UTCTime")]
     UtcTime(UtcTime),
