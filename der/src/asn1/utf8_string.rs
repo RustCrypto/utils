@@ -146,7 +146,7 @@ impl Tagged for str {
 #[cfg(test)]
 mod tests {
     use super::Utf8String;
-    use crate::traits::Decodable;
+    use crate::Decodable;
 
     #[test]
     fn parse_ascii_bytes() {

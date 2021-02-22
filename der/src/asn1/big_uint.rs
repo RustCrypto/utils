@@ -197,7 +197,7 @@ impl_size!(
 #[cfg(test)]
 mod tests {
     use super::BigUInt;
-    use crate::{asn1::integer::tests::*, traits::Decodable, Any, ErrorKind, Result, Tag};
+    use crate::{asn1::integer::tests::*, Any, Decodable, ErrorKind, Result, Tag};
     use core::convert::TryInto;
 
     // TODO(tarcieri): tests for more integer sizes

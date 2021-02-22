@@ -9,7 +9,16 @@ const CONSTRUCTED_FLAG: u8 = 0b100000;
 /// Indicator bit for context-specific types
 const CONTEXT_SPECIFIC_FLAG: u8 = 0b10000000;
 
+/// Types with an associated ASN.1 [`Tag`].
+pub trait Tagged {
+    /// ASN.1 tag
+    const TAG: Tag;
+}
+
 /// ASN.1 tags.
+///
+/// Tags are the leading byte of the Tag-Length-Value encoding used by ASN.1
+/// DER and identify the type of the subsequent value.
 #[derive(Copy, Clone, Eq, PartialEq)]
 #[allow(clippy::identity_op)]
 #[non_exhaustive]
