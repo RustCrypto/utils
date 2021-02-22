@@ -33,11 +33,11 @@ pub fn encrypt_in_place<'b>(
 
     match params.encryption {
         EncryptionScheme::Aes128Cbc { iv } => {
-            let cipher = Aes128Cbc::new_from_slices(key.as_slice(), iv).map_err(|_| CryptoError)?;
+            let cipher = Aes128Cbc::new_var(key.as_slice(), iv).map_err(|_| CryptoError)?;
             cipher.encrypt(buffer, pos).map_err(|_| CryptoError)
         }
         EncryptionScheme::Aes256Cbc { iv } => {
-            let cipher = Aes256Cbc::new_from_slices(key.as_slice(), iv).map_err(|_| CryptoError)?;
+            let cipher = Aes256Cbc::new_var(key.as_slice(), iv).map_err(|_| CryptoError)?;
             cipher.encrypt(buffer, pos).map_err(|_| CryptoError)
         }
     }
@@ -59,11 +59,11 @@ pub fn decrypt_in_place<'a>(
 
     match params.encryption {
         EncryptionScheme::Aes128Cbc { iv } => {
-            let cipher = Aes128Cbc::new_from_slices(key.as_slice(), iv).map_err(|_| CryptoError)?;
+            let cipher = Aes128Cbc::new_var(key.as_slice(), iv).map_err(|_| CryptoError)?;
             cipher.decrypt(buffer).map_err(|_| CryptoError)
         }
         EncryptionScheme::Aes256Cbc { iv } => {
-            let cipher = Aes256Cbc::new_from_slices(key.as_slice(), iv).map_err(|_| CryptoError)?;
+            let cipher = Aes256Cbc::new_var(key.as_slice(), iv).map_err(|_| CryptoError)?;
             cipher.decrypt(buffer).map_err(|_| CryptoError)
         }
     }

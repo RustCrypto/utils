@@ -2,12 +2,32 @@
 # It is not intended for manual editing.
 [[package]]
 name = "aes"
-version = "0.7.0-pre"
-source = "git+https://github.com/RustCrypto/block-ciphers#7bf9d473a926e8daa106933065f0b368782748e9"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "884391ef1066acaa41e766ba8f596341b96e93ce34f9a43e7d24bf0a0eaf0561"
 dependencies = [
- "cfg-if",
+ "aes-soft",
+ "aesni",
  "cipher",
- "cpuid-bool 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "aes-soft"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be14c7498ea50828a38d0e24a765ed2effe92a705885b57d029cd67d45744072"
+dependencies = [
+ "cipher",
+ "opaque-debug 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "aesni"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea2e11f5e94c2f7d386164cc2aa1f97823fed6f259e486940a71c174dd01b0ce"
+dependencies = [
+ "cipher",
  "opaque-debug 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -41,8 +61,9 @@ dependencies = [
 
 [[package]]
 name = "block-modes"
-version = "0.8.0-pre"
-source = "git+https://github.com/RustCrypto/block-ciphers#7bf9d473a926e8daa106933065f0b368782748e9"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57a0e8073e8baa88212fb5823574c02ebccb395136ba9a164ab89379ec6072f0"
 dependencies = [
  "block-padding 0.2.1",
  "cipher",
@@ -69,9 +90,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "cipher"
-version = "0.3.0-pre.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e1db53c34251ece12ba40366dd5ece6dc5672296d7fb34f7b1791e8f0d449e69"
+checksum = "12f8e7987cbd042a63249497f41aed09f8e65add917ea6566effbc56578d6801"
 dependencies = [
  "generic-array",
 ]
@@ -96,12 +117,6 @@ checksum = "8aebca1129a03dc6dc2b127edd729435bbc4a37e1d5f4d7513165089ceb02634"
 [[package]]
 name = "cpuid-bool"
 version = "0.2.0"
-
-[[package]]
-name = "cpuid-bool"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcb25d077389e53838a8158c8e99174c5a9d902dee4904320db714f3c653ffba"
 
 [[package]]
 name = "crypto-mac"

@@ -17,8 +17,8 @@ readme = "README.md"
 der = { version = "0.2.7", features = ["oid"], path = "../der" }
 spki = { version = "0.2", path = "../spki" }
 
-aes = { version = "=0.7.0-pre", optional = true }
-block-modes = { version = "=0.8.0-pre", optional = true, default-features = false }
+aes = { version = "0.6", optional = true }
+block-modes = { version = "0.7", optional = true, default-features = false }
 hmac = { version = "0.10", optional = true, default-features = false }
 pbkdf2 = { version = "0.7", optional = true, default-features = false }
 sha2 = { version = "0.9", optional = true, default-features = false }

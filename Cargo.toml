@@ -16,7 +16,3 @@ members = [
     "pkcs8",
     "spki",
 ]
-
-[patch.crates-io]
-aes = { git = "https://github.com/RustCrypto/block-ciphers" }
-block-modes = { git = "https://github.com/RustCrypto/block-ciphers" }

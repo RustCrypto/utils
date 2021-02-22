@@ -231,7 +231,6 @@ impl<T: Variant> Encoding for T {
 
     fn encoded_len(bytes: &[u8]) -> usize {
         // TODO: replace with `unwrap_or` on stabilization
-        #[allow(clippy::manual_unwrap_or)]
         match encoded_len_inner(bytes.len(), T::PADDED) {
             Some(v) => v,
             None => 0,
