@@ -221,8 +221,7 @@
 //! When the `derive` feature of this crate is enabled, the following custom
 //! derive macros are available:
 //!
-//! - [`Decodable`]: derive for `CHOICE` enum (see [`der_derive::Decodable`])
-//! - [`Encodable`]: derive for `CHOICE` enum (see [`der_derive::Encodable`])
+//! - [`Choice`]: derive for `CHOICE` enum (see [`der_derive::Choice`])
 //! - [`Message`]: derive for `SEQUENCE` struct (see [`der_derive::Message`])
 //!
 //! ### Derive [`Message`] for `SEQUENCE` struct
@@ -377,7 +376,7 @@ pub use {
 
 #[cfg(feature = "derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
-pub use der_derive::{Decodable, Encodable, Message};
+pub use der_derive::{Choice, Message};
 
 #[cfg(feature = "oid")]
 #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]

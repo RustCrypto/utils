@@ -7,8 +7,8 @@ use quote::{quote, ToTokens};
 use syn::{DataStruct, Field, Ident, Lifetime};
 use synstructure::Structure;
 
-/// Derive `Message` on a struct
-pub(crate) struct DeriveMessageForStruct {
+/// Derive the `Message` trait for a struct
+pub(crate) struct DeriveMessage {
     /// Field decoders
     decode_fields: TokenStream,
 
@@ -19,7 +19,7 @@ pub(crate) struct DeriveMessageForStruct {
     encode_fields: TokenStream,
 }
 
-impl DeriveMessageForStruct {
+impl DeriveMessage {
     pub fn derive(s: Structure<'_>, data: &DataStruct, lifetime: Option<&Lifetime>) -> TokenStream {
         let mut state = Self {
             decode_fields: TokenStream::new(),
