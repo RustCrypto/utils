@@ -7,6 +7,7 @@ pub(crate) mod any;
 pub(crate) mod big_uint;
 pub(crate) mod bit_string;
 pub(crate) mod boolean;
+pub(crate) mod choice;
 pub(crate) mod generalized_time;
 pub(crate) mod integer;
 pub(crate) mod null;

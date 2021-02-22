@@ -1,7 +1,7 @@
 //! ASN.1 `ANY` type.
 
 use crate::{
-    BitString, ByteSlice, Decodable, Decoder, Encodable, Encoder, Error, ErrorKind,
+    BitString, ByteSlice, Choice, Decodable, Decoder, Encodable, Encoder, Error, ErrorKind,
     GeneralizedTime, Header, Length, Null, OctetString, PrintableString, Result, Sequence, Tag,
     UtcTime, Utf8String,
 };
@@ -120,6 +120,12 @@ impl<'a> Any<'a> {
             tag: self.tag,
             length: self.len(),
         }
+    }
+}
+
+impl<'a> Choice<'a> for Any<'a> {
+    fn can_decode(_: Tag) -> bool {
+        true
     }
 }
 

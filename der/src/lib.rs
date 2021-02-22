@@ -346,6 +346,7 @@ pub use crate::{
     asn1::{
         any::Any,
         bit_string::BitString,
+        choice::Choice,
         generalized_time::GeneralizedTime,
         null::Null,
         octet_string::OctetString,
