@@ -82,7 +82,7 @@ pub use spki::{AlgorithmIdentifier, SubjectPublicKeyInfo};
 
 #[cfg(feature = "alloc")]
 pub use crate::{
-    document::{PrivateKeyDocument, PublicKeyDocument},
+    document::{private_key::PrivateKeyDocument, public_key::PublicKeyDocument},
     traits::{ToPrivateKey, ToPublicKey},
 };
 
@@ -90,3 +90,6 @@ pub use crate::{
 pub use crate::private_key_info::encrypted::EncryptedPrivateKeyInfo;
 #[cfg(feature = "pkcs5")]
 pub use pkcs5;
+
+#[cfg(all(feature = "alloc", feature = "pkcs5"))]
+pub use crate::document::encrypted_private_key::EncryptedPrivateKeyDocument;
