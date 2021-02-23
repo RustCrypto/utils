@@ -27,11 +27,11 @@ const ED25519_DER_AES256_SHA256_EXAMPLE: &[u8] =
     include_bytes!("examples/ed25519-encpriv-aes256-sha256.der");
 
 /// Password used to encrypt the keys.
-#[allow(dead_code)] // TODO(tarcieri): decryption support
+#[cfg(feature = "encryption")]
 const PASSWORD: &[u8] = b"hunter42"; // Bad password; don't actually use outside tests!
 
 #[test]
-fn parse_ed25519_der_encrypted_aes128_sha1() {
+fn parse_ed25519_der_encpriv_aes128_sha1() {
     let pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES128_SHA1_EXAMPLE).unwrap();
 
     assert_eq!(
@@ -63,7 +63,7 @@ fn parse_ed25519_der_encrypted_aes128_sha1() {
 }
 
 #[test]
-fn parse_ed25519_der_encrypted_aes256_sha256() {
+fn parse_ed25519_der_encpriv_aes256_sha256() {
     let pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES256_SHA256_EXAMPLE).unwrap();
 
     assert_eq!(
@@ -92,4 +92,12 @@ fn parse_ed25519_der_encrypted_aes256_sha256() {
         pk.encrypted_data,
         &hex!("D0CD6C770F4BB87176422305C17401809E226674CE74185D221BFDAA95069890C8882FCE02B05D41BCBF54B035595BCD4154B32593708469B86AACF8815A7B2B")
     );
+}
+
+#[cfg(feature = "encryption")]
+#[test]
+fn decrypt_ed25519_der_encpriv_aes256_sha256() {
+    let enc_pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES256_SHA256_EXAMPLE).unwrap();
+    let pk = enc_pk.decrypt(PASSWORD).unwrap();
+    assert_eq!(pk.as_ref(), include_bytes!("examples/ed25519-priv.der"));
 }

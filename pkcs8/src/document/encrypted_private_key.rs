@@ -5,6 +5,9 @@ use alloc::{borrow::ToOwned, vec::Vec};
 use core::convert::{TryFrom, TryInto};
 use zeroize::{Zeroize, Zeroizing};
 
+#[cfg(feature = "encryption")]
+use crate::PrivateKeyDocument;
+
 #[cfg(feature = "std")]
 use {
     super::private_key::write_secret_file,
@@ -47,6 +50,14 @@ impl EncryptedPrivateKeyDocument {
     pub fn encrypted_private_key_info(&self) -> EncryptedPrivateKeyInfo<'_> {
         EncryptedPrivateKeyInfo::try_from(self.0.as_ref())
             .expect("malformed EncryptedPrivateKeyDocument")
+    }
+
+    /// Attempt to decrypt this encrypted private key using the provided
+    /// password to derive an encryption key.
+    #[cfg(feature = "encryption")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+    pub fn decrypt(&self, password: impl AsRef<[u8]>) -> Result<PrivateKeyDocument> {
+        self.encrypted_private_key_info().decrypt(password)
     }
 }
 

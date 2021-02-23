@@ -5,6 +5,9 @@ use core::convert::TryFrom;
 use der::{Decodable, Encodable, Message};
 use pkcs5::EncryptionScheme;
 
+#[cfg(feature = "encryption")]
+use {crate::PrivateKeyDocument, core::convert::TryInto};
+
 /// PKCS#8 `EncryptedPrivateKeyInfo`.
 ///
 /// ASN.1 structure containing a PKCS#5 [`EncryptionScheme`] identifier for a
@@ -43,6 +46,25 @@ pub struct EncryptedPrivateKeyInfo<'a> {
 
     /// Private key data
     pub encrypted_data: &'a [u8],
+}
+
+impl<'a> EncryptedPrivateKeyInfo<'a> {
+    /// Attempt to decrypt this encrypted private key using the provided
+    /// password to derive an encryption key.
+    #[cfg(feature = "encryption")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+    pub fn decrypt(&self, password: impl AsRef<[u8]>) -> Result<PrivateKeyDocument> {
+        let mut buffer = self.encrypted_data.to_vec();
+
+        let pt_len = self
+            .encryption_algorithm
+            .decrypt_in_place(password, &mut buffer)
+            .map_err(|_| Error::Decode)? // TODO(tarcieri): add `pkcs8::Error::Crypto`
+            .len();
+
+        buffer.truncate(pt_len);
+        buffer.try_into()
+    }
 }
 
 impl<'a> TryFrom<&'a [u8]> for EncryptedPrivateKeyInfo<'a> {
