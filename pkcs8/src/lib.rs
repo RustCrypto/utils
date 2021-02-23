@@ -33,18 +33,22 @@
 //!
 //! # Encrypted Private Key Support
 //! [`EncryptedPrivateKeyInfo`] supports decoding/encoding encrypted PKCS#8
-//! private keys.
+//! private keys and is gated under the `pkcs5` feature.
 //!
-//! However, support for actually decrypting/encrypting them remains TBD.
-//! Please see the following GitHub issue for more information:
+//! When the `encryption` feature of this crate is enabled, it provides a
+//! [`EncryptedPrivateKeyInfo::decrypt`] function which is able to decrypt
+//! keys encrypted with the following algorithms:
 //!
-//! <https://github.com/RustCrypto/utils/issues/263>
+//! - [PKCS#5v2 Password Based Encryption Scheme 2 (RFC 8018)]
+//!   - Key derivation function: PBKDF2 with HMAC-SHA256 as the PRF
+//!   - Symmetric encryption: AES-128-CBC or AES-256-CBC
 //!
 //! # Minimum Supported Rust Version
 //!
 //! This crate requires **Rust 1.47** at a minimum.
 //!
 //! [RFC 5208]: https://tools.ietf.org/html/rfc5208
+//! [PKCS#5v2 Password Based Encryption Scheme 2 (RFC 8018)]: https://tools.ietf.org/html/rfc8018#section-6.2
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -82,7 +86,7 @@ pub use spki::{AlgorithmIdentifier, SubjectPublicKeyInfo};
 
 #[cfg(feature = "alloc")]
 pub use crate::{
-    document::{PrivateKeyDocument, PublicKeyDocument},
+    document::{private_key::PrivateKeyDocument, public_key::PublicKeyDocument},
     traits::{ToPrivateKey, ToPublicKey},
 };
 
@@ -90,3 +94,6 @@ pub use crate::{
 pub use crate::private_key_info::encrypted::EncryptedPrivateKeyInfo;
 #[cfg(feature = "pkcs5")]
 pub use pkcs5;
+
+#[cfg(all(feature = "alloc", feature = "pkcs5"))]
+pub use crate::document::encrypted_private_key::EncryptedPrivateKeyDocument;
