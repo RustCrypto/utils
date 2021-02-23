@@ -7,6 +7,7 @@
 //! size. It supports decoding/encoding of the following types without the use
 //! of a heap:
 //!
+//! - [`EncryptedPrivateKeyInfo`]: (with `pkcs5` feature) encrypted key.
 //! - [`PrivateKeyInfo`]: algorithm identifier and data representing a private key.
 //! - [`SubjectPublicKeyInfo`]: algorithm identifier and data representing a public key
 //!   (re-exported from the [`spki`] crate)
@@ -14,6 +15,7 @@
 //! When the `alloc` feature is enabled, the following additional types are
 //! available which provide more convenient decoding/encoding support:
 //!
+//! - [`EncryptedPrivateKeyDocument`]: (with `pkcs5` feature) heap-backed encrypted key.
 //! - [`PrivateKeyDocument`]: heap-backed storage for serialized [`PrivateKeyInfo`].
 //! - [`PublicKeyDocument`]: heap-backed storage for serialized [`SubjectPublicKeyInfo`].
 //!
@@ -33,7 +35,9 @@
 //!
 //! # Encrypted Private Key Support
 //! [`EncryptedPrivateKeyInfo`] supports decoding/encoding encrypted PKCS#8
-//! private keys and is gated under the `pkcs5` feature.
+//! private keys and is gated under the `pkcs5` feature. The corresponding
+//! [`EncryptedPrivateKeyDocument`] type provides heap-backed storage
+//! (`alloc` feature required).
 //!
 //! When the `encryption` feature of this crate is enabled, it provides a
 //! [`EncryptedPrivateKeyInfo::decrypt`] function which is able to decrypt

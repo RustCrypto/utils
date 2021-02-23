@@ -1,12 +1,18 @@
 //! PKCS#8 `EncryptedPrivateKeyInfo`
 
 use crate::{Error, Result};
-use core::convert::TryFrom;
+use core::{convert::TryFrom, fmt};
 use der::{Decodable, Encodable, Message};
 use pkcs5::EncryptionScheme;
 
+#[cfg(feature = "alloc")]
+use crate::{EncryptedPrivateKeyDocument, PrivateKeyDocument};
+
 #[cfg(feature = "encryption")]
-use {crate::PrivateKeyDocument, core::convert::TryInto};
+use core::convert::TryInto;
+
+#[cfg(feature = "pem")]
+use {crate::pem, zeroize::Zeroizing};
 
 /// PKCS#8 `EncryptedPrivateKeyInfo`.
 ///
@@ -38,7 +44,7 @@ use {crate::PrivateKeyDocument, core::convert::TryInto};
 ///
 /// [RFC 5208 Section 6]: https://tools.ietf.org/html/rfc5208#section-6
 #[cfg_attr(docsrs, doc(cfg(feature = "pkcs5")))]
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct EncryptedPrivateKeyInfo<'a> {
     /// Algorithm identifier describing a password-based symmetric encryption
     /// scheme used to encrypt the `encrypted_data` field.
@@ -64,6 +70,23 @@ impl<'a> EncryptedPrivateKeyInfo<'a> {
 
         buffer.truncate(pt_len);
         buffer.try_into()
+    }
+
+    /// Encode this [`EncryptedPrivateKeyInfo`] as ASN.1 DER.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    pub fn to_der(&self) -> EncryptedPrivateKeyDocument {
+        self.into()
+    }
+
+    /// Encode this [`EncryptedPrivateKeyInfo`] as PEM-encoded ASN.1 DER.
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    pub fn to_pem(&self) -> Zeroizing<alloc::string::String> {
+        Zeroizing::new(pem::encode(
+            self.to_der().as_ref(),
+            pem::ENCRYPTED_PRIVATE_KEY_BOUNDARY,
+        ))
     }
 }
 
@@ -97,5 +120,13 @@ impl<'a> Message<'a> for EncryptedPrivateKeyInfo<'a> {
             &self.encryption_algorithm,
             &der::OctetString::new(self.encrypted_data)?,
         ])
+    }
+}
+
+impl<'a> fmt::Debug for EncryptedPrivateKeyInfo<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("EncryptedPrivateKeyInfo")
+            .field("encryption_algorithm", &self.encryption_algorithm)
+            .finish() // TODO(tarcieri): use `finish_non_exhaustive` when stable
     }
 }

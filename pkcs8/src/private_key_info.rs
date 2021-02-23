@@ -8,10 +8,7 @@ use core::{convert::TryFrom, fmt};
 use der::{Decodable, Encodable, Message};
 
 #[cfg(feature = "alloc")]
-use {
-    crate::{error, PrivateKeyDocument},
-    core::convert::TryInto,
-};
+use crate::PrivateKeyDocument;
 
 #[cfg(feature = "pem")]
 use {crate::pem, zeroize::Zeroizing};
@@ -60,19 +57,17 @@ impl<'a> PrivateKeyInfo<'a> {
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn to_der(&self) -> PrivateKeyDocument {
-        self.to_vec()
-            .ok()
-            .and_then(|buf| buf.try_into().ok())
-            .expect(error::DER_ENCODING_MSG)
+        self.into()
     }
 
     /// Encode this [`PrivateKeyInfo`] as PEM-encoded ASN.1 DER.
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<alloc::string::String> {
-        let doc = self.to_der();
-        let pem = pem::encode(doc.as_ref(), pem::PRIVATE_KEY_BOUNDARY);
-        Zeroizing::new(pem)
+        Zeroizing::new(pem::encode(
+            self.to_der().as_ref(),
+            pem::PRIVATE_KEY_BOUNDARY,
+        ))
     }
 }
 

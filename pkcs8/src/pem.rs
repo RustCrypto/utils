@@ -15,6 +15,13 @@ pub(crate) struct Boundary {
     post: &'static str,
 }
 
+/// Encrypted private key encapsulation boundary
+#[cfg(feature = "pkcs5")]
+pub(crate) const ENCRYPTED_PRIVATE_KEY_BOUNDARY: Boundary = Boundary {
+    pre: "-----BEGIN ENCRYPTED PRIVATE KEY-----\n",
+    post: "\n-----END ENCRYPTED PRIVATE KEY-----",
+};
+
 /// Private key encapsulation boundary
 pub(crate) const PRIVATE_KEY_BOUNDARY: Boundary = Boundary {
     pre: "-----BEGIN PRIVATE KEY-----\n",
