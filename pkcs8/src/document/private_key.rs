@@ -9,6 +9,13 @@ use core::{
 use der::Encodable;
 use zeroize::{Zeroize, Zeroizing};
 
+#[cfg(feature = "encryption")]
+use {
+    crate::{EncryptedPrivateKeyDocument, EncryptedPrivateKeyInfo},
+    pkcs5::pbes2,
+    rand_core::{CryptoRng, RngCore},
+};
+
 #[cfg(feature = "pem")]
 use {crate::pem, alloc::string::String, core::str::FromStr};
 
@@ -25,6 +32,11 @@ use std::{fs, path::Path, str};
 pub struct PrivateKeyDocument(Zeroizing<Vec<u8>>);
 
 impl PrivateKeyDocument {
+    /// Parse the [`PrivateKeyInfo`] contained in this [`PrivateKeyDocument`]
+    pub fn private_key_info(&self) -> PrivateKeyInfo<'_> {
+        PrivateKeyInfo::try_from(self.0.as_ref()).expect("malformed PrivateKeyDocument")
+    }
+
     /// Parse [`PrivateKeyDocument`] from ASN.1 DER-encoded PKCS#8
     pub fn from_der(bytes: &[u8]) -> Result<Self> {
         bytes.try_into()
@@ -82,9 +94,48 @@ impl PrivateKeyDocument {
         write_secret_file(path, self.to_pem().as_bytes())
     }
 
-    /// Parse the [`PrivateKeyInfo`] contained in this [`PrivateKeyDocument`]
-    pub fn private_key_info(&self) -> PrivateKeyInfo<'_> {
-        PrivateKeyInfo::try_from(self.0.as_ref()).expect("malformed PrivateKeyDocument")
+    /// Encrypt this private key using a symmetric encryption key derived
+    /// from the provided password.
+    #[cfg(feature = "encryption")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+    pub fn encrypt(
+        &self,
+        mut rng: impl CryptoRng + RngCore,
+        password: impl AsRef<[u8]>,
+    ) -> Result<EncryptedPrivateKeyDocument> {
+        let mut salt = [0u8; 16];
+        rng.fill_bytes(&mut salt);
+
+        let mut iv = [0u8; 16];
+        rng.fill_bytes(&mut iv);
+
+        let pbkdf2_iterations = 10_000;
+        let pbes2_params =
+            pbes2::Parameters::pbkdf2_sha256_aes256cbc(pbkdf2_iterations, &salt, &iv)
+                .map_err(|_| Error::Encode)?; // TODO(tarcieri): add `pkcs8::Error::Crypto`
+
+        self.encrypt_with_params(pbes2_params, password)
+    }
+
+    /// Encrypt this private key using a symmetric encryption key derived
+    /// from the provided password and [`pbes2::Parameters`].
+    #[cfg(feature = "encryption")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+    pub fn encrypt_with_params(
+        &self,
+        pbes2_params: pbes2::Parameters<'_>,
+        password: impl AsRef<[u8]>,
+    ) -> Result<EncryptedPrivateKeyDocument> {
+        pbes2_params
+            .encrypt(password, self.as_ref())
+            .map(|encrypted_data| {
+                EncryptedPrivateKeyInfo {
+                    encryption_algorithm: pbes2_params.into(),
+                    encrypted_data: &encrypted_data,
+                }
+                .into()
+            })
+            .map_err(|_| Error::Encode)
     }
 }
 

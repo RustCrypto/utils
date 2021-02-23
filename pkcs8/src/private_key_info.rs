@@ -10,6 +10,12 @@ use der::{Decodable, Encodable, Message};
 #[cfg(feature = "alloc")]
 use crate::PrivateKeyDocument;
 
+#[cfg(feature = "encryption")]
+use {
+    crate::EncryptedPrivateKeyDocument,
+    rand_core::{CryptoRng, RngCore},
+};
+
 #[cfg(feature = "pem")]
 use {crate::pem, zeroize::Zeroizing};
 
@@ -53,6 +59,18 @@ pub struct PrivateKeyInfo<'a> {
 }
 
 impl<'a> PrivateKeyInfo<'a> {
+    /// Encrypt this private key using a symmetric encryption key derived
+    /// from the provided password.
+    #[cfg(feature = "encryption")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+    pub fn encrypt(
+        &self,
+        rng: impl CryptoRng + RngCore,
+        password: impl AsRef<[u8]>,
+    ) -> Result<EncryptedPrivateKeyDocument> {
+        PrivateKeyDocument::from(self).encrypt(rng, password)
+    }
+
     /// Encode this [`PrivateKeyInfo`] as ASN.1 DER.
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]

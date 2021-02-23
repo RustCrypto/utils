@@ -33,6 +33,20 @@ use {
 pub struct EncryptedPrivateKeyDocument(Zeroizing<Vec<u8>>);
 
 impl EncryptedPrivateKeyDocument {
+    /// Attempt to decrypt this encrypted private key using the provided
+    /// password to derive an encryption key.
+    #[cfg(feature = "encryption")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+    pub fn decrypt(&self, password: impl AsRef<[u8]>) -> Result<PrivateKeyDocument> {
+        self.encrypted_private_key_info().decrypt(password)
+    }
+
+    /// Parse the [`EncryptedPrivateKeyInfo`] contained in this [`EncryptedPrivateKeyDocument`].
+    pub fn encrypted_private_key_info(&self) -> EncryptedPrivateKeyInfo<'_> {
+        EncryptedPrivateKeyInfo::try_from(self.0.as_ref())
+            .expect("malformed EncryptedPrivateKeyDocument")
+    }
+
     /// Parse [`EncryptedPrivateKeyDocument`] from ASN.1 DER-encoded PKCS#8.
     pub fn from_der(bytes: &[u8]) -> Result<Self> {
         bytes.try_into()
@@ -91,20 +105,6 @@ impl EncryptedPrivateKeyDocument {
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn write_pem_file(&self, path: impl AsRef<Path>) -> Result<()> {
         write_secret_file(path, self.to_pem().as_bytes())
-    }
-
-    /// Parse the [`EncryptedPrivateKeyInfo`] contained in this [`EncryptedPrivateKeyDocument`].
-    pub fn encrypted_private_key_info(&self) -> EncryptedPrivateKeyInfo<'_> {
-        EncryptedPrivateKeyInfo::try_from(self.0.as_ref())
-            .expect("malformed EncryptedPrivateKeyDocument")
-    }
-
-    /// Attempt to decrypt this encrypted private key using the provided
-    /// password to derive an encryption key.
-    #[cfg(feature = "encryption")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
-    pub fn decrypt(&self, password: impl AsRef<[u8]>) -> Result<PrivateKeyDocument> {
-        self.encrypted_private_key_info().decrypt(password)
     }
 }
 

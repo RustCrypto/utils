@@ -6,6 +6,9 @@ use core::convert::TryFrom;
 use hex_literal::hex;
 use pkcs8::{pkcs5::pbes2, EncryptedPrivateKeyInfo};
 
+#[cfg(feature = "encryption")]
+use pkcs8::PrivateKeyDocument;
+
 #[cfg(feature = "pem")]
 use pkcs8::EncryptedPrivateKeyDocument;
 
@@ -125,6 +128,23 @@ fn decrypt_ed25519_der_encpriv_aes256_sha256() {
     let enc_pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES256_SHA256_EXAMPLE).unwrap();
     let pk = enc_pk.decrypt(PASSWORD).unwrap();
     assert_eq!(pk.as_ref(), ED25519_DER_PLAINTEXT_EXAMPLE);
+}
+
+#[cfg(feature = "encryption")]
+#[test]
+fn encrypt_ed25519_der_encpriv_aes256_sha256() {
+    let pbes2_params = pkcs5::pbes2::Parameters::pbkdf2_sha256_aes256cbc(
+        2048,
+        &hex!("79d982e70df91a88"),
+        &hex!("b2d02d78b2efd9dff694cf8e0af40925"),
+    )
+    .unwrap();
+
+    let pk_plaintext = PrivateKeyDocument::try_from(ED25519_DER_PLAINTEXT_EXAMPLE).unwrap();
+    let pk_encrypted = pk_plaintext
+        .encrypt_with_params(pbes2_params, PASSWORD)
+        .unwrap();
+    assert_eq!(pk_encrypted.as_ref(), ED25519_DER_AES256_SHA256_EXAMPLE);
 }
 
 #[test]

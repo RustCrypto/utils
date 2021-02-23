@@ -24,6 +24,11 @@ use {crate::pem, alloc::string::String, core::str::FromStr};
 pub struct PublicKeyDocument(Vec<u8>);
 
 impl PublicKeyDocument {
+    /// Parse the [`SubjectPublicKeyInfo`] contained in this [`PublicKeyDocument`]
+    pub fn spki(&self) -> SubjectPublicKeyInfo<'_> {
+        SubjectPublicKeyInfo::try_from(self.0.as_slice()).expect("malformed PublicKeyDocument")
+    }
+
     /// Parse [`PublicKeyDocument`] from ASN.1 DER
     pub fn from_der(bytes: &[u8]) -> Result<Self> {
         bytes.try_into()
@@ -81,11 +86,6 @@ impl PublicKeyDocument {
     pub fn write_pem_file(&self, path: impl AsRef<Path>) -> Result<()> {
         fs::write(path, self.to_pem().as_bytes())?;
         Ok(())
-    }
-
-    /// Parse the [`SubjectPublicKeyInfo`] contained in this [`PublicKeyDocument`]
-    pub fn spki(&self) -> SubjectPublicKeyInfo<'_> {
-        SubjectPublicKeyInfo::try_from(self.0.as_slice()).expect("malformed PublicKeyDocument")
     }
 }
 
