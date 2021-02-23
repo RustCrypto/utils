@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.3 (2021-02-23)
+### Added
+- Support for decrypting/encrypting `EncryptedPrivateKeyInfo` ([#293], [#302])
+- PEM support for `EncryptedPrivateKeyInfo` ([#301])
+- `Error::Crypto` variant ([#305])
+
+[#293]: https://github.com/RustCrypto/utils/pull/293
+[#301]: https://github.com/RustCrypto/utils/pull/301
+[#302]: https://github.com/RustCrypto/utils/pull/302
+[#305]: https://github.com/RustCrypto/utils/pull/305
+
 ## 0.5.2 (2021-02-20)
 ### Changed
 - Use `pkcs5` crate ([#290])
