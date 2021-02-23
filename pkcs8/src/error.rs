@@ -13,6 +13,9 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Error {
+    /// Cryptographic errors
+    Crypto,
+
     /// Decoding errors
     Decode,
 
@@ -38,6 +41,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Error::Crypto => f.write_str("PKCS#8 cryptographic error"),
             Error::Decode => f.write_str("PKCS#8 decoding error"),
             Error::Encode => f.write_str("PKCS#8 encoding error"),
             #[cfg(feature = "std")]
