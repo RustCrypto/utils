@@ -25,18 +25,33 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
-pub use der::{self, Error, ObjectIdentifier};
-pub use spki::AlgorithmIdentifier;
-
-use core::convert::{TryFrom, TryInto};
-use der::{sequence, Any, Encodable, Encoder, Length};
+#[cfg(all(feature = "alloc", feature = "pbes2"))]
+extern crate alloc;
 
 pub mod pbes1;
 pub mod pbes2;
 
+pub use der::{self, Error, ObjectIdentifier};
+pub use spki::AlgorithmIdentifier;
+
+use core::{
+    convert::{TryFrom, TryInto},
+    fmt,
+};
+use der::{sequence, Any, Encodable, Encoder, Length};
+
+#[cfg(all(feature = "alloc", feature = "pbes2"))]
+use alloc::vec::Vec;
+
 /// Cryptographic errors
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct CryptoError;
+
+impl fmt::Display for CryptoError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("PKCS#5 cryptographic error")
+    }
+}
 
 /// Supported PKCS#5 password-based encryption schemes.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -55,18 +70,18 @@ pub enum EncryptionScheme<'a> {
 }
 
 impl<'a> EncryptionScheme<'a> {
-    /// Encrypt the given ciphertext in-place using a key derived from the
-    /// provided password and this scheme's parameters.
-    #[cfg(feature = "pbes2")]
+    /// Attempt to decrypt the given ciphertext, allocating and returning a
+    /// byte vector containing the plaintext.
+    #[cfg(all(feature = "alloc", feature = "pbes2"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pbes2")))]
-    pub fn encrypt_in_place<'b>(
+    pub fn decrypt(
         &self,
         password: impl AsRef<[u8]>,
-        buffer: &'b mut [u8],
-        pos: usize,
-    ) -> Result<&'b [u8], CryptoError> {
+        ciphertext: &[u8],
+    ) -> Result<Vec<u8>, CryptoError> {
         match self {
-            Self::Pbes2(params) => params.encrypt_in_place(password, buffer, pos),
+            Self::Pbes2(params) => params.decrypt(password, ciphertext),
             _ => Err(CryptoError),
         }
     }
@@ -86,6 +101,38 @@ impl<'a> EncryptionScheme<'a> {
     ) -> Result<&'b [u8], CryptoError> {
         match self {
             Self::Pbes2(params) => params.decrypt_in_place(password, buffer),
+            _ => Err(CryptoError),
+        }
+    }
+
+    /// Encrypt the given plaintext, allocating and returning a vector
+    /// containing the ciphertext.
+    #[cfg(all(feature = "alloc", feature = "pbes2"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pbes2")))]
+    pub fn encrypt(
+        &self,
+        password: impl AsRef<[u8]>,
+        plaintext: &[u8],
+    ) -> Result<Vec<u8>, CryptoError> {
+        match self {
+            Self::Pbes2(params) => params.encrypt(password, plaintext),
+            _ => Err(CryptoError),
+        }
+    }
+
+    /// Encrypt the given ciphertext in-place using a key derived from the
+    /// provided password and this scheme's parameters.
+    #[cfg(feature = "pbes2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pbes2")))]
+    pub fn encrypt_in_place<'b>(
+        &self,
+        password: impl AsRef<[u8]>,
+        buffer: &'b mut [u8],
+        pos: usize,
+    ) -> Result<&'b [u8], CryptoError> {
+        match self {
+            Self::Pbes2(params) => params.encrypt_in_place(password, buffer, pos),
             _ => Err(CryptoError),
         }
     }

@@ -10,6 +10,9 @@ use core::convert::{TryFrom, TryInto};
 use der::{Any, Decodable, Encodable, Encoder, Error, ErrorKind, Length, Message, OctetString};
 use spki::AlgorithmParameters;
 
+#[cfg(all(feature = "alloc", feature = "pbes2"))]
+use alloc::vec::Vec;
+
 /// Password-Based Encryption Scheme 2 (PBES2) OID.
 ///
 /// <https://tools.ietf.org/html/rfc8018#section-6.2>
@@ -81,17 +84,20 @@ impl<'a> Parameters<'a> {
         Ok(Self { kdf, encryption })
     }
 
-    /// Encrypt the given ciphertext in-place using a key derived from the
-    /// provided password and this scheme's parameters.
-    #[cfg(feature = "pbes2")]
+    /// Attempt to decrypt the given ciphertext, allocating and returning a
+    /// byte vector containing the plaintext.
+    #[cfg(all(feature = "alloc", feature = "pbes2"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pbes2")))]
-    pub fn encrypt_in_place<'b>(
+    pub fn decrypt(
         &self,
         password: impl AsRef<[u8]>,
-        buffer: &'b mut [u8],
-        pos: usize,
-    ) -> Result<&'b [u8], CryptoError> {
-        encryption::encrypt_in_place(self, password, buffer, pos)
+        ciphertext: &[u8],
+    ) -> Result<Vec<u8>, CryptoError> {
+        let mut buffer = ciphertext.to_vec();
+        let pt_len = self.decrypt_in_place(password, &mut buffer)?.len();
+        buffer.truncate(pt_len);
+        Ok(buffer)
     }
 
     /// Attempt to decrypt the given ciphertext in-place using a key derived
@@ -108,6 +114,43 @@ impl<'a> Parameters<'a> {
         buffer: &'b mut [u8],
     ) -> Result<&'b [u8], CryptoError> {
         encryption::decrypt_in_place(self, password, buffer)
+    }
+
+    /// Encrypt the given plaintext, allocating and returning a vector
+    /// containing the ciphertext.
+    #[cfg(all(feature = "alloc", feature = "pbes2"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pbes2")))]
+    pub fn encrypt(
+        &self,
+        password: impl AsRef<[u8]>,
+        plaintext: &[u8],
+    ) -> Result<Vec<u8>, CryptoError> {
+        // TODO(tarcieri): support non-AES ciphers?
+        let mut buffer = Vec::with_capacity(plaintext.len() + AES_BLOCK_SIZE);
+        buffer.extend_from_slice(plaintext);
+        buffer.extend_from_slice(&[0u8; AES_BLOCK_SIZE]);
+
+        let ct_len = self
+            .encrypt_in_place(password, &mut buffer, plaintext.len())?
+            .len();
+
+        buffer.truncate(ct_len);
+        Ok(buffer)
+    }
+
+    /// Encrypt the given plaintext in-place using a key derived from the
+    /// provided password and this scheme's parameters, writing the ciphertext
+    /// into the same buffer.
+    #[cfg(feature = "pbes2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pbes2")))]
+    pub fn encrypt_in_place<'b>(
+        &self,
+        password: impl AsRef<[u8]>,
+        buffer: &'b mut [u8],
+        pos: usize,
+    ) -> Result<&'b [u8], CryptoError> {
+        encryption::encrypt_in_place(self, password, buffer, pos)
     }
 }
 

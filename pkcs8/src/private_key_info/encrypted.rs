@@ -60,16 +60,10 @@ impl<'a> EncryptedPrivateKeyInfo<'a> {
     #[cfg(feature = "encryption")]
     #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
     pub fn decrypt(&self, password: impl AsRef<[u8]>) -> Result<PrivateKeyDocument> {
-        let mut buffer = self.encrypted_data.to_vec();
-
-        let pt_len = self
-            .encryption_algorithm
-            .decrypt_in_place(password, &mut buffer)
-            .map_err(|_| Error::Decode)? // TODO(tarcieri): add `pkcs8::Error::Crypto`
-            .len();
-
-        buffer.truncate(pt_len);
-        buffer.try_into()
+        self.encryption_algorithm
+            .decrypt(password, &self.encrypted_data)
+            .map_err(|_| Error::Decode) // TODO(tarcieri): add `pkcs8::Error::Crypto`
+            .and_then(TryInto::try_into)
     }
 
     /// Encode this [`EncryptedPrivateKeyInfo`] as ASN.1 DER.
