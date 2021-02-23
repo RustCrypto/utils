@@ -112,7 +112,7 @@ impl PrivateKeyDocument {
         let pbkdf2_iterations = 10_000;
         let pbes2_params =
             pbes2::Parameters::pbkdf2_sha256_aes256cbc(pbkdf2_iterations, &salt, &iv)
-                .map_err(|_| Error::Encode)?; // TODO(tarcieri): add `pkcs8::Error::Crypto`
+                .map_err(|_| Error::Crypto)?;
 
         self.encrypt_with_params(pbes2_params, password)
     }

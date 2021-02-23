@@ -62,7 +62,7 @@ impl<'a> EncryptedPrivateKeyInfo<'a> {
     pub fn decrypt(&self, password: impl AsRef<[u8]>) -> Result<PrivateKeyDocument> {
         self.encryption_algorithm
             .decrypt(password, &self.encrypted_data)
-            .map_err(|_| Error::Decode) // TODO(tarcieri): add `pkcs8::Error::Crypto`
+            .map_err(|_| Error::Crypto)
             .and_then(TryInto::try_into)
     }
 
