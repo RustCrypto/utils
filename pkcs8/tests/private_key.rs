@@ -116,40 +116,35 @@ fn encode_ec_p256_der() {
 #[cfg(feature = "alloc")]
 fn encode_ed25519_der() {
     let pk = PrivateKeyInfo::try_from(ED25519_DER_EXAMPLE).unwrap();
-    let pk_encoded = pk.to_der();
-    assert_eq!(ED25519_DER_EXAMPLE, pk_encoded.as_ref());
+    assert_eq!(ED25519_DER_EXAMPLE, pk.to_der().as_ref());
 }
 
 #[test]
 #[cfg(feature = "alloc")]
 fn encode_rsa_2048_der() {
     let pk = PrivateKeyInfo::try_from(RSA_2048_DER_EXAMPLE).unwrap();
-    let pk_encoded = pk.to_der();
-    assert_eq!(RSA_2048_DER_EXAMPLE, pk_encoded.as_ref());
+    assert_eq!(RSA_2048_DER_EXAMPLE, pk.to_der().as_ref());
 }
 
 #[test]
 #[cfg(feature = "pem")]
 fn encode_ec_p256_pem() {
     let pk = PrivateKeyInfo::try_from(EC_P256_DER_EXAMPLE).unwrap();
-    let pk_encoded = pk.to_pem();
-    assert_eq!(EC_P256_PEM_EXAMPLE.trim_end(), &*pk_encoded);
+    assert_eq!(EC_P256_PEM_EXAMPLE.trim_end(), &*pk.to_pem());
 }
 
 #[test]
 #[cfg(feature = "pem")]
 fn encode_ed25519_pem() {
     let pk = PrivateKeyInfo::try_from(ED25519_DER_EXAMPLE).unwrap();
-    let pk_encoded = pk.to_pem();
-    assert_eq!(ED25519_PEM_EXAMPLE.trim_end(), &*pk_encoded);
+    assert_eq!(ED25519_PEM_EXAMPLE.trim_end(), &*pk.to_pem());
 }
 
 #[test]
 #[cfg(feature = "pem")]
 fn encode_rsa_2048_pem() {
     let pk = PrivateKeyInfo::try_from(RSA_2048_DER_EXAMPLE).unwrap();
-    let pk_encoded = pk.to_pem();
-    assert_eq!(RSA_2048_PEM_EXAMPLE.trim_end(), &*pk_encoded);
+    assert_eq!(RSA_2048_PEM_EXAMPLE.trim_end(), &*pk.to_pem());
 }
 
 #[test]

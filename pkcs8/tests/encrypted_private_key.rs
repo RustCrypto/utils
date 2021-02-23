@@ -6,6 +6,13 @@ use core::convert::TryFrom;
 use hex_literal::hex;
 use pkcs8::{pkcs5::pbes2, EncryptedPrivateKeyInfo};
 
+#[cfg(feature = "pem")]
+use pkcs8::EncryptedPrivateKeyDocument;
+
+/// Ed25519 PKCS#8 private key plaintext encoded as ASN.1 DER
+#[cfg(feature = "encryption")]
+const ED25519_DER_PLAINTEXT_EXAMPLE: &[u8] = include_bytes!("examples/ed25519-priv.der");
+
 /// Ed25519 PKCS#8 encrypted private key (PBES2 + AES-128-CBC + PBKDF2-SHA1) encoded as ASN.1 DER.
 ///
 /// Generated using:
@@ -26,12 +33,17 @@ const ED25519_DER_AES128_SHA1_EXAMPLE: &[u8] =
 const ED25519_DER_AES256_SHA256_EXAMPLE: &[u8] =
     include_bytes!("examples/ed25519-encpriv-aes256-sha256.der");
 
+/// Ed25519 PKCS#8 encrypted private key encoded as PEM
+#[cfg(feature = "pem")]
+const ED25519_PEM_AES256_SHA256_EXAMPLE: &str =
+    include_str!("examples/ed25519-encpriv-aes256-sha256.pem");
+
 /// Password used to encrypt the keys.
 #[cfg(feature = "encryption")]
 const PASSWORD: &[u8] = b"hunter42"; // Bad password; don't actually use outside tests!
 
 #[test]
-fn parse_ed25519_der_encpriv_aes128_sha1() {
+fn decode_ed25519_encpriv_aes128_sha1_der() {
     let pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES128_SHA1_EXAMPLE).unwrap();
 
     assert_eq!(
@@ -63,7 +75,7 @@ fn parse_ed25519_der_encpriv_aes128_sha1() {
 }
 
 #[test]
-fn parse_ed25519_der_encpriv_aes256_sha256() {
+fn decode_ed25519_encpriv_aes256_sha256_der() {
     let pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES256_SHA256_EXAMPLE).unwrap();
 
     assert_eq!(
@@ -94,10 +106,57 @@ fn parse_ed25519_der_encpriv_aes256_sha256() {
     );
 }
 
+#[test]
+#[cfg(feature = "pem")]
+fn decode_ed25519_encpriv_aes256_sha256_pem() {
+    let pkcs8_doc: EncryptedPrivateKeyDocument = ED25519_PEM_AES256_SHA256_EXAMPLE.parse().unwrap();
+    assert_eq!(pkcs8_doc.as_ref(), ED25519_DER_AES256_SHA256_EXAMPLE);
+
+    // Ensure `EncryptedPrivateKeyDocument` parses successfully
+    assert_eq!(
+        pkcs8_doc.encrypted_private_key_info(),
+        EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES256_SHA256_EXAMPLE).unwrap()
+    );
+}
+
 #[cfg(feature = "encryption")]
 #[test]
 fn decrypt_ed25519_der_encpriv_aes256_sha256() {
     let enc_pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES256_SHA256_EXAMPLE).unwrap();
     let pk = enc_pk.decrypt(PASSWORD).unwrap();
-    assert_eq!(pk.as_ref(), include_bytes!("examples/ed25519-priv.der"));
+    assert_eq!(pk.as_ref(), ED25519_DER_PLAINTEXT_EXAMPLE);
+}
+
+#[test]
+#[cfg(feature = "alloc")]
+fn encode_ed25519_encpriv_aes256_sha256_der() {
+    let pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES256_SHA256_EXAMPLE).unwrap();
+    assert_eq!(ED25519_DER_AES256_SHA256_EXAMPLE, pk.to_der().as_ref());
+}
+
+#[test]
+#[cfg(feature = "pem")]
+fn encode_ed25519_encpriv_aes256_sha256_pem() {
+    let pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES256_SHA256_EXAMPLE).unwrap();
+    assert_eq!(ED25519_PEM_AES256_SHA256_EXAMPLE.trim_end(), &*pk.to_pem());
+}
+
+#[test]
+#[cfg(feature = "std")]
+fn read_der_file() {
+    let pkcs8_doc = EncryptedPrivateKeyDocument::read_der_file(
+        "tests/examples/ed25519-encpriv-aes256-sha256.der",
+    )
+    .unwrap();
+    assert_eq!(pkcs8_doc.as_ref(), ED25519_DER_AES256_SHA256_EXAMPLE);
+}
+
+#[test]
+#[cfg(all(feature = "pem", feature = "std"))]
+fn read_pem_file() {
+    let pkcs8_doc = EncryptedPrivateKeyDocument::read_pem_file(
+        "tests/examples/ed25519-encpriv-aes256-sha256.pem",
+    )
+    .unwrap();
+    assert_eq!(pkcs8_doc.as_ref(), ED25519_DER_AES256_SHA256_EXAMPLE);
 }

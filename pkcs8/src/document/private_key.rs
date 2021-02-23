@@ -9,11 +9,11 @@ use core::{
 use der::Encodable;
 use zeroize::{Zeroize, Zeroizing};
 
-#[cfg(feature = "std")]
-use std::{fs, path::Path, str};
-
 #[cfg(feature = "pem")]
 use {crate::pem, alloc::string::String, core::str::FromStr};
+
+#[cfg(feature = "std")]
+use std::{fs, path::Path, str};
 
 /// PKCS#8 private key document.
 ///
@@ -64,9 +64,7 @@ impl PrivateKeyDocument {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn read_pem_file(path: impl AsRef<Path>) -> Result<Self> {
-        let bytes = Zeroizing::new(fs::read(path)?);
-        let pem = str::from_utf8(&*bytes).map_err(|_| Error::Decode)?;
-        Self::from_pem(pem)
+        Self::from_pem(&Zeroizing::new(fs::read_to_string(path)?))
     }
 
     /// Write ASN.1 DER-encoded PKCS#8 private key to the given path

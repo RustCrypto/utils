@@ -63,8 +63,7 @@ impl PublicKeyDocument {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn read_pem_file(path: impl AsRef<Path>) -> Result<Self> {
-        let pem = fs::read_to_string(path)?;
-        Self::from_pem(&pem)
+        Self::from_pem(&fs::read_to_string(path)?)
     }
 
     /// Write ASN.1 DER-encoded public key to the given path
