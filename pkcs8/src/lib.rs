@@ -3,9 +3,11 @@
 //! Private-Key Information Syntax Specification (as defined in [RFC 5208]).
 //!
 //! # About
-//! This is a minimalistic library targeting `no_std` platforms and small code
-//! size. It supports decoding/encoding of the following types without the use
-//! of a heap:
+//! This library provides generalized PKCS#8 support designed to work with a
+//! number of different algorithms. It supports `no_std` platforms including
+//! ones without a heap (albeit with reduced functionality).
+//!
+//! It supports decoding/encoding the following types:
 //!
 //! - [`EncryptedPrivateKeyInfo`]: (with `pkcs5` feature) encrypted key.
 //! - [`PrivateKeyInfo`]: algorithm identifier and data representing a private key.
@@ -39,9 +41,10 @@
 //! [`EncryptedPrivateKeyDocument`] type provides heap-backed storage
 //! (`alloc` feature required).
 //!
-//! When the `encryption` feature of this crate is enabled, it provides a
-//! [`EncryptedPrivateKeyInfo::decrypt`] function which is able to decrypt
-//! keys encrypted with the following algorithms:
+//! When the `encryption` feature of this crate is enabled, it provides
+//! [`EncryptedPrivateKeyInfo::decrypt`] and [`PrivateKeyInfo::encrypt`]
+//! functions which are able to decrypt/encrypt keys using the following
+//! algorithms:
 //!
 //! - [PKCS#5v2 Password Based Encryption Scheme 2 (RFC 8018)]
 //!   - Key derivation function: PBKDF2 with HMAC-SHA256 as the PRF
@@ -70,6 +73,26 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+pub use der::{self, ObjectIdentifier};
+#[cfg(feature = "pkcs5")]
+pub use encrypted_private_key_info::EncryptedPrivateKeyInfo;
+#[cfg(feature = "pkcs5")]
+pub use pkcs5;
+pub use spki::{AlgorithmIdentifier, SubjectPublicKeyInfo};
+
+#[cfg(all(feature = "alloc", feature = "pkcs5"))]
+pub use crate::document::encrypted_private_key::EncryptedPrivateKeyDocument;
+#[cfg(feature = "alloc")]
+pub use crate::{
+    document::{private_key::PrivateKeyDocument, public_key::PublicKeyDocument},
+    traits::{ToPrivateKey, ToPublicKey},
+};
+pub use crate::{
+    error::{Error, Result},
+    private_key_info::PrivateKeyInfo,
+    traits::{FromPrivateKey, FromPublicKey},
+};
+
 mod error;
 mod private_key_info;
 mod traits;
@@ -77,27 +100,7 @@ mod traits;
 #[cfg(feature = "alloc")]
 mod document;
 
+#[cfg(feature = "pkcs5")]
+pub(crate) mod encrypted_private_key_info;
 #[cfg(feature = "pem")]
 mod pem;
-
-pub use crate::{
-    error::{Error, Result},
-    private_key_info::PrivateKeyInfo,
-    traits::{FromPrivateKey, FromPublicKey},
-};
-pub use der::{self, ObjectIdentifier};
-pub use spki::{AlgorithmIdentifier, SubjectPublicKeyInfo};
-
-#[cfg(feature = "alloc")]
-pub use crate::{
-    document::{private_key::PrivateKeyDocument, public_key::PublicKeyDocument},
-    traits::{ToPrivateKey, ToPublicKey},
-};
-
-#[cfg(feature = "pkcs5")]
-pub use crate::private_key_info::encrypted::EncryptedPrivateKeyInfo;
-#[cfg(feature = "pkcs5")]
-pub use pkcs5;
-
-#[cfg(all(feature = "alloc", feature = "pkcs5"))]
-pub use crate::document::encrypted_private_key::EncryptedPrivateKeyDocument;

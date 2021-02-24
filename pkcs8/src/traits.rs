@@ -6,6 +6,12 @@ use core::convert::TryFrom;
 #[cfg(feature = "alloc")]
 use crate::{PrivateKeyDocument, PublicKeyDocument};
 
+#[cfg(feature = "encryption")]
+use {
+    crate::{EncryptedPrivateKeyDocument, EncryptedPrivateKeyInfo},
+    rand_core::{CryptoRng, RngCore},
+};
+
 #[cfg(feature = "pem")]
 use alloc::string::String;
 
@@ -26,6 +32,16 @@ pub trait FromPrivateKey: Sized {
         Self::from_pkcs8_private_key_info(PrivateKeyInfo::try_from(bytes)?)
     }
 
+    /// Deserialize encrypted PKCS#8 private key from ASN.1 DER-encoded data
+    /// (binary format) and attempt to decrypt it using the provided password.
+    #[cfg(feature = "encryption")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+    fn from_pkcs8_encrypted_der(bytes: &[u8], password: impl AsRef<[u8]>) -> Result<Self> {
+        EncryptedPrivateKeyInfo::try_from(bytes)?
+            .decrypt(password)
+            .and_then(|doc| Self::from_pkcs8_doc(&doc))
+    }
+
     /// Deserialize PKCS#8 private key from a [`PrivateKeyDocument`].
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
@@ -44,6 +60,23 @@ pub trait FromPrivateKey: Sized {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn from_pkcs8_pem(s: &str) -> Result<Self> {
         PrivateKeyDocument::from_pem(s).and_then(|doc| Self::from_pkcs8_doc(&doc))
+    }
+
+    /// Deserialize encrypted PKCS#8-encoded private key from PEM and attempt
+    /// to decrypt it using the provided password.
+    ///
+    /// Keys in this format begin with the following delimiter:
+    ///
+    /// ```text
+    /// -----BEGIN ENCRYPTED PRIVATE KEY-----
+    /// ```
+    #[cfg(all(feature = "encryption", feature = "pem"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    fn from_pkcs8_encrypted_pem(s: &str, password: impl AsRef<[u8]>) -> Result<Self> {
+        EncryptedPrivateKeyDocument::from_pem(s)?
+            .decrypt(password)
+            .and_then(|doc| Self::from_pkcs8_doc(&doc))
     }
 
     /// Load PKCS#8 private key from an ASN.1 DER-encoded file on the local
@@ -118,11 +151,37 @@ pub trait ToPrivateKey {
     /// Serialize a [`PrivateKeyDocument`] containing a PKCS#8-encoded private key.
     fn to_pkcs8_der(&self) -> PrivateKeyDocument;
 
+    /// Create an [`EncryptedPrivateKeyDocument`] containing the ciphertext of
+    /// a PKCS#8 encoded private key encrypted under the given `password`.
+    #[cfg(feature = "encryption")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+    fn to_pkcs8_encrypted_der(
+        &self,
+        rng: impl CryptoRng + RngCore,
+        password: impl AsRef<[u8]>,
+    ) -> Result<EncryptedPrivateKeyDocument> {
+        self.to_pkcs8_der().encrypt(rng, password)
+    }
+
     /// Serialize this private key as PEM-encoded PKCS#8.
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn to_pkcs8_pem(&self) -> Zeroizing<String> {
         self.to_pkcs8_der().to_pem()
+    }
+
+    /// Serialize this private key as an encrypted PEM-encoded PKCS#8 private
+    /// key using the `provided` to derive an encryption key.
+    #[cfg(all(feature = "encryption", feature = "pem"))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    fn to_pkcs8_encrypted_pem(
+        &self,
+        rng: impl CryptoRng + RngCore,
+        password: impl AsRef<[u8]>,
+    ) -> Result<Zeroizing<String>> {
+        self.to_pkcs8_encrypted_der(rng, password)
+            .map(|key| key.to_pem())
     }
 
     /// Write ASN.1 DER-encoded PKCS#8 private key to the given path
