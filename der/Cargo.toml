@@ -15,7 +15,7 @@ keywords = ["asn1", "crypto", "itu", "pkcs"]
 readme = "README.md"
 
 [dependencies]
-const-oid = { version = "0.4", optional = true, path = "../const-oid" }
+const-oid = { version = "0.4.3", optional = true, path = "../const-oid" }
 der_derive = { version = "0.2", optional = true, path = "derive" }
 typenum = { version = "1", optional = true }
 
