@@ -52,11 +52,19 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+mod error;
+mod parser;
+
+pub use crate::error::{Error, Result};
+
 use core::{
     convert::TryFrom,
     fmt,
     str::{FromStr, Split},
 };
+
+/// Type used to represent an "arc" (i.e. integer identifier value)
+pub type Arc = u32;
 
 /// Minimum number of arcs in an OID.
 ///
@@ -82,26 +90,10 @@ pub const MAX_ARCS: usize = 12;
 const MAX_LOWER_ARCS: usize = MAX_ARCS - 2;
 
 /// Maximum value of the first arc in an OID
-const FIRST_ARC_MAX: u32 = 2;
+const FIRST_ARC_MAX: Arc = 2;
 
 /// Maximum value of the second arc in an OID
-const SECOND_ARC_MAX: u32 = 39;
-
-/// Error type
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Error;
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("OID error")
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for Error {}
-
-/// Result type
-pub type Result<T> = core::result::Result<T, Error>;
+const SECOND_ARC_MAX: Arc = 39;
 
 /// Object identifier (OID).
 ///
@@ -132,6 +124,10 @@ impl ObjectIdentifier {
     /// Create an [`ObjectIdentifier`] from a slice of integers, where each
     /// integer represents an "arc" (a.k.a. node) in the OID.
     ///
+    /// NOTE: this method is soft-deprecated and will be removed in a future
+    /// release. We recommend using [`ObjectIdentifier::parse`] going forward
+    /// (which will be renamed to [`ObjectIdentifier::new`] in a future release).
+    ///
     /// # Panics
     ///
     /// To enable `const fn` usage and work around current limitations thereof,
@@ -139,8 +135,8 @@ impl ObjectIdentifier {
     ///
     /// For that reason this method is not recommended except for use in
     /// constants (where it will generate a compiler error instead).
-    /// To parse an OID from a `&[u32]` slice without panicking on error,
-    /// use [`TryFrom<&[u32]>`][1] instead.
+    /// To parse an OID from a `&[Arc]` slice without panicking on error,
+    /// use [`TryFrom<&[Arc]>`][1] instead.
     ///
     /// In order for an OID to be valid, it must meet the following criteria:
     ///
@@ -149,12 +145,12 @@ impl ObjectIdentifier {
     /// - The first arc MUST be within the range 0-2
     /// - The second arc MUST be within the range 0-39
     ///
-    /// [1]: ./struct.ObjectIdentifier.html#impl-TryFrom%3C%26%27_%20%5Bu32%5D%3E
-    pub const fn new(arcs: &[u32]) -> Self {
+    /// [1]: ./struct.ObjectIdentifier.html#impl-TryFrom%3C%26%27_%20%5BArc%5D%3E
+    pub const fn new(arcs: &[Arc]) -> Self {
         const_assert!(arcs.len() >= MIN_ARCS, "OID too short (minimum 3 arcs)");
         const_assert!(
             arcs.len() <= MAX_ARCS,
-            "OID too long (internal limit reached)"
+            "OID too long (too may arcs; internal limit reached)"
         );
 
         let first_arc = arcs[0];
@@ -215,7 +211,7 @@ impl ObjectIdentifier {
                 arcs[2], arcs[3], arcs[4], arcs[5], arcs[6],
                 arcs[7], arcs[8], arcs[9], arcs[10], arcs[11],
             ],
-            _ => [0u32; MAX_LOWER_ARCS], // Checks above prevent this case, but makes Miri happy
+            _ => [0; MAX_LOWER_ARCS], // Checks above prevent this case, but makes Miri happy
         };
 
         // TODO(tarcieri): use `LowerArcs::new` when `const fn`-friendly
@@ -228,8 +224,27 @@ impl ObjectIdentifier {
         }
     }
 
+    /// Parse an [`ObjectIdentifier`] from the dot-delimited string form, e.g.:
+    ///
+    /// ```
+    /// use const_oid::ObjectIdentifier;
+    ///
+    /// const MY_OID: ObjectIdentifier = ObjectIdentifier::parse("1.2.840.113549.1.1.1");
+    /// ```
+    ///
+    /// Like [`ObjectIdentifier::new`], this version is intended for use in
+    /// `const` contexts. where it will generate compile errors in the event
+    /// the OID is malformed.
+    ///
+    /// This method is *NOT* intended for use outside of const contexts, as it
+    /// will panic with a bad error message. However, this type also has a
+    /// [`FromStr`] impl that can be used for fallible parsing.
+    pub const fn parse(s: &str) -> Self {
+        parser::Parser::parse(s).result()
+    }
+
     /// Return the arc with the given index, if it exists.
-    pub fn arc(&self, index: usize) -> Option<u32> {
+    pub fn arc(&self, index: usize) -> Option<Arc> {
         match index {
             0 => Some(self.root_arcs.first_arc()),
             1 => Some(self.root_arcs.second_arc()),
@@ -239,7 +254,7 @@ impl ObjectIdentifier {
 
     /// Iterate over the arcs (a.k.a. nodes) in an [`ObjectIdentifier`].
     ///
-    /// Returns [`Arcs`], an iterator over `u32` values representing the value
+    /// Returns [`Arcs`], an iterator over `Arc` values representing the value
     /// of each arc/node.
     pub fn arcs(&self) -> Arcs {
         Arcs {
@@ -314,10 +329,10 @@ impl FromStr for ObjectIdentifier {
     }
 }
 
-impl TryFrom<&[u32]> for ObjectIdentifier {
+impl TryFrom<&[Arc]> for ObjectIdentifier {
     type Error = Error;
 
-    fn try_from(arcs: &[u32]) -> Result<Self> {
+    fn try_from(arcs: &[Arc]) -> Result<Self> {
         if arcs.len() < MIN_ARCS || arcs.len() > MAX_ARCS {
             return Err(Error);
         }
@@ -370,9 +385,9 @@ pub struct Arcs {
 }
 
 impl Iterator for Arcs {
-    type Item = u32;
+    type Item = Arc;
 
-    fn next(&mut self) -> Option<u32> {
+    fn next(&mut self) -> Option<Arc> {
         let arc = self.oid.arc(self.index)?;
         self.index = self.index.checked_add(1).unwrap();
         Some(arc)
@@ -388,8 +403,8 @@ struct RootArcs(u8);
 
 impl RootArcs {
     /// Create [`RootArcs`] from the first and second arc values represented
-    /// as `u32` integers.
-    fn new(first_arc: u32, second_arc: u32) -> Result<Self> {
+    /// as `Arc` integers.
+    fn new(first_arc: Arc, second_arc: Arc) -> Result<Self> {
         if first_arc > FIRST_ARC_MAX || second_arc > SECOND_ARC_MAX {
             return Err(Error);
         }
@@ -399,13 +414,13 @@ impl RootArcs {
     }
 
     /// Get the value of the first arc
-    fn first_arc(self) -> u32 {
-        self.0 as u32 / (SECOND_ARC_MAX + 1)
+    fn first_arc(self) -> Arc {
+        self.0 as Arc / (SECOND_ARC_MAX + 1)
     }
 
     /// Get the value of the second arc
-    fn second_arc(self) -> u32 {
-        self.0 as u32 % (SECOND_ARC_MAX + 1)
+    fn second_arc(self) -> Arc {
+        self.0 as Arc % (SECOND_ARC_MAX + 1)
     }
 }
 
@@ -413,8 +428,8 @@ impl TryFrom<u8> for RootArcs {
     type Error = Error;
 
     fn try_from(octet: u8) -> Result<Self> {
-        let first = octet as u32 / (SECOND_ARC_MAX + 1);
-        let second = octet as u32 % (SECOND_ARC_MAX + 1);
+        let first = octet as Arc / (SECOND_ARC_MAX + 1);
+        let second = octet as Arc % (SECOND_ARC_MAX + 1);
         let result = Self::new(first, second)?;
         debug_assert_eq!(octet, result.0);
         Ok(result)
@@ -434,13 +449,13 @@ struct LowerArcs {
     length: u8,
 
     /// "Lower" arc values.
-    arcs: [u32; MAX_LOWER_ARCS],
+    arcs: [Arc; MAX_LOWER_ARCS],
 }
 
 impl LowerArcs {
     /// Create new [`LowerArcs`] from an array and length, validating length
     /// is in range (1..MAX_LOWER_ARCS)
-    fn new(arcs: [u32; MAX_LOWER_ARCS], length: usize) -> Result<Self> {
+    fn new(arcs: [Arc; MAX_LOWER_ARCS], length: usize) -> Result<Self> {
         if length > 0 && length < MAX_LOWER_ARCS {
             Ok(Self {
                 arcs,
@@ -453,7 +468,7 @@ impl LowerArcs {
 
     /// Parse [`LowerArcs`] from ASN.1 BER.
     fn from_ber(mut bytes: &[u8]) -> Result<Self> {
-        let mut arcs = [0u32; MAX_LOWER_ARCS];
+        let mut arcs = [Arc::default(); MAX_LOWER_ARCS];
         let mut index = 0;
 
         while !bytes.is_empty() {
@@ -467,7 +482,7 @@ impl LowerArcs {
 
     /// Helper for parsing [`LowerArcs`] from a string
     fn from_split(split: &mut Split<'_, char>) -> Result<Self> {
-        let mut arcs = [0u32; MAX_LOWER_ARCS];
+        let mut arcs = [Arc::default(); MAX_LOWER_ARCS];
         let mut length = 0;
 
         for (i, n) in split.enumerate() {
@@ -490,21 +505,21 @@ impl LowerArcs {
     }
 }
 
-impl AsRef<[u32]> for LowerArcs {
-    fn as_ref(&self) -> &[u32] {
+impl AsRef<[Arc]> for LowerArcs {
+    fn as_ref(&self) -> &[Arc] {
         &self.arcs[..self.len()]
     }
 }
 
-impl TryFrom<&[u32]> for LowerArcs {
+impl TryFrom<&[Arc]> for LowerArcs {
     type Error = Error;
 
-    fn try_from(arcs: &[u32]) -> Result<Self> {
+    fn try_from(arcs: &[Arc]) -> Result<Self> {
         if arcs.len() > MAX_LOWER_ARCS {
             return Err(Error);
         }
 
-        let mut lower_arcs = [0u32; MAX_LOWER_ARCS];
+        let mut lower_arcs = [Arc::default(); MAX_LOWER_ARCS];
         lower_arcs[..arcs.len()].copy_from_slice(arcs);
 
         Ok(Self {
@@ -522,7 +537,7 @@ fn parse_byte(bytes: &mut &[u8]) -> Result<u8> {
 }
 
 /// Parse a base 128 (big endian) integer from a bytestring
-fn parse_base128(bytes: &mut &[u8]) -> Result<u32> {
+fn parse_base128(bytes: &mut &[u8]) -> Result<Arc> {
     let mut result = 0;
     let mut shift = 0;
 
@@ -534,7 +549,7 @@ fn parse_base128(bytes: &mut &[u8]) -> Result<u32> {
             return Err(Error);
         }
 
-        result = result << 7 | (byte & 0b1111111) as u32;
+        result = result << 7 | (byte & 0b1111111) as Arc;
 
         if byte & 0b10000000 == 0 {
             return Ok(result);
@@ -545,7 +560,7 @@ fn parse_base128(bytes: &mut &[u8]) -> Result<u32> {
 }
 
 /// Write the given unsigned integer in base 128
-fn write_base128(bytes: &mut [u8], mut n: u32) -> Result<usize> {
+fn write_base128(bytes: &mut [u8], mut n: Arc) -> Result<usize> {
     let nbytes = base128_len(n);
     let mut i = nbytes.checked_sub(1).expect("length underflow");
     let mut mask = 0;
@@ -563,7 +578,7 @@ fn write_base128(bytes: &mut [u8], mut n: u32) -> Result<usize> {
 }
 
 /// Compute the length of a value when encoded in base 128
-fn base128_len(n: u32) -> usize {
+fn base128_len(n: Arc) -> usize {
     match n {
         0..=0x7f => 1,
         0x80..=0x3fff => 2,
