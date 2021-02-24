@@ -2,8 +2,8 @@
 
 use crate::{
     BitString, ByteSlice, Choice, Decodable, Decoder, Encodable, Encoder, Error, ErrorKind,
-    GeneralizedTime, Header, Length, Null, OctetString, PrintableString, Result, Sequence, Tag,
-    UtcTime, Utf8String,
+    GeneralizedTime, Header, Ia5String, Length, Null, OctetString, PrintableString, Result,
+    Sequence, Tag, UtcTime, Utf8String,
 };
 use core::convert::{TryFrom, TryInto};
 
@@ -69,6 +69,11 @@ impl<'a> Any<'a> {
 
     /// Attempt to decode an ASN.1 `GeneralizedTime`.
     pub fn generalized_time(self) -> Result<GeneralizedTime> {
+        self.try_into()
+    }
+
+    /// Attempt to decode an ASN.1 `IA5String`.
+    pub fn ia5_string(self) -> Result<Ia5String<'a>> {
         self.try_into()
     }
 

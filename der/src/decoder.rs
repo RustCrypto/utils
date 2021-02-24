@@ -1,8 +1,8 @@
 //! DER decoder.
 
 use crate::{
-    Any, BitString, Choice, Decodable, ErrorKind, GeneralizedTime, Length, Null, OctetString,
-    PrintableString, Result, Sequence, UtcTime, Utf8String,
+    Any, BitString, Choice, Decodable, ErrorKind, GeneralizedTime, Ia5String, Length, Null,
+    OctetString, PrintableString, Result, Sequence, UtcTime, Utf8String,
 };
 use core::convert::TryInto;
 
@@ -124,6 +124,11 @@ impl<'a> Decoder<'a> {
 
     /// Attempt to decode an ASN.1 `GeneralizedTime`.
     pub fn generalized_time(&mut self) -> Result<GeneralizedTime> {
+        self.decode()
+    }
+
+    /// Attempt to decode an ASN.1 `IA5String`.
+    pub fn ia5_string(&mut self) -> Result<Ia5String<'a>> {
         self.decode()
     }
 

@@ -48,6 +48,9 @@ pub enum Tag {
     /// `PrintableString` tag.
     PrintableString = 0x13,
 
+    /// `IA5String` tag.
+    Ia5String = 0x16,
+
     /// `UTCTime` tag.
     UtcTime = 0x17,
 
@@ -87,6 +90,7 @@ impl TryFrom<u8> for Tag {
             0x06 => Ok(Tag::ObjectIdentifier),
             0x0C => Ok(Tag::Utf8String),
             0x13 => Ok(Tag::PrintableString),
+            0x16 => Ok(Tag::Ia5String),
             0x17 => Ok(Tag::UtcTime),
             0x18 => Ok(Tag::GeneralizedTime),
             0x30 => Ok(Tag::Sequence),
@@ -126,6 +130,7 @@ impl Tag {
             Self::ObjectIdentifier => "OBJECT IDENTIFIER",
             Self::Utf8String => "UTF8String",
             Self::PrintableString => "PrintableString",
+            Self::Ia5String => "IA5String",
             Self::UtcTime => "UTCTime",
             Self::GeneralizedTime => "GeneralizedTime",
             Self::Sequence => "SEQUENCE",

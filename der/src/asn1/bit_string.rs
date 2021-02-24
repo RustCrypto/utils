@@ -13,7 +13,7 @@ pub struct BitString<'a> {
 }
 
 impl<'a> BitString<'a> {
-    /// Create a new [`BitString`] from a byte slice.
+    /// Create a new ASN.1 `BIT STRING` from a byte slice.
     pub fn new(slice: &'a [u8]) -> Result<Self> {
         ByteSlice::new(slice)
             .map(|inner| Self { inner })

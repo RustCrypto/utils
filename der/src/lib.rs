@@ -43,6 +43,7 @@
 //! - [`BigUInt`]: ASN.1 unsigned `INTEGER` with raw access to encoded bytes
 //! - [`BitString`]: ASN.1 `BIT STRING`
 //! - [`GeneralizedTime`]: ASN.1 `GeneralizedTime`
+//! - [`Ia5String`]: ASN.1 `IA5String`
 //! - [`Null`]: ASN.1 `NULL`
 //! - [`ObjectIdentifier`]: ASN.1 `OBJECT IDENTIFIER`
 //! - [`OctetString`]: ASN.1 `OCTET STRING`
@@ -305,11 +306,20 @@
 //! # }
 //! ```
 //!
+//! # See also
+//!
+//! For more information about ASN.1 DER we recommend the following guides:
+//!
+//! - [A Layman's Guide to a Subset of ASN.1, BER, and DER] (RSA Laboratories)
+//! - [A Warm Welcome to ASN.1 and DER] (Let's Encrypt)
+//!
 //! [X.690]: https://www.itu.int/rec/T-REC-X.690/
 //! [RustCrypto]: https://github.com/rustcrypto
 //! [`pkcs8`]: https://docs.rs/pkcs8/
 //! [GitHub Issue]: https://github.com/RustCrypto/utils/issues
 //! [RFC 5280 Section 4.1.1.2]: https://tools.ietf.org/html/rfc5280#section-4.1.1.2
+//! [A Layman's Guide to a Subset of ASN.1, BER, and DER]: https://luca.ntop.org/Teaching/Appunti/asn1.html
+//! [A Warm Welcome to ASN.1 and DER]: https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -347,6 +357,7 @@ pub use crate::{
         bit_string::BitString,
         choice::Choice,
         generalized_time::GeneralizedTime,
+        ia5_string::Ia5String,
         null::Null,
         octet_string::OctetString,
         printable_string::PrintableString,

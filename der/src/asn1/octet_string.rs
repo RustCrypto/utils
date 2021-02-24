@@ -11,7 +11,7 @@ pub struct OctetString<'a> {
 }
 
 impl<'a> OctetString<'a> {
-    /// Create a new [`OctetString`] from a byte slice.
+    /// Create a new ASN.1 `OCTET STRING` from a byte slice.
     pub fn new(slice: &'a [u8]) -> Result<Self> {
         ByteSlice::new(slice)
             .map(|inner| Self { inner })

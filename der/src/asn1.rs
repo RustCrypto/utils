@@ -9,6 +9,7 @@ pub(crate) mod bit_string;
 pub(crate) mod boolean;
 pub(crate) mod choice;
 pub(crate) mod generalized_time;
+pub(crate) mod ia5_string;
 pub(crate) mod integer;
 pub(crate) mod null;
 pub(crate) mod octet_string;

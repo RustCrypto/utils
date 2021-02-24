@@ -8,8 +8,10 @@ use core::{convert::TryFrom, fmt, str};
 
 /// ASN.1 `PrintableString` type.
 ///
-/// Supports a subset the ASCII character set. For UTF-8 support, use
-/// [`Utf8String`][`crate::Utf8String`].
+/// Supports a subset the ASCII character set (desribed below).
+///
+/// For UTF-8, use [`Utf8String`][`crate::Utf8String`] instead. For the full
+/// ASCII character set, use [`Ia5String`][`crate::Ia5String`].
 ///
 /// # Supported characters
 ///
@@ -37,7 +39,7 @@ pub struct PrintableString<'a> {
 }
 
 impl<'a> PrintableString<'a> {
-    /// Create a new [`PrintableString`].
+    /// Create a new ASN.1 `PrintableString`.
     pub fn new<T>(input: &'a T) -> Result<Self>
     where
         T: AsRef<[u8]> + ?Sized,
