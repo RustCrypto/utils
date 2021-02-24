@@ -24,7 +24,7 @@ pub struct Utf8String<'a> {
 }
 
 impl<'a> Utf8String<'a> {
-    /// Create a new [`Utf8String`].
+    /// Create a new ASN.1 `UTF8String`.
     pub fn new<T>(input: &'a T) -> Result<Self>
     where
         T: AsRef<[u8]> + ?Sized,

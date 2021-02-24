@@ -1,8 +1,8 @@
 //! DER encoder.
 
 use crate::{
-    asn1::sequence, BitString, Encodable, ErrorKind, GeneralizedTime, Header, Length, Null,
-    OctetString, PrintableString, Result, Tag, UtcTime, Utf8String,
+    asn1::sequence, BitString, Encodable, ErrorKind, GeneralizedTime, Header, Ia5String, Length,
+    Null, OctetString, PrintableString, Result, Tag, UtcTime, Utf8String,
 };
 use core::convert::TryInto;
 
@@ -84,6 +84,18 @@ impl<'a> Encoder<'a> {
             .or_else(|_| {
                 self.error(ErrorKind::Value {
                     tag: Tag::GeneralizedTime,
+                })
+            })
+            .and_then(|value| self.encode(&value))
+    }
+
+    /// Encode the provided value as an ASN.1 `IA5String`
+    pub fn ia5_string(&mut self, value: impl TryInto<Ia5String<'a>>) -> Result<()> {
+        value
+            .try_into()
+            .or_else(|_| {
+                self.error(ErrorKind::Value {
+                    tag: Tag::Ia5String,
                 })
             })
             .and_then(|value| self.encode(&value))
