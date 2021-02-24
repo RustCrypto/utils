@@ -5,10 +5,10 @@ use hex_literal::hex;
 use std::{convert::TryFrom, string::ToString};
 
 /// Example OID value with a root arc of `1`
-const EXAMPLE_OID_1: ObjectIdentifier = ObjectIdentifier::new(&[1, 2, 840, 10045, 2, 1]);
+const EXAMPLE_OID_1: ObjectIdentifier = ObjectIdentifier::parse("1.2.840.10045.2.1");
 
 /// Example OID value with a root arc of `2`
-const EXAMPLE_OID_2: ObjectIdentifier = ObjectIdentifier::new(&[2, 16, 840, 1, 101, 3, 4, 1, 42]);
+const EXAMPLE_OID_2: ObjectIdentifier = ObjectIdentifier::parse("2.16.840.1.101.3.4.1.42");
 
 /// Example OID 1 encoded as ASN.1 BER/DER
 const EXAMPLE_OID_1_BER: &[u8] = &hex!("2A8648CE3D0201");
@@ -115,6 +115,12 @@ fn to_ber() {
 
 #[test]
 #[should_panic]
+fn new_empty() {
+    ObjectIdentifier::new(&[]);
+}
+
+#[test]
+#[should_panic]
 fn new_too_short() {
     ObjectIdentifier::new(&[1, 2]);
 }
@@ -129,4 +135,28 @@ fn new_invalid_first_arc() {
 #[should_panic]
 fn new_invalid_second_arc() {
     ObjectIdentifier::new(&[1, 40, 840, 10045, 3, 1, 7]);
+}
+
+#[test]
+#[should_panic]
+fn parse_empty() {
+    ObjectIdentifier::parse("");
+}
+
+#[test]
+#[should_panic]
+fn parse_too_short() {
+    ObjectIdentifier::parse("1.2");
+}
+
+#[test]
+#[should_panic]
+fn parse_invalid_first_arc() {
+    ObjectIdentifier::parse("3.2.840.10045.3.1.7");
+}
+
+#[test]
+#[should_panic]
+fn parse_invalid_second_arc() {
+    ObjectIdentifier::parse("1.40.840.10045.3.1.7");
 }
