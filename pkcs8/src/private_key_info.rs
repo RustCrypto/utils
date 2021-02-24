@@ -1,23 +1,19 @@
 //! PKCS#8 `PrivateKeyInfo`.
 
-#[cfg(feature = "pkcs5")]
-pub(crate) mod encrypted;
-
-use crate::{AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
+
 use der::{Decodable, Encodable, Message};
-
-#[cfg(feature = "alloc")]
-use crate::PrivateKeyDocument;
-
+#[cfg(feature = "pem")]
+use {crate::pem, zeroize::Zeroizing};
 #[cfg(feature = "encryption")]
 use {
     crate::EncryptedPrivateKeyDocument,
     rand_core::{CryptoRng, RngCore},
 };
 
-#[cfg(feature = "pem")]
-use {crate::pem, zeroize::Zeroizing};
+#[cfg(feature = "alloc")]
+use crate::PrivateKeyDocument;
+use crate::{AlgorithmIdentifier, Error, Result};
 
 /// RFC 5208 designates `0` as the only valid version for PKCS#8 documents
 const VERSION: u8 = 0;
