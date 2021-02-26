@@ -97,7 +97,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     #[inline]
     pub fn block_mode_processing<'a>(
         &mut self,
-        mut data: &'a [u8],
+        mut data: &[u8],
         buf: &'a mut [u8],
         mut process: impl FnMut(&mut [Block<BlockSize>]),
     ) -> Result<&'a [u8], InvalidLength> {
