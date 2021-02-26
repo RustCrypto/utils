@@ -99,7 +99,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         &mut self,
         mut data: &'a [u8],
         buf: &'a mut [u8],
-        mut process: impl FnMut(&mut Block<BlockSize>),
+        mut process: impl FnMut(&mut [Block<BlockSize>]),
     ) -> Result<&'a [u8], InvalidLength> {
         let pos = self.get_pos();
         let rem = self.remaining();
@@ -126,18 +126,18 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
             buf_block[..pos].copy_from_slice(&self.buffer[..pos]);
             buf_block[pos..].copy_from_slice(l);
 
-            process(buf_block);
+            process(slice::from_mut(buf_block));
             blocks_processed += 1;
         }
 
         let (data_blocks, leftover) = to_blocks::<BlockSize>(data);
-        if buf_blocks.len() < data_blocks.len() {
-            return Err(InvalidLength);
-        }
-        for (data_block, buf_block) in data_blocks.iter().zip(buf_blocks.iter_mut()) {
-            buf_block.copy_from_slice(data_block);
-            process(buf_block);
-            blocks_processed += 1;
+        match buf_blocks.get_mut(..data_blocks.len()) {
+            Some(buf_blocks) => {
+                buf_blocks.clone_from_slice(data_blocks);
+                process(buf_blocks);
+                blocks_processed += buf_blocks.len();
+            },
+            None => return Err(InvalidLength),
         }
 
         let n = leftover.len();
