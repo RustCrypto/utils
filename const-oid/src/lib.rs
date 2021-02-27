@@ -52,6 +52,9 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+#[macro_use]
+mod macros;
+
 mod error;
 mod parser;
 
@@ -108,15 +111,6 @@ pub struct ObjectIdentifier {
     /// Additional "lower" arcs beyond the first and second arcs
     /// (the latter are stored as [`RootArcs`]).
     lower_arcs: LowerArcs,
-}
-
-/// Constant panicking assertion.
-// TODO(tarcieri): use const panic when stable.
-// See: https://github.com/rust-lang/rust/issues/51999
-macro_rules! const_assert {
-    ($bool:expr, $msg:expr) => {
-        [$msg][!$bool as usize]
-    };
 }
 
 #[allow(clippy::len_without_is_empty)]
