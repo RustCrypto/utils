@@ -121,24 +121,15 @@ impl<'a> Encoder<'a> {
     /// Encode an ASN.1 [`ObjectIdentifier`]
     #[cfg(feature = "oid")]
     #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
-    pub fn oid(&mut self, oid: impl TryInto<ObjectIdentifier>) -> Result<()> {
-        let oid: ObjectIdentifier = oid.try_into().or_else(|_| {
-            self.error(ErrorKind::Value {
-                tag: Tag::ObjectIdentifier,
+    pub fn oid(&mut self, value: impl TryInto<ObjectIdentifier>) -> Result<()> {
+        value
+            .try_into()
+            .or_else(|_| {
+                self.error(ErrorKind::Value {
+                    tag: Tag::ObjectIdentifier,
+                })
             })
-        })?;
-
-        let expected_len = oid.ber_len();
-        Header::new(Tag::ObjectIdentifier, expected_len).and_then(|header| header.encode(self))?;
-        let buffer = self.reserve(expected_len)?;
-
-        if oid.write_ber(buffer)?.len() == expected_len {
-            Ok(())
-        } else {
-            self.error(ErrorKind::Length {
-                tag: Tag::ObjectIdentifier,
-            })
-        }
+            .and_then(|value| self.encode(&value))
     }
 
     /// Encode the provided value as an ASN.1 `PrintableString`

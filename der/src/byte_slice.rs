@@ -3,7 +3,7 @@
 //!
 //! This limit is presently 65,535 bytes.
 
-use crate::{Length, Result};
+use crate::{Error, Length, Result};
 use core::convert::TryFrom;
 
 /// Byte slice newtype which respects the `Length::max()` limit.
@@ -45,5 +45,13 @@ impl<'a> ByteSlice<'a> {
 impl AsRef<[u8]> for ByteSlice<'_> {
     fn as_ref(&self) -> &[u8] {
         self.as_bytes()
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for ByteSlice<'a> {
+    type Error = Error;
+
+    fn try_from(slice: &'a [u8]) -> Result<Self> {
+        Self::new(slice)
     }
 }

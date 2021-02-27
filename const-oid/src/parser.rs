@@ -1,16 +1,16 @@
-//! OID parser with `const` support
+//! OID string parser with `const` support.
 
-use crate::{Arc, ObjectIdentifier, MAX_ARCS};
+use crate::{encoder::Encoder, Arc, ObjectIdentifier};
 
-/// Const-friendly OID parser.
+/// Const-friendly OID string parser.
 ///
 /// Parses an OID from the dotted string representation.
 pub(crate) struct Parser {
-    /// Parsed arcs in progress
-    arcs: [Arc; MAX_ARCS],
+    /// Current arc in progress
+    current_arc: Arc,
 
-    /// Current arc being parsed
-    cursor: usize,
+    /// BER/DER encoder
+    encoder: Encoder,
 }
 
 impl Parser {
@@ -23,71 +23,39 @@ impl Parser {
             "OID must start with a digit"
         );
 
+        let current_arc = 0;
+        let encoder = Encoder::new();
         Self {
-            arcs: [0; MAX_ARCS],
-            cursor: 0,
+            current_arc,
+            encoder,
         }
         .parse_bytes(bytes)
     }
 
     /// Finish parsing, returning the result
-    pub(crate) const fn result(self) -> ObjectIdentifier {
-        let arcs = self.arcs;
-
-        // TODO(tarcieri): refactor this!
-        // This is a temporary workaround to allow this function to reuse the
-        // existing validation logic in `ObjectIdentifier::new`.
-        // In the next breaking release we can replace `new` with this function
-        // entirely and consolidate the validation logic.
-        match self.cursor {
-            3 => ObjectIdentifier::new(&[arcs[0], arcs[1], arcs[2]]),
-            4 => ObjectIdentifier::new(&[arcs[0], arcs[1], arcs[2], arcs[3]]),
-            5 => ObjectIdentifier::new(&[arcs[0], arcs[1], arcs[2], arcs[3], arcs[4]]),
-            6 => ObjectIdentifier::new(&[arcs[0], arcs[1], arcs[2], arcs[3], arcs[4], arcs[5]]),
-            7 => ObjectIdentifier::new(&[
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4], arcs[5], arcs[6],
-            ]),
-            8 => ObjectIdentifier::new(&[
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4], arcs[5], arcs[6], arcs[7],
-            ]),
-            9 => ObjectIdentifier::new(&[
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4], arcs[5], arcs[6], arcs[7], arcs[8],
-            ]),
-            10 => ObjectIdentifier::new(&[
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4], arcs[5], arcs[6], arcs[7], arcs[8],
-                arcs[9],
-            ]),
-            11 => ObjectIdentifier::new(&[
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4], arcs[5], arcs[6], arcs[7], arcs[8],
-                arcs[9], arcs[10],
-            ]),
-            12 => ObjectIdentifier::new(&[
-                arcs[0], arcs[1], arcs[2], arcs[3], arcs[4], arcs[5], arcs[6], arcs[7], arcs[8],
-                arcs[9], arcs[10], arcs[11],
-            ]),
-            _ => ObjectIdentifier::new(&[]),
-        }
+    pub(crate) const fn finish(self) -> ObjectIdentifier {
+        self.encoder.finish()
     }
 
     /// Parse the remaining bytes
     const fn parse_bytes(mut self, bytes: &[u8]) -> Self {
         match bytes {
             [] => {
-                self.cursor += 1;
+                self.encoder = self.encoder.encode(self.current_arc);
                 self
             }
             [byte @ b'0'..=b'9', remaining @ ..] => {
-                let current_arc = self.arcs[self.cursor];
-                self.arcs[self.cursor] = current_arc * 10 + parse_ascii_digit(*byte);
+                self.current_arc = self.current_arc * 10 + parse_ascii_digit(*byte);
                 self.parse_bytes(remaining)
             }
             [b'.', remaining @ ..] => {
                 const_assert!(!remaining.is_empty(), "invalid trailing '.' in OID");
-                const_assert!(
-                    self.cursor < MAX_ARCS,
-                    "maximum number of OID arcs exceeded"
-                );
-                self.cursor += 1;
+                // const_assert!(
+                //     self.cursor < MAX_ARCS,
+                //     "maximum number of OID arcs exceeded"
+                // );
+                self.encoder = self.encoder.encode(self.current_arc);
+                self.current_arc = 0;
                 self.parse_bytes(remaining)
             }
             [byte, ..] => {
@@ -131,7 +99,7 @@ mod tests {
 
     #[test]
     fn parse() {
-        let oid = Parser::parse("1.23.456").result();
+        let oid = Parser::parse("1.23.456").finish();
         assert_eq!(oid, "1.23.456".parse().unwrap());
     }
 

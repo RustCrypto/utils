@@ -1,9 +1,7 @@
 //! ASN.1 `OBJECT IDENTIFIER`
 
-use crate::{
-    Any, Encodable, Encoder, Error, Header, Length, ObjectIdentifier, Result, Tag, Tagged,
-};
-use core::convert::TryFrom;
+use crate::{Any, Encodable, Encoder, Error, Length, ObjectIdentifier, Result, Tag, Tagged};
+use core::convert::{TryFrom, TryInto};
 
 impl TryFrom<Any<'_>> for ObjectIdentifier {
     type Error = Error;
@@ -14,15 +12,24 @@ impl TryFrom<Any<'_>> for ObjectIdentifier {
     }
 }
 
+impl<'a> TryFrom<&'a ObjectIdentifier> for Any<'a> {
+    type Error = Error;
+
+    fn try_from(oid: &'a ObjectIdentifier) -> Result<Any<'a>> {
+        Ok(Any {
+            tag: Tag::ObjectIdentifier,
+            value: oid.as_bytes().try_into()?,
+        })
+    }
+}
+
 impl Encodable for ObjectIdentifier {
     fn encoded_len(&self) -> Result<Length> {
-        let ber_len = self.ber_len();
-        let header = Header::new(Tag::ObjectIdentifier, ber_len)?;
-        header.encoded_len()? + ber_len
+        Any::try_from(self)?.encoded_len()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        encoder.oid(*self)
+        Any::try_from(self)?.encode(encoder)
     }
 }
 

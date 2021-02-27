@@ -1,5 +1,8 @@
 //! `const-oid` crate tests
 
+// TODO(tarcieri): test full set of OID encoding constraints specified here:
+// <https://misc.daniel-marschall.de/asn.1/oid_facts.html>
+
 use const_oid::ObjectIdentifier;
 use hex_literal::hex;
 use std::{convert::TryFrom, string::ToString};
@@ -96,21 +99,9 @@ fn try_from_u32_slice() {
 }
 
 #[test]
-fn write_ber() {
-    let mut buffer = [0u8; 16];
-
-    let oid1_ber = EXAMPLE_OID_1.write_ber(&mut buffer).unwrap();
-    assert_eq!(oid1_ber, EXAMPLE_OID_1_BER);
-
-    let oid2_ber = EXAMPLE_OID_2.write_ber(&mut buffer).unwrap();
-    assert_eq!(oid2_ber, EXAMPLE_OID_2_BER);
-}
-
-#[cfg(feature = "alloc")]
-#[test]
-fn to_ber() {
-    assert_eq!(EXAMPLE_OID_1.to_ber(), EXAMPLE_OID_1_BER);
-    assert_eq!(EXAMPLE_OID_2.to_ber(), EXAMPLE_OID_2_BER);
+fn as_bytes() {
+    assert_eq!(EXAMPLE_OID_1.as_bytes(), EXAMPLE_OID_1_BER);
+    assert_eq!(EXAMPLE_OID_2.as_bytes(), EXAMPLE_OID_2_BER);
 }
 
 #[test]
