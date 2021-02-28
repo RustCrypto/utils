@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.4 (2021-02-28)
+### Added
+- `ObjectIdentifier::as_bytes` method ([#317])
+
+### Changed
+- Internal representation changed to BER/DER ([#317])
+- Deprecated `ObjectIdentifier::ber_len`, `::write_ber`, and `::to_ber` ([#317])
+
+[#317]: https://github.com/RustCrypto/utils/pull/317
+
 ## 0.4.3 (2021-02-24)
 ### Added
 - Const-friendly OID string parser ([#312])
