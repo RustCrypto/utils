@@ -12,24 +12,31 @@ impl TryFrom<Any<'_>> for ObjectIdentifier {
     }
 }
 
-impl<'a> TryFrom<&'a ObjectIdentifier> for Any<'a> {
-    type Error = Error;
+impl<'a> From<&'a ObjectIdentifier> for Any<'a> {
+    fn from(oid: &'a ObjectIdentifier) -> Any<'a> {
+        // Note: ensuring an infallible conversion is possible relies on the
+        // invariant that `const_oid::MAX_LEN <= Length::max()`.
+        //
+        // The `length()` test below ensures this is the case.
+        let value = oid
+            .as_bytes()
+            .try_into()
+            .expect("OID length invariant violated");
 
-    fn try_from(oid: &'a ObjectIdentifier) -> Result<Any<'a>> {
-        Ok(Any {
+        Any {
             tag: Tag::ObjectIdentifier,
-            value: oid.as_bytes().try_into()?,
-        })
+            value,
+        }
     }
 }
 
 impl Encodable for ObjectIdentifier {
     fn encoded_len(&self) -> Result<Length> {
-        Any::try_from(self)?.encoded_len()
+        Any::from(self).encoded_len()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Any::try_from(self)?.encode(encoder)
+        Any::from(self).encode(encoder)
     }
 }
 
@@ -39,7 +46,7 @@ impl<'a> Tagged for ObjectIdentifier {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Decodable, Encodable, ObjectIdentifier};
+    use crate::{Decodable, Encodable, Length, ObjectIdentifier};
 
     const EXAMPLE_OID: ObjectIdentifier = ObjectIdentifier::parse("1.2.840.113549");
     const EXAMPLE_OID_BYTES: &[u8; 8] = &[0x06, 0x06, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d];
@@ -59,5 +66,11 @@ mod tests {
             EXAMPLE_OID_BYTES,
             EXAMPLE_OID.encode_to_slice(&mut buffer).unwrap()
         );
+    }
+
+    #[test]
+    fn length() {
+        // Ensure an infallible `From` conversion to `Any` will never panic
+        assert!(const_oid::MAX_LEN <= Length::max());
     }
 }
