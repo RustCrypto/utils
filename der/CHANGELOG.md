@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.10 (2021-02-28)
+### Added
+- Impl `From<ObjectIdentifier>` for `Any` ([#317], [#319])
+
+### Changed
+- Bump minimum `const-oid` dependency to v0.4.4 ([#318])
+
+[#317]: https://github.com/RustCrypto/utils/pull/317
+[#318]: https://github.com/RustCrypto/utils/pull/318
+[#319]: https://github.com/RustCrypto/utils/pull/319
+
 ## 0.2.9 (2021-02-24)
 ### Added
 - Support for `IA5String` ([#310])
