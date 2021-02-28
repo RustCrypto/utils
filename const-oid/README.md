@@ -19,7 +19,7 @@ Object Identifiers, a.k.a. OIDs, are an International Telecommunications
 Union (ITU) and ISO/IEC standard for naming any object, concept, or "thing"
 with a globally unambiguous persistent name.
 
-OIDS are defined in the ITU's [X.660] standard.
+The ITU's [X.660] standard provides an OID specification.
 
 The following is an example of an OID, in this case identifying the
 `rsaEncryption` algorithm:
