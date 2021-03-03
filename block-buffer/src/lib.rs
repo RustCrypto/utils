@@ -11,6 +11,7 @@
 pub use block_padding;
 pub use generic_array;
 
+use core::fmt;
 use generic_array::{ArrayLength, GenericArray};
 
 mod buffer;
@@ -35,7 +36,13 @@ pub trait DigestBuffer<BlockSize: ArrayLength<u8>>: Default {
     fn reset(&mut self);
 }
 
-/// Error used in the `block_mode_processing` methods.
+/// Error type used by the [`BlockBuffer::block_mode_processing`] and
+/// [`LazyBlockBuffer::block_mode_processing`] methods.
 #[derive(Copy, Clone, Debug)]
 pub struct InvalidLength;
-// TODO: add error impls
+
+impl fmt::Display for InvalidLength {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        f.write_str("Invalid Length")
+    }
+}
