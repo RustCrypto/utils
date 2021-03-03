@@ -1,11 +1,11 @@
 #[cfg(feature = "block-padding")]
 use block_padding::Padding;
 
-use core::slice;
 use crate::{
     utils::{to_blocks, to_blocks_mut},
-    Block, DigestBuffer, ParBlock,
+    Block, DigestBuffer, InvalidLength, ParBlock,
 };
+use core::slice;
 use generic_array::{typenum::U1, ArrayLength};
 
 /// Buffer for block processing of data.
@@ -94,6 +94,8 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         self.process_data(data, &mut gen_block, set, |f| f(), unreachable);
     }
 
+    /// Process `data` in blocks and write result to `out_buf`, storing
+    /// leftovers for future use.
     #[inline]
     pub fn block_mode_processing<'a>(
         &mut self,
@@ -130,15 +132,13 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
             blocks_processed += 1;
         }
 
-        let (data_blocks, leftover) = to_blocks::<BlockSize>(data);
-        match buf_blocks.get_mut(..data_blocks.len()) {
-            Some(buf_blocks) => {
-                buf_blocks.clone_from_slice(data_blocks);
-                process(buf_blocks);
-                blocks_processed += buf_blocks.len();
-            },
-            None => return Err(InvalidLength),
-        }
+        let (data_blocks, leftover) = to_blocks(data);
+        let buf_blocks = buf_blocks
+            .get_mut(..data_blocks.len())
+            .ok_or(InvalidLength)?;
+        buf_blocks.clone_from_slice(data_blocks);
+        process(buf_blocks);
+        blocks_processed += buf_blocks.len();
 
         let n = leftover.len();
         self.buffer[..n].copy_from_slice(leftover);
@@ -306,6 +306,3 @@ fn set(a: &mut [u8], b: &[u8]) {
 fn unreachable<S, B: ArrayLength<u8>>(_: &mut S) -> ParBlock<B, U1> {
     unreachable!();
 }
-
-#[derive(Copy, Clone, Debug)]
-pub struct InvalidLength;

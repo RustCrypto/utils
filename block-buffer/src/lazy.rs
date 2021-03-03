@@ -1,5 +1,9 @@
-use crate::{utils::to_blocks, Block, DigestBuffer};
-use generic_array::ArrayLength;
+use crate::{
+    utils::{to_blocks, to_blocks_mut},
+    Block, DigestBuffer, InvalidLength,
+};
+use core::slice;
+use generic_array::{typenum::U1, ArrayLength};
 
 /// Buffer for lazy block processing of data.
 #[derive(Clone, Default)]
@@ -9,12 +13,80 @@ pub struct LazyBlockBuffer<BlockSize: ArrayLength<u8>> {
 }
 
 impl<BlockSize: ArrayLength<u8>> LazyBlockBuffer<BlockSize> {
+    /// Process `data` in blocks and write result to `out_buf`, storing
+    /// leftovers for future use.
+    #[inline]
+    pub fn block_mode_processing<'a>(
+        &mut self,
+        mut data: &[u8],
+        buf: &'a mut [u8],
+        mut process: impl FnMut(&mut [Block<BlockSize>]),
+    ) -> Result<&'a [u8], InvalidLength> {
+        let pos = self.get_pos();
+        let rem = self.remaining();
+        let mut blocks_processed = 0;
+        let (_, mut buf_blocks, _) = to_blocks_mut::<BlockSize, U1>(buf);
+        if pos != 0 {
+            let n = data.len();
+            if n <= rem {
+                // double slicing allows to remove panic branches
+                self.buffer[pos..][..n].copy_from_slice(data);
+                self.set_pos_unchecked(pos + n);
+                return Ok(&buf[..0]);
+            }
+            if buf_blocks.is_empty() {
+                return Err(InvalidLength);
+            }
+
+            let (l, r) = buf_blocks.split_at_mut(1);
+            let buf_block = &mut l[0];
+            buf_blocks = r;
+            let (l, r) = data.split_at(rem);
+            data = r;
+
+            buf_block[..pos].copy_from_slice(&self.buffer[..pos]);
+            buf_block[pos..].copy_from_slice(l);
+
+            process(slice::from_mut(buf_block));
+            blocks_processed += 1;
+        }
+
+        let (data_blocks, leftover) = to_blocks_lazy(data);
+        let buf_blocks = buf_blocks
+            .get_mut(..data_blocks.len())
+            .ok_or(InvalidLength)?;
+        buf_blocks.clone_from_slice(data_blocks);
+        process(buf_blocks);
+        blocks_processed += buf_blocks.len();
+
+        let n = leftover.len();
+        self.buffer[..n].copy_from_slice(leftover);
+        self.set_pos_unchecked(n);
+
+        let res = unsafe {
+            let res_len = BlockSize::USIZE * blocks_processed;
+            // SAFETY: number of processed blocks never exceeds capacity of `buf`
+            debug_assert!(buf.len() >= res_len);
+            buf.get_unchecked(..res_len)
+        };
+        Ok(res)
+    }
+
     /// Pad remaining data with zeros and call `compress` with resulting block.
     pub fn pad_zeros(&mut self) -> &mut Block<BlockSize> {
         let pos = self.get_pos();
         self.buffer[pos..].iter_mut().for_each(|b| *b = 0);
         self.set_pos_unchecked(0);
         &mut self.buffer
+    }
+
+    /// Return block if buffer is full, otherwise returns `None`.
+    #[inline]
+    pub fn get_full_block(&mut self) -> Option<&mut Block<BlockSize>> {
+        match self.remaining() {
+            0 => Some(&mut self.buffer),
+            _ => None,
+        }
     }
 
     /// Return size of the internall buffer in bytes.
@@ -82,17 +154,7 @@ impl<B: ArrayLength<u8>> DigestBuffer<B> for LazyBlockBuffer<B> {
             compress(core::slice::from_ref(&self.buffer));
         }
 
-        let (mut blocks, mut leftover) = to_blocks(input);
-        if leftover.is_empty() {
-            debug_assert!(!blocks.is_empty());
-            let m = blocks.len() - 1;
-            // SAFETY: at this stage `input` always contains at least one byte,
-            // so either `leftover` is not empty or we have at least one block
-            unsafe {
-                leftover = blocks.get_unchecked(m);
-                blocks = blocks.get_unchecked(..m);
-            }
-        }
+        let (blocks, leftover) = to_blocks_lazy(input);
         compress(blocks);
 
         let n = leftover.len();
@@ -104,4 +166,19 @@ impl<B: ArrayLength<u8>> DigestBuffer<B> for LazyBlockBuffer<B> {
     fn reset(&mut self) {
         self.pos = 0;
     }
+}
+
+fn to_blocks_lazy<N: ArrayLength<u8>>(data: &[u8]) -> (&[Block<N>], &[u8]) {
+    let (mut blocks, mut leftover) = to_blocks(data);
+    if leftover.is_empty() {
+        debug_assert!(!blocks.is_empty());
+        let m = blocks.len() - 1;
+        // SAFETY: at this stage `input` always contains at least one byte,
+        // so either `leftover` is not empty or we have at least one block
+        unsafe {
+            leftover = blocks.get_unchecked(m);
+            blocks = blocks.get_unchecked(..m);
+        }
+    }
+    (blocks, leftover)
 }

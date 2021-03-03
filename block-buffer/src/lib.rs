@@ -34,3 +34,8 @@ pub trait DigestBuffer<BlockSize: ArrayLength<u8>>: Default {
     /// Reset buffer by setting cursor position to zero.
     fn reset(&mut self);
 }
+
+/// Error used in the `block_mode_processing` methods.
+#[derive(Copy, Clone, Debug)]
+pub struct InvalidLength;
+// TODO: add error impls
