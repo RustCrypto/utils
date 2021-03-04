@@ -80,7 +80,7 @@ pub const MAX_LEN: usize = 23;
 ///
 /// OIDs are hierarchical structures consisting of "arcs", i.e. integer
 /// identifiers.
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct ObjectIdentifier {
     /// Array containing BER/DER-serialized bytes (no header)
     bytes: [u8; MAX_LEN],
