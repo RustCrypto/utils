@@ -354,6 +354,7 @@ mod tag;
 pub use crate::{
     asn1::{
         any::Any,
+        big_uint::BigUInt,
         bit_string::BitString,
         choice::Choice,
         generalized_time::GeneralizedTime,
@@ -377,13 +378,6 @@ pub use crate::{
 };
 
 pub(crate) use crate::byte_slice::ByteSlice;
-
-#[cfg(feature = "big-uint")]
-#[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
-pub use {
-    crate::asn1::big_uint::{BigUInt, BigUIntSize},
-    typenum::consts,
-};
 
 #[cfg(feature = "derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]

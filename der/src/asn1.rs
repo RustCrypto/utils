@@ -3,7 +3,6 @@
 //! Includes built-in ASN.1 types and helper types for modeling ASN.1 concepts.
 
 pub(crate) mod any;
-#[cfg(feature = "big-uint")]
 pub(crate) mod big_uint;
 pub(crate) mod bit_string;
 pub(crate) mod boolean;

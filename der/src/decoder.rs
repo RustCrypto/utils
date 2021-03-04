@@ -1,13 +1,10 @@
 //! DER decoder.
 
 use crate::{
-    Any, BitString, Choice, Decodable, ErrorKind, GeneralizedTime, Ia5String, Length, Null,
-    OctetString, PrintableString, Result, Sequence, UtcTime, Utf8String,
+    Any, BigUInt, BitString, Choice, Decodable, ErrorKind, GeneralizedTime, Ia5String, Length,
+    Null, OctetString, PrintableString, Result, Sequence, UtcTime, Utf8String,
 };
 use core::convert::TryInto;
-
-#[cfg(feature = "big-uint")]
-use crate::{BigUInt, BigUIntSize};
 
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
@@ -108,12 +105,7 @@ impl<'a> Decoder<'a> {
     }
 
     /// Attempt to decode an ASN.1 `INTEGER` as a [`BigUInt`].
-    #[cfg(feature = "big-uint")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
-    pub fn big_uint<N>(&mut self) -> Result<BigUInt<'a, N>>
-    where
-        N: BigUIntSize,
-    {
+    pub fn big_uint<const N: usize>(&mut self) -> Result<BigUInt<'a, N>> {
         self.decode()
     }
 
