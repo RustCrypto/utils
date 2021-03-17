@@ -17,7 +17,7 @@ readme = "README.md"
 der = { version = "0.2", features = ["oid"], path = "../der" }
 spki = { version = "0.2", path = "../spki" }
 
-base64ct = { version = "0.2", optional = true, features = ["alloc"], path = "../base64ct" }
+base64ct = { version = "1", optional = true, path = "../base64ct" }
 rand_core = { version = "0.6", optional = true, default-features = false }
 pkcs5 = { version = "0.1.1", optional = true, path = "../pkcs5" }
 zeroize = { version = "1", optional = true, default-features = false, features = ["alloc"] }
@@ -29,7 +29,7 @@ hex-literal = "0.3"
 encryption = ["alloc", "pkcs5/alloc", "pkcs5/pbes2", "rand_core"]
 std = ["alloc", "der/std"]
 alloc = ["der/alloc", "zeroize"]
-pem = ["alloc", "base64ct"]
+pem = ["alloc", "base64ct/alloc"]
 
 [package.metadata.docs.rs]
 all-features = true

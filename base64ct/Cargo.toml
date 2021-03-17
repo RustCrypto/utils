@@ -1,10 +1,10 @@
 [package]
 name = "base64ct"
-version = "0.2.1" # Also update html_root_url in lib.rs when bumping this
+version = "1.0.0" # Also update html_root_url in lib.rs when bumping this
 description = """
-Pure Rust implementation Base64 (RFC 4648) implemented without data-dependent
-branches/LUTs thereby providing portable "best effort" constant-time operation
-and embedded-friendly no_std support
+Pure Rust implementation of Base64 (RFC 4648) which avoids any usages of
+data-dependent branches/LUTs and thereby provides portable "best effort"
+constant-time operation and embedded-friendly no_std support
 """
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
