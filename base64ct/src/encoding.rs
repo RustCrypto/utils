@@ -90,10 +90,9 @@ impl<T: Variant> Encoding for T {
         }
     }
 
-    /// Decode a standard Base64 string without padding in-place.
     fn decode_in_place(mut buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError> {
-        // TODO: eliminate unsafe code when compiler will be smart enough to
-        // eliminate bound checks, see: https://github.com/rust-lang/rust/issues/80963
+        // TODO: eliminate unsafe code when LLVM12 is stable
+        // See: https://github.com/rust-lang/rust/issues/80963
         let mut err = if T::PADDED {
             let (unpadded_len, e) = decode_padding(buf)?;
             buf = &mut buf[..unpadded_len];
@@ -230,11 +229,7 @@ impl<T: Variant> Encoding for T {
     }
 
     fn encoded_len(bytes: &[u8]) -> usize {
-        // TODO: replace with `unwrap_or` on stabilization
-        match encoded_len_inner(bytes.len(), T::PADDED) {
-            Some(v) => v,
-            None => 0,
-        }
+        encoded_len_inner(bytes.len(), T::PADDED).unwrap_or(0)
     }
 }
 
@@ -296,16 +291,14 @@ fn is_pad_ct(input: u8) -> i16 {
 
 #[inline(always)]
 const fn encoded_len_inner(n: usize, padded: bool) -> Option<usize> {
-    // TODO: replace with `checked_mul` and `map` on stabilization
-    if n > usize::MAX / 4 {
-        return None;
-    }
-
-    let q = 4 * n;
-
-    if padded {
-        Some(((q / 3) + 3) & !3)
-    } else {
-        Some((q / 3) + (q % 3 != 0) as usize)
+    match n.checked_mul(4) {
+        Some(q) => {
+            if padded {
+                Some(((q / 3) + 3) & !3)
+            } else {
+                Some((q / 3) + (q % 3 != 0) as usize)
+            }
+        }
+        None => None,
     }
 }
