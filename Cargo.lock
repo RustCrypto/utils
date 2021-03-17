@@ -235,7 +235,7 @@ dependencies = [
 
 [[package]]
 name = "pkcs8"
-version = "0.5.4"
+version = "0.5.5"
 dependencies = [
  "base64ct",
  "der",
