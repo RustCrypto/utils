@@ -77,12 +77,6 @@ impl<'a> Any<'a> {
         self.try_into()
     }
 
-    /// Attempt to decode an ASN.1 `NULL` value.
-    #[deprecated(since = "0.2.4", note = "Please use the `is_null` function instead")]
-    pub fn null(self) -> Result<Null> {
-        self.try_into()
-    }
-
     /// Attempt to decode an ASN.1 `OCTET STRING`.
     pub fn octet_string(self) -> Result<OctetString<'a>> {
         self.try_into()
