@@ -63,7 +63,7 @@ impl<'a> TryFrom<&'a [u8]> for AlgorithmIdentifier<'a> {
     type Error = Error;
 
     fn try_from(bytes: &'a [u8]) -> Result<Self> {
-        Self::from_bytes(bytes)
+        Self::from_der(bytes)
     }
 }
 

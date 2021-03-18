@@ -230,39 +230,39 @@ pub(crate) mod tests {
 
     #[test]
     fn decode_i8() {
-        assert_eq!(0, i8::from_bytes(I0_BYTES).unwrap());
-        assert_eq!(127, i8::from_bytes(I127_BYTES).unwrap());
-        assert_eq!(-128, i8::from_bytes(INEG128_BYTES).unwrap());
+        assert_eq!(0, i8::from_der(I0_BYTES).unwrap());
+        assert_eq!(127, i8::from_der(I127_BYTES).unwrap());
+        assert_eq!(-128, i8::from_der(INEG128_BYTES).unwrap());
     }
 
     #[test]
     fn decode_i16() {
-        assert_eq!(0, i16::from_bytes(I0_BYTES).unwrap());
-        assert_eq!(127, i16::from_bytes(I127_BYTES).unwrap());
-        assert_eq!(128, i16::from_bytes(I128_BYTES).unwrap());
-        assert_eq!(255, i16::from_bytes(I255_BYTES).unwrap());
-        assert_eq!(256, i16::from_bytes(I256_BYTES).unwrap());
-        assert_eq!(32767, i16::from_bytes(I32767_BYTES).unwrap());
-        assert_eq!(-128, i16::from_bytes(INEG128_BYTES).unwrap());
-        assert_eq!(-129, i16::from_bytes(INEG129_BYTES).unwrap());
-        assert_eq!(-32768, i16::from_bytes(INEG32768_BYTES).unwrap());
+        assert_eq!(0, i16::from_der(I0_BYTES).unwrap());
+        assert_eq!(127, i16::from_der(I127_BYTES).unwrap());
+        assert_eq!(128, i16::from_der(I128_BYTES).unwrap());
+        assert_eq!(255, i16::from_der(I255_BYTES).unwrap());
+        assert_eq!(256, i16::from_der(I256_BYTES).unwrap());
+        assert_eq!(32767, i16::from_der(I32767_BYTES).unwrap());
+        assert_eq!(-128, i16::from_der(INEG128_BYTES).unwrap());
+        assert_eq!(-129, i16::from_der(INEG129_BYTES).unwrap());
+        assert_eq!(-32768, i16::from_der(INEG32768_BYTES).unwrap());
     }
 
     #[test]
     fn decode_u8() {
-        assert_eq!(0, u8::from_bytes(I0_BYTES).unwrap());
-        assert_eq!(127, u8::from_bytes(I127_BYTES).unwrap());
-        assert_eq!(255, u8::from_bytes(I255_BYTES).unwrap());
+        assert_eq!(0, u8::from_der(I0_BYTES).unwrap());
+        assert_eq!(127, u8::from_der(I127_BYTES).unwrap());
+        assert_eq!(255, u8::from_der(I255_BYTES).unwrap());
     }
 
     #[test]
     fn decode_u16() {
-        assert_eq!(0, u16::from_bytes(I0_BYTES).unwrap());
-        assert_eq!(127, u16::from_bytes(I127_BYTES).unwrap());
-        assert_eq!(255, u16::from_bytes(I255_BYTES).unwrap());
-        assert_eq!(256, u16::from_bytes(I256_BYTES).unwrap());
-        assert_eq!(32767, u16::from_bytes(I32767_BYTES).unwrap());
-        assert_eq!(65535, u16::from_bytes(I65535_BYTES).unwrap());
+        assert_eq!(0, u16::from_der(I0_BYTES).unwrap());
+        assert_eq!(127, u16::from_der(I127_BYTES).unwrap());
+        assert_eq!(255, u16::from_der(I255_BYTES).unwrap());
+        assert_eq!(256, u16::from_der(I256_BYTES).unwrap());
+        assert_eq!(32767, u16::from_der(I32767_BYTES).unwrap());
+        assert_eq!(65535, u16::from_der(I65535_BYTES).unwrap());
     }
 
     #[test]
@@ -327,9 +327,9 @@ pub(crate) mod tests {
     /// Integers must be encoded with a minimum number of octets
     #[test]
     fn reject_non_canonical() {
-        assert!(i8::from_bytes(&[0x02, 0x02, 0x00, 0x00]).is_err());
-        assert!(i16::from_bytes(&[0x02, 0x02, 0x00, 0x00]).is_err());
-        assert!(u8::from_bytes(&[0x02, 0x02, 0x00, 0x00]).is_err());
-        assert!(u16::from_bytes(&[0x02, 0x02, 0x00, 0x00]).is_err());
+        assert!(i8::from_der(&[0x02, 0x02, 0x00, 0x00]).is_err());
+        assert!(i16::from_der(&[0x02, 0x02, 0x00, 0x00]).is_err());
+        assert!(u8::from_der(&[0x02, 0x02, 0x00, 0x00]).is_err());
+        assert!(u16::from_der(&[0x02, 0x02, 0x00, 0x00]).is_err());
     }
 }

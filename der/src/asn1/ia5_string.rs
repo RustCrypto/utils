@@ -138,7 +138,7 @@ mod tests {
     #[test]
     fn parse_bytes() {
         let example_bytes = hex!("16 0d 74 65 73 74 31 40 72 73 61 2e 63 6f 6d");
-        let printable_string = Ia5String::from_bytes(&example_bytes).unwrap();
+        let printable_string = Ia5String::from_der(&example_bytes).unwrap();
         assert_eq!(printable_string.as_str(), "test1@rsa.com");
     }
 }

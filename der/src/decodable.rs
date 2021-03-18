@@ -17,8 +17,8 @@ pub trait Decodable<'a>: Sized {
     /// Attempt to decode this message using the provided decoder.
     fn decode(decoder: &mut Decoder<'a>) -> Result<Self>;
 
-    /// Parse `Self` from the provided byte slice.
-    fn from_bytes(bytes: &'a [u8]) -> Result<Self> {
+    /// Parse `Self` from the provided DER-encoded byte slice.
+    fn from_der(bytes: &'a [u8]) -> Result<Self> {
         let mut decoder = Decoder::new(bytes);
         let result = Self::decode(&mut decoder)?;
         decoder.finish(result)

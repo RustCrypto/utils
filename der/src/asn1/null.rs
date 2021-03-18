@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn decode() {
-        assert!(Null::from_bytes(&[0x05, 0x00]).is_ok());
+        assert!(Null::from_der(&[0x05, 0x00]).is_ok());
     }
 
     #[test]
@@ -94,6 +94,6 @@ mod tests {
 
     #[test]
     fn reject_non_canonical() {
-        assert!(Null::from_bytes(&[0x05, 0x81, 0x00]).is_err());
+        assert!(Null::from_der(&[0x05, 0x81, 0x00]).is_err());
     }
 }

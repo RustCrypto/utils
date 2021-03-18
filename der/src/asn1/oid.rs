@@ -46,18 +46,14 @@ impl<'a> Tagged for ObjectIdentifier {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Any, Decodable, Encodable, Length, ObjectIdentifier};
-    use core::convert::TryFrom;
+    use crate::{Decodable, Encodable, Length, ObjectIdentifier};
 
     const EXAMPLE_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549");
     const EXAMPLE_OID_BYTES: &[u8; 8] = &[0x06, 0x06, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d];
 
     #[test]
     fn decode() {
-        // TODO(tarcieri): use `Decodable::from_der` directly after renamed
-        let any = Any::from_bytes(EXAMPLE_OID_BYTES).unwrap();
-        let oid = ObjectIdentifier::try_from(any).unwrap();
-
+        let oid = ObjectIdentifier::from_der(EXAMPLE_OID_BYTES).unwrap();
         assert_eq!(EXAMPLE_OID, oid);
     }
 

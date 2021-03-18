@@ -194,7 +194,7 @@ mod tests {
     #[test]
     fn round_trip() {
         let example_bytes = hex!("18 0f 31 39 39 31 30 35 30 36 32 33 34 35 34 30 5a");
-        let utc_time = GeneralizedTime::from_bytes(&example_bytes).unwrap();
+        let utc_time = GeneralizedTime::from_der(&example_bytes).unwrap();
         assert_eq!(utc_time.unix_duration().as_secs(), 673573540);
 
         let mut buf = [0u8; 128];

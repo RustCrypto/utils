@@ -30,7 +30,7 @@ impl<'a> TryFrom<&'a [u8]> for SubjectPublicKeyInfo<'a> {
     type Error = Error;
 
     fn try_from(bytes: &'a [u8]) -> Result<Self> {
-        Self::from_bytes(bytes)
+        Self::from_der(bytes)
     }
 }
 

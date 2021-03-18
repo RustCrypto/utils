@@ -78,7 +78,7 @@ impl<'a> TryFrom<&'a [u8]> for EncryptedPrivateKeyInfo<'a> {
     type Error = Error;
 
     fn try_from(bytes: &'a [u8]) -> Result<Self> {
-        Ok(Self::from_bytes(bytes)?)
+        Ok(Self::from_der(bytes)?)
     }
 }
 

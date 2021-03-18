@@ -210,7 +210,7 @@
 //!
 //! // Deserialize the `AlgorithmIdentifier` we just serialized from ASN.1 DER
 //! // using `der::Decodable::from_bytes`.
-//! let decoded_algorithm_identifier = AlgorithmIdentifier::from_bytes(
+//! let decoded_algorithm_identifier = AlgorithmIdentifier::from_der(
 //!     &der_encoded_algorithm_identifier
 //! ).unwrap();
 //!
@@ -266,7 +266,7 @@
 //! let der_encoded_algorithm_identifier = algorithm_identifier.to_vec().unwrap();
 //!
 //! // Decode
-//! let decoded_algorithm_identifier = AlgorithmIdentifier::from_bytes(
+//! let decoded_algorithm_identifier = AlgorithmIdentifier::from_der(
 //!     &der_encoded_algorithm_identifier
 //! ).unwrap();
 //!
