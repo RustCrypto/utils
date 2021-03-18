@@ -1,7 +1,7 @@
 //! The [`Message`] pattern provided by this crate simplifies writing ASN.1 DER
 //! decoders and encoders which map ASN.1 `SEQUENCE` types to Rust structs.
 
-use crate::{asn1::sequence, Decodable, Encodable, Encoder, Length, Result, Tag, Tagged};
+use crate::{Decodable, Encodable, Encoder, Header, Length, Result, Tag, Tagged};
 
 /// Messages encoded as an ASN.1 `SEQUENCE`.
 ///
@@ -28,11 +28,14 @@ where
     M: Message<'a>,
 {
     fn encoded_len(&self) -> Result<Length> {
-        self.fields(sequence::encoded_len)
+        self.fields(|fields| {
+            let inner_len = encoded_len_inner(fields)?;
+            Header::new(Tag::Sequence, inner_len)?.encoded_len() + inner_len
+        })
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        self.fields(|fields| encoder.sequence(fields))
+        self.fields(|fields| encoder.message(fields))
     }
 }
 
@@ -41,4 +44,21 @@ where
     M: Message<'a>,
 {
     const TAG: Tag = Tag::Sequence;
+}
+
+/// Obtain the length of an ASN.1 `SEQUENCE` consisting of the given
+/// [`Encodable`] fields when serialized as ASN.1 DER, including the header
+/// (i.e. tag and length)
+pub fn encoded_len(fields: &[&dyn Encodable]) -> Result<Length> {
+    let inner_len = encoded_len_inner(fields)?;
+    Header::new(Tag::Sequence, inner_len)?.encoded_len() + inner_len
+}
+
+/// Obtain the length of an ASN.1 message `SEQUENCE` consisting of the given
+/// [`Encodable`] fields when serialized as ASN.1 DER, including the header
+/// (i.e. tag and length)
+pub(crate) fn encoded_len_inner(fields: &[&dyn Encodable]) -> Result<Length> {
+    fields.iter().fold(Ok(Length::zero()), |sum, encodable| {
+        sum + encodable.encoded_len()?
+    })
 }

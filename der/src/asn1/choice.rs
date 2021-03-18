@@ -9,7 +9,6 @@ use crate::{Decodable, Encodable, Tag, Tagged};
 /// This crate models choice as a trait, with a blanket impl for all types
 /// which impl `Decodable + Encodable + Tagged` (i.e. they are modeled as
 /// a `CHOICE` with only one possible variant)
-// TODO(tarcieri): refactor enum custom derive to use `Choice`
 pub trait Choice<'a>: Decodable<'a> + Encodable {
     /// Is the provided [`Tag`] decodable as a variant of this `CHOICE`?
     fn can_decode(tag: Tag) -> bool;

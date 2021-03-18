@@ -1,27 +1,9 @@
 //! ASN.1 `SEQUENCE` support.
 
 use crate::{
-    Any, ByteSlice, Decoder, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag,
-    Tagged,
+    Any, ByteSlice, Decoder, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged,
 };
 use core::convert::TryFrom;
-
-/// Obtain the length of an ASN.1 `SEQUENCE` of [`Encodable`] values when
-/// serialized as ASN.1 DER, including the `SEQUENCE` tag and length prefix.
-pub fn encoded_len(encodables: &[&dyn Encodable]) -> Result<Length> {
-    let inner_len = encoded_len_inner(encodables)?;
-    Header::new(Tag::Sequence, inner_len)?.encoded_len() + inner_len
-}
-
-/// Obtain the inner length of an ASN.1 `SEQUENCE` of [`Encodable`] values
-/// excluding the tag and length.
-pub(crate) fn encoded_len_inner(encodables: &[&dyn Encodable]) -> Result<Length> {
-    encodables
-        .iter()
-        .fold(Ok(Length::zero()), |sum, encodable| {
-            sum + encodable.encoded_len()?
-        })
-}
 
 /// ASN.1 `SEQUENCE` type.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

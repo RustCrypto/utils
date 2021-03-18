@@ -4,7 +4,7 @@
 
 use crate::{AlgorithmIdentifier, Error, ObjectIdentifier};
 use core::convert::{TryFrom, TryInto};
-use der::{sequence, Any, Encodable, Encoder, ErrorKind, Header, Length, OctetString, Result, Tag};
+use der::{message, Any, Encodable, Encoder, ErrorKind, Header, Length, OctetString, Result, Tag};
 
 /// `pbeWithMD2AndDES-CBC` Object Identifier (OID).
 pub const PBE_WITH_MD2_AND_DES_CBC_OID: ObjectIdentifier =
@@ -111,17 +111,11 @@ impl Encodable for Parameters {
         self.header()?.encode(encoder)?;
         let inner_len = self.inner_len()?;
 
-        // TODO(tarcieri): use nested `encoder.sequence` method once implemented
-        // See other todos in the `der` crate's `encoder.rs` for more background
-        let mut inner_encoder = Encoder::new(encoder.reserve(inner_len)?);
-        self.encryption.oid().encode(&mut inner_encoder)?;
-        inner_encoder.sequence(&[&self.salt_string()?, &self.iteration_count])?;
-
-        if inner_encoder.finish()?.len() == inner_len.into() {
+        encoder.sequence(inner_len, |nested_encoder| {
+            nested_encoder.oid(self.encryption.oid())?;
+            nested_encoder.message(&[&self.salt_string()?, &self.iteration_count])?;
             Ok(())
-        } else {
-            encoder.error(ErrorKind::Length { tag: Tag::Sequence })
-        }
+        })
     }
 }
 
@@ -134,7 +128,7 @@ impl Parameters {
     /// Get the inner length of the encoded sequence
     fn inner_len(&self) -> Result<Length> {
         let oid_len = self.encryption.oid().encoded_len()?;
-        let params_len = sequence::encoded_len(&[&self.salt_string()?, &self.iteration_count])?;
+        let params_len = message::encoded_len(&[&self.salt_string()?, &self.iteration_count])?;
         oid_len + params_len
     }
 

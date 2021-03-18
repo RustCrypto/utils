@@ -340,6 +340,8 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+pub mod message;
+
 mod asn1;
 mod byte_slice;
 mod datetime;
@@ -350,22 +352,14 @@ mod encoder;
 mod error;
 mod header;
 mod length;
-mod message;
 mod str_slice;
 mod tag;
 
 pub use crate::{
     asn1::{
-        any::Any,
-        bit_string::BitString,
-        choice::Choice,
-        generalized_time::GeneralizedTime,
-        ia5_string::Ia5String,
-        null::Null,
-        octet_string::OctetString,
-        printable_string::PrintableString,
-        sequence::{self, Sequence},
-        utc_time::UtcTime,
+        any::Any, bit_string::BitString, choice::Choice, generalized_time::GeneralizedTime,
+        ia5_string::Ia5String, null::Null, octet_string::OctetString,
+        printable_string::PrintableString, sequence::Sequence, utc_time::UtcTime,
         utf8_string::Utf8String,
     },
     decodable::Decodable,
