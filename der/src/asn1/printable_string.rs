@@ -173,7 +173,7 @@ mod tests {
             0x13, 0x0b, 0x54, 0x65, 0x73, 0x74, 0x20, 0x55, 0x73, 0x65, 0x72, 0x20, 0x31,
         ];
 
-        let printable_string = PrintableString::from_bytes(example_bytes).unwrap();
+        let printable_string = PrintableString::from_der(example_bytes).unwrap();
         assert_eq!(printable_string.as_str(), "Test User 1");
     }
 }

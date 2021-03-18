@@ -180,23 +180,23 @@ mod tests {
 
     #[test]
     fn decode() {
-        assert_eq!(Length::zero(), Length::from_bytes(&[0x00]).unwrap());
+        assert_eq!(Length::zero(), Length::from_der(&[0x00]).unwrap());
 
-        assert_eq!(Length::from(0x7Fu8), Length::from_bytes(&[0x7F]).unwrap());
+        assert_eq!(Length::from(0x7Fu8), Length::from_der(&[0x7F]).unwrap());
 
         assert_eq!(
             Length::from(0x80u8),
-            Length::from_bytes(&[0x81, 0x80]).unwrap()
+            Length::from_der(&[0x81, 0x80]).unwrap()
         );
 
         assert_eq!(
             Length::from(0xFFu8),
-            Length::from_bytes(&[0x81, 0xFF]).unwrap()
+            Length::from_der(&[0x81, 0xFF]).unwrap()
         );
 
         assert_eq!(
             Length::from(0x100u16),
-            Length::from_bytes(&[0x82, 0x01, 0x00]).unwrap()
+            Length::from_der(&[0x82, 0x01, 0x00]).unwrap()
         );
     }
 
@@ -232,6 +232,6 @@ mod tests {
 
     #[test]
     fn reject_indefinite_lengths() {
-        assert!(Length::from_bytes(&[0x80]).is_err());
+        assert!(Length::from_der(&[0x80]).is_err());
     }
 }

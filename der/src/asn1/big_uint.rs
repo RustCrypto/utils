@@ -217,27 +217,27 @@ mod tests {
 
     #[test]
     fn decode_bigu8() {
-        assert!(BigU8::from_bytes(I0_BYTES).unwrap().is_empty());
-        assert_eq!(&[127], BigU8::from_bytes(I127_BYTES).unwrap().as_bytes());
-        assert_eq!(&[128], BigU8::from_bytes(I128_BYTES).unwrap().as_bytes());
-        assert_eq!(&[255], BigU8::from_bytes(I255_BYTES).unwrap().as_bytes());
+        assert!(BigU8::from_der(I0_BYTES).unwrap().is_empty());
+        assert_eq!(&[127], BigU8::from_der(I127_BYTES).unwrap().as_bytes());
+        assert_eq!(&[128], BigU8::from_der(I128_BYTES).unwrap().as_bytes());
+        assert_eq!(&[255], BigU8::from_der(I255_BYTES).unwrap().as_bytes());
     }
 
     #[test]
     fn decode_bigu16() {
-        assert!(BigU16::from_bytes(I0_BYTES).unwrap().is_empty());
-        assert_eq!(&[127], BigU16::from_bytes(I127_BYTES).unwrap().as_bytes());
-        assert_eq!(&[128], BigU16::from_bytes(I128_BYTES).unwrap().as_bytes());
-        assert_eq!(&[255], BigU16::from_bytes(I255_BYTES).unwrap().as_bytes());
+        assert!(BigU16::from_der(I0_BYTES).unwrap().is_empty());
+        assert_eq!(&[127], BigU16::from_der(I127_BYTES).unwrap().as_bytes());
+        assert_eq!(&[128], BigU16::from_der(I128_BYTES).unwrap().as_bytes());
+        assert_eq!(&[255], BigU16::from_der(I255_BYTES).unwrap().as_bytes());
 
         assert_eq!(
             &[0x01, 0x00],
-            BigU16::from_bytes(I256_BYTES).unwrap().as_bytes()
+            BigU16::from_der(I256_BYTES).unwrap().as_bytes()
         );
 
         assert_eq!(
             &[0x7F, 0xFF],
-            BigU16::from_bytes(I32767_BYTES).unwrap().as_bytes()
+            BigU16::from_der(I32767_BYTES).unwrap().as_bytes()
         );
     }
 

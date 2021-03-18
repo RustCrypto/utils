@@ -58,8 +58,8 @@ mod tests {
 
     #[test]
     fn decode() {
-        assert_eq!(true, bool::from_bytes(&[0x01, 0x01, 0xFF]).unwrap());
-        assert_eq!(false, bool::from_bytes(&[0x01, 0x01, 0x00]).unwrap());
+        assert_eq!(true, bool::from_der(&[0x01, 0x01, 0xFF]).unwrap());
+        assert_eq!(false, bool::from_der(&[0x01, 0x01, 0x00]).unwrap());
     }
 
     #[test]
@@ -77,6 +77,6 @@ mod tests {
 
     #[test]
     fn reject_non_canonical() {
-        assert!(bool::from_bytes(&[0x01, 0x01, 0x01]).is_err());
+        assert!(bool::from_der(&[0x01, 0x01, 0x01]).is_err());
     }
 }

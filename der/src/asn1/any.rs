@@ -159,6 +159,6 @@ impl<'a> TryFrom<&'a [u8]> for Any<'a> {
     type Error = Error;
 
     fn try_from(bytes: &'a [u8]) -> Result<Any<'a>> {
-        Any::from_bytes(bytes)
+        Any::from_der(bytes)
     }
 }
