@@ -38,7 +38,7 @@ use core::{
     convert::{TryFrom, TryInto},
     fmt,
 };
-use der::{sequence, Any, Encodable, Encoder, Length};
+use der::{message, Any, Encodable, Encoder, Length};
 
 #[cfg(all(feature = "alloc", feature = "pbes2"))]
 use alloc::vec::Vec;
@@ -205,14 +205,14 @@ impl<'a> Encodable for EncryptionScheme<'a> {
     fn encoded_len(&self) -> der::Result<Length> {
         match self {
             Self::Pbes1(pbes1) => pbes1.encoded_len(),
-            Self::Pbes2(pbes2) => sequence::encoded_len(&[&pbes2::PBES2_OID, pbes2]),
+            Self::Pbes2(pbes2) => message::encoded_len(&[&pbes2::PBES2_OID, pbes2]),
         }
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> der::Result<()> {
         match self {
             Self::Pbes1(pbes1) => pbes1.encode(encoder),
-            Self::Pbes2(pbes2) => encoder.sequence(&[&pbes2::PBES2_OID, pbes2]),
+            Self::Pbes2(pbes2) => encoder.message(&[&pbes2::PBES2_OID, pbes2]),
         }
     }
 }

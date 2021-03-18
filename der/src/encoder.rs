@@ -1,8 +1,8 @@
 //! DER encoder.
 
 use crate::{
-    asn1::sequence, BitString, Encodable, ErrorKind, GeneralizedTime, Header, Ia5String, Length,
-    Null, OctetString, PrintableString, Result, Tag, UtcTime, Utf8String,
+    message, BitString, Encodable, ErrorKind, GeneralizedTime, Header, Ia5String, Length, Null,
+    OctetString, PrintableString, Result, Tag, UtcTime, Utf8String,
 };
 use core::convert::TryInto;
 
@@ -101,6 +101,20 @@ impl<'a> Encoder<'a> {
             .and_then(|value| self.encode(&value))
     }
 
+    /// Encode a message with the provided [`Encodable`] fields as an
+    /// ASN.1 `SEQUENCE`.
+    pub fn message(&mut self, fields: &[&dyn Encodable]) -> Result<()> {
+        let length = message::encoded_len_inner(fields)?;
+
+        self.sequence(length, |nested_encoder| {
+            for field in fields {
+                field.encode(nested_encoder)?;
+            }
+
+            Ok(())
+        })
+    }
+
     /// Encode an ASN.1 `NULL` value.
     pub fn null(&mut self) -> Result<()> {
         self.encode(&Null)
@@ -144,6 +158,26 @@ impl<'a> Encoder<'a> {
             .and_then(|value| self.encode(&value))
     }
 
+    /// Encode an ASN.1 `SEQUENCE` of the given length.
+    ///
+    /// Spawns a nested [`Encoder`] which is expected to be exactly the
+    /// specified length upon completion.
+    pub fn sequence<F>(&mut self, length: Length, f: F) -> Result<()>
+    where
+        F: FnOnce(&mut Encoder<'_>) -> Result<()>,
+    {
+        Header::new(Tag::Sequence, length).and_then(|header| header.encode(self))?;
+
+        let mut nested_encoder = Encoder::new(self.reserve(length)?);
+        f(&mut nested_encoder)?;
+
+        if nested_encoder.finish()?.len() == length.into() {
+            Ok(())
+        } else {
+            self.error(ErrorKind::Length { tag: Tag::Sequence })
+        }
+    }
+
     /// Encode the provided value as an ASN.1 `UTCTime`
     pub fn utc_time(&mut self, value: impl TryInto<UtcTime>) -> Result<()> {
         value
@@ -164,29 +198,9 @@ impl<'a> Encoder<'a> {
             .and_then(|value| self.encode(&value))
     }
 
-    /// Encode a sequence of values which impl the [`Encodable`] trait.
-    // TODO(tarcieri): rename this to `message`, add `sequence` which handles nested encoder
-    pub fn sequence(&mut self, encodables: &[&dyn Encodable]) -> Result<()> {
-        let expected_len = sequence::encoded_len_inner(encodables)?;
-        Header::new(Tag::Sequence, expected_len).and_then(|header| header.encode(self))?;
-
-        let mut nested_encoder = Encoder::new(self.reserve(expected_len)?);
-
-        for encodable in encodables {
-            encodable.encode(&mut nested_encoder)?;
-        }
-
-        if nested_encoder.finish()?.len() == expected_len.into() {
-            Ok(())
-        } else {
-            self.error(ErrorKind::Length { tag: Tag::Sequence })
-        }
-    }
-
     /// Reserve a portion of the internal buffer, updating the internal cursor
     /// position and returning a mutable slice.
-    // TODO(tarcieri): make this private after implementing a nested `sequence` method
-    pub fn reserve(&mut self, len: impl TryInto<Length>) -> Result<&mut [u8]> {
+    fn reserve(&mut self, len: impl TryInto<Length>) -> Result<&mut [u8]> {
         let len = len
             .try_into()
             .or_else(|_| self.error(ErrorKind::Overflow))?;

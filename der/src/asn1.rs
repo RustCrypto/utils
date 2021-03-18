@@ -17,6 +17,6 @@ pub(crate) mod octet_string;
 pub(crate) mod oid;
 pub(crate) mod optional;
 pub(crate) mod printable_string;
-pub mod sequence;
+pub(crate) mod sequence;
 pub(crate) mod utc_time;
 pub(crate) mod utf8_string;
