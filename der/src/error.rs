@@ -92,7 +92,7 @@ impl From<Utf8Error> for Error {
 #[cfg(feature = "oid")]
 impl From<const_oid::Error> for Error {
     fn from(_: const_oid::Error) -> Error {
-        ErrorKind::Oid.into()
+        ErrorKind::MalformedOid.into()
     }
 }
 
@@ -120,8 +120,7 @@ pub enum ErrorKind {
     Noncanonical,
 
     /// Malformed OID
-    // TODO(tarcieri): rename this to `MalformedOid` in next breaking release
-    Oid,
+    MalformedOid,
 
     /// Integer overflow occurred (library bug!).
     Overflow,
@@ -209,7 +208,7 @@ impl fmt::Display for ErrorKind {
             ErrorKind::Failed => write!(f, "operation failed"),
             ErrorKind::Length { tag } => write!(f, "incorrect length for {}", tag),
             ErrorKind::Noncanonical => write!(f, "DER is not canonically encoded"),
-            ErrorKind::Oid => write!(f, "malformed OID"),
+            ErrorKind::MalformedOid => write!(f, "malformed OID"),
             ErrorKind::Overflow => write!(f, "integer overflow"),
             ErrorKind::Overlength => write!(f, "DER message is too long"),
             ErrorKind::TrailingData { decoded, remaining } => {
