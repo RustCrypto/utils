@@ -1,6 +1,6 @@
 [package]
 name = "const-oid"
-version = "0.4.5"
+version = "0.5.0-pre"
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 edition = "2018"
@@ -19,8 +19,7 @@ readme = "README.md"
 hex-literal = "0.3"
 
 [features]
-alloc = []
-std = ["alloc"]
+std = []
 
 [package.metadata.docs.rs]
 all-features = true

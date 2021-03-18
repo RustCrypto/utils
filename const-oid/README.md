@@ -52,7 +52,7 @@ dual licensed as above, without any additional terms or conditions.
 [docs-image]: https://docs.rs/const-oid/badge.svg
 [docs-link]: https://docs.rs/const-oid/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[rustc-image]: https://img.shields.io/badge/rustc-1.46+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.47+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
 [build-image]: https://github.com/RustCrypto/utils/workflows/const-oid/badge.svg?branch=master&event=push

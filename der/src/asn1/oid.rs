@@ -8,7 +8,7 @@ impl TryFrom<Any<'_>> for ObjectIdentifier {
 
     fn try_from(any: Any<'_>) -> Result<ObjectIdentifier> {
         any.tag().assert_eq(Tag::ObjectIdentifier)?;
-        Ok(ObjectIdentifier::from_ber(any.as_bytes())?)
+        Ok(ObjectIdentifier::from_bytes(any.as_bytes())?)
     }
 }
 
@@ -46,17 +46,19 @@ impl<'a> Tagged for ObjectIdentifier {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Decodable, Encodable, Length, ObjectIdentifier};
+    use crate::{Any, Decodable, Encodable, Length, ObjectIdentifier};
+    use core::convert::TryFrom;
 
-    const EXAMPLE_OID: ObjectIdentifier = ObjectIdentifier::parse("1.2.840.113549");
+    const EXAMPLE_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549");
     const EXAMPLE_OID_BYTES: &[u8; 8] = &[0x06, 0x06, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d];
 
     #[test]
     fn decode() {
-        assert_eq!(
-            EXAMPLE_OID,
-            ObjectIdentifier::from_bytes(EXAMPLE_OID_BYTES).unwrap()
-        );
+        // TODO(tarcieri): use `Decodable::from_der` directly after renamed
+        let any = Any::from_bytes(EXAMPLE_OID_BYTES).unwrap();
+        let oid = ObjectIdentifier::try_from(any).unwrap();
+
+        assert_eq!(EXAMPLE_OID, oid);
     }
 
     #[test]
@@ -71,6 +73,6 @@ mod tests {
     #[test]
     fn length() {
         // Ensure an infallible `From` conversion to `Any` will never panic
-        assert!(const_oid::MAX_LEN <= Length::max());
+        assert!(ObjectIdentifier::max_len() <= Length::max());
     }
 }

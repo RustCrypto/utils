@@ -2,7 +2,7 @@
 
 use crate::{
     arcs::{FIRST_ARC_MAX, SECOND_ARC_MAX},
-    Arc, Error, ObjectIdentifier, Result, MAX_LEN,
+    Arc, Error, ObjectIdentifier, Result,
 };
 
 /// BER/DER encoder
@@ -11,7 +11,7 @@ pub(crate) struct Encoder {
     state: State,
 
     /// Bytes of the OID being encoded in-progress
-    bytes: [u8; MAX_LEN],
+    bytes: [u8; ObjectIdentifier::max_len()],
 
     /// Current position within the byte buffer
     cursor: usize,
@@ -34,7 +34,7 @@ impl Encoder {
     pub(crate) const fn new() -> Self {
         Self {
             state: State::Initial,
-            bytes: [0u8; MAX_LEN],
+            bytes: [0u8; ObjectIdentifier::max_len()],
             cursor: 0,
         }
     }
@@ -59,11 +59,11 @@ impl Encoder {
                 let nbytes = base128_len(arc);
 
                 const_assert!(
-                    self.cursor + nbytes + 1 < MAX_LEN,
+                    self.cursor + nbytes + 1 < ObjectIdentifier::max_len(),
                     "OID too long (exceeded max DER bytes)"
                 );
-                let new_cursor = self.cursor + nbytes + 1;
 
+                let new_cursor = self.cursor + nbytes + 1;
                 let mut result = self.encode_base128_byte(arc, nbytes, false);
                 result.cursor = new_cursor;
                 result
@@ -89,24 +89,10 @@ impl Encoder {
             n >>= 7;
 
             const_assert!(i > 0, "Base 128 offset miscalculation");
-            self.encode_base128_byte(n, index_sub(i), true)
+            self.encode_base128_byte(n, i.saturating_sub(1), true)
         } else {
             self.bytes[self.cursor] = n as u8 | mask;
             self
-        }
-    }
-}
-
-// TODO(tarcieri): replace this with `saturating_sub` when MSRV is 1.47+
-const fn index_sub(index: usize) -> usize {
-    match index {
-        4 => 3,
-        3 => 2,
-        2 => 1,
-        1 => 0,
-        _ => {
-            const_assert!(index <= 4, "index too large");
-            0
         }
     }
 }

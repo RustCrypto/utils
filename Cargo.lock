@@ -103,7 +103,7 @@ version = "0.0.2"
 
 [[package]]
 name = "const-oid"
-version = "0.4.5"
+version = "0.5.0-pre"
 dependencies = [
  "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -137,7 +137,7 @@ dependencies = [
 
 [[package]]
 name = "der"
-version = "0.2.10"
+version = "0.3.0-pre"
 dependencies = [
  "const-oid",
  "der_derive",
@@ -221,7 +221,7 @@ dependencies = [
 
 [[package]]
 name = "pkcs5"
-version = "0.1.1"
+version = "0.2.0-pre"
 dependencies = [
  "aes",
  "block-modes",
@@ -235,7 +235,7 @@ dependencies = [
 
 [[package]]
 name = "pkcs8"
-version = "0.5.5"
+version = "0.6.0-pre"
 dependencies = [
  "base64ct",
  "der",
@@ -285,7 +285,7 @@ dependencies = [
 
 [[package]]
 name = "spki"
-version = "0.2.1"
+version = "0.3.0-pre"
 dependencies = [
  "der",
 ]

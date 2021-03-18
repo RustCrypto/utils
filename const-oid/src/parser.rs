@@ -45,15 +45,12 @@ impl Parser {
                 self
             }
             [byte @ b'0'..=b'9', remaining @ ..] => {
-                self.current_arc = self.current_arc * 10 + parse_ascii_digit(*byte);
+                let digit = byte.saturating_sub(b'0');
+                self.current_arc = self.current_arc * 10 + digit as Arc;
                 self.parse_bytes(remaining)
             }
             [b'.', remaining @ ..] => {
                 const_assert!(!remaining.is_empty(), "invalid trailing '.' in OID");
-                // const_assert!(
-                //     self.cursor < MAX_ARCS,
-                //     "maximum number of OID arcs exceeded"
-                // );
                 self.encoder = self.encoder.encode(self.current_arc);
                 self.current_arc = 0;
                 self.parse_bytes(remaining)
@@ -68,27 +65,6 @@ impl Parser {
                 // Needed for match exhaustiveness and matching types
                 self
             }
-        }
-    }
-}
-
-/// Parse a digit from an ASCII character
-// TODO(tarcieri): replace this with `byte.saturating_sub(b'0')` when MSRV 1.47+
-const fn parse_ascii_digit(char: u8) -> Arc {
-    match char {
-        b'0' => 0,
-        b'1' => 1,
-        b'2' => 2,
-        b'3' => 3,
-        b'4' => 4,
-        b'5' => 5,
-        b'6' => 6,
-        b'7' => 7,
-        b'8' => 8,
-        b'9' => 9,
-        other => {
-            const_assert!(matches!(other, b'0'..=b'9'), "invalid ASCII digit");
-            0 // Unreachable due to above `const_assert`
         }
     }
 }

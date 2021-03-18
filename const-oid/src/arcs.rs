@@ -50,7 +50,7 @@ impl<'a> Iterator for Arcs<'a> {
                 let mut result = 0;
                 let mut arc_bytes = 0;
 
-                // TODO(tarcieri): consolidate this with `ObjectIdentifier::from_ber`?
+                // TODO(tarcieri): consolidate this with `ObjectIdentifier::from_bytes`?
                 loop {
                     match self.oid.as_bytes().get(offset + arc_bytes).cloned() {
                         Some(byte) => {
