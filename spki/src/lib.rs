@@ -22,8 +22,5 @@
 mod algorithm;
 mod spki;
 
-pub use crate::{
-    algorithm::{AlgorithmIdentifier, AlgorithmParameters},
-    spki::SubjectPublicKeyInfo,
-};
+pub use crate::{algorithm::AlgorithmIdentifier, spki::SubjectPublicKeyInfo};
 pub use der::{self, ObjectIdentifier};

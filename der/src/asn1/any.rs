@@ -17,8 +17,8 @@ use crate::ObjectIdentifier;
 /// Classes in X.680 in 1994, and X.690 no longer refers to it whatsoever.
 ///
 /// Nevertheless, this crate defines an [`Any`] type as it remains a familiar
-/// and useful concept, although the usage within arguably resembles the
-/// type system concept more than the original ASN.1 concept.
+/// and useful concept which is still extensively used in things like
+/// PKI-related RFCs.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Any<'a> {
     /// Tag representing the type of the encoded value

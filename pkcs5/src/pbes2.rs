@@ -8,7 +8,6 @@ mod encryption;
 use crate::{AlgorithmIdentifier, CryptoError, ObjectIdentifier};
 use core::convert::{TryFrom, TryInto};
 use der::{Any, Decodable, Encodable, Encoder, Error, ErrorKind, Length, Message, OctetString};
-use spki::AlgorithmParameters;
 
 #[cfg(all(feature = "alloc", feature = "pbes2"))]
 use alloc::vec::Vec;
@@ -404,11 +403,11 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Pbkdf2Prf {
 impl<'a> From<Pbkdf2Prf> for AlgorithmIdentifier<'a> {
     fn from(prf: Pbkdf2Prf) -> Self {
         // TODO(tarcieri): support non-NULL parameters?
-        let parameters = AlgorithmParameters::Null;
+        let parameters = der::Null;
 
         AlgorithmIdentifier {
             oid: prf.oid(),
-            parameters: Some(parameters),
+            parameters: Some(parameters.into()),
         }
     }
 }
@@ -492,14 +491,14 @@ impl<'a> TryFrom<EncryptionScheme<'a>> for AlgorithmIdentifier<'a> {
     type Error = Error;
 
     fn try_from(scheme: EncryptionScheme<'a>) -> der::Result<Self> {
-        let parameters = match scheme {
-            EncryptionScheme::Aes128Cbc { iv } => Any::from(OctetString::new(iv)?),
-            EncryptionScheme::Aes256Cbc { iv } => Any::from(OctetString::new(iv)?),
-        };
+        let parameters = OctetString::new(match scheme {
+            EncryptionScheme::Aes128Cbc { iv } => iv,
+            EncryptionScheme::Aes256Cbc { iv } => iv,
+        })?;
 
         Ok(AlgorithmIdentifier {
             oid: scheme.oid(),
-            parameters: Some(parameters.try_into()?),
+            parameters: Some(parameters.into()),
         })
     }
 }
