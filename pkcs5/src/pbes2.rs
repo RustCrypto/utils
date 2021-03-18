@@ -16,24 +16,24 @@ use alloc::vec::Vec;
 /// Password-Based Encryption Scheme 2 (PBES2) OID.
 ///
 /// <https://tools.ietf.org/html/rfc8018#section-6.2>
-pub const PBES2_OID: ObjectIdentifier = ObjectIdentifier::parse("1.2.840.113549.1.5.13");
+pub const PBES2_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.1.5.13");
 
 /// Password-Based Key Derivation Function (PBKDF2) OID.
-pub const PBKDF2_OID: ObjectIdentifier = ObjectIdentifier::parse("1.2.840.113549.1.5.12");
+pub const PBKDF2_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.1.5.12");
 
 /// HMAC-SHA1 (for use with PBKDF2)
-pub const HMAC_WITH_SHA1_OID: ObjectIdentifier = ObjectIdentifier::parse("1.2.840.113549.2.7");
+pub const HMAC_WITH_SHA1_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.2.7");
 
 /// HMAC-SHA-256 (for use with PBKDF2)
-pub const HMAC_WITH_SHA256_OID: ObjectIdentifier = ObjectIdentifier::parse("1.2.840.113549.2.9");
+pub const HMAC_WITH_SHA256_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.2.9");
 
 /// 128-bit Advanced Encryption Standard (AES) algorithm with Cipher-Block
 /// Chaining (CBC) mode of operation.
-pub const AES_128_CBC_OID: ObjectIdentifier = ObjectIdentifier::parse("2.16.840.1.101.3.4.1.2");
+pub const AES_128_CBC_OID: ObjectIdentifier = ObjectIdentifier::new("2.16.840.1.101.3.4.1.2");
 
 /// 256-bit Advanced Encryption Standard (AES) algorithm with Cipher-Block
 /// Chaining (CBC) mode of operation.
-pub const AES_256_CBC_OID: ObjectIdentifier = ObjectIdentifier::parse("2.16.840.1.101.3.4.1.42");
+pub const AES_256_CBC_OID: ObjectIdentifier = ObjectIdentifier::new("2.16.840.1.101.3.4.1.42");
 
 /// AES cipher block size
 const AES_BLOCK_SIZE: usize = 16;
