@@ -1,10 +1,7 @@
 //! X.509 `AlgorithmIdentifier`
 
-use core::convert::TryFrom;
-use der::{
-    Any, Choice, Decodable, Encodable, Encoder, Error, Length, Message, Null, ObjectIdentifier,
-    Result, Tag,
-};
+use core::convert::{TryFrom, TryInto};
+use der::{Any, Decodable, Encodable, Error, ErrorKind, Message, ObjectIdentifier, Result};
 
 /// X.509 `AlgorithmIdentifier` as defined in [RFC 5280 Section 4.1.1.2].
 ///
@@ -22,7 +19,7 @@ pub struct AlgorithmIdentifier<'a> {
     pub oid: ObjectIdentifier,
 
     /// Algorithm `parameters`.
-    pub parameters: Option<AlgorithmParameters<'a>>,
+    pub parameters: Option<Any<'a>>,
 }
 
 impl<'a> AlgorithmIdentifier<'a> {
@@ -32,30 +29,14 @@ impl<'a> AlgorithmIdentifier<'a> {
     /// but are an [`ObjectIdentifier`] or [`Null`], i.e. this method is
     /// explicitly for handling cases other than those two.
     pub fn parameters_any(&self) -> Result<Any<'a>> {
-        let params = self.parameters.ok_or(der::ErrorKind::Truncated)?;
-
-        params.any().ok_or_else(|| {
-            der::ErrorKind::UnexpectedTag {
-                expected: Some(der::Tag::Sequence),
-                actual: params.tag(),
-            }
-            .into()
-        })
+        self.parameters.ok_or_else(|| ErrorKind::Truncated.into())
     }
 
     /// Get the `parameters` field as an [`ObjectIdentifier`].
     ///
     /// Returns an error if it is absent or not an OID.
     pub fn parameters_oid(&self) -> Result<ObjectIdentifier> {
-        let params = self.parameters.ok_or(der::ErrorKind::Truncated)?;
-
-        params.oid().ok_or_else(|| {
-            der::ErrorKind::UnexpectedTag {
-                expected: Some(der::Tag::Sequence),
-                actual: params.tag(),
-            }
-            .into()
-        })
+        self.parameters_any().and_then(TryInto::try_into)
     }
 }
 
@@ -85,119 +66,5 @@ impl<'a> Message<'a> for AlgorithmIdentifier<'a> {
         F: FnOnce(&[&dyn Encodable]) -> Result<T>,
     {
         f(&[&self.oid, &self.parameters])
-    }
-}
-
-/// The `parameters` field of `AlgorithmIdentifier`.
-///
-/// This is an algorithm-defined `ANY` field, but we map it into an `enum`
-/// for now to simplify the [`ObjectIdentifier`] use case.
-///
-/// Ideally this type can eventually go away and be replaced by [`Any`]
-/// with the assistance of OID reference types. See the following tracking
-/// issue for more info:
-///
-/// <https://github.com/RustCrypto/utils/issues/266>
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum AlgorithmParameters<'a> {
-    /// Catch-all ASN.1 `ANY` type.
-    ///
-    /// Types which don't map to the other variants of this enum will be mapped
-    /// to this one instead.
-    Any(Any<'a>),
-
-    /// ASN.1 `NULL` value
-    Null,
-
-    /// [`ObjectIdentifier`] that names a specific algorithm within a larger
-    /// algorithm family.
-    Oid(ObjectIdentifier),
-}
-
-impl<'a> AlgorithmParameters<'a> {
-    /// Get the [`Any`] value if applicable.
-    ///
-    /// Note that this will return [`None`] in the event the parameter is an
-    /// OID or `NULL`.
-    pub fn any(self) -> Option<Any<'a>> {
-        match self {
-            Self::Any(any) => Some(any),
-            _ => None,
-        }
-    }
-
-    /// Is this parameter value NULL?
-    pub fn is_null(self) -> bool {
-        self == AlgorithmParameters::Null
-    }
-
-    /// Is this parameter value an OID?
-    pub fn is_oid(self) -> bool {
-        self.oid().is_some()
-    }
-
-    /// Get the OID value if applicable.
-    pub fn oid(self) -> Option<ObjectIdentifier> {
-        match self {
-            Self::Oid(oid) => Some(oid),
-            _ => None,
-        }
-    }
-
-    /// Get the ASN.1 DER [`Tag`] for these parameters.
-    pub fn tag(self) -> Tag {
-        match self {
-            Self::Any(any) => any.tag(),
-            Self::Null => Tag::Null,
-            Self::Oid(_) => Tag::ObjectIdentifier,
-        }
-    }
-}
-
-impl<'a> From<Null> for AlgorithmParameters<'a> {
-    fn from(_: Null) -> AlgorithmParameters<'a> {
-        Self::Null
-    }
-}
-
-impl<'a> From<ObjectIdentifier> for AlgorithmParameters<'a> {
-    fn from(oid: ObjectIdentifier) -> AlgorithmParameters<'a> {
-        Self::Oid(oid)
-    }
-}
-
-impl<'a> TryFrom<Any<'a>> for AlgorithmParameters<'a> {
-    type Error = Error;
-
-    fn try_from(any: Any<'a>) -> Result<AlgorithmParameters<'a>> {
-        match any.tag() {
-            Tag::Null => Null::try_from(any).map(Into::into),
-            Tag::ObjectIdentifier => any.oid().map(Into::into),
-            _ => Ok(Self::Any(any)),
-        }
-    }
-}
-
-impl<'a> Choice<'a> for AlgorithmParameters<'a> {
-    fn can_decode(_: Tag) -> bool {
-        true
-    }
-}
-
-impl<'a> Encodable for AlgorithmParameters<'a> {
-    fn encoded_len(&self) -> Result<Length> {
-        match self {
-            Self::Any(any) => any.encoded_len(),
-            Self::Null => Null.encoded_len(),
-            Self::Oid(oid) => oid.encoded_len(),
-        }
-    }
-
-    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        match self {
-            Self::Any(any) => any.encode(encoder),
-            Self::Null => encoder.null(),
-            Self::Oid(oid) => encoder.oid(*oid),
-        }
     }
 }
