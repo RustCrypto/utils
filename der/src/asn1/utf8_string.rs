@@ -5,6 +5,9 @@ use crate::{
 };
 use core::{convert::TryFrom, fmt, str};
 
+#[cfg(feature = "alloc")]
+use alloc::{borrow::ToOwned, string::String};
+
 /// ASN.1 `UTF8String` type.
 ///
 /// Supports the full UTF-8 encoding.
@@ -140,7 +143,35 @@ impl Encodable for str {
 }
 
 impl Tagged for str {
-    const TAG: Tag = Tag::Boolean;
+    const TAG: Tag = Tag::Utf8String;
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl<'a> TryFrom<Any<'a>> for String {
+    type Error = Error;
+
+    fn try_from(any: Any<'a>) -> Result<String> {
+        Utf8String::try_from(any).map(|s| s.as_str().to_owned())
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl Encodable for String {
+    fn encoded_len(&self) -> Result<Length> {
+        Utf8String::new(self)?.encoded_len()
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        Utf8String::new(self)?.encode(encoder)
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl Tagged for String {
+    const TAG: Tag = Tag::Utf8String;
 }
 
 #[cfg(test)]
