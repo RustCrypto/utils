@@ -35,20 +35,6 @@ impl Time {
     }
 }
 
-// TODO(tarcieri): auto-derive conversions from ASN.1 types to enum variants?
-
-impl From<GeneralizedTime> for Time {
-    fn from(time: GeneralizedTime) -> Time {
-        Time::GeneralTime(time)
-    }
-}
-
-impl From<UtcTime> for Time {
-    fn from(time: UtcTime) -> Time {
-        Time::UtcTime(time)
-    }
-}
-
 const UTC_TIMESTAMP: &[u8] = &hex!("17 0d 39 31 30 35 30 36 32 33 34 35 34 30 5a");
 const GENERAL_TIMESTAMP: &[u8] = &hex!("18 0f 31 39 39 31 30 35 30 36 32 33 34 35 34 30 5a");
 
