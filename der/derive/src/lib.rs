@@ -62,6 +62,11 @@ decl_derive!(
     /// [`Decodable`][2] and [`Encodable`][3] traits along with the
     /// [`Choice`][1] supertrait for any enum representing an ASN.1 `CHOICE`.
     ///
+    /// The enum must consist entirely of 1-tuple variants wrapping inner
+    /// types which must also impl the [`Decodable`][2] and [`Encodable`][3]
+    /// traits. It will will also generate [`From`] impls for each of the
+    /// inner types of the variants into the enum that wraps them.
+    ///
     /// # Usage
     ///
     /// ```ignore

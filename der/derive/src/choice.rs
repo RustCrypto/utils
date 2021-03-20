@@ -5,7 +5,7 @@
 use crate::{Asn1Attrs, Asn1Type};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{DataEnum, Ident, Lifetime, Variant};
+use syn::{DataEnum, Fields, FieldsUnnamed, Ident, Lifetime, Type, Variant};
 use synstructure::{Structure, VariantInfo};
 
 /// Registry of `CHOICE` alternatives for a given enum
@@ -159,6 +159,21 @@ impl DeriveChoice {
             ..
         } = self;
 
+        let mut variant_conversions = TokenStream::new();
+
+        for variant in self.alternatives.values() {
+            let variant_ident = &variant.ident;
+            let variant_type = &variant.field_type;
+
+            variant_conversions.extend(s.gen_impl(quote! {
+                gen impl From<#variant_type> for @Self {
+                    fn from(field: #variant_type) -> Self {
+                        Self::#variant_ident(field)
+                    }
+                }
+            }));
+        }
+
         s.gen_impl(quote! {
             gen impl ::der::Choice<#lifetime> for @Self {
                 fn can_decode(tag: ::der::Tag) -> bool {
@@ -200,6 +215,8 @@ impl DeriveChoice {
                     }
                 }
             }
+
+            #variant_conversions
         })
     }
 }
@@ -212,14 +229,26 @@ struct Alternative {
 
     /// [`Ident`] for the corresponding enum variant.
     pub ident: Ident,
+
+    /// Type of the inner field (i.e. of the variant's 1-tuple)
+    pub field_type: Type,
 }
 
 impl Alternative {
     /// Register a `CHOICE` alternative for a variant
     pub fn register(alternatives: &mut Alternatives, asn1_type: Asn1Type, variant: &Variant) {
+        let field_type = match &variant.fields {
+            Fields::Unnamed(FieldsUnnamed { unnamed, .. }) if unnamed.len() == 1 => {
+                let field = unnamed.first().unwrap();
+                field.ty.clone()
+            }
+            _ => panic!("can only derive `Choice` for enums with 1-tuple variants"),
+        };
+
         let alternative = Self {
             asn1_type,
             ident: variant.ident.clone(),
+            field_type,
         };
 
         if let Some(duplicate) = alternatives.insert(asn1_type, alternative) {

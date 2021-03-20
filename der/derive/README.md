@@ -7,7 +7,8 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-Procedural macro for automatically deriving the `der` crate's `Message` trait.
+Procedural macro for automatically deriving the `der` crate's `Choice` and
+`Message` traits.
 
 [Documentation][docs-link]
 
