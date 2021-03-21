@@ -112,14 +112,6 @@ impl<'a> Any<'a> {
     pub fn utf8_string(self) -> Result<Utf8String<'a>> {
         self.try_into()
     }
-
-    /// Get the ASN.1 DER [`Header`] for this [`Any`] value
-    pub(crate) fn header(self) -> Header {
-        Header {
-            tag: self.tag,
-            length: self.len(),
-        }
-    }
 }
 
 impl<'a> Choice<'a> for Any<'a> {
@@ -141,11 +133,11 @@ impl<'a> Decodable<'a> for Any<'a> {
 
 impl<'a> Encodable for Any<'a> {
     fn encoded_len(&self) -> Result<Length> {
-        self.header().encoded_len()? + self.len()
+        self.len().for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        self.header().encode(encoder)?;
+        Header::new(self.tag, self.len())?.encode(encoder)?;
         encoder.bytes(self.as_bytes())
     }
 }

@@ -79,14 +79,6 @@ where
                 _ => 0u8,                    // No leading `0`
             }
     }
-
-    /// Get the ASN.1 DER [`Header`] for this [`BigUint`] value
-    fn header(self) -> Result<Header> {
-        Ok(Header {
-            tag: Tag::Integer,
-            length: self.inner_len()?,
-        })
-    }
 }
 
 impl<'a, N> From<&BigUInt<'a, N>> for BigUInt<'a, N>
@@ -142,11 +134,11 @@ where
     N: Unsigned + NonZero,
 {
     fn encoded_len(&self) -> Result<Length> {
-        self.header()?.encoded_len()? + self.inner_len()?
+        self.inner_len()?.for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        self.header()?.encode(encoder)?;
+        Header::new(Self::TAG, self.inner_len()?)?.encode(encoder)?;
 
         // Add leading `0x00` byte if required
         if self.inner_len()? > self.len() {

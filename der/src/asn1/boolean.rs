@@ -28,21 +28,11 @@ impl TryFrom<Any<'_>> for bool {
 
 impl Encodable for bool {
     fn encoded_len(&self) -> Result<Length> {
-        Header {
-            tag: Tag::Boolean,
-            length: 1u8.into(),
-        }
-        .encoded_len()?
-            + 1u8
+        Length::one().for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Header {
-            tag: Tag::Boolean,
-            length: 1u8.into(),
-        }
-        .encode(encoder)?;
-
+        Header::new(Self::TAG, Length::one())?.encode(encoder)?;
         let byte = if *self { TRUE_OCTET } else { FALSE_OCTET };
         encoder.byte(byte)
     }

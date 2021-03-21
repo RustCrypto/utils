@@ -13,7 +13,7 @@ use core::{
 ///
 /// Presently constrained to the range `0..=65535`
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
-pub struct Length(u32);
+pub struct Length(pub(crate) u32);
 
 impl Length {
     /// Return a length of `0`.
@@ -21,9 +21,20 @@ impl Length {
         Length(0)
     }
 
+    /// Return a length of `1`.
+    pub const fn one() -> Self {
+        Length(1)
+    }
+
     /// Get the maximum length supported by this crate
     pub const fn max() -> Self {
         Self(65535)
+    }
+
+    /// Get the length of DER Tag-Length-Value (TLV) encoded data if `self`
+    /// is the length of the inner "value" portion of the message
+    pub fn for_tlv(self) -> Result<Self> {
+        Length(1) + self.encoded_len()? + self
     }
 }
 
