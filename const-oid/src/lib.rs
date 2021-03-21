@@ -19,6 +19,29 @@
 //!
 //! For more information, see: <https://en.wikipedia.org/wiki/Object_identifier>
 //!
+//! ## Implementation
+//!
+//! This library supports parsing OIDs in const contexts, e.g.:
+//!
+//! ```rust
+//! use const_oid::ObjectIdentifier;
+//!
+//! pub const MY_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.1.1.1");
+//! ```
+//!
+//! The OID parser is implemented entirely in terms of `const fn` and without the
+//! use of proc macros.
+//!
+//! Additionally, it also includes a `const fn` OID serializer, and stores the OIDs
+//! parsed from const contexts encoded using the BER/DER serialization
+//! (sans header).
+//!
+//! This allows [`ObjectIdentifier`] to impl `AsRef<[u8]>` which can be used to
+//! obtain the BER/DER serialization of an OID, even one declared `const`.
+//!
+//! Additionally, it impls `FromStr` and `TryFrom<&[u8]>` and functions just as
+//! well as a runtime OID library.
+//!
 //! # Minimum Supported Rust Version
 //!
 //! This crate requires **Rust 1.47** at a minimum.
@@ -33,7 +56,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/const-oid/0.5.0-pre"
+    html_root_url = "https://docs.rs/const-oid/0.5.0"
 )]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
@@ -93,7 +116,7 @@ impl ObjectIdentifier {
     /// ```
     /// use const_oid::ObjectIdentifier;
     ///
-    /// const MY_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.1.1.1");
+    /// pub const MY_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.1.1.1");
     /// ```
     ///
     /// # Panics

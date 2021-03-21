@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 (2021-03-21)
+### Added
+- `TryFrom<&[u8]>` impl on `ObjectIdentifier` ([#338])
+
+## Changed
+- MSRV 1.47+ ([#338])
+- Renamed the following methods ([#338]):
+  - `ObjectIdentifier::new` => `ObjectIdentifier::from_arcs`
+  - `ObjectIdentifier::parse` => `ObjectIdentifier::new`
+  - `ObjectIdentifier::from_ber` => `ObjectIdentifier::from_bytes`
+
+### Removed
+- Deprecated methods ([#338])
+- `alloc` feature - only used by aforementioned deprecated methods ([#338])
+- `TryFrom<&[Arc]>` impl on `ObjectIdentifier` - use `::from_arcs` ([#338])
+
+[#338]: https://github.com/RustCrypto/utils/pull/338
+
 ## 0.4.5 (2021-03-04)
 ### Added
 - `Hash` and `Ord` impls on `ObjectIdentifier` ([#323])
