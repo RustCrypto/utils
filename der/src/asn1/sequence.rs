@@ -14,8 +14,7 @@ pub struct Sequence<'a> {
 
 impl<'a> Sequence<'a> {
     /// Create a new [`Sequence`] from a slice.
-    // TODO(tarcieri): validate `slice` is well-formed DER or make this API private
-    pub fn new(slice: &'a [u8]) -> Result<Self> {
+    pub(crate) fn new(slice: &'a [u8]) -> Result<Self> {
         ByteSlice::new(slice)
             .map(|inner| Self { inner })
             .map_err(|_| ErrorKind::Length { tag: Self::TAG }.into())
