@@ -9,6 +9,22 @@
 //! Note that this crate shouldn't be used directly, but instead accessed
 //! by using the `derive` feature of the `der` crate.
 //!
+//! # Why not `serde`?
+//!
+//! The `der` crate is designed to be easily usable in embedded environments,
+//! including ones where code size comes at a premium.
+//!
+//! This crate (i.e. `der_derive`) is able to generate code which is
+//! significantly smaller than `serde_derive`. This is because the `der`
+//! crate has been designed with high-level abstractions which reduce
+//! code size, including trait object-based encoders which allow encoding
+//! logic which is duplicated in `serde` serializers to be implemented in
+//! a single place in the `der` crate.
+//!
+//! This is a deliberate tradeoff in terms of performance, flexibility, and
+//! code size. At least for now, the `der` crate is optimizing for leveraging
+//! as many abstractions as it can to minimize code size.
+//!
 //! # `#[asn1(type = "...")]` attribute
 //!
 //! This attribute can be used to specify the ASN.1 type for a particular
