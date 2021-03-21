@@ -1,7 +1,11 @@
 //! Length calculations for encoded ASN.1 DER values
 
 use crate::{Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Result};
-use core::{convert::TryFrom, fmt, ops::Add};
+use core::{
+    convert::{TryFrom, TryInto},
+    fmt,
+    ops::Add,
+};
 
 /// ASN.1-encoded length.
 ///
@@ -9,7 +13,7 @@ use core::{convert::TryFrom, fmt, ops::Add};
 ///
 /// Presently constrained to the range `0..=65535`
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
-pub struct Length(u16);
+pub struct Length(u32);
 
 impl Length {
     /// Return a length of `0`.
@@ -18,13 +22,8 @@ impl Length {
     }
 
     /// Get the maximum length supported by this crate
-    pub const fn max() -> usize {
-        u16::MAX as usize
-    }
-
-    /// Convert length to `usize`
-    pub fn to_usize(self) -> usize {
-        self.0.into()
+    pub const fn max() -> Self {
+        Self(65535)
     }
 }
 
@@ -73,25 +72,13 @@ impl Add<Length> for Result<Length> {
 
 impl From<u8> for Length {
     fn from(len: u8) -> Length {
-        Length(len as u16)
+        Length(len as u32)
     }
 }
 
 impl From<u16> for Length {
     fn from(len: u16) -> Length {
-        Length(len)
-    }
-}
-
-impl From<Length> for u16 {
-    fn from(len: Length) -> u16 {
-        len.0
-    }
-}
-
-impl From<Length> for usize {
-    fn from(len: Length) -> usize {
-        len.0 as usize
+        Length(len as u32)
     }
 }
 
@@ -99,9 +86,21 @@ impl TryFrom<usize> for Length {
     type Error = Error;
 
     fn try_from(len: usize) -> Result<Length> {
-        u16::try_from(len)
-            .map(Length)
-            .map_err(|_| ErrorKind::Overflow.into())
+        let inner = u32::try_from(len).map_err(|_| ErrorKind::Overflow)?;
+
+        if inner <= Self::max().0 {
+            Ok(Length(inner))
+        } else {
+            Err(ErrorKind::Overflow.into())
+        }
+    }
+}
+
+impl TryFrom<Length> for usize {
+    type Error = Error;
+
+    fn try_from(len: Length) -> Result<usize> {
+        len.0.try_into().map_err(|_| ErrorKind::Overflow.into())
     }
 }
 
@@ -148,6 +147,8 @@ impl Encodable for Length {
             0..=0x7F => Ok(Length(1)),
             0x80..=0xFF => Ok(Length(2)),
             0x100..=0xFFFF => Ok(Length(3)),
+            // TODO(tarcieri): support lengths greater than 65535?
+            _ => Err(ErrorKind::Overflow.into()),
         }
     }
 
@@ -163,6 +164,8 @@ impl Encodable for Length {
                 encoder.byte((self.0 >> 8) as u8)?;
                 encoder.byte((self.0 & 0xFF) as u8)
             }
+            // TODO(tarcieri): support lengths greater than 65535?
+            _ => Err(ErrorKind::Overflow.into()),
         }
     }
 }

@@ -4,7 +4,7 @@ use crate::{
     Any, BitString, Choice, Decodable, ErrorKind, GeneralizedTime, Ia5String, Length, Null,
     OctetString, PrintableString, Result, Sequence, UtcTime, Utf8String,
 };
-use core::convert::TryInto;
+use core::convert::{TryFrom, TryInto};
 
 #[cfg(feature = "big-uint")]
 use {
@@ -205,7 +205,7 @@ impl<'a> Decoder<'a> {
 
         let result = self
             .remaining()?
-            .get(..len.to_usize())
+            .get(..len.try_into()?)
             .ok_or(ErrorKind::Truncated)?;
 
         self.position = (self.position + len)?;
@@ -222,8 +222,10 @@ impl<'a> Decoder<'a> {
     /// Obtain the remaining bytes in this decoder from the current cursor
     /// position.
     fn remaining(&self) -> Result<&'a [u8]> {
+        let pos = usize::try_from(self.position)?;
+
         self.bytes
-            .and_then(|b| b.get(self.position.into()..))
+            .and_then(|b| b.get(pos..))
             .ok_or_else(|| ErrorKind::Truncated.at(self.position))
     }
 

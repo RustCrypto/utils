@@ -4,7 +4,7 @@ use crate::{
     message, BitString, Encodable, ErrorKind, GeneralizedTime, Header, Ia5String, Length, Null,
     OctetString, PrintableString, Result, Tag, UtcTime, Utf8String,
 };
-use core::convert::TryInto;
+use core::convert::{TryFrom, TryInto};
 
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
@@ -55,13 +55,12 @@ impl<'a> Encoder<'a> {
     /// Finish encoding to the buffer, returning a slice containing the data
     /// written to the buffer.
     pub fn finish(self) -> Result<&'a [u8]> {
-        let position = self.position;
+        let pos = self.position;
+        let range = ..usize::try_from(self.position)?;
 
         match self.bytes {
-            Some(bytes) => bytes
-                .get(..self.position.into())
-                .ok_or_else(|| ErrorKind::Truncated.at(position)),
-            None => Err(ErrorKind::Failed.at(position)),
+            Some(bytes) => bytes.get(range).ok_or_else(|| ErrorKind::Truncated.at(pos)),
+            None => Err(ErrorKind::Failed.at(pos)),
         }
     }
 
@@ -171,7 +170,7 @@ impl<'a> Encoder<'a> {
         let mut nested_encoder = Encoder::new(self.reserve(length)?);
         f(&mut nested_encoder)?;
 
-        if nested_encoder.finish()?.len() == length.into() {
+        if nested_encoder.finish()?.len() == length.try_into()? {
             Ok(())
         } else {
             self.error(ErrorKind::Length { tag: Tag::Sequence })
@@ -210,7 +209,7 @@ impl<'a> Encoder<'a> {
         }
 
         let end = (self.position + len).or_else(|e| self.error(e.kind()))?;
-        let range = self.position.into()..end.into();
+        let range = self.position.try_into()?..end.try_into()?;
         let position = &mut self.position;
 
         // TODO(tarcieri): non-panicking version of this code
@@ -255,9 +254,10 @@ impl<'a> Encoder<'a> {
 
     /// Get the number of bytes still remaining in the buffer.
     fn remaining_len(&self) -> Result<Length> {
-        self.buffer_len()?
-            .to_usize()
-            .checked_sub(self.position.into())
+        let buffer_len = usize::try_from(self.buffer_len()?)?;
+
+        buffer_len
+            .checked_sub(self.position.try_into()?)
             .ok_or_else(|| ErrorKind::Truncated.at(self.position))
             .and_then(TryInto::try_into)
     }
