@@ -45,6 +45,9 @@ pub enum Tag {
     /// `UTF8String` tag.
     Utf8String = 0x0C,
 
+    /// `SET` and `SET OF` tag.
+    Set = 0x11,
+
     /// `PrintableString` tag.
     PrintableString = 0x13,
 
@@ -89,6 +92,7 @@ impl TryFrom<u8> for Tag {
             0x05 => Ok(Tag::Null),
             0x06 => Ok(Tag::ObjectIdentifier),
             0x0C => Ok(Tag::Utf8String),
+            0x11 => Ok(Tag::Set),
             0x13 => Ok(Tag::PrintableString),
             0x16 => Ok(Tag::Ia5String),
             0x17 => Ok(Tag::UtcTime),
@@ -129,6 +133,7 @@ impl Tag {
             Self::Null => "NULL",
             Self::ObjectIdentifier => "OBJECT IDENTIFIER",
             Self::Utf8String => "UTF8String",
+            Self::Set => "SET",
             Self::PrintableString => "PrintableString",
             Self::Ia5String => "IA5String",
             Self::UtcTime => "UTCTime",

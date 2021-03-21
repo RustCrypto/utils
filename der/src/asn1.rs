@@ -18,5 +18,6 @@ pub(crate) mod oid;
 pub(crate) mod optional;
 pub(crate) mod printable_string;
 pub(crate) mod sequence;
+pub(crate) mod set_of;
 pub(crate) mod utc_time;
 pub(crate) mod utf8_string;

@@ -13,14 +13,15 @@ pub struct Sequence<'a> {
 }
 
 impl<'a> Sequence<'a> {
-    /// Create a new [`Sequence`] from a slice
+    /// Create a new [`Sequence`] from a slice.
+    // TODO(tarcieri): validate `slice` is well-formed DER or make this API private
     pub fn new(slice: &'a [u8]) -> Result<Self> {
         ByteSlice::new(slice)
             .map(|inner| Self { inner })
             .map_err(|_| ErrorKind::Length { tag: Self::TAG }.into())
     }
 
-    /// Borrow the inner byte sequence
+    /// Borrow the inner byte sequence.
     pub fn as_bytes(&self) -> &'a [u8] {
         self.inner.as_bytes()
     }
@@ -47,7 +48,7 @@ impl AsRef<[u8]> for Sequence<'_> {
 impl<'a> TryFrom<Any<'a>> for Sequence<'a> {
     type Error = Error;
 
-    fn try_from(any: Any<'a>) -> Result<Sequence<'a>> {
+    fn try_from(any: Any<'a>) -> Result<Self> {
         any.tag().assert_eq(Tag::Sequence)?;
         Self::new(any.as_bytes())
     }

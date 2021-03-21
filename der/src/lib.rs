@@ -36,7 +36,8 @@
 //! - `()`: ASN.1 `NULL` (see also [`Null`])
 //! - [`bool`]: ASN.1 `BOOLEAN`
 //! - [`i8`], [`i16`], [`u8`], [`u16`]: ASN.1 `INTEGER`
-//! - [`str`], [`String`]: ASN.1 `UTF8String` (see also [`Utf8String`])
+//! - [`str`], [`String`][`alloc::string::String`] (latter requires `alloc` feature):
+//!   ASN.1 `UTF8String` (see also [`Utf8String`])
 //! - [`Option`]: ASN.1 `OPTIONAL`
 //! - [`SystemTime`][`std::time::SystemTime`]: ASN.1 `GeneralizedTime` (requires `std` feature)
 //!
@@ -52,6 +53,7 @@
 //! - [`OctetString`]: ASN.1 `OCTET STRING`
 //! - [`PrintableString`]: ASN.1 `PrintableString` (ASCII subset)
 //! - [`Sequence`]: ASN.1 `SEQUENCE`
+//! - [`SetOfRef`]: ASN.1 `SET OF`
 //! - [`UtcTime`]: ASN.1 `UTCTime`
 //! - [`Utf8String`]: ASN.1 `UTF8String`
 //!
@@ -357,9 +359,17 @@ mod tag;
 
 pub use crate::{
     asn1::{
-        any::Any, bit_string::BitString, choice::Choice, generalized_time::GeneralizedTime,
-        ia5_string::Ia5String, null::Null, octet_string::OctetString,
-        printable_string::PrintableString, sequence::Sequence, utc_time::UtcTime,
+        any::Any,
+        bit_string::BitString,
+        choice::Choice,
+        generalized_time::GeneralizedTime,
+        ia5_string::Ia5String,
+        null::Null,
+        octet_string::OctetString,
+        printable_string::PrintableString,
+        sequence::Sequence,
+        set_of::{SetOf, SetOfRef, SetOfRefIter},
+        utc_time::UtcTime,
         utf8_string::Utf8String,
     },
     decodable::Decodable,
