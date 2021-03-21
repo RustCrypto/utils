@@ -132,8 +132,9 @@ impl<'a> Decodable<'a> for Any<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Any<'a>> {
         let header = Header::decode(decoder)?;
         let tag = header.tag;
-        let len = header.length.to_usize();
-        let value = decoder.bytes(len).map_err(|_| ErrorKind::Length { tag })?;
+        let value = decoder
+            .bytes(header.length)
+            .map_err(|_| ErrorKind::Length { tag })?;
         Self::new(tag, value)
     }
 }

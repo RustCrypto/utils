@@ -6,7 +6,10 @@ use crate::{Encoder, Length, Result};
 use {
     crate::ErrorKind,
     alloc::vec::Vec,
-    core::{convert::TryInto, iter},
+    core::{
+        convert::{TryFrom, TryInto},
+        iter,
+    },
 };
 
 /// Encoding trait.
@@ -30,7 +33,7 @@ pub trait Encodable {
     #[cfg(feature = "alloc")]
     #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     fn encode_to_vec(&self, buf: &mut Vec<u8>) -> Result<Length> {
-        let expected_len = self.encoded_len()?.to_usize();
+        let expected_len = usize::try_from(self.encoded_len()?)?;
         buf.reserve(expected_len);
         buf.extend(iter::repeat(0).take(expected_len));
 

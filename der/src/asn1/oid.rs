@@ -47,6 +47,7 @@ impl<'a> Tagged for ObjectIdentifier {
 #[cfg(test)]
 mod tests {
     use crate::{Decodable, Encodable, Length, ObjectIdentifier};
+    use core::convert::TryInto;
 
     const EXAMPLE_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549");
     const EXAMPLE_OID_BYTES: &[u8; 8] = &[0x06, 0x06, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d];
@@ -69,6 +70,6 @@ mod tests {
     #[test]
     fn length() {
         // Ensure an infallible `From` conversion to `Any` will never panic
-        assert!(ObjectIdentifier::max_len() <= Length::max());
+        assert!(ObjectIdentifier::max_len() <= Length::max().try_into().unwrap());
     }
 }
