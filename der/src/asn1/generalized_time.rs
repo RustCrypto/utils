@@ -30,6 +30,11 @@ const MAX_UNIX_DURATION: Duration = Duration::from_secs(253_402_300_800);
 pub struct GeneralizedTime(Duration);
 
 impl GeneralizedTime {
+    /// Get the length of a [`GeneralizedTime`].
+    pub const fn length() -> Length {
+        Length(LENGTH as u32)
+    }
+
     /// Create a new [`GeneralizedTime`] given a [`Duration`] since `UNIX_EPOCH`
     /// (a.k.a. "Unix time")
     pub fn new(unix_duration: Duration) -> Result<Self> {
@@ -68,14 +73,6 @@ impl GeneralizedTime {
     pub fn to_system_time(&self) -> SystemTime {
         UNIX_EPOCH + self.unix_duration()
     }
-
-    /// Get the ASN.1 DER [`Header`] for this [`GeneralizedTime`] value.
-    fn header(self) -> Header {
-        Header {
-            tag: Tag::GeneralizedTime,
-            length: (LENGTH as u8).into(),
-        }
-    }
 }
 
 impl From<&GeneralizedTime> for GeneralizedTime {
@@ -96,18 +93,18 @@ impl TryFrom<Any<'_>> for GeneralizedTime {
     type Error = Error;
 
     fn try_from(any: Any<'_>) -> Result<GeneralizedTime> {
-        any.tag().assert_eq(Tag::GeneralizedTime)?;
+        any.tag().assert_eq(Self::TAG)?;
 
         match *any.as_bytes() {
             // RFC 5280 requires mandatory seconds and Z-normalized time zone
             [y1, y2, y3, y4, mon1, mon2, day1, day2, hour1, hour2, min1, min2, sec1, sec2, b'Z'] => {
-                let year = datetime::decode_decimal(Tag::GeneralizedTime, y1, y2)? * 100
-                    + datetime::decode_decimal(Tag::GeneralizedTime, y3, y4)?;
-                let month = datetime::decode_decimal(Tag::GeneralizedTime, mon1, mon2)?;
-                let day = datetime::decode_decimal(Tag::GeneralizedTime, day1, day2)?;
-                let hour = datetime::decode_decimal(Tag::GeneralizedTime, hour1, hour2)?;
-                let minute = datetime::decode_decimal(Tag::GeneralizedTime, min1, min2)?;
-                let second = datetime::decode_decimal(Tag::GeneralizedTime, sec1, sec2)?;
+                let year = datetime::decode_decimal(Self::TAG, y1, y2)? * 100
+                    + datetime::decode_decimal(Self::TAG, y3, y4)?;
+                let month = datetime::decode_decimal(Self::TAG, mon1, mon2)?;
+                let day = datetime::decode_decimal(Self::TAG, day1, day2)?;
+                let hour = datetime::decode_decimal(Self::TAG, hour1, hour2)?;
+                let minute = datetime::decode_decimal(Self::TAG, min1, min2)?;
+                let second = datetime::decode_decimal(Self::TAG, sec1, sec2)?;
 
                 DateTime::new(year, month, day, hour, minute, second)
                     .and_then(|dt| dt.unix_duration())
@@ -129,26 +126,25 @@ impl TryFrom<Any<'_>> for GeneralizedTime {
 
 impl Encodable for GeneralizedTime {
     fn encoded_len(&self) -> Result<Length> {
-        self.header().encoded_len()? + (LENGTH as u8)
+        Self::length().for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        self.header().encode(encoder)?;
+        Header::new(Self::TAG, Self::length())?.encode(encoder)?;
 
-        let datetime = DateTime::from_unix_duration(self.0).ok_or(ErrorKind::Value {
-            tag: Tag::GeneralizedTime,
-        })?;
+        let datetime =
+            DateTime::from_unix_duration(self.0).ok_or(ErrorKind::Value { tag: Self::TAG })?;
 
         let year_hi = datetime.year() / 100;
         let year_lo = datetime.year() % 100;
 
-        datetime::encode_decimal(encoder, Tag::GeneralizedTime, year_hi)?;
-        datetime::encode_decimal(encoder, Tag::GeneralizedTime, year_lo)?;
-        datetime::encode_decimal(encoder, Tag::GeneralizedTime, datetime.month())?;
-        datetime::encode_decimal(encoder, Tag::GeneralizedTime, datetime.day())?;
-        datetime::encode_decimal(encoder, Tag::GeneralizedTime, datetime.hour())?;
-        datetime::encode_decimal(encoder, Tag::GeneralizedTime, datetime.minute())?;
-        datetime::encode_decimal(encoder, Tag::GeneralizedTime, datetime.second())?;
+        datetime::encode_decimal(encoder, Self::TAG, year_hi)?;
+        datetime::encode_decimal(encoder, Self::TAG, year_lo)?;
+        datetime::encode_decimal(encoder, Self::TAG, datetime.month())?;
+        datetime::encode_decimal(encoder, Self::TAG, datetime.day())?;
+        datetime::encode_decimal(encoder, Self::TAG, datetime.hour())?;
+        datetime::encode_decimal(encoder, Self::TAG, datetime.minute())?;
+        datetime::encode_decimal(encoder, Self::TAG, datetime.second())?;
         encoder.byte(b'Z')
     }
 }

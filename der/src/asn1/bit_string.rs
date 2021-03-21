@@ -34,14 +34,6 @@ impl<'a> BitString<'a> {
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
-
-    /// Get the ASN.1 DER [`Header`] for this [`BitString`] value
-    fn header(self) -> Result<Header> {
-        Ok(Header {
-            tag: Tag::BitString,
-            length: (self.inner.len() + 1u16)?,
-        })
-    }
 }
 
 impl AsRef<[u8]> for BitString<'_> {
@@ -93,11 +85,11 @@ impl<'a> From<BitString<'a>> for &'a [u8] {
 
 impl<'a> Encodable for BitString<'a> {
     fn encoded_len(&self) -> Result<Length> {
-        self.header()?.encoded_len()? + 1u16 + self.inner.len()
+        (Length::one() + self.inner.len())?.for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        self.header()?.encode(encoder)?;
+        Header::new(Self::TAG, (Length::one() + self.inner.len())?)?.encode(encoder)?;
         encoder.byte(0)?;
         encoder.bytes(self.as_bytes())
     }

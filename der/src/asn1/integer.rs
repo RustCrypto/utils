@@ -24,20 +24,11 @@ impl TryFrom<Any<'_>> for i8 {
 
 impl Encodable for i8 {
     fn encoded_len(&self) -> Result<Length> {
-        Header {
-            tag: Tag::Integer,
-            length: 1u8.into(),
-        }
-        .encoded_len()?
-            + 1u8
+        Length::one().for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Header {
-            tag: Tag::Integer,
-            length: 1u8.into(),
-        }
-        .encode(encoder)?;
+        Header::new(Self::TAG, Length::one())?.encode(encoder)?;
         encoder.byte(*self as u8)
     }
 }
@@ -71,12 +62,7 @@ impl Encodable for i16 {
             return x.encoded_len();
         }
 
-        Header {
-            tag: Tag::Integer,
-            length: 2u8.into(),
-        }
-        .encoded_len()?
-            + 2u8
+        Length::from(2u8).for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
@@ -84,12 +70,7 @@ impl Encodable for i16 {
             return x.encode(encoder);
         }
 
-        Header {
-            tag: Tag::Integer,
-            length: 2u8.into(),
-        }
-        .encode(encoder)?;
-
+        Header::new(Self::TAG, Length::from(2u8))?.encode(encoder)?;
         encoder.bytes(&self.to_be_bytes())
     }
 }
@@ -121,21 +102,11 @@ impl TryFrom<Any<'_>> for u8 {
 impl Encodable for u8 {
     fn encoded_len(&self) -> Result<Length> {
         let inner_len = if *self < 0x80 { 1u8 } else { 2u8 };
-
-        Header {
-            tag: Tag::Integer,
-            length: inner_len.into(),
-        }
-        .encoded_len()?
-            + inner_len
+        Length::from(inner_len).for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Header {
-            tag: Tag::Integer,
-            length: if *self < 0x80 { 1u8 } else { 2u8 }.into(),
-        }
-        .encode(encoder)?;
+        Header::new(Self::TAG, if *self < 0x80 { 1u8 } else { 2u8 })?.encode(encoder)?;
 
         if *self >= 0x80 {
             encoder.byte(0)?;
@@ -177,13 +148,7 @@ impl Encodable for u16 {
         }
 
         let inner_len = if *self < 0x8000 { 2u16 } else { 3u16 };
-
-        Header {
-            tag: Tag::Integer,
-            length: inner_len.into(),
-        }
-        .encoded_len()?
-            + inner_len
+        Length::from(inner_len).for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
@@ -191,11 +156,7 @@ impl Encodable for u16 {
             return x.encode(encoder);
         }
 
-        Header {
-            tag: Tag::Integer,
-            length: if *self < 0x8000 { 2u16 } else { 3u16 }.into(),
-        }
-        .encode(encoder)?;
+        Header::new(Self::TAG, if *self < 0x8000 { 2u16 } else { 3u16 })?.encode(encoder)?;
 
         if *self >= 0x8000 {
             encoder.byte(0)?;

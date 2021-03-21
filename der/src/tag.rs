@@ -155,7 +155,7 @@ impl Decodable<'_> for Tag {
 
 impl Encodable for Tag {
     fn encoded_len(&self) -> Result<Length> {
-        Ok(1u8.into())
+        Ok(Length::one())
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
