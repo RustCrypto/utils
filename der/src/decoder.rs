@@ -7,7 +7,10 @@ use crate::{
 use core::convert::TryInto;
 
 #[cfg(feature = "big-uint")]
-use crate::{BigUInt, BigUIntSize};
+use {
+    crate::BigUInt,
+    typenum::{NonZero, Unsigned},
+};
 
 #[cfg(feature = "oid")]
 use crate::ObjectIdentifier;
@@ -112,7 +115,7 @@ impl<'a> Decoder<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
     pub fn big_uint<N>(&mut self) -> Result<BigUInt<'a, N>>
     where
-        N: BigUIntSize,
+        N: Unsigned + NonZero,
     {
         self.decode()
     }
