@@ -387,10 +387,7 @@ pub(crate) use crate::byte_slice::ByteSlice;
 
 #[cfg(feature = "big-uint")]
 #[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
-pub use {
-    crate::asn1::big_uint::{BigUInt, BigUIntSize},
-    typenum::consts,
-};
+pub use {crate::asn1::big_uint::BigUInt, typenum::consts};
 
 #[cfg(feature = "derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
