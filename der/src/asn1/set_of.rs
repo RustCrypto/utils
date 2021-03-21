@@ -6,19 +6,34 @@ use crate::{
 };
 use core::{convert::TryFrom, marker::PhantomData};
 
+#[cfg(feature = "alloc")]
+use {
+    crate::Header,
+    alloc::collections::{btree_set, BTreeSet},
+};
+
 /// ASN.1 `SET OF` denotes a collection of zero or more occurrences of a
 /// given type.
 ///
-/// When encoded as DER, `SET OF` is lexicographically ordered.
-pub trait SetOf<'a, T>: Decodable<'a> + Encodable
+/// When encoded as DER, `SET OF` is lexicographically ordered. To implement
+/// that requirement, types `T` which are elements of [`SetOf`] MUST provide
+/// an impl of `Ord` which ensures that the corresponding DER encodings of
+/// a given type are ordered.
+pub trait SetOf<'a, 'b, T>: Decodable<'a> + Encodable
 where
     T: Clone + Decodable<'a> + Encodable + Ord,
 {
-    /// Iterator over the elements of the set
+    /// Iterator over the elements of the set.
+    ///
+    /// The iterator type MUST maintain the invariant that messages are
+    /// lexicographically ordered.
+    ///
+    /// See toplevel documentation about `Ord` trait requirements for
+    /// more information.
     type Iter: Iterator<Item = T>;
 
-    /// Iterate over the elements of the set
-    fn elements(&self) -> Self::Iter;
+    /// Iterate over the elements of the set.
+    fn elements(&'b self) -> Self::Iter;
 }
 
 /// ASN.1 `SET OF` backed by a byte slice containing serialized DER.
@@ -117,22 +132,22 @@ where
     }
 }
 
-impl<'a, T> Tagged for SetOfRef<'a, T>
-where
-    T: Clone + Decodable<'a> + Encodable + Ord,
-{
-    const TAG: Tag = Tag::Set;
-}
-
-impl<'a, T> SetOf<'a, T> for SetOfRef<'a, T>
+impl<'a, 'b, T> SetOf<'a, 'b, T> for SetOfRef<'a, T>
 where
     T: Clone + Decodable<'a> + Encodable + Ord,
 {
     type Iter = SetOfRefIter<'a, T>;
 
-    fn elements(&self) -> Self::Iter {
+    fn elements(&'b self) -> Self::Iter {
         SetOfRefIter::new(self)
     }
+}
+
+impl<'a, T> Tagged for SetOfRef<'a, T>
+where
+    T: Clone + Decodable<'a> + Encodable + Ord,
+{
+    const TAG: Tag = Tag::Set;
 }
 
 /// Iterator over the elements of an [`SetOfRef`].
@@ -176,4 +191,94 @@ where
             )
         }
     }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl<'a, T> TryFrom<Any<'a>> for BTreeSet<T>
+where
+    T: Clone + Decodable<'a> + Encodable + Ord,
+{
+    type Error = Error;
+
+    fn try_from(any: Any<'a>) -> Result<Self> {
+        any.tag().assert_eq(Tag::Set)?;
+
+        let mut result = BTreeSet::new();
+        let mut decoder = Decoder::new(any.as_bytes());
+        let mut last_value = None;
+
+        while !decoder.is_finished() {
+            let value = decoder.decode()?;
+
+            if let Some(last) = last_value.take() {
+                if last >= value {
+                    return Err(ErrorKind::Noncanonical.into());
+                }
+
+                result.insert(last);
+            }
+
+            last_value = Some(value);
+        }
+
+        if let Some(last) = last_value {
+            result.insert(last);
+        }
+
+        Ok(result)
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl<'a, T> Encodable for BTreeSet<T>
+where
+    T: Clone + Decodable<'a> + Encodable + Ord,
+{
+    fn encoded_len(&self) -> Result<Length> {
+        btreeset_inner_len(self)?.for_tlv()
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        Header::new(Self::TAG, btreeset_inner_len(self)?)?.encode(encoder)?;
+
+        for value in self.iter() {
+            encoder.encode(value)?;
+        }
+
+        Ok(())
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl<'a, 'b, T: 'b> SetOf<'a, 'b, T> for BTreeSet<T>
+where
+    T: Clone + Decodable<'a> + Encodable + Ord,
+{
+    type Iter = core::iter::Cloned<btree_set::Iter<'b, T>>;
+
+    fn elements(&'b self) -> Self::Iter {
+        self.iter().cloned()
+    }
+}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl<'a, T> Tagged for BTreeSet<T>
+where
+    T: Clone + Decodable<'a> + Encodable + Ord,
+{
+    const TAG: Tag = Tag::Set;
+}
+
+/// Get the encoded length of a [`BTreeSet`]
+#[cfg(feature = "alloc")]
+fn btreeset_inner_len<'a, T>(set: &BTreeSet<T>) -> Result<Length>
+where
+    T: Clone + Decodable<'a> + Encodable + Ord,
+{
+    set.iter()
+        .fold(Ok(Length::zero()), |acc, val| acc? + val.encoded_len()?)
 }

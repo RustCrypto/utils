@@ -14,6 +14,8 @@ pub trait Choice<'a>: Decodable<'a> + Encodable {
     fn can_decode(tag: Tag) -> bool;
 }
 
+/// This blanket impl allows any [`Tagged`] type to function as a [`Choice`]
+/// with a single alternative.
 impl<'a, T> Choice<'a> for T
 where
     T: Decodable<'a> + Encodable + Tagged,
