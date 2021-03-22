@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 (2021-03-22)
+### Added
+- Impl `Decode`/`Encoded`/`Tagged` for `String` ([#344])
+- `Length::one` and `Length::for_tlv` ([#351])
+- `SET OF` support with `SetOf` trait and `SetOfRef` ([#346], [#352])
+
+### Changed
+- Rename `Decodable::from_bytes` => `Decodable::from_der` ([#339])
+- Separate `sequence` and `message` ([#341])
+- Rename `ErrorKind::Oid` => `ErrorKind::MalformedOid` ([#342])
+- Auto-derive `From` impls for variants when deriving `Choice` ([#345])
+- Make `Length` use `u32` internally ([#349])
+- Make `Sequence` constructor private ([#348])
+- Bump `const_oid` to v0.5 ([#350])
+- Bump `der_derive` to v0.3 ([#353])
+
+### Removed
+- Deprecated methods ([#340])
+- `BigUIntSize` ([#347])
+
+[#339]: https://github.com/RustCrypto/utils/pull/339
+[#340]: https://github.com/RustCrypto/utils/pull/340
+[#341]: https://github.com/RustCrypto/utils/pull/341
+[#342]: https://github.com/RustCrypto/utils/pull/342
+[#344]: https://github.com/RustCrypto/utils/pull/344
+[#345]: https://github.com/RustCrypto/utils/pull/345
+[#346]: https://github.com/RustCrypto/utils/pull/346
+[#347]: https://github.com/RustCrypto/utils/pull/347
+[#348]: https://github.com/RustCrypto/utils/pull/348
+[#349]: https://github.com/RustCrypto/utils/pull/349
+[#350]: https://github.com/RustCrypto/utils/pull/350
+[#351]: https://github.com/RustCrypto/utils/pull/351
+[#352]: https://github.com/RustCrypto/utils/pull/352
+[#353]: https://github.com/RustCrypto/utils/pull/353
+
 ## 0.2.10 (2021-02-28)
 ### Added
 - Impl `From<ObjectIdentifier>` for `Any` ([#317], [#319])
