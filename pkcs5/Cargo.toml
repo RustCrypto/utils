@@ -15,7 +15,7 @@ readme = "README.md"
 
 [dependencies]
 der = { version = "0.3", features = ["oid"], path = "../der" }
-spki = { version = "=0.3.0-pre", path = "../spki" }
+spki = { version = "0.3", path = "../spki" }
 
 aes = { version = "0.6", optional = true }
 block-modes = { version = "0.7", optional = true, default-features = false }
