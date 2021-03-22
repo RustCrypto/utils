@@ -36,8 +36,8 @@
 //! - `()`: ASN.1 `NULL` (see also [`Null`])
 //! - [`bool`]: ASN.1 `BOOLEAN`
 //! - [`i8`], [`i16`], [`u8`], [`u16`]: ASN.1 `INTEGER`
-//! - [`str`], [`String`][`alloc::string::String`]: ASN.1 `UTF8String` (see also [`Utf8String`])
-//!   (`String` requires `alloc` feature)
+//! - [`str`], [`String`][`alloc::string::String`]: ASN.1 `UTF8String`
+//!   (see also [`Utf8String`]. `String` requires `alloc` feature)
 //! - [`BTreeSet`][`alloc::collections::BTreeSet`]: ASN.1 `SET OF` (requires `alloc` feature)
 //! - [`Option`]: ASN.1 `OPTIONAL`
 //! - [`SystemTime`][`std::time::SystemTime`]: ASN.1 `GeneralizedTime` (requires `std` feature)
