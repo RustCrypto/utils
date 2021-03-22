@@ -25,9 +25,7 @@ pub struct AlgorithmIdentifier<'a> {
 impl<'a> AlgorithmIdentifier<'a> {
     /// Get the `parameters` field as an [`Any`].
     ///
-    /// Returns an error if `parameters` are `None`, or if they are `Some`
-    /// but are an [`ObjectIdentifier`] or [`Null`], i.e. this method is
-    /// explicitly for handling cases other than those two.
+    /// Returns an error if `parameters` are `None`.
     pub fn parameters_any(&self) -> Result<Any<'a>> {
         self.parameters.ok_or_else(|| ErrorKind::Truncated.into())
     }
