@@ -4,7 +4,7 @@ use crate::{Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Length, Result
 use core::convert::TryFrom;
 
 /// ASN.1 `OCTET STRING` type.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct OctetString<'a> {
     /// Inner value
     inner: ByteSlice<'a>,

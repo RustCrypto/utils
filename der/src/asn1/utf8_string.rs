@@ -20,7 +20,7 @@ use alloc::{borrow::ToOwned, string::String};
 /// still provided for explicitness in cases where it might be ambiguous with
 /// other ASN.1 string encodings such as
 /// [`PrintableString`][`crate::PrintableString`].
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Utf8String<'a> {
     /// Inner value
     inner: StrSlice<'a>,

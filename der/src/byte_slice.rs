@@ -7,7 +7,7 @@ use crate::{Error, Length, Result};
 use core::convert::TryFrom;
 
 /// Byte slice newtype which respects the `Length::max()` limit.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub(crate) struct ByteSlice<'a> {
     /// Inner value
     inner: &'a [u8],

@@ -6,7 +6,7 @@ use crate::{
 use core::convert::TryFrom;
 
 /// ASN.1 `SEQUENCE` type.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Sequence<'a> {
     /// Inner value
     inner: ByteSlice<'a>,

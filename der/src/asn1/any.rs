@@ -19,7 +19,7 @@ use crate::ObjectIdentifier;
 /// Nevertheless, this crate defines an [`Any`] type as it remains a familiar
 /// and useful concept which is still extensively used in things like
 /// PKI-related RFCs.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Any<'a> {
     /// Tag representing the type of the encoded value
     pub(crate) tag: Tag,

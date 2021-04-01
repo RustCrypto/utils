@@ -4,7 +4,7 @@ use crate::{Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagg
 use core::convert::TryFrom;
 
 /// ASN.1 `NULL` type.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Null;
 
 impl TryFrom<Any<'_>> for Null {
