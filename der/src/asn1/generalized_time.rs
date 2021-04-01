@@ -26,7 +26,7 @@ const MAX_UNIX_DURATION: Duration = Duration::from_secs(253_402_300_800);
 /// > is zero.  GeneralizedTime values MUST NOT include fractional seconds.
 ///
 /// [1]: https://tools.ietf.org/html/rfc5280#section-4.1.2.5.2
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct GeneralizedTime(Duration);
 
 impl GeneralizedTime {

@@ -4,8 +4,8 @@
 use crate::{Length, Result};
 use core::{convert::TryFrom, str};
 
-/// String slice newtype which respects the `Length::max()` limit.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+/// String slice newtype which respects the [`Length::max`] limit.
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub(crate) struct StrSlice<'a> {
     /// Inner value
     inner: &'a str,

@@ -19,7 +19,7 @@ pub trait Tagged {
 ///
 /// Tags are the leading byte of the Tag-Length-Value encoding used by ASN.1
 /// DER and identify the type of the subsequent value.
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 #[allow(clippy::identity_op)]
 #[non_exhaustive]
 #[repr(u8)]

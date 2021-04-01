@@ -18,7 +18,7 @@ use typenum::{NonZero, Unsigned};
 /// indicating the size of an integer in bytes.
 ///
 /// Currently supported sizes are 1 - 512 bytes.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd)]
 #[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
 pub struct BigUInt<'a, N: Unsigned + NonZero> {
     /// Inner value

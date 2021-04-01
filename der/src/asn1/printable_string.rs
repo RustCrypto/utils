@@ -32,7 +32,7 @@ use core::{convert::TryFrom, fmt, str};
 /// - `:`
 /// - `=`
 /// - `?`
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct PrintableString<'a> {
     /// Inner value
     inner: StrSlice<'a>,

@@ -16,7 +16,7 @@ use core::{convert::TryFrom, fmt, str};
 /// For UTF-8, use [`Utf8String`][`crate::Utf8String`].
 ///
 /// [International Alphabet No. 5 (IA5)]: https://en.wikipedia.org/wiki/T.50_%28standard%29
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Ia5String<'a> {
     /// Inner value
     inner: StrSlice<'a>,

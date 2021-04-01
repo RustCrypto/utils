@@ -33,7 +33,7 @@ const MAX_UNIX_DURATION: Duration = Duration::from_secs(2_524_608_000);
 /// > - Where `YY` is less than 50, the year SHALL be interpreted as `20YY`.
 ///
 /// [1]: https://tools.ietf.org/html/rfc5280#section-4.1.2.5.1
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct UtcTime(Duration);
 
 impl UtcTime {
