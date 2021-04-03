@@ -83,16 +83,28 @@ impl TokenTreeIter {
     }
 
     fn next_hex_val(&mut self) -> Option<u8> {
+        let mut incomment = false;
         loop {
             let v = match self.buf.get(self.pos) {
                 Some(&v) => v,
                 None => return None,
             };
             self.pos += 1;
+            if incomment {
+                match v {
+                    b'\n' => { incomment = false; }
+                    _ => { /* nothing */ }
+                };
+                continue;
+            }
             let n = match v {
                 b'0'..=b'9' => v - 48,
                 b'A'..=b'F' => v - 55,
                 b'a'..=b'f' => v - 87,
+                b'#' => {
+                    incomment = true;
+                    continue;
+                }
                 b' ' | b'\r' | b'\n' | b'\t' => continue,
                 _ => panic!("encountered invalid character"),
             };
