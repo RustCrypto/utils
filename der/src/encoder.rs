@@ -24,7 +24,7 @@ impl<'a> Encoder<'a> {
     pub fn new(bytes: &'a mut [u8]) -> Self {
         Self {
             bytes: Some(bytes),
-            position: Length::zero(),
+            position: Length::ZERO,
         }
     }
 
@@ -274,6 +274,6 @@ mod tests {
         let mut encoder = Encoder::new(&mut buffer);
         let err = false.encode(&mut encoder).err().unwrap();
         assert_eq!(err.kind(), ErrorKind::Overlength);
-        assert_eq!(err.position(), Some(Length::zero()));
+        assert_eq!(err.position(), Some(Length::ZERO));
     }
 }

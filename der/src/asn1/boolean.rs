@@ -28,11 +28,11 @@ impl TryFrom<Any<'_>> for bool {
 
 impl Encodable for bool {
     fn encoded_len(&self) -> Result<Length> {
-        Length::one().for_tlv()
+        Length::ONE.for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Header::new(Self::TAG, Length::one())?.encode(encoder)?;
+        Header::new(Self::TAG, Length::ONE)?.encode(encoder)?;
         let byte = if *self { TRUE_OCTET } else { FALSE_OCTET };
         encoder.byte(byte)
     }

@@ -46,7 +46,7 @@ impl<'a> StrSlice<'a> {
 
     /// Is this [`StrSlice`] empty?
     pub fn is_empty(self) -> bool {
-        self.len() == Length::zero()
+        self.len() == Length::ZERO
     }
 }
 

@@ -85,11 +85,11 @@ impl<'a> From<BitString<'a>> for &'a [u8] {
 
 impl<'a> Encodable for BitString<'a> {
     fn encoded_len(&self) -> Result<Length> {
-        (Length::one() + self.inner.len())?.for_tlv()
+        (Length::ONE + self.inner.len())?.for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Header::new(Self::TAG, (Length::one() + self.inner.len())?)?.encode(encoder)?;
+        Header::new(Self::TAG, (Length::ONE + self.inner.len())?)?.encode(encoder)?;
         encoder.byte(0)?;
         encoder.bytes(self.as_bytes())
     }

@@ -58,7 +58,7 @@ pub fn encoded_len(fields: &[&dyn Encodable]) -> Result<Length> {
 /// [`Encodable`] fields when serialized as ASN.1 DER, including the header
 /// (i.e. tag and length)
 pub(crate) fn encoded_len_inner(fields: &[&dyn Encodable]) -> Result<Length> {
-    fields.iter().fold(Ok(Length::zero()), |sum, encodable| {
+    fields.iter().fold(Ok(Length::ZERO), |sum, encodable| {
         sum + encodable.encoded_len()?
     })
 }

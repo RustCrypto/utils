@@ -35,8 +35,12 @@ pub struct UtcTime(Duration);
 
 impl UtcTime {
     /// Length of an RFC 5280-flavored ASN.1 DER-encoded [`UtcTime`].
+    pub const LENGTH: Length = Length::new(13);
+
+    /// Length of an RFC 5280-flavored ASN.1 DER-encoded [`UtcTime`].
+    #[deprecated(since = "0.3.3", note = "please use UtcTime::LENGTH")]
     pub const fn length() -> Length {
-        Length::new(13)
+        Self::LENGTH
     }
 
     /// Create a new [`UtcTime`] given a [`Duration`] since `UNIX_EPOCH`
@@ -121,11 +125,11 @@ impl TryFrom<Any<'_>> for UtcTime {
 
 impl Encodable for UtcTime {
     fn encoded_len(&self) -> Result<Length> {
-        Self::length().for_tlv()
+        Self::LENGTH.for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Header::new(Self::TAG, Self::length())?.encode(encoder)?;
+        Header::new(Self::TAG, Self::LENGTH)?.encode(encoder)?;
 
         let datetime =
             DateTime::from_unix_duration(self.0).ok_or(ErrorKind::Value { tag: Self::TAG })?;
