@@ -13,9 +13,16 @@ use core::{
 ///
 /// Presently constrained to the range `0..=65535`
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
-pub struct Length(pub(crate) u32);
+pub struct Length(u32);
 
 impl Length {
+    /// Create a new [`Length`] for any value which fits inside of a [`u16`].
+    ///
+    /// This function is const-safe and therefore useful for [`Length`] constants.
+    pub const fn new(value: u16) -> Self {
+        Length(value as u32)
+    }
+
     /// Return a length of `0`.
     pub const fn zero() -> Self {
         Length(0)

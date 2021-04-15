@@ -9,9 +9,6 @@ use core::{convert::TryFrom, time::Duration};
 #[cfg(feature = "std")]
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Length of an RFC 5280-flavored ASN.1 DER-encoded `GeneralizedTime`
-const LENGTH: usize = 15;
-
 /// Maximum duration since `UNIX_EPOCH` allowable as `GeneralizedTime`.
 const MAX_UNIX_DURATION: Duration = Duration::from_secs(253_402_300_800);
 
@@ -30,9 +27,9 @@ const MAX_UNIX_DURATION: Duration = Duration::from_secs(253_402_300_800);
 pub struct GeneralizedTime(Duration);
 
 impl GeneralizedTime {
-    /// Get the length of a [`GeneralizedTime`].
+    /// Length of an RFC 5280-flavored ASN.1 DER-encoded [`GeneralizedTime`].
     pub const fn length() -> Length {
-        Length(LENGTH as u32)
+        Length::new(15)
     }
 
     /// Create a new [`GeneralizedTime`] given a [`Duration`] since `UNIX_EPOCH`
