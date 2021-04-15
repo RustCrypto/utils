@@ -9,9 +9,6 @@ use core::{convert::TryFrom, time::Duration};
 #[cfg(feature = "std")]
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Length of an RFC 5280-flavored ASN.1 DER-encoded `UTCTime`
-const LENGTH: usize = 13;
-
 /// Maximum duration since `UNIX_EPOCH` which can be represented as a `UTCTime`
 /// (non-inclusive) according to RFC 5280 rules.
 ///
@@ -37,9 +34,9 @@ const MAX_UNIX_DURATION: Duration = Duration::from_secs(2_524_608_000);
 pub struct UtcTime(Duration);
 
 impl UtcTime {
-    /// Get the length of a [`UtcTime`].
+    /// Length of an RFC 5280-flavored ASN.1 DER-encoded [`UtcTime`].
     pub const fn length() -> Length {
-        Length(LENGTH as u32)
+        Length::new(13)
     }
 
     /// Create a new [`UtcTime`] given a [`Duration`] since `UNIX_EPOCH`
