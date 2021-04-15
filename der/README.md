@@ -22,10 +22,9 @@ The core implementation avoids any heap usage (with convenience methods
 that allocate gated under the off-by-default `alloc` feature).
 
 The implementation is presently specialized for documents which are smaller
-than 64kB, as that provides a safe bound for the current use cases.
+than 64kB as that provides a safe bound for the current use cases.
 However, that may be revisited in the future depending on interest in
-support for larger documents. Please open a [GitHub Issue] if you find
-this limit constraining in practice.
+support for larger documents. See [RustCrypto/utils#370].
 
 ## License
 
@@ -59,4 +58,4 @@ dual licensed as above, without any additional terms or conditions.
 
 [RustCrypto]: https://github.com/rustcrypto
 [`pkcs8`]: https://docs.rs/pkcs8/
-[GitHub Issue]: https://github.com/RustCrypto/utils/issues
+[RustCrypto/utils#370]: https://github.com/RustCrypto/utils/issues/370
