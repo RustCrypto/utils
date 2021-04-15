@@ -1,5 +1,8 @@
 //! Length calculations for encoded ASN.1 DER values
 
+// TODO(tarcieri): support lengths greater than 65535.
+// See: <https://github.com/RustCrypto/utils/issues/370>
+
 use crate::{Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Result};
 use core::{
     convert::{TryFrom, TryInto},
@@ -8,14 +11,20 @@ use core::{
 };
 
 /// ASN.1-encoded length.
-///
-/// # Limits
-///
-/// Presently constrained to the range `0..=65535`
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Length(u32);
 
 impl Length {
+    /// Length of `0`
+    pub const ZERO: Self = Self(0);
+
+    /// Length of `1`
+    pub const ONE: Self = Self(1);
+
+    /// Maximum length currently supported: `65535`.
+    // TODO(tarcieri): support lengths greater than 65535
+    pub const MAX: Self = Self(65535);
+
     /// Create a new [`Length`] for any value which fits inside of a [`u16`].
     ///
     /// This function is const-safe and therefore useful for [`Length`] constants.
@@ -24,19 +33,21 @@ impl Length {
     }
 
     /// Return a length of `0`.
+    #[deprecated(since = "0.3.3", note = "please use Length::ZERO")]
     pub const fn zero() -> Self {
-        Length(0)
+        Self::ZERO
     }
 
     /// Return a length of `1`.
+    #[deprecated(since = "0.3.3", note = "please use Length::ONE")]
     pub const fn one() -> Self {
-        Length(1)
+        Self::ONE
     }
 
     /// Get the maximum length supported by this crate
-    // TODO(tarcieri): support lengths greater than 65535
+    #[deprecated(since = "0.3.3", note = "please use Length::MAX")]
     pub const fn max() -> Self {
-        Self(65535)
+        Self::MAX
     }
 
     /// Get the length of DER Tag-Length-Value (TLV) encoded data if `self`
@@ -113,7 +124,7 @@ impl TryFrom<u32> for Length {
     type Error = Error;
 
     fn try_from(len: u32) -> Result<Length> {
-        if len <= Self::max().0 {
+        if len <= Self::MAX.0 {
             Ok(Length(len))
         } else {
             Err(ErrorKind::Overflow.into())
@@ -219,7 +230,7 @@ mod tests {
 
     #[test]
     fn decode() {
-        assert_eq!(Length::zero(), Length::from_der(&[0x00]).unwrap());
+        assert_eq!(Length::ZERO, Length::from_der(&[0x00]).unwrap());
 
         assert_eq!(Length::from(0x7Fu8), Length::from_der(&[0x7F]).unwrap());
 
@@ -243,10 +254,7 @@ mod tests {
     fn encode() {
         let mut buffer = [0u8; 3];
 
-        assert_eq!(
-            &[0x00],
-            Length::zero().encode_to_slice(&mut buffer).unwrap()
-        );
+        assert_eq!(&[0x00], Length::ZERO.encode_to_slice(&mut buffer).unwrap());
 
         assert_eq!(
             &[0x7F],
@@ -276,7 +284,7 @@ mod tests {
 
     #[test]
     fn add_overflows_when_max_length_exceeded() {
-        let result = Length::max() + Length::one();
+        let result = Length::MAX + Length::ONE;
         assert_eq!(
             result.err().map(|err| err.kind()),
             Some(ErrorKind::Overflow)

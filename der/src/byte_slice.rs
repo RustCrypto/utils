@@ -38,7 +38,7 @@ impl<'a> ByteSlice<'a> {
 
     /// Is this [`ByteSlice`] empty?
     pub fn is_empty(self) -> bool {
-        self.len() == Length::zero()
+        self.len() == Length::ZERO
     }
 }
 

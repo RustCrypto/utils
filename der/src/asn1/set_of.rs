@@ -280,5 +280,5 @@ where
     T: Clone + Decodable<'a> + Encodable + Ord,
 {
     set.iter()
-        .fold(Ok(Length::zero()), |acc, val| acc? + val.encoded_len()?)
+        .fold(Ok(Length::ZERO), |acc, val| acc? + val.encoded_len()?)
 }

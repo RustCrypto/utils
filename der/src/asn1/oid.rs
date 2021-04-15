@@ -70,6 +70,6 @@ mod tests {
     #[test]
     fn length() {
         // Ensure an infallible `From` conversion to `Any` will never panic
-        assert!(ObjectIdentifier::max_len() <= Length::max().try_into().unwrap());
+        assert!(ObjectIdentifier::max_len() <= Length::MAX.try_into().unwrap());
     }
 }

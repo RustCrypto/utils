@@ -33,7 +33,7 @@ impl<'a> Decoder<'a> {
     pub fn new(bytes: &'a [u8]) -> Self {
         Self {
             bytes: Some(bytes),
-            position: Length::zero(),
+            position: Length::ZERO,
         }
     }
 
@@ -251,7 +251,7 @@ mod tests {
         let mut decoder = Decoder::new(&[]);
         let err = bool::decode(&mut decoder).err().unwrap();
         assert_eq!(ErrorKind::Truncated, err.kind());
-        assert_eq!(Some(Length::zero()), err.position());
+        assert_eq!(Some(Length::ZERO), err.position());
     }
 
     #[test]
