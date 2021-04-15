@@ -98,7 +98,7 @@ use core::{convert::TryFrom, fmt, str::FromStr};
 #[derive(Copy, Clone, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct ObjectIdentifier {
     /// Array containing BER/DER-serialized bytes (no header)
-    bytes: [u8; Self::max_len()],
+    bytes: [u8; Self::MAX_LENGTH],
 
     /// Length in bytes
     length: u8,
@@ -107,8 +107,12 @@ pub struct ObjectIdentifier {
 #[allow(clippy::len_without_is_empty)]
 impl ObjectIdentifier {
     /// Maximum length of a BER/DER-encoded OID in bytes.
+    pub const MAX_LENGTH: usize = 23; // 24-bytes total w\ 1-byte length
+
+    /// Maximum length of a BER/DER-encoded OID in bytes.
+    #[deprecated(since = "0.5.1", note = "please use ObjectIdentifier::MAX_LENGTH")]
     pub const fn max_len() -> usize {
-        23 // 24-bytes total w\ 1-byte length
+        Self::MAX_LENGTH
     }
 
     /// Parse an [`ObjectIdentifier`] from the dot-delimited string form, e.g.:
@@ -139,7 +143,7 @@ impl ObjectIdentifier {
 
     /// Parse an OID from a slice of [`Arc`] values (i.e. integers).
     pub fn from_arcs(arcs: &[Arc]) -> Result<Self> {
-        let mut bytes = [0u8; Self::max_len()];
+        let mut bytes = [0u8; Self::MAX_LENGTH];
 
         bytes[0] = match *arcs {
             [first, second, _, ..] => RootArcs::new(first, second)?.into(),
@@ -162,7 +166,7 @@ impl ObjectIdentifier {
     pub fn from_bytes(ber_bytes: &[u8]) -> Result<Self> {
         let len = ber_bytes.len();
 
-        if !(2..=Self::max_len()).contains(&len) {
+        if !(2..=Self::MAX_LENGTH).contains(&len) {
             return Err(Error);
         }
 
@@ -197,7 +201,7 @@ impl ObjectIdentifier {
             }
         }
 
-        let mut bytes = [0u8; Self::max_len()];
+        let mut bytes = [0u8; Self::MAX_LENGTH];
         bytes[..len].copy_from_slice(ber_bytes);
 
         Ok(Self {
@@ -242,7 +246,7 @@ impl FromStr for ObjectIdentifier {
         let first_arc = split.next().and_then(|s| s.parse().ok()).ok_or(Error)?;
         let second_arc = split.next().and_then(|s| s.parse().ok()).ok_or(Error)?;
 
-        let mut bytes = [0u8; Self::max_len()];
+        let mut bytes = [0u8; Self::MAX_LENGTH];
         bytes[0] = RootArcs::new(first_arc, second_arc)?.into();
 
         let mut offset = 1;
