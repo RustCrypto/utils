@@ -27,6 +27,7 @@ impl Length {
     }
 
     /// Get the maximum length supported by this crate
+    // TODO(tarcieri): support lengths greater than 65535
     pub const fn max() -> Self {
         Self(65535)
     }
@@ -44,8 +45,8 @@ impl Add for Length {
     fn add(self, other: Self) -> Result<Self> {
         self.0
             .checked_add(other.0)
-            .map(Length)
             .ok_or_else(|| ErrorKind::Overflow.into())
+            .and_then(TryInto::try_into)
     }
 }
 
@@ -62,6 +63,14 @@ impl Add<u16> for Length {
 
     fn add(self, other: u16) -> Result<Self> {
         self + Length::from(other)
+    }
+}
+
+impl Add<u32> for Length {
+    type Output = Result<Self>;
+
+    fn add(self, other: u32) -> Result<Self> {
+        self + Length::try_from(other)?
     }
 }
 
@@ -93,17 +102,25 @@ impl From<u16> for Length {
     }
 }
 
+impl TryFrom<u32> for Length {
+    type Error = Error;
+
+    fn try_from(len: u32) -> Result<Length> {
+        if len <= Self::max().0 {
+            Ok(Length(len))
+        } else {
+            Err(ErrorKind::Overflow.into())
+        }
+    }
+}
+
 impl TryFrom<usize> for Length {
     type Error = Error;
 
     fn try_from(len: usize) -> Result<Length> {
-        let inner = u32::try_from(len).map_err(|_| ErrorKind::Overflow)?;
-
-        if inner <= Self::max().0 {
-            Ok(Length(inner))
-        } else {
-            Err(ErrorKind::Overflow.into())
-        }
+        u32::try_from(len)
+            .map_err(|_| ErrorKind::Overflow)?
+            .try_into()
     }
 }
 
@@ -146,6 +163,7 @@ impl Decodable<'_> for Length {
             }
             _ => {
                 // We specialize to a maximum 3-byte length
+                // TODO(tarcieri): support lengths greater than 65535
                 Err(ErrorKind::Overlength.into())
             }
         }
@@ -158,7 +176,7 @@ impl Encodable for Length {
             0..=0x7F => Ok(Length(1)),
             0x80..=0xFF => Ok(Length(2)),
             0x100..=0xFFFF => Ok(Length(3)),
-            // TODO(tarcieri): support lengths greater than 65535?
+            // TODO(tarcieri): support lengths greater than 65535
             _ => Err(ErrorKind::Overflow.into()),
         }
     }
@@ -175,7 +193,7 @@ impl Encodable for Length {
                 encoder.byte((self.0 >> 8) as u8)?;
                 encoder.byte((self.0 & 0xFF) as u8)
             }
-            // TODO(tarcieri): support lengths greater than 65535?
+            // TODO(tarcieri): support lengths greater than 65535
             _ => Err(ErrorKind::Overflow.into()),
         }
     }
@@ -190,7 +208,7 @@ impl fmt::Display for Length {
 #[cfg(test)]
 mod tests {
     use super::Length;
-    use crate::{Decodable, Encodable};
+    use crate::{Decodable, Encodable, ErrorKind};
 
     #[test]
     fn decode() {
@@ -247,5 +265,14 @@ mod tests {
     #[test]
     fn reject_indefinite_lengths() {
         assert!(Length::from_der(&[0x80]).is_err());
+    }
+
+    #[test]
+    fn add_overflows_when_max_length_exceeded() {
+        let result = Length::max() + Length::one();
+        assert_eq!(
+            result.err().map(|err| err.kind()),
+            Some(ErrorKind::Overflow)
+        );
     }
 }
