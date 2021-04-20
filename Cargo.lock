@@ -105,7 +105,7 @@ version = "0.0.2"
 
 [[package]]
 name = "const-oid"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
