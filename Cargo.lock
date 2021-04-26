@@ -111,14 +111,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "cpufeatures"
+version = "0.0.0"
+
+[[package]]
 name = "cpuid-bool"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8aebca1129a03dc6dc2b127edd729435bbc4a37e1d5f4d7513165089ceb02634"
-
-[[package]]
-name = "cpuid-bool"
-version = "0.2.0"
 
 [[package]]
 name = "crypto-mac"
@@ -280,7 +280,7 @@ checksum = "fa827a14b29ab7f44778d14a88d3cb76e949c45083f7dbfa507d0cb699dc12de"
 dependencies = [
  "block-buffer 0.9.0",
  "cfg-if",
- "cpuid-bool 0.1.2",
+ "cpuid-bool",
  "digest",
  "opaque-debug 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

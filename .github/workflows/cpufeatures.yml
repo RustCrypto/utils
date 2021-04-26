@@ -1,16 +1,16 @@
-name: cpuid-bool
+name: cpufeatures
 
 on:
   pull_request:
       paths:
-        - "cpuid-bool/**"
+        - "cpufeatures/**"
         - "Cargo.*"
   push:
     branches: master
 
 defaults:
   run:
-    working-directory: cpuid-bool
+    working-directory: cpufeatures
 
 env:
   CARGO_INCREMENTAL: 0
