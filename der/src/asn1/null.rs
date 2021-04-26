@@ -1,6 +1,6 @@
 //! ASN.1 `NULL` support.
 
-use crate::{Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
+use crate::{Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 /// ASN.1 `NULL` type.
@@ -23,7 +23,10 @@ impl TryFrom<Any<'_>> for Null {
 
 impl<'a> From<Null> for Any<'a> {
     fn from(_: Null) -> Any<'a> {
-        Any::new(Tag::Null, &[]).unwrap()
+        Any {
+            tag: Tag::Null,
+            value: ByteSlice::default(),
+        }
     }
 }
 
@@ -57,7 +60,7 @@ impl TryFrom<Any<'_>> for () {
 
 impl<'a> From<()> for Any<'a> {
     fn from(_: ()) -> Any<'a> {
-        Any::new(Tag::Null, &[]).unwrap()
+        Null.into()
     }
 }
 

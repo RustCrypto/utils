@@ -114,7 +114,7 @@ where
         // values the leading `0x00` byte may need to be removed.
         // TODO(tarcieri): validate leading 0 byte was required
         if bytes.len() > N::to_usize() {
-            if bytes.len() != N::to_usize().checked_add(1).unwrap() {
+            if bytes.len() != N::to_usize().checked_add(1).expect("overflow") {
                 return Err(ErrorKind::Length { tag: Self::TAG }.into());
             }
 
