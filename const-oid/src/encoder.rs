@@ -119,11 +119,12 @@ pub(crate) fn write_base128(bytes: &mut [u8], mut n: Arc) -> Result<usize> {
         let byte = bytes.get_mut(i).ok_or(Error)?;
         *byte = (n & 0b1111111 | mask) as u8;
         n >>= 7;
-        i = i.checked_sub(1).unwrap();
+        i = i.checked_sub(1).expect("overflow");
         mask = 0b10000000;
     }
 
-    *bytes.get_mut(0).unwrap() = (n | mask) as u8;
+    bytes[0] = (n | mask) as u8;
+
     Ok(nbytes + 1)
 }
 

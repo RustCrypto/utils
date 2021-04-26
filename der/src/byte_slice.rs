@@ -48,6 +48,15 @@ impl AsRef<[u8]> for ByteSlice<'_> {
     }
 }
 
+impl Default for ByteSlice<'_> {
+    fn default() -> Self {
+        Self {
+            inner: &[],
+            length: Length::ZERO,
+        }
+    }
+}
+
 impl<'a> TryFrom<&'a [u8]> for ByteSlice<'a> {
     type Error = Error;
 
