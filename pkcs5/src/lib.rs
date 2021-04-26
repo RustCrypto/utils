@@ -22,7 +22,7 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_root_url = "https://docs.rs/pkcs5/0.2.0"
 )]
-#![forbid(unsafe_code)]
+#![forbid(unsafe_code, clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
 #[cfg(all(feature = "alloc", feature = "pbes2"))]
