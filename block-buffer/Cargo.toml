@@ -1,6 +1,6 @@
 [package]
 name = "block-buffer"
-version = "0.10.0-pre.3" # Also update html_root_url in lib.rs when bumping this
+version = "0.10.0-pre.4" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Fixed size buffer for block processing of data"
