@@ -55,7 +55,7 @@ dependencies = [
 
 [[package]]
 name = "block-buffer"
-version = "0.10.0-pre.2"
+version = "0.10.0-pre.3"
 dependencies = [
  "block-padding 0.3.0-pre",
  "generic-array",
