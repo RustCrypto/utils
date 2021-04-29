@@ -6,7 +6,7 @@ members = [
     "block-padding",
     "collectable",
     "const-oid",
-    "cpuid-bool",
+    "cpufeatures",
     "dbl",
     "der",
     "der/derive",

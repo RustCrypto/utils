@@ -3,7 +3,7 @@
 //! # Example
 //! ```
 //! // This macro creates `cpuid_aes_sha` module
-//! cpuid_bool::new!(cpuid_aes_sha, "aes", "sha");
+//! cpufeatures::new!(cpuid_aes_sha, "aes", "sha");
 //!
 //! // `token` is a Zero Sized Type value, which guarantees
 //! // that underlying static storage got properly initialized,
@@ -35,7 +35,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/cpuid-bool/0.2.0"
+    html_root_url = "https://docs.rs/cpufeatures/0.0.0"
 )]
 
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
@@ -89,7 +89,7 @@ macro_rules! new {
                         let cr = unsafe {
                             [__cpuid(1), __cpuid_count(7, 0)]
                         };
-                        let res = $(cpuid_bool::check!(cr, $tf) & )+ true;
+                        let res = $(cpufeatures::check!(cr, $tf) & )+ true;
                         STORAGE.store(res as u8, Relaxed);
                         res
                     } else {
