@@ -1,6 +1,6 @@
 [package]
 name = "pkcs5"
-version = "0.2.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.2.1" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #5:
 Password-Based Cryptography Specification Version 2.1 (RFC 8018)
