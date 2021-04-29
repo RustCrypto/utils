@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.1 (2021-04-29)
+### Changed
+- Bump `aes` to v0.7 ([#388])
+- Bump `block-modes` to v0.8  ([#388])
+- Bump `hmac` to v0.11  ([#388])
+- Bump `pbkdf2` to v0.8  ([#388])
+
+[#388]: https://github.com/RustCrypto/utils/pull/388
+
 ## 0.2.0 (2021-03-22)
 ### Changed
 - Bump `der` to v0.3 ([#354])
