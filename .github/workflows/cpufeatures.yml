@@ -2,9 +2,9 @@ name: cpufeatures
 
 on:
   pull_request:
-      paths:
-        - "cpufeatures/**"
-        - "Cargo.*"
+    paths:
+      - "cpufeatures/**"
+      - "Cargo.*"
   push:
     branches: master
 
@@ -22,7 +22,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.39.0 # MSRV
+          - 1.40.0 # MSRV
           - stable
     steps:
     - uses: actions/checkout@v1
