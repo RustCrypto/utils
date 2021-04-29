@@ -41,9 +41,33 @@ jobs:
           override: true
       - run: cargo build --release --target ${{ matrix.target }} --no-default-features
       - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features alloc
-      - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features encryption
       - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features pem
-      - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features pkcs5
+
+  # `pkcs5` crate is MSRV 1.49+
+  encryption:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.49.0 # MSRV
+          - stable
+        target:
+          - thumbv7em-none-eabi
+          - wasm32-unknown-unknown
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
+          override: true
+      - run: cargo build --release --target ${{ matrix.target }} --no-default-features
+      - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features alloc
+      - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features pem
+      - run: cargo test --release --features encryption
+      - run: cargo test --release --features pkcs5
+      - run: cargo test --release --all-features
 
   test:
     runs-on: ubuntu-latest
@@ -62,7 +86,4 @@ jobs:
       - run: cargo test --release --no-default-features
       - run: cargo test --release
       - run: cargo test --release --features alloc
-      - run: cargo test --release --features encryption
       - run: cargo test --release --features pem
-      - run: cargo test --release --features pkcs5
-      - run: cargo test --release --all-features
