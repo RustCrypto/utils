@@ -3,20 +3,28 @@
 //! macros to `libcore` is implemented.
 //!
 //! Supported target architectures:
-//! - `aarch64` (Linux and macOS/M4)
-//! - `x86`/`x86_64` (OS independent and `no_std`-friendly)
+//! - `aarch64`: Linux and macOS/M4 only (ARM64 does not support OS-independent feature detection)
+//!   - Target features: `aes`, `sha2`, `sha3`
+//! - `x86`/`x86_64`: OS independent and `no_std`-friendly
+//!   - Target features: `adx`, `aes`, `avx`, `avx2`, `bmi1`, `bmi2`, `fma`,
+//!     `mmx`, `pclmulqdq`, `popcnt`, `rdrand`, `rdseed`, `sgx`, `sha`, `sse`,
+//!     `sse2`, `sse3`, `sse4.1`, `sse4.2`, `ssse3`
+//!
+//! If you would like detection support for a target feature which is not on
+//! this list, please [open a GitHub issue][gh].
 //!
 //! # Example
 //! ```
 //! # #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-//! {
+//! # {
 //! // This macro creates `cpuid_aes_sha` module
 //! cpufeatures::new!(cpuid_aes_sha, "aes", "sha");
 //!
-//! // `token` is a Zero Sized Type value, which guarantees
+//! // `token` is a Zero Sized Type (ZST) value, which guarantees
 //! // that underlying static storage got properly initialized,
 //! // which allows to omit initialization branch
 //! let token: cpuid_aes_sha::InitToken = cpuid_aes_sha::init();
+//!
 //! if token.get() {
 //!     println!("CPU supports both SHA and AES extensions");
 //! } else {
@@ -43,6 +51,7 @@
 //! calls, thus runtime overhead for them is minimal.
 //!
 //! [RFC 2725]: https://github.com/rust-lang/rfcs/pull/2725
+//! [gh]: https://github.com/RustCrypto/utils/issues/new?title=cpufeatures:%20requesting%20support%20for%20CHANGEME%20target%20feature
 
 #![no_std]
 #![doc(
