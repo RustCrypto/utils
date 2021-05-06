@@ -17,18 +17,95 @@ env:
   RUSTFLAGS: "-Dwarnings"
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  # Linux tests
+  linux:
     strategy:
       matrix:
-        rust:
+        include:
+          # 32-bit Linux/x86
+          - target: i686-unknown-linux-gnu
+            rust: 1.40.0 # MSRV
+            deps: sudo apt update && sudo apt install gcc-multilib
+          - target: i686-unknown-linux-gnu
+            rust: stable
+            deps: sudo apt update && sudo apt install gcc-multilib
+
+          # 64-bit Linux/x86_64
+          - target: x86_64-unknown-linux-gnu
+            rust: 1.40.0 # MSRV
+          - target: x86_64-unknown-linux-gnu
+            rust: stable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
+          override: true
+          profile: minimal
+      - run: ${{ matrix.deps }}
+      - run: cargo test --target ${{ matrix.target }} --release
+
+  # macOS tests
+  macos:
+    strategy:
+      matrix:
+        toolchain:
           - 1.40.0 # MSRV
           - stable
+    runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v1
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: ${{ matrix.rust }}
-        override: true
-    - run: cargo test --release
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          target: x86_64-apple-darwin
+          override: true
+      - run: cargo test --release
+
+  # Windows tests
+  windows:
+    strategy:
+      matrix:
+        include:
+          # 64-bit Windows (GNU)
+          # TODO(tarcieri): try re-enabling this when we bump MSRV
+          #- target: x86_64-pc-windows-gnu
+          #  toolchain: 1.40.0 # MSRV
+          - target: x86_64-pc-windows-gnu
+            toolchain: stable
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          target: ${{ matrix.target }}
+          override: true
+      - run: cargo test --target ${{ matrix.target }} --release
+
+  # Cross-compiled tests
+  cross:
+    strategy:
+      matrix:
+        include:
+          # ARM64
+          # TODO(tarcieri): try re-enabling this when we bump MSRV
+          #- target: aarch64-unknown-linux-gnu
+          #  rust: 1.40.0 # MSRV
+          - target: aarch64-unknown-linux-gnu
+            rust: stable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          target: ${{ matrix.target }}
+          override: true
+          profile: minimal
+      - run: cargo install cross
+      - run: cross test --target ${{ matrix.target }} --release

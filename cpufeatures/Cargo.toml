@@ -1,12 +1,21 @@
 [package]
 name = "cpufeatures"
 version = "0.1.0" # Also update html_root_url in lib.rs when bumping this
+description = """
+Lightweight and efficient no-std compatible alternative to the
+is_x86_feature_detected! macro
+"""
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
-description = "Lightweight and efficient no-std compatible alternative to the is_x86_feature_detected macro"
 documentation = "https://docs.rs/cpufeatures"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["cpuid", "target-feature"]
 categories = ["no-std"]
 edition = "2018"
 readme = "README.md"
+
+[target.aarch64-apple-darwin.dependencies]
+libc = "0.2"
+
+[target.'cfg(all(target_arch = "aarch64", target_os = "linux"))'.dependencies]
+libc = "0.2"
