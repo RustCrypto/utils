@@ -23,9 +23,15 @@ macro_rules! __unless_target_features {
 #[doc(hidden)]
 macro_rules! __detect_target_features {
     ($($tf:tt),+) => {{
-        let hwcaps = unsafe { libc::getauxval(libc::AT_HWCAP) };
+        let hwcaps = $crate::aarch64::getauxval_hwcap();
         $($crate::check!(hwcaps, $tf) & )+ true
     }};
+}
+
+/// Linux helper function for calling `getauxval` to get `AT_HWCAP`.
+#[cfg(target_os = "linux")]
+pub fn getauxval_hwcap() -> u64 {
+    unsafe { libc::getauxval(libc::AT_HWCAP) }
 }
 
 #[cfg(target_os = "macos")]
