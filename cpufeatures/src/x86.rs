@@ -3,6 +3,11 @@
 //! Portable, `no_std`-friendly implementation that relies on the x86 `CPUID`
 //! instruction for feature detection.
 
+// Evaluate the given `$body` expression any of the supplied target features
+// are not enabled. Otherwise returns true.
+//
+// The `$body` expression is not evaluated on SGX targets, and returns false
+// on these targets unless *all* supplied target features are enabled.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __unless_target_features {
@@ -22,6 +27,7 @@ macro_rules! __unless_target_features {
     }};
 }
 
+// Use CPUID to detect the presence of all supplied target features.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __detect_target_features {

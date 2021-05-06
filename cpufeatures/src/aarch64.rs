@@ -4,6 +4,8 @@
 //! unprivileged userspace code, so this implementation relies on OS-specific
 //! APIs for feature detection.
 
+// Evaluate the given `$body` expression any of the supplied target features
+// are not enabled. Otherwise returns true.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __unless_target_features {
@@ -18,6 +20,7 @@ macro_rules! __unless_target_features {
     };
 }
 
+// Linux runtime detection of target CPU features using `getauxval`.
 #[cfg(target_os = "linux")]
 #[macro_export]
 #[doc(hidden)]
@@ -34,6 +37,7 @@ pub fn getauxval_hwcap() -> u64 {
     unsafe { libc::getauxval(libc::AT_HWCAP) }
 }
 
+// MacOS runtime detection of target CPU features using `sysctlbyname`.
 #[cfg(target_os = "macos")]
 #[macro_export]
 #[doc(hidden)]
@@ -43,21 +47,25 @@ macro_rules! __detect_target_features {
     }};
 }
 
-/// Linux `expand_check_macro`
+// Linux `expand_check_macro`
 #[cfg(target_os = "linux")]
 macro_rules! __expand_check_macro {
-    ($(($name:tt, $hwcap:expr)),* $(,)?) => {
+    ($(($name:tt, $hwcap:ident)),* $(,)?) => {
+        $(
+            pub use libc::$hwcap;
+        )*
+
         #[macro_export]
         #[doc(hidden)]
         macro_rules! check {
             $(
-                ($hwcaps:expr, $name) => { (($hwcaps & libc::$hwcap) != 0) };
+                ($hwcaps:expr, $name) => { (($hwcaps & $crate::aarch64::$hwcap) != 0) };
             )*
         }
     };
 }
 
-/// Linux `expand_check_macro`
+// Linux `expand_check_macro`
 #[cfg(target_os = "linux")]
 __expand_check_macro! {
     ("aes",  HWCAP_AES),  // Enable AES support.
@@ -65,17 +73,17 @@ __expand_check_macro! {
     ("sha3", HWCAP_SHA3), // Enable SHA512 and SHA3 support.
 }
 
-/// macOS `check!` macro.
-///
-/// NOTE: several of these instructions (e.g. `aes`, `sha2`) can be assumed to
-/// be present on all Apple ARM64 hardware.
-///
-/// Newer CPU instructions now have nodes within sysctl's `hw.optional`
-/// namespace, however the ones that do not can safely be assumed to be
-/// present on all Apple ARM64 devices, now and for the foreseeable future.
-///
-/// See discussion on this issue for more information:
-/// <https://github.com/RustCrypto/utils/issues/378>
+// macOS `check!` macro.
+//
+// NOTE: several of these instructions (e.g. `aes`, `sha2`) can be assumed to
+// be present on all Apple ARM64 hardware.
+//
+// Newer CPU instructions now have nodes within sysctl's `hw.optional`
+// namespace, however the ones that do not can safely be assumed to be
+// present on all Apple ARM64 devices, now and for the foreseeable future.
+//
+// See discussion on this issue for more information:
+// <https://github.com/RustCrypto/utils/issues/378>
 #[cfg(target_os = "macos")]
 #[macro_export]
 #[doc(hidden)]
