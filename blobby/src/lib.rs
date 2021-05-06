@@ -51,7 +51,7 @@
 )]
 extern crate alloc;
 
-use alloc::{boxed::Box, vec, vec::Vec};
+use alloc::{boxed::Box, collections::BTreeMap, vec, vec::Vec};
 use core::iter::Iterator;
 
 /// Iterator over binary blobs
@@ -112,6 +112,100 @@ fn read_vlq(data: &[u8], pos: &mut usize) -> Result<usize, Error> {
     }
 
     Ok(val)
+}
+
+/// Write a git-flavoured VLQ value into `buf`.
+///
+/// Returns the slice within `buf` that holds the value.
+fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
+    macro_rules! step {
+        ($n:expr) => {
+            buf[$n] = if $n == 3 {
+                (val & (VAL_MASK as usize)) as u8
+            } else {
+                val -= 1;
+                NEXT_MASK | (val & (VAL_MASK as usize)) as u8
+            };
+            val >>= 7;
+            if val == 0 {
+                return &buf[$n..];
+            }
+        };
+    }
+
+    step!(3);
+    step!(2);
+    step!(1);
+    step!(0);
+    panic!("integer is too big")
+}
+
+/// Encode the given collection of binary blobs in .blb format into `writer`.
+/// Returns the encoded data together with a count of the number of blobs included in the index.
+///
+/// The encoded file format is:
+///  - count of index entries=N
+///  - N x index entries, each encoded as:
+///      - size L of index entry (VLQ)
+///      - index blob contents (L bytes)
+///  - repeating encoded blobs, each encoded as:
+///      - VLQ value that is either:
+///         - (J << 1) & 0x01: indicates this blob is index entry J
+///         - (L << 1) & 0x00: indicates an explicit blob of len L
+///      - (in the latter case) explicit blob contents (L bytes)
+pub fn encode_blobs<'a, I, T: 'a>(blobs: &'a I) -> (Vec<u8>, usize)
+where
+    &'a I: IntoIterator<Item = &'a T>,
+    T: AsRef<[u8]>,
+{
+    let mut idx_map = BTreeMap::new();
+    blobs
+        .into_iter()
+        .map(|v| v.as_ref())
+        .filter(|blob| !blob.is_empty())
+        .for_each(|blob| {
+            let v = idx_map.entry(blob.as_ref()).or_insert(0);
+            *v += 1;
+        });
+
+    let mut idx: Vec<&[u8]> = idx_map
+        .iter()
+        .filter(|(_, &v)| v > 1)
+        .map(|(&k, _)| k)
+        .collect();
+    idx.sort_by_key(|e| {
+        let k = match e {
+            [0] => 2,
+            [1] => 1,
+            _ => 0,
+        };
+        (k, idx_map.get(e).unwrap())
+    });
+    idx.reverse();
+    let idx_len = idx.len();
+
+    let rev_idx: BTreeMap<&[u8], usize> = idx.iter().enumerate().map(|(i, &e)| (e, i)).collect();
+
+    let mut out_buf = Vec::new();
+    let mut buf = [0u8; 4];
+    out_buf.extend_from_slice(encode_vlq(idx.len(), &mut buf));
+    for e in idx {
+        out_buf.extend_from_slice(encode_vlq(e.len(), &mut buf));
+        out_buf.extend_from_slice(e);
+    }
+
+    for blob in blobs.into_iter().map(|v| v.as_ref()) {
+        if let Some(dup_pos) = rev_idx.get(blob) {
+            let n = (dup_pos << 1) + 1usize;
+            out_buf.extend_from_slice(encode_vlq(n, &mut buf));
+        } else {
+            let n = blob.len() << 1;
+            out_buf.extend_from_slice(encode_vlq(n, &mut buf));
+            out_buf.extend_from_slice(blob);
+        }
+    }
+
+    (out_buf, idx_len)
 }
 
 impl<'a> BlobIterator<'a> {
