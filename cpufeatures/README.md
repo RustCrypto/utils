@@ -9,11 +9,48 @@
 
 Lightweight and efficient `no_std` compatible alternative to the
 `is_x86_feature_detected!` macro providing runtime CPU feature detection
-for x86/x86_64 CPUs.
-
-ARM support forthcoming. See [RustCrypto/utils#378].
+for x86/x86_64 and ARM64 CPUs.
 
 [Documentation][docs-link]
+
+## Supported architectures
+
+### `aarch64`: Linux and macOS/M4 only
+
+Note: ARM64 does not support OS-independent feature detection 
+
+Target features:
+
+- `aes`
+- `sha2`
+- `sha3`
+
+Note: please open a GitHub Issue to request support for additional features.
+
+### `x86`/`x86_64`: OS independent and `no_std`-friendly
+
+Target features:
+
+- `adx`
+- `aes`
+- `avx`
+- `avx2`
+- `bmi1`
+- `bmi2`
+- `fma`
+- `mmx`
+- `pclmulqdq`
+- `popcnt`
+- `rdrand`
+- `rdseed`
+- `sgx`
+- `sha`
+- `sse`
+- `sse2`
+- `sse3`
+- `sse4.1`
+- `sse4.2`
+- `ssse3`
 
 ## License
 
