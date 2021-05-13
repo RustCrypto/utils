@@ -51,15 +51,13 @@ macro_rules! __detect_target_features {
 #[cfg(target_os = "linux")]
 macro_rules! __expand_check_macro {
     ($(($name:tt, $hwcap:ident)),* $(,)?) => {
-        $(
-            pub use libc::$hwcap;
-        )*
-
         #[macro_export]
         #[doc(hidden)]
         macro_rules! check {
             $(
-                ($hwcaps:expr, $name) => { (($hwcaps & $crate::aarch64::$hwcap) != 0) };
+                ($hwcaps:expr, $name) => {
+                    (($hwcaps & $crate::aarch64::hwcaps::$hwcap) != 0)
+                };
             )*
         }
     };
@@ -69,8 +67,21 @@ macro_rules! __expand_check_macro {
 #[cfg(target_os = "linux")]
 __expand_check_macro! {
     ("aes",  HWCAP_AES),  // Enable AES support.
+    ("neon", HWCAP_NEON), // Enable Advanced SIMD instructions.
     ("sha2", HWCAP_SHA2), // Enable SHA1 and SHA256 support.
     ("sha3", HWCAP_SHA3), // Enable SHA512 and SHA3 support.
+}
+
+/// Linux hardware capabilities
+///
+/// Workaround for these being missing from certain environments (i.e. Musl)
+/// See: <https://github.com/rust-lang/libc/issues/2171>
+#[cfg(target_os = "linux")]
+pub mod hwcaps {
+    pub const HWCAP_AES: libc::c_ulong = 1 << 3;
+    pub const HWCAP_NEON: libc::c_ulong = 1 << 12;
+    pub const HWCAP_SHA2: libc::c_ulong = 1 << 6;
+    pub const HWCAP_SHA3: libc::c_ulong = 1 << 17;
 }
 
 // macOS `check!` macro.
@@ -89,6 +100,9 @@ __expand_check_macro! {
 #[doc(hidden)]
 macro_rules! check {
     ("aes") => {
+        true
+    };
+    ("neon") => {
         true
     };
     ("sha2") => {
