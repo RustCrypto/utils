@@ -67,7 +67,6 @@ macro_rules! __expand_check_macro {
 #[cfg(target_os = "linux")]
 __expand_check_macro! {
     ("aes",  HWCAP_AES),  // Enable AES support.
-    ("neon", HWCAP_NEON), // Enable Advanced SIMD instructions.
     ("sha2", HWCAP_SHA2), // Enable SHA1 and SHA256 support.
     ("sha3", HWCAP_SHA3), // Enable SHA512 and SHA3 support.
 }
@@ -100,9 +99,6 @@ pub mod hwcaps {
 #[doc(hidden)]
 macro_rules! check {
     ("aes") => {
-        true
-    };
-    ("neon") => {
         true
     };
     ("sha2") => {
