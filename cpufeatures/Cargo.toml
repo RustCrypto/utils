@@ -1,6 +1,6 @@
 [package]
 name = "cpufeatures"
-version = "0.1.2" # Also update html_root_url in lib.rs when bumping this
+version = "0.1.3" # Also update html_root_url in lib.rs when bumping this
 description = """
 Lightweight and efficient no-std compatible alternative to the
 is_x86_feature_detected! macro
