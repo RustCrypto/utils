@@ -60,19 +60,15 @@
     html_root_url = "https://docs.rs/cpufeatures/0.1.3"
 )]
 
-#[cfg(all(target_arch = "aarch64", any(target_os = "linux", target_os = "macos")))]
+#[cfg(all(target_arch = "aarch64"))]
 #[doc(hidden)]
 pub mod aarch64;
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
 
-#[cfg(not(any(
-    all(target_arch = "aarch64", any(target_os = "linux", target_os = "macos")),
-    target_arch = "x86",
-    target_arch = "x86_64"
-)))]
-compile_error!("This crate works only on `aarch64` (Linux/Mac), `x86`, and `x86-64` targets.");
+#[cfg(not(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")))]
+compile_error!("This crate works only on `aarch64`, `x86`, and `x86-64` targets.");
 
 /// Create module with CPU feature detection code.
 #[macro_export]

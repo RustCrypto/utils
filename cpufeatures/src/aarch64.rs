@@ -134,3 +134,13 @@ pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
     assert_eq!(rc, 0, "sysctlbyname returned error code: {}", rc);
     value != 0
 }
+
+// On other targets, runtime CPU feature detection is unavailable
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __detect_target_features {
+    ($($tf:tt),+) => {
+        false
+    };
+}
