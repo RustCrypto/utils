@@ -4,19 +4,18 @@ use crate::AlgorithmIdentifier;
 use core::convert::TryFrom;
 use der::{Decodable, Encodable, Error, Message, Result};
 
-/// X.509 `SubjectPublicKeyInfo` (SPKI).
+/// X.509 `SubjectPublicKeyInfo` (SPKI) as defined in [RFC 5280 Section 4.1.2.7].
 ///
 /// ASN.1 structure containing an [`AlgorithmIdentifier`] and public key
 /// data in an algorithm specific format.
-///
-/// Described in RFC 5280 Section 4.1.2.7:
-/// <https://tools.ietf.org/html/rfc5280#section-4.1.2.7>
 ///
 /// ```text
 ///    SubjectPublicKeyInfo  ::=  SEQUENCE  {
 ///         algorithm            AlgorithmIdentifier,
 ///         subjectPublicKey     BIT STRING  }
 /// ```
+///
+/// [RFC 5280 Section 4.1.2.7]: https://tools.ietf.org/html/rfc5280#section-4.1.2.7
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct SubjectPublicKeyInfo<'a> {
     /// X.509 [`AlgorithmIdentifier`] for the public key type
