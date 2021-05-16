@@ -1,8 +1,5 @@
 //! Length calculations for encoded ASN.1 DER values
 
-// TODO(tarcieri): support lengths greater than 65535.
-// See: <https://github.com/RustCrypto/utils/issues/370>
-
 use crate::{Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Result};
 use core::{
     convert::{TryFrom, TryInto},
@@ -10,7 +7,12 @@ use core::{
     ops::Add,
 };
 
+/// Maximum length as a `u32` (1 MiB).
+const MAX_U32: u32 = 0xf_ffff;
+
 /// ASN.1-encoded length.
+///
+/// Maximum length is defined by the [`Length::MAX`] constant (1 MiB).
 #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Length(u32);
 
@@ -21,9 +23,8 @@ impl Length {
     /// Length of `1`
     pub const ONE: Self = Self(1);
 
-    /// Maximum length currently supported: `65535`.
-    // TODO(tarcieri): support lengths greater than 65535
-    pub const MAX: Self = Self(65535);
+    /// Maximum length currently supported: 1 MiB
+    pub const MAX: Self = Self(MAX_U32);
 
     /// Create a new [`Length`] for any value which fits inside of a [`u16`].
     ///
@@ -51,9 +52,30 @@ impl Length {
     }
 
     /// Get the length of DER Tag-Length-Value (TLV) encoded data if `self`
-    /// is the length of the inner "value" portion of the message
+    /// is the length of the inner "value" portion of the message.
     pub fn for_tlv(self) -> Result<Self> {
         Length(1) + self.encoded_len()? + self
+    }
+
+    /// Get initial octet of the encoded length (if one is required).
+    ///
+    /// From X.690 Section 8.1.3.5:
+    /// > In the long form, the length octets shall consist of an initial octet
+    /// > and one or more subsequent octets. The initial octet shall be encoded
+    /// > as follows:
+    /// >
+    /// > a) bit 8 shall be one;
+    /// > b) bits 7 to 1 shall encode the number of subsequent octets in the
+    /// >    length octets, as an unsigned binary integer with bit 7 as the
+    /// >    most significant bit;
+    /// > c) the value 11111111₂ shall not be used.
+    fn initial_octet(self) -> Option<u8> {
+        match self.0 {
+            0x80..=0xFF => Some(0x81),
+            0x100..=0xFFFF => Some(0x82),
+            0x10000..=MAX_U32 => Some(0x83),
+            _ => None,
+        }
     }
 }
 
@@ -156,32 +178,26 @@ impl Decodable<'_> for Length {
             // Note: per X.690 Section 8.1.3.6.1 the byte 0x80 encodes indefinite
             // lengths, which are not allowed in DER, so disallow that byte.
             len if len < 0x80 => Ok(len.into()),
-            0x81 => {
-                let len = decoder.byte()?;
+            tag @ 0x81..=0x83 => {
+                let nbytes = tag.checked_sub(0x80).ok_or(ErrorKind::Overlength)? as usize;
+                let mut decoded_len = 0;
 
-                // X.690 Section 10.1: DER lengths must be encoded with a minimum
-                // number of octets
-                if len >= 0x80 {
-                    Ok(len.into())
-                } else {
-                    Err(ErrorKind::Noncanonical.into())
+                for _ in 0..nbytes {
+                    decoded_len = (decoded_len << 8) | decoder.byte()? as u32;
                 }
-            }
-            0x82 => {
-                let len_hi = decoder.byte()? as u16;
-                let len = (len_hi << 8) | (decoder.byte()? as u16);
+
+                let length = Length::try_from(decoded_len)?;
 
                 // X.690 Section 10.1: DER lengths must be encoded with a minimum
                 // number of octets
-                if len > 0xFF {
-                    Ok(len.into())
+                if length.initial_octet() == Some(tag) {
+                    Ok(length)
                 } else {
                     Err(ErrorKind::Noncanonical.into())
                 }
             }
             _ => {
-                // We specialize to a maximum 3-byte length
-                // TODO(tarcieri): support lengths greater than 65535
+                // We specialize to a maximum 4-byte length (including initial octet)
                 Err(ErrorKind::Overlength.into())
             }
         }
@@ -194,25 +210,23 @@ impl Encodable for Length {
             0..=0x7F => Ok(Length(1)),
             0x80..=0xFF => Ok(Length(2)),
             0x100..=0xFFFF => Ok(Length(3)),
-            // TODO(tarcieri): support lengths greater than 65535
+            0x10000..=MAX_U32 => Ok(Length(4)),
             _ => Err(ErrorKind::Overflow.into()),
         }
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        match self.0 {
-            0..=0x7F => encoder.byte(self.0 as u8),
-            0x80..=0xFF => {
-                encoder.byte(0x81)?;
-                encoder.byte(self.0 as u8)
+        if let Some(tag_byte) = self.initial_octet() {
+            encoder.byte(tag_byte)?;
+
+            match self.0.to_be_bytes() {
+                [0, 0, 0, byte] => encoder.byte(byte),
+                [0, 0, bytes @ ..] => encoder.bytes(&bytes),
+                [0, bytes @ ..] => encoder.bytes(&bytes),
+                _ => Err(ErrorKind::Overlength.into()),
             }
-            0x100..=0xFFFF => {
-                encoder.byte(0x82)?;
-                encoder.byte((self.0 >> 8) as u8)?;
-                encoder.byte((self.0 & 0xFF) as u8)
-            }
-            // TODO(tarcieri): support lengths greater than 65535
-            _ => Err(ErrorKind::Overflow.into()),
+        } else {
+            encoder.byte(self.0 as u8)
         }
     }
 }
@@ -227,6 +241,7 @@ impl fmt::Display for Length {
 mod tests {
     use super::Length;
     use crate::{Decodable, Encodable, ErrorKind};
+    use core::convert::TryFrom;
 
     #[test]
     fn decode() {
@@ -248,11 +263,16 @@ mod tests {
             Length::from(0x100u16),
             Length::from_der(&[0x82, 0x01, 0x00]).unwrap()
         );
+
+        assert_eq!(
+            Length::try_from(0x10000u32).unwrap(),
+            Length::from_der(&[0x83, 0x01, 0x00, 0x00]).unwrap()
+        );
     }
 
     #[test]
     fn encode() {
-        let mut buffer = [0u8; 3];
+        let mut buffer = [0u8; 4];
 
         assert_eq!(&[0x00], Length::ZERO.encode_to_slice(&mut buffer).unwrap());
 
@@ -274,6 +294,14 @@ mod tests {
         assert_eq!(
             &[0x82, 0x01, 0x00],
             Length::from(0x100u16).encode_to_slice(&mut buffer).unwrap()
+        );
+
+        assert_eq!(
+            &[0x83, 0x01, 0x00, 0x00],
+            Length::try_from(0x10000u32)
+                .unwrap()
+                .encode_to_slice(&mut buffer)
+                .unwrap()
         );
     }
 

@@ -21,11 +21,6 @@ implemented as part of the [RustCrypto] project, e.g. the [`pkcs8`] crate.
 The core implementation avoids any heap usage (with convenience methods
 that allocate gated under the off-by-default `alloc` feature).
 
-The implementation is presently specialized for documents which are smaller
-than 64kB as that provides a safe bound for the current use cases.
-However, that may be revisited in the future depending on interest in
-support for larger documents. See [RustCrypto/utils#370].
-
 ## License
 
 Licensed under either of:
