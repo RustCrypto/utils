@@ -7,6 +7,7 @@ members = [
     "collectable",
     "const-oid",
     "cpufeatures",
+    "crypto-bigint",
     "dbl",
     "der",
     "der/derive",

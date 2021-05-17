@@ -108,6 +108,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "crypto-bigint"
+version = "0.0.0"
+dependencies = [
+ "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "subtle",
+]
+
+[[package]]
 name = "crypto-mac"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
