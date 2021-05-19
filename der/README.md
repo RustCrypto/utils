@@ -46,8 +46,8 @@ dual licensed as above, without any additional terms or conditions.
 [rustc-image]: https://img.shields.io/badge/rustc-1.47+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
-[build-image]: https://github.com/RustCrypto/utils/workflows/der/badge.svg?branch=master&event=push
-[build-link]: https://github.com/RustCrypto/utils/actions?query=workflow:der
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/der.yml/badge.svg
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/der.yml
 
 [//]: # (general links)
 
