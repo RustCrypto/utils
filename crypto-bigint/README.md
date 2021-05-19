@@ -50,7 +50,7 @@ dual licensed as above, without any additional terms or conditions.
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
 [build-image]: https://github.com/RustCrypto/utils/workflows/crypto-bigint/badge.svg?branch=master&event=push
-[build-link]: https://github.com/RustCrypto/utils/actions?query=workflow:crypto-bigint
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/crypto-bigint.yml
 
 [//]: # (general links)
 
