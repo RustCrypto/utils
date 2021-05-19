@@ -2,17 +2,11 @@
 
 #![allow(clippy::needless_range_loop)]
 
+mod decoder;
+
+use self::decoder::Decoder;
 use crate::{ops, Limb, NumBits, NumBytes, LIMB_BYTES};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
-
-/// Constant panicking assertion.
-// TODO(tarcieri): use const panic when stable.
-// See: https://github.com/rust-lang/rust/issues/51999
-macro_rules! const_assert {
-    ($bool:expr, $msg:expr) => {
-        [$msg][!$bool as usize]
-    };
-}
 
 /// Big unsigned integer.
 ///
@@ -88,23 +82,37 @@ impl<const LIMBS: usize> UInt<LIMBS> {
             "bytes are not the expected size"
         );
 
-        let mut limbs = [0; LIMBS];
+        let mut decoder = Decoder::new();
         let mut i = 0;
-        let mut offset = LIMB_BYTES * LIMBS;
 
-        while i < LIMBS {
-            offset -= LIMB_BYTES;
-            let mut j = 0;
-
-            while j < LIMB_BYTES {
-                limbs[i] = (limbs[i] << 8) | bytes[offset + j] as Limb;
-                j += 1;
-            }
-
+        while i < LIMB_BYTES * LIMBS {
             i += 1;
+            decoder = decoder.add_byte(bytes[bytes.len() - i]);
         }
 
-        Self { limbs }
+        decoder.finish()
+    }
+
+    /// Create a new [`UInt`] from the provided big endian hex string.
+    pub const fn from_be_hex(hex: &str) -> Self {
+        let bytes = hex.as_bytes();
+
+        const_assert!(
+            bytes.len() == LIMB_BYTES * LIMBS * 2,
+            "hex string is not the expected size"
+        );
+
+        let mut decoder = Decoder::new();
+        let mut i = 0;
+
+        while i < LIMB_BYTES * LIMBS * 2 {
+            i += 2;
+            let offset = bytes.len() - i;
+            let byte = decode_hex_byte([bytes[offset], bytes[offset + 1]]);
+            decoder = decoder.add_byte(byte);
+        }
+
+        decoder.finish()
     }
 
     /// Create a new [`UInt`] from the provided little endian bytes.
@@ -114,22 +122,36 @@ impl<const LIMBS: usize> UInt<LIMBS> {
             "bytes are not the expected size"
         );
 
-        let mut limbs = [0; LIMBS];
+        let mut decoder = Decoder::new();
         let mut i = 0;
 
-        while i < LIMBS {
-            let mut j = LIMB_BYTES;
-            let offset = i * LIMB_BYTES;
-
-            while j > 0 {
-                limbs[i] = (limbs[i] << 8) | bytes[offset + j - 1] as Limb;
-                j -= 1;
-            }
-
+        while i < LIMB_BYTES * LIMBS {
+            decoder = decoder.add_byte(bytes[i]);
             i += 1;
         }
 
-        Self { limbs }
+        decoder.finish()
+    }
+
+    /// Create a new [`UInt`] from the provided little endian hex string.
+    pub const fn from_le_hex(hex: &str) -> Self {
+        let bytes = hex.as_bytes();
+
+        const_assert!(
+            bytes.len() == LIMB_BYTES * LIMBS * 2,
+            "bytes are not the expected size"
+        );
+
+        let mut decoder = Decoder::new();
+        let mut i = 0;
+
+        while i < LIMB_BYTES * LIMBS * 2 {
+            let byte = decode_hex_byte([bytes[i], bytes[i + 1]]);
+            decoder = decoder.add_byte(byte);
+            i += 2;
+        }
+
+        decoder.finish()
     }
 
     /// Determine if this [`UInt`] is equal to zero.
@@ -163,6 +185,17 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     pub fn checked_add(&self, rhs: &Self) -> CtOption<Self> {
         let (result, carry) = self.adc(rhs, 0);
         CtOption::new(result, !Choice::from(carry as u8))
+    }
+
+    /// Borrow the limbs of this [`UInt`].
+    pub fn limbs(&self) -> &[Limb; LIMBS] {
+        &self.limbs
+    }
+}
+
+impl<const LIMBS: usize> AsRef<[Limb]> for UInt<LIMBS> {
+    fn as_ref(&self) -> &[Limb] {
+        self.limbs()
     }
 }
 
@@ -232,6 +265,31 @@ impl<const LIMBS: usize> PartialEq for UInt<LIMBS> {
 }
 
 impl<const LIMBS: usize> Eq for UInt<LIMBS> {}
+
+const fn decode_hex_byte(bytes: [u8; 2]) -> u8 {
+    let mut i = 0;
+    let mut result = 0u8;
+
+    while i < 2 {
+        result <<= 4;
+        result |= match bytes[i] {
+            b @ b'0'..=b'9' => b - b'0',
+            b @ b'a'..=b'f' => 10 + b - b'a',
+            b @ b'A'..=b'F' => 10 + b - b'A',
+            b => {
+                const_assert!(
+                    matches!(b, b'0'..=b'9' | b'a' ..= b'f' | b'A'..=b'F'),
+                    "invalid hex byte"
+                );
+                0
+            }
+        };
+
+        i += 1;
+    }
+
+    result
+}
 
 macro_rules! impl_biguint_aliases {
     ($(($name:ident, $bits:expr, $doc:expr)),+) => {
@@ -378,6 +436,20 @@ mod tests {
 
     #[test]
     #[cfg(target_pointer_width = "32")]
+    fn from_be_hex() {
+        let n = UIntEx::from_be_hex("0011223344556677");
+        assert_eq!(&n.limbs, &[0x44556677, 0x00112233]);
+    }
+
+    #[test]
+    #[cfg(target_pointer_width = "64")]
+    fn from_be_hex() {
+        let n = UIntEx::from_be_hex("00112233445566778899aabbccddeeff");
+        assert_eq!(&n.limbs, &[0x8899aabbccddeeff, 0x0011223344556677]);
+    }
+
+    #[test]
+    #[cfg(target_pointer_width = "32")]
     fn from_le_bytes() {
         let bytes = hex!("7766554433221100");
         let n = UIntEx::from_le_bytes(&bytes);
@@ -389,6 +461,20 @@ mod tests {
     fn from_le_bytes() {
         let bytes = hex!("ffeeddccbbaa99887766554433221100");
         let n = UIntEx::from_le_bytes(&bytes);
+        assert_eq!(&n.limbs, &[0x8899aabbccddeeff, 0x0011223344556677]);
+    }
+
+    #[test]
+    #[cfg(target_pointer_width = "32")]
+    fn from_le_hex() {
+        let n = UIntEx::from_le_hex("7766554433221100");
+        assert_eq!(&n.limbs, &[0x44556677, 0x00112233]);
+    }
+
+    #[test]
+    #[cfg(target_pointer_width = "64")]
+    fn from_le_hex() {
+        let n = UIntEx::from_le_hex("ffeeddccbbaa99887766554433221100");
         assert_eq!(&n.limbs, &[0x8899aabbccddeeff, 0x0011223344556677]);
     }
 

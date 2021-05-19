@@ -15,6 +15,9 @@
 #[cfg(feature = "std")]
 extern crate std;
 
+#[macro_use]
+mod macros;
+
 mod ops;
 mod traits;
 mod uint;
