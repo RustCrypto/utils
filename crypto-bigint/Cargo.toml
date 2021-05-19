@@ -1,0 +1,25 @@
+[package]
+name = "crypto-bigint"
+version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
+description = """
+Pure Rust implementation of a big integer library designed from the ground-up
+for use in cryptographic applications only. Provides constant-time,
+no_std-friendly implementations of modern formulas using const generics.
+"""
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+edition = "2018"
+repository = "https://github.com/RustCrypto/utils/tree/master/crypto-bigint"
+categories = ["algorithms", "cryptography", "data-structures", "mathematics", "no-std"]
+keywords = ["arbitrary", "crypto", "bignum", "integer", "precision"]
+readme = "README.md"
+
+[dependencies]
+subtle = { version = "2", default-features = false }
+
+[dev-dependencies]
+hex-literal = "0.3"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
