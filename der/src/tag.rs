@@ -1,7 +1,10 @@
 //! ASN.1 tags.
 
 use crate::{Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Length, Result};
-use core::{convert::TryFrom, fmt};
+use core::{
+    convert::{TryFrom, TryInto},
+    fmt,
+};
 
 /// Indicator bit for constructed form encoding (i.e. vs primitive form)
 const CONSTRUCTED_FLAG: u8 = 0b100000;
@@ -75,6 +78,42 @@ pub enum Tag {
 
     /// Context-specific tag (3) unique to a particular structure.
     ContextSpecific3 = 3 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (4) unique to a particular structure.
+    ContextSpecific4 = 4 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (5) unique to a particular structure.
+    ContextSpecific5 = 5 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (6) unique to a particular structure.
+    ContextSpecific6 = 6 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (7) unique to a particular structure.
+    ContextSpecific7 = 7 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (8) unique to a particular structure.
+    ContextSpecific8 = 8 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (9) unique to a particular structure.
+    ContextSpecific9 = 9 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (10) unique to a particular structure.
+    ContextSpecific10 = 10 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (11) unique to a particular structure.
+    ContextSpecific11 = 11 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (12) unique to a particular structure.
+    ContextSpecific12 = 12 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (13) unique to a particular structure.
+    ContextSpecific13 = 13 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (14) unique to a particular structure.
+    ContextSpecific14 = 14 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+
+    /// Context-specific tag (15) unique to a particular structure.
+    ContextSpecific15 = 15 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
 }
 
 impl TryFrom<u8> for Tag {
@@ -99,6 +138,18 @@ impl TryFrom<u8> for Tag {
             0xA1 => Ok(Tag::ContextSpecific1),
             0xA2 => Ok(Tag::ContextSpecific2),
             0xA3 => Ok(Tag::ContextSpecific3),
+            0xA4 => Ok(Tag::ContextSpecific4),
+            0xA5 => Ok(Tag::ContextSpecific5),
+            0xA6 => Ok(Tag::ContextSpecific6),
+            0xA7 => Ok(Tag::ContextSpecific7),
+            0xA8 => Ok(Tag::ContextSpecific8),
+            0xA9 => Ok(Tag::ContextSpecific9),
+            0xAA => Ok(Tag::ContextSpecific10),
+            0xAB => Ok(Tag::ContextSpecific11),
+            0xAC => Ok(Tag::ContextSpecific12),
+            0xAD => Ok(Tag::ContextSpecific13),
+            0xAE => Ok(Tag::ContextSpecific14),
+            0xAF => Ok(Tag::ContextSpecific15),
             _ => Err(ErrorKind::UnknownTag { byte }.into()),
         }
     }
@@ -130,7 +181,20 @@ impl Tag {
         }
     }
 
+    /// Get the [`Tag`] value that corresponds to a context-specific tag value
+    /// (i.e. lower 6-bits of the tag, sans leading `10` bits)
+    pub fn context_specific(tag: u8) -> Result<Tag> {
+        let byte = Class::ContextSpecific as u8 | tag;
+
+        if tag < 16 {
+            byte.try_into()
+        } else {
+            Err(ErrorKind::UnknownTag { byte }.into())
+        }
+    }
+
     /// Names of ASN.1 type which corresponds to a given [`Tag`].
+    // TODO(tarcieri): move this to `Display` and consolidate "Context Specific N"?
     pub fn type_name(self) -> &'static str {
         match self {
             Self::Boolean => "BOOLEAN",
@@ -150,6 +214,18 @@ impl Tag {
             Self::ContextSpecific1 => "Context Specific 1",
             Self::ContextSpecific2 => "Context Specific 2",
             Self::ContextSpecific3 => "Context Specific 3",
+            Self::ContextSpecific4 => "Context Specific 4",
+            Self::ContextSpecific5 => "Context Specific 5",
+            Self::ContextSpecific6 => "Context Specific 6",
+            Self::ContextSpecific7 => "Context Specific 7",
+            Self::ContextSpecific8 => "Context Specific 8",
+            Self::ContextSpecific9 => "Context Specific 9",
+            Self::ContextSpecific10 => "Context Specific 10",
+            Self::ContextSpecific11 => "Context Specific 11",
+            Self::ContextSpecific12 => "Context Specific 12",
+            Self::ContextSpecific13 => "Context Specific 13",
+            Self::ContextSpecific14 => "Context Specific 14",
+            Self::ContextSpecific15 => "Context Specific 15",
         }
     }
 }
@@ -232,5 +308,17 @@ mod tests {
         assert_eq!(Tag::ContextSpecific1.class(), Class::ContextSpecific);
         assert_eq!(Tag::ContextSpecific2.class(), Class::ContextSpecific);
         assert_eq!(Tag::ContextSpecific3.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific4.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific5.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific6.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific7.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific8.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific9.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific10.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific11.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific12.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific13.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific14.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific15.class(), Class::ContextSpecific);
     }
 }
