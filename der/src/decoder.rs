@@ -2,7 +2,7 @@
 
 use crate::{
     Any, BitString, Choice, Decodable, ErrorKind, GeneralizedTime, Ia5String, Length, Null,
-    OctetString, PrintableString, Result, Sequence, UtcTime, Utf8String,
+    OctetString, PrintableString, Result, Sequence, Tag, UtcTime, Utf8String,
 };
 use core::convert::{TryFrom, TryInto};
 
@@ -128,6 +128,38 @@ impl<'a> Decoder<'a> {
     /// Attempt to decode an ASN.1 `BIT STRING`.
     pub fn bit_string(&mut self) -> Result<BitString<'a>> {
         self.decode()
+    }
+
+    /// Attempt to decode an ASN.1 `CONTEXT-SPECIFIC` field, creating a new
+    /// nested [`Decoder`] and calling the provided argument with it.
+    ///
+    /// The provided `tag` should contain the lower 6-bits of the context
+    /// specific tag, sans the leading `10` high bits.
+    pub fn context_specific<F, T>(&mut self, context_specific_tag: u8, f: F) -> Result<T>
+    where
+        F: FnOnce(&mut Decoder<'a>) -> Result<T>,
+    {
+        self.any()?.context_specific(context_specific_tag, f)
+    }
+
+    /// Attempt to decode an `OPTIONAL` ASN.1 `CONTEXT-SPECIFIC` field.
+    ///
+    /// Returns `Ok(None)` if the tag is not of the expected type.
+    pub fn context_specific_optional<F, T>(
+        &mut self,
+        context_specific_tag: u8,
+        f: F,
+    ) -> Result<Option<T>>
+    where
+        F: FnOnce(&mut Decoder<'a>) -> Result<T>,
+    {
+        if let Some(byte) = self.peek() {
+            if byte == Tag::context_specific(context_specific_tag)? as u8 {
+                return self.context_specific(context_specific_tag, f).map(Some);
+            }
+        }
+
+        Ok(None)
     }
 
     /// Attempt to decode an ASN.1 `GeneralizedTime`.
