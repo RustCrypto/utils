@@ -67,7 +67,7 @@ impl<'a> Any<'a> {
         self.try_into()
     }
 
-    /// Attempt to decode an ASN.1 `CONTEXT-SPECIFIC`, creating a new
+    /// Attempt to decode an ASN.1 `CONTEXT-SPECIFIC` field, creating a new
     /// nested [`Decoder`] and calling the provided argument with it.
     ///
     /// The provided `tag` should contain the lower 6-bits of the context
