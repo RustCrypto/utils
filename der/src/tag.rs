@@ -6,9 +6,6 @@ use core::{convert::TryFrom, fmt};
 /// Indicator bit for constructed form encoding (i.e. vs primitive form)
 const CONSTRUCTED_FLAG: u8 = 0b100000;
 
-/// Indicator bit for context-specific types
-const CONTEXT_SPECIFIC_FLAG: u8 = 0b10000000;
-
 /// Types with an associated ASN.1 [`Tag`].
 pub trait Tagged {
     /// ASN.1 tag
@@ -68,16 +65,16 @@ pub enum Tag {
     Sequence = 0x10 | CONSTRUCTED_FLAG,
 
     /// Context-specific tag (0) unique to a particular structure.
-    ContextSpecific0 = 0 | CONTEXT_SPECIFIC_FLAG | CONSTRUCTED_FLAG,
+    ContextSpecific0 = 0 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
 
     /// Context-specific tag (1) unique to a particular structure.
-    ContextSpecific1 = 1 | CONTEXT_SPECIFIC_FLAG | CONSTRUCTED_FLAG,
+    ContextSpecific1 = 1 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
 
     /// Context-specific tag (2) unique to a particular structure.
-    ContextSpecific2 = 2 | CONTEXT_SPECIFIC_FLAG | CONSTRUCTED_FLAG,
+    ContextSpecific2 = 2 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
 
     /// Context-specific tag (3) unique to a particular structure.
-    ContextSpecific3 = 3 | CONTEXT_SPECIFIC_FLAG | CONSTRUCTED_FLAG,
+    ContextSpecific3 = 3 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
 }
 
 impl TryFrom<u8> for Tag {
@@ -120,6 +117,16 @@ impl Tag {
                 actual: self,
             }
             .into())
+        }
+    }
+
+    /// Get the [`Class`] that corresponds to this [`Tag`].
+    pub fn class(self) -> Class {
+        match self as u8 & 0b11000000 {
+            0b01000000 => Class::Application,
+            0b10000000 => Class::ContextSpecific,
+            0b11000000 => Class::Private,
+            _ => Class::Universal,
         }
     }
 
@@ -172,5 +179,58 @@ impl fmt::Display for Tag {
 impl fmt::Debug for Tag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Tag(0x{:02x}: {})", *self as u8, self.type_name())
+    }
+}
+
+/// Class of an ASN.1 [`Tag`].
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u8)]
+pub enum Class {
+    /// Types whose meaning is the same in all applications.
+    Universal = 0b00000000,
+
+    /// Types whose meaning is specific to an application, such as X.500
+    /// directory services.
+    ///
+    /// Types in two different applications may have the same
+    /// application-specific tag and different meanings.
+    Application = 0b01000000,
+
+    /// Types whose meaning is specific to a given structured type.
+    ///
+    /// Context-specific tags are used to distinguish between component types
+    /// with the same underlying tag within the context of a given structured
+    /// type, and component types in two different structured types may have
+    /// the same tag and different meanings.
+    ContextSpecific = 0b10000000,
+
+    /// Types whose meaning is specific to a given enterprise.
+    Private = 0b11000000,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Class, Tag};
+
+    #[test]
+    fn tag_class() {
+        assert_eq!(Tag::Boolean.class(), Class::Universal);
+        assert_eq!(Tag::Integer.class(), Class::Universal);
+        assert_eq!(Tag::BitString.class(), Class::Universal);
+        assert_eq!(Tag::OctetString.class(), Class::Universal);
+        assert_eq!(Tag::Null.class(), Class::Universal);
+        assert_eq!(Tag::ObjectIdentifier.class(), Class::Universal);
+        assert_eq!(Tag::Utf8String.class(), Class::Universal);
+        assert_eq!(Tag::Set.class(), Class::Universal);
+        assert_eq!(Tag::PrintableString.class(), Class::Universal);
+        assert_eq!(Tag::Ia5String.class(), Class::Universal);
+        assert_eq!(Tag::UtcTime.class(), Class::Universal);
+        assert_eq!(Tag::GeneralizedTime.class(), Class::Universal);
+        assert_eq!(Tag::Sequence.class(), Class::Universal);
+
+        assert_eq!(Tag::ContextSpecific0.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific1.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific2.class(), Class::ContextSpecific);
+        assert_eq!(Tag::ContextSpecific3.class(), Class::ContextSpecific);
     }
 }
