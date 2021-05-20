@@ -90,6 +90,11 @@ impl<'a> Decoder<'a> {
         self.decode()
     }
 
+    /// Attempt to decode an `OPTIONAL` ASN.1 `ANY` value.
+    pub fn any_optional(&mut self) -> Result<Option<Any<'a>>> {
+        self.decode()
+    }
+
     /// Attempt to decode ASN.1 `INTEGER` as `i8`
     pub fn int8(&mut self) -> Result<i8> {
         self.decode()
