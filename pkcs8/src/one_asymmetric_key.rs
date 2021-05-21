@@ -3,6 +3,30 @@ use der::{ContextualTo1, Decodable, Encodable, Message};
 use crate::{attributes::_AttributesStub, version::Version, AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
 
+mod pubkey {
+    use der::{BitString, Encodable, Encoder, Header, Length, Tag, Tagged};
+
+    // wow, java much?
+    pub(super) struct EncodableContextSpecificPublicKey<'a>(pub BitString<'a>);
+
+    impl<'a> Encodable for EncodableContextSpecificPublicKey<'a> {
+        fn encoded_len(&self) -> der::Result<Length> {
+            let inner_len = self.0.encoded_len()?;
+            Header::new(Self::TAG, inner_len)?.encoded_len()? + inner_len
+        }
+
+        fn encode(&self, encoder: &mut Encoder<'_>) -> der::Result<()> {
+            Header::new(Self::TAG, self.0.encoded_len()?)?.encode(encoder)?;
+
+            self.0.encode(encoder)
+        }
+    }
+
+    impl<'a> Tagged for EncodableContextSpecificPublicKey<'a> {
+        const TAG: Tag = Tag::ContextSpecific1;
+    }
+}
+
 /// PKCS#8 `OneAsymmetricKey`.
 ///
 /// ASN.1 structure containing a [`Version`], an [`AlgorithmIdentifier`], private key
@@ -128,7 +152,9 @@ impl<'a> Message<'a> for OneAsymmetricKey<'a> {
             &self.algorithm,
             &der::OctetString::new(self.private_key)?,
             &if let Some(key) = self.public_key {
-                Some(ContextualTo1(der::BitString::new(key)?))
+                Some(pubkey::EncodableContextSpecificPublicKey(
+                    der::BitString::new(key)?,
+                ))
             } else {
                 None
             },

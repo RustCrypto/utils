@@ -2,6 +2,7 @@ use core::convert::TryFrom;
 
 use der::{Encodable, Encoder, Tag, Tagged};
 
+#[derive(Debug)]
 pub(crate) struct _AttributesStub;
 
 impl TryFrom<der::Any<'_>> for _AttributesStub {

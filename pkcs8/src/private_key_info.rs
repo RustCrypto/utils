@@ -100,7 +100,7 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
         any.sequence(|decoder| {
             // Parse and validate `version` INTEGER.
             // For PrivateKeyInfo, only v1 is valid.
-            if let Version::V1 = Version::decode(decoder)? {
+            if Version::V1 != Version::decode(decoder)? {
                 return Err(der::ErrorKind::Value {
                     tag: der::Tag::Integer,
                 }
