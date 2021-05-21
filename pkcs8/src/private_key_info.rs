@@ -41,7 +41,7 @@ use crate::{
 /// Attributes ::= SET OF Attribute
 /// ```
 ///
-/// Note: `PrivateKeyInfo` only allows version `v1` (`0x00`), use [`OneAsymmetricKey`]
+/// Note: `PrivateKeyInfo` only allows version `v1` (`0x00`), use [`crate::OneAsymmetricKey`]
 /// for PKCS#8 documents with version `v2` (`0x01`).
 ///
 /// [RFC 5208 Section 5]: https://tools.ietf.org/html/rfc5208#section-5
