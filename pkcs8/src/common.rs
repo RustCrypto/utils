@@ -2,10 +2,14 @@ use core::convert::TryFrom;
 
 use der::{Encodable, Encoder, Tagged};
 
-/// RFC 5958 designates `0` and `1` as the only valid version for PKCS#8 documents
+/// Version marker for PKCS#8 documents.
+///
+/// (RFC 5958 designates `0` and `1` as the only valid version for PKCS#8 documents.)
 #[derive(Clone, Debug, Copy)]
 pub enum Version {
+    /// Denotes PKCS#8 v1, used for [`crate::PrivateKeyInfo`] and [`crate::OneAsymmetricKey`]
     V1 = 0,
+    /// Denotes PKCS#8 v2, only used for [`crate::OneAsymmetricKey`]
     V2 = 1,
 }
 

@@ -119,9 +119,8 @@ impl<'a> Message<'a> for OneAsymmetricKey<'a> {
     where
         F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
     {
-        let version: u8 = self.version.into();
         f(&[
-            &version,
+            &Into::<u8>::into(self.version),
             &self.algorithm,
             &der::OctetString::new(self.private_key)?,
             &if let Some(key) = self.public_key {
