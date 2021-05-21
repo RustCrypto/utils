@@ -35,11 +35,12 @@ macro_rules! context {
             T: Encodable,
         {
             fn encoded_len(&self) -> Result<Length> {
-                Header::new(Self::TAG, Length::ONE)?.encoded_len()? + (self.0.encoded_len()?)
+                let inner_len = self.0.encoded_len()?;
+                Header::new(Self::TAG, inner_len)?.encoded_len()? + inner_len
             }
 
             fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-                Header::new(Self::TAG, Length::ONE)?.encode(encoder)?;
+                Header::new(Self::TAG, self.0.encoded_len()?)?.encode(encoder)?;
 
                 self.0.encode(encoder)
             }
