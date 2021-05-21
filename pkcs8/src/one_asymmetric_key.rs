@@ -38,9 +38,6 @@ use core::{convert::TryFrom, fmt};
 /// [RFC 5958 Section 2]: https://datatracker.ietf.org/doc/html/rfc5958#section-2
 #[derive(Clone)]
 pub struct OneAsymmetricKey<'a> {
-    /// PKCS#8 document, only [`Version::V1`] and [`Version::V2`] are valid.
-    pub version: Version,
-
     /// X.509 [`AlgorithmIdentifier`] for the private key type
     pub algorithm: AlgorithmIdentifier<'a>,
 
@@ -49,6 +46,19 @@ pub struct OneAsymmetricKey<'a> {
 
     /// Public key data, optionally available if version is v2
     pub public_key: Option<&'a [u8]>,
+}
+
+impl<'a> OneAsymmetricKey<'a> {
+    /// Gets the dynamic version this document would have.
+    ///
+    /// [`Version::V1`] if `public_key` is `None`, [`Version::V2`] if `Some`.
+    pub fn version(&self) -> Version {
+        if let Some(_) = self.public_key {
+            Version::V2
+        } else {
+            Version::V1
+        }
+    }
 }
 
 impl<'a> TryFrom<&'a [u8]> for OneAsymmetricKey<'a> {
@@ -84,20 +94,16 @@ impl<'a> TryFrom<der::Any<'a>> for OneAsymmetricKey<'a> {
                         // TODO: Properly process and store attributes
                     }
 
-                    let ret = if let Some(ContextualTo1(pubkey)) =
-                        decoder.decode::<Option<ContextualTo1<BitString<'a>>>>()?
-                    {
-                        Some(pubkey.as_bytes())
-                    } else {
-                        None
-                    };
+                    let ret: Option<&[u8]> = None;
 
-                    while let Some(_) = decoder.decode::<Option<ContextualTo1<BitString<'a>>>>()? {
+                    while let Some(pk) = decoder.context_specific_optional(1, |dec| dec.bit_string())? {
                         // Throw away further public keys (for now)
                         // FIXME: the documentation says "...,",
                         //  meaning more fields of the same type can exist,
                         //  considering that the rest of the documentation isn't talking about "multiple public keys",
-                        //  I assume it is okay to only get the first value, and ignore the rest.
+                        //  I assume it is okay to only get the last value, and ignore the rest.
+
+                        ret.get_or_insert(pk.as_bytes());
                     }
 
                     ret
@@ -105,7 +111,6 @@ impl<'a> TryFrom<der::Any<'a>> for OneAsymmetricKey<'a> {
             };
 
             Ok(Self {
-                version,
                 algorithm,
                 private_key,
                 public_key,
@@ -120,7 +125,7 @@ impl<'a> Message<'a> for OneAsymmetricKey<'a> {
         F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
     {
         f(&[
-            &u8::from(self.version),
+            &u8::from(self.version()),
             &self.algorithm,
             &der::OctetString::new(self.private_key)?,
             &if let Some(key) = self.public_key {
@@ -135,7 +140,7 @@ impl<'a> Message<'a> for OneAsymmetricKey<'a> {
 impl<'a> fmt::Debug for OneAsymmetricKey<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("OneAsymmetricKey")
-            .field("version", &self.version)
+            .field("version", &self.version())
             .field("algorithm", &self.algorithm)
             .field("public_key", &self.public_key)
             .finish() // TODO: use `finish_non_exhaustive` when stable

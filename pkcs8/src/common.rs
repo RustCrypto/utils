@@ -1,4 +1,4 @@
-use core::convert::TryFrom;
+use core::convert::{TryFrom, TryInto};
 
 use der::{Encodable, Encoder, Tagged};
 
@@ -25,10 +25,10 @@ impl TryFrom<der::Any<'_>> for Version {
     fn try_from(any: der::Any<'_>) -> der::Result<Version> {
         any.tag().assert_eq(Self::TAG)?;
 
-        match any.uint8()? {
+        match *any.as_bytes() {
             [0x00] => Ok(Version::V1),
             [0x01] => Ok(Version::V2),
-            _ => Err(der::ErrorKind::Value { tag: der::Tag::Integer }),
+            _ => Err(der::ErrorKind::Value { tag: der::Tag::Integer }.into()),
         }
     }
 }
