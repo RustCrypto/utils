@@ -184,7 +184,7 @@ impl Tag {
     /// Get the [`Tag`] value that corresponds to a context-specific tag value
     /// (i.e. lower 6-bits of the tag, sans leading `10` bits)
     pub fn context_specific(tag: u8) -> Result<Tag> {
-        let byte = Class::ContextSpecific as u8 | tag;
+        let byte = Class::ContextSpecific as u8 | CONSTRUCTED_FLAG | tag;
 
         if tag < 16 {
             byte.try_into()
