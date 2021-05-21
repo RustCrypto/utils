@@ -91,6 +91,7 @@ pub use crate::{
     error::{Error, Result},
     one_asymmetric_key::OneAsymmetricKey,
     private_key_info::PrivateKeyInfo,
+    common::Version,
     traits::{FromPrivateKey, FromPublicKey},
 };
 
