@@ -13,10 +13,7 @@ use {
 
 #[cfg(feature = "alloc")]
 use crate::PrivateKeyDocument;
-use crate::{AlgorithmIdentifier, Error, Result};
-
-/// RFC 5208 designates `0` as the only valid version for PKCS#8 documents
-const VERSION: u8 = 0;
+use crate::{attributes::Attributes, version::Version, AlgorithmIdentifier, Error, Result};
 
 /// PKCS#8 `PrivateKeyInfo`.
 ///
@@ -40,6 +37,9 @@ const VERSION: u8 = 0;
 ///
 /// Attributes ::= SET OF Attribute
 /// ```
+///
+/// Note: `PrivateKeyInfo` only allows version `v1` (`0x00`), use [`crate::OneAsymmetricKey`]
+/// for PKCS#8 documents with version `v2` (`0x01`).
 ///
 /// [RFC 5208 Section 5]: https://tools.ietf.org/html/rfc5208#section-5
 #[derive(Clone)]
@@ -99,7 +99,8 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
     fn try_from(any: der::Any<'a>) -> der::Result<PrivateKeyInfo<'a>> {
         any.sequence(|decoder| {
             // Parse and validate `version` INTEGER.
-            if u8::decode(decoder)? != VERSION {
+            // For PrivateKeyInfo, only v1 is valid.
+            if Version::V1 != Version::decode(decoder)? {
                 return Err(der::ErrorKind::Value {
                     tag: der::Tag::Integer,
                 }
@@ -108,6 +109,10 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
 
             let algorithm = decoder.decode()?;
             let private_key = decoder.octet_string()?.into();
+
+            // run once, throw away an Attributes field (for now)
+            // TODO: Properly process and store attributes
+            decoder.decode::<Option<Attributes>>()?;
 
             Ok(Self {
                 algorithm,
@@ -123,7 +128,7 @@ impl<'a> Message<'a> for PrivateKeyInfo<'a> {
         F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
     {
         f(&[
-            &VERSION,
+            &u8::from(Version::V1),
             &self.algorithm,
             &der::OctetString::new(self.private_key)?,
         ])

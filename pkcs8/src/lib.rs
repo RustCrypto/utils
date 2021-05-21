@@ -11,6 +11,8 @@
 //!
 //! - [`EncryptedPrivateKeyInfo`]: (with `pkcs5` feature) encrypted key.
 //! - [`PrivateKeyInfo`]: algorithm identifier and data representing a private key.
+//! - [`OneAsymmetricKey`]: a version, algorithm identifier, private key data,
+//!   and optionally public key data.
 //! - [`SubjectPublicKeyInfo`]: algorithm identifier and data representing a public key
 //!   (re-exported from the [`spki`] crate)
 //!
@@ -89,13 +91,18 @@ pub use crate::{
 };
 pub use crate::{
     error::{Error, Result},
+    one_asymmetric_key::OneAsymmetricKey,
     private_key_info::PrivateKeyInfo,
     traits::{FromPrivateKey, FromPublicKey},
+    version::Version,
 };
 
+mod attributes;
 mod error;
+mod one_asymmetric_key;
 mod private_key_info;
 mod traits;
+mod version;
 
 #[cfg(feature = "alloc")]
 mod document;
