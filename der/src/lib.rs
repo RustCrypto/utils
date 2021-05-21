@@ -357,6 +357,7 @@ pub use crate::{
         any::Any,
         bit_string::BitString,
         choice::Choice,
+        context::{ContextualTo0, ContextualTo1, ContextualTo2, ContextualTo3},
         generalized_time::GeneralizedTime,
         ia5_string::Ia5String,
         null::Null,

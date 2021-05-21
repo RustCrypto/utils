@@ -89,11 +89,14 @@ pub use crate::{
 };
 pub use crate::{
     error::{Error, Result},
+    one_asymmetric_key::OneAsymmetricKey,
     private_key_info::PrivateKeyInfo,
     traits::{FromPrivateKey, FromPublicKey},
 };
 
+mod common;
 mod error;
+mod one_asymmetric_key;
 mod private_key_info;
 mod traits;
 
