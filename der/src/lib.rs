@@ -376,7 +376,7 @@ pub use crate::{
     header::Header,
     length::Length,
     message::Message,
-    tag::{Tag, Tagged},
+    tag::{Class, Tag, Tagged},
 };
 
 pub(crate) use crate::byte_slice::ByteSlice;
