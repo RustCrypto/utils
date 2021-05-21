@@ -35,7 +35,7 @@ macro_rules! context {
             T: Encodable,
         {
             fn encoded_len(&self) -> Result<Length> {
-                Length::ONE + self.0.encoded_len()?
+                Header::new(Self::TAG, Length::ONE)?.encoded_len()? + (self.0.encoded_len()?)
             }
 
             fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
