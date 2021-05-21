@@ -4,7 +4,7 @@ use der::{Encodable, Encoder, Tagged};
 
 /// Version marker for PKCS#8 documents.
 ///
-/// (RFC 5958 designates `0` and `1` as the only valid version for PKCS#8 documents.)
+/// (RFC 5958 designates `0` and `1` as the only valid versions for PKCS#8 documents)
 #[derive(Clone, Debug, Copy)]
 pub enum Version {
     /// Denotes PKCS#8 v1, used for [`crate::PrivateKeyInfo`] and [`crate::OneAsymmetricKey`]

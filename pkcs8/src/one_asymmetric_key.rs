@@ -9,7 +9,7 @@ use core::{convert::TryFrom, fmt};
 /// PKCS#8 `OneAsymmetricKey`.
 ///
 /// ASN.1 structure containing a [`Version`], an [`AlgorithmIdentifier`], private key
-/// data, and optionally public key data, in an algorithm specific format.
+/// data, and optionally public key data, in an algorithm-specific format.
 ///
 /// Described in [RFC 5958 Section 2]:
 ///
