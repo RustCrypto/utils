@@ -84,24 +84,25 @@ pub use spki::{AlgorithmIdentifier, SubjectPublicKeyInfo};
 
 #[cfg(all(feature = "alloc", feature = "pkcs5"))]
 pub use crate::document::encrypted_private_key::EncryptedPrivateKeyDocument;
-pub use crate::{
-    common::Version,
-    error::{Error, Result},
-    one_asymmetric_key::OneAsymmetricKey,
-    private_key_info::PrivateKeyInfo,
-    traits::{FromPrivateKey, FromPublicKey},
-};
 #[cfg(feature = "alloc")]
 pub use crate::{
     document::{private_key::PrivateKeyDocument, public_key::PublicKeyDocument},
     traits::{ToPrivateKey, ToPublicKey},
 };
+pub use crate::{
+    error::{Error, Result},
+    one_asymmetric_key::OneAsymmetricKey,
+    private_key_info::PrivateKeyInfo,
+    traits::{FromPrivateKey, FromPublicKey},
+    version::Version,
+};
 
-mod common;
+mod attributes;
 mod error;
 mod one_asymmetric_key;
 mod private_key_info;
 mod traits;
+mod version;
 
 #[cfg(feature = "alloc")]
 mod document;

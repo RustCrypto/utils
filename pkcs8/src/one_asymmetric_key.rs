@@ -1,9 +1,6 @@
-use der::{BitString, ContextualTo1, Decodable, Encodable, Message};
+use der::{ContextualTo1, Decodable, Encodable, Message};
 
-use crate::{
-    common::{Version, _AttributesStub},
-    AlgorithmIdentifier, Error, Result,
-};
+use crate::{attributes::_AttributesStub, version::Version, AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
 
 /// PKCS#8 `OneAsymmetricKey`.
@@ -94,9 +91,11 @@ impl<'a> TryFrom<der::Any<'a>> for OneAsymmetricKey<'a> {
                         // TODO: Properly process and store attributes
                     }
 
-                    let ret: Option<&[u8]> = None;
+                    let mut ret: Option<&[u8]> = None;
 
-                    while let Some(pk) = decoder.context_specific_optional(1, |dec| dec.bit_string())? {
+                    while let Some(pk) =
+                        decoder.context_specific_optional(1, |dec| dec.bit_string())?
+                    {
                         // Throw away further public keys (for now)
                         // FIXME: the documentation says "...,",
                         //  meaning more fields of the same type can exist,

@@ -1,4 +1,4 @@
-use core::convert::{TryFrom, TryInto};
+use core::convert::TryFrom;
 
 use der::{Encodable, Encoder, Tagged};
 
@@ -28,7 +28,10 @@ impl TryFrom<der::Any<'_>> for Version {
         match *any.as_bytes() {
             [0x00] => Ok(Version::V1),
             [0x01] => Ok(Version::V2),
-            _ => Err(der::ErrorKind::Value { tag: der::Tag::Integer }.into()),
+            _ => Err(der::ErrorKind::Value {
+                tag: der::Tag::Integer,
+            }
+            .into()),
         }
     }
 }
@@ -47,30 +50,4 @@ impl Encodable for Version {
 
 impl Tagged for Version {
     const TAG: der::Tag = der::Tag::Integer;
-}
-
-pub(crate) struct _AttributesStub;
-
-impl TryFrom<der::Any<'_>> for _AttributesStub {
-    type Error = der::Error;
-
-    fn try_from(any: der::Any<'_>) -> der::Result<_AttributesStub> {
-        any.tag().assert_eq(Self::TAG)?;
-
-        Ok(_AttributesStub)
-    }
-}
-
-impl Encodable for _AttributesStub {
-    fn encoded_len(&self) -> der::Result<der::Length> {
-        der::Length::from(1u8).for_tlv()
-    }
-
-    fn encode(&self, _encoder: &mut Encoder<'_>) -> der::Result<()> {
-        Ok(())
-    }
-}
-
-impl Tagged for _AttributesStub {
-    const TAG: der::Tag = der::Tag::ContextSpecific0;
 }

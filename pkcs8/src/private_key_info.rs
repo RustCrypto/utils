@@ -13,10 +13,7 @@ use {
 
 #[cfg(feature = "alloc")]
 use crate::PrivateKeyDocument;
-use crate::{
-    common::{Version, _AttributesStub},
-    AlgorithmIdentifier, Error, Result,
-};
+use crate::{attributes::_AttributesStub, version::Version, AlgorithmIdentifier, Error, Result};
 
 /// PKCS#8 `PrivateKeyInfo`.
 ///
