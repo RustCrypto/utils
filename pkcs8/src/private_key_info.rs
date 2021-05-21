@@ -13,7 +13,7 @@ use {
 
 #[cfg(feature = "alloc")]
 use crate::PrivateKeyDocument;
-use crate::{attributes::_AttributesStub, version::Version, AlgorithmIdentifier, Error, Result};
+use crate::{attributes::Attributes, version::Version, AlgorithmIdentifier, Error, Result};
 
 /// PKCS#8 `PrivateKeyInfo`.
 ///
@@ -112,7 +112,7 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
 
             // run once, throw away an Attributes field (for now)
             // TODO: Properly process and store attributes
-            decoder.decode::<Option<_AttributesStub>>()?;
+            decoder.decode::<Option<Attributes>>()?;
 
             Ok(Self {
                 algorithm,

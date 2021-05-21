@@ -1,30 +1,31 @@
 use core::convert::TryFrom;
 
-use der::{Encodable, Encoder, Tag, Tagged};
+use der::{Any, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
 
+// TODO: make proper attributes struct
 #[derive(Debug)]
-pub(crate) struct _AttributesStub;
+pub(crate) struct Attributes;
 
-impl TryFrom<der::Any<'_>> for _AttributesStub {
-    type Error = der::Error;
+impl TryFrom<Any<'_>> for Attributes {
+    type Error = Error;
 
-    fn try_from(any: der::Any<'_>) -> der::Result<_AttributesStub> {
+    fn try_from(any: Any<'_>) -> Result<Attributes> {
         any.tag().assert_eq(Self::TAG)?;
 
-        Ok(_AttributesStub)
+        Ok(Attributes)
     }
 }
 
-impl Encodable for _AttributesStub {
-    fn encoded_len(&self) -> der::Result<der::Length> {
-        der::Length::from(1u8).for_tlv()
+impl Encodable for Attributes {
+    fn encoded_len(&self) -> Result<Length> {
+        Length::ONE.for_tlv()
     }
 
-    fn encode(&self, _encoder: &mut Encoder<'_>) -> der::Result<()> {
+    fn encode(&self, _encoder: &mut Encoder<'_>) -> Result<()> {
         Ok(())
     }
 }
 
-impl Tagged for _AttributesStub {
+impl Tagged for Attributes {
     const TAG: Tag = Tag::ContextSpecific0;
 }

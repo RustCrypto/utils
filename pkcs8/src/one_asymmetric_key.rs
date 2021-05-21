@@ -1,6 +1,6 @@
 use der::{Decodable, Encodable, Message};
 
-use crate::{attributes::_AttributesStub, version::Version, AlgorithmIdentifier, Error, Result};
+use crate::{attributes::Attributes, version::Version, AlgorithmIdentifier, Error, Result};
 use core::{convert::TryFrom, fmt};
 
 mod pubkey {
@@ -104,12 +104,12 @@ impl<'a> TryFrom<der::Any<'a>> for OneAsymmetricKey<'a> {
                 Version::V1 => {
                     // run once, throw away an Attributes field (for now)
                     // TODO: Properly process and store attributes
-                    decoder.decode::<Option<_AttributesStub>>()?;
+                    decoder.decode::<Option<Attributes>>()?;
 
                     None
                 }
                 Version::V2 => {
-                    while decoder.decode::<Option<_AttributesStub>>()?.is_some() {
+                    while decoder.decode::<Option<Attributes>>()?.is_some() {
                         // Throw away all Attributes (for now)
                         // TODO: Properly process and store attributes
                     }
