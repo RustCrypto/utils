@@ -38,7 +38,7 @@ use core::{convert::TryFrom, fmt};
 /// [RFC 5958 Section 2]: https://datatracker.ietf.org/doc/html/rfc5958#section-2
 #[derive(Clone)]
 pub struct OneAsymmetricKey<'a> {
-    /// Version, can be set to [`Version::V1`] or [`Version::V2`]
+    /// PKCS#8 document, only [`Version::V1`] and [`Version::V2`] are valid.
     pub version: Version,
 
     /// X.509 [`AlgorithmIdentifier`] for the private key type
@@ -120,7 +120,7 @@ impl<'a> Message<'a> for OneAsymmetricKey<'a> {
         F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
     {
         f(&[
-            &Into::<u8>::into(self.version),
+            &u8::from(self.version),
             &self.algorithm,
             &der::OctetString::new(self.private_key)?,
             &if let Some(key) = self.public_key {

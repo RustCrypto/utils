@@ -13,9 +13,9 @@ pub enum Version {
     V2 = 1,
 }
 
-impl Into<u8> for Version {
-    fn into(self) -> u8 {
-        self as u8
+impl From<Version> for u8 {
+    fn from(version: Version) -> Self {
+        version as u8
     }
 }
 

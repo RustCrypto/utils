@@ -131,7 +131,7 @@ impl<'a> Message<'a> for PrivateKeyInfo<'a> {
         F: FnOnce(&[&dyn Encodable]) -> der::Result<T>,
     {
         f(&[
-            &(Version::V1 as u8),
+            &u8::from(Version::V1),
             &self.algorithm,
             &der::OctetString::new(self.private_key)?,
         ])
