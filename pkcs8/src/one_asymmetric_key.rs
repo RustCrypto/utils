@@ -73,7 +73,7 @@ impl<'a> OneAsymmetricKey<'a> {
     ///
     /// [`Version::V1`] if `public_key` is `None`, [`Version::V2`] if `Some`.
     pub fn version(&self) -> Version {
-        if let Some(_) = self.public_key {
+        if self.public_key.is_some() {
             Version::V2
         } else {
             Version::V1
@@ -109,7 +109,7 @@ impl<'a> TryFrom<der::Any<'a>> for OneAsymmetricKey<'a> {
                     None
                 }
                 Version::V2 => {
-                    while let Some(_) = decoder.decode::<Option<_AttributesStub>>()? {
+                    while decoder.decode::<Option<_AttributesStub>>()?.is_some() {
                         // Throw away all Attributes (for now)
                         // TODO: Properly process and store attributes
                     }
