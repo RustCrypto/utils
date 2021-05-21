@@ -25,10 +25,10 @@ impl TryFrom<der::Any<'_>> for Version {
     fn try_from(any: der::Any<'_>) -> der::Result<Version> {
         any.tag().assert_eq(Self::TAG)?;
 
-        match *any.as_bytes() {
+        match any.uint8()? {
             [0x00] => Ok(Version::V1),
             [0x01] => Ok(Version::V2),
-            _ => Err(der::ErrorKind::Noncanonical.into()),
+            _ => Err(der::ErrorKind::Value { tag: der::Tag::Integer }),
         }
     }
 }
