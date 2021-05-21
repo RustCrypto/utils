@@ -1,6 +1,8 @@
-use core::convert::TryFrom;
+use core::convert::{TryFrom, TryInto};
 
 use der::{Encodable, Encoder, Tagged};
+
+use crate::Error;
 
 /// Version marker for PKCS#8 documents.
 ///
@@ -19,20 +21,25 @@ impl From<Version> for u8 {
     }
 }
 
-impl TryFrom<der::Any<'_>> for Version {
+impl TryFrom<u8> for Version {
+    type Error = Error;
+    fn try_from(byte: u8) -> Result<Version, Error> {
+        match byte {
+            0 => Ok(Version::V1),
+            1 => Ok(Version::V2),
+            _ => Err(Error::Decode),
+        }
+    }
+}
+impl<'a> TryFrom<der::Any<'a>> for Version {
     type Error = der::Error;
-
-    fn try_from(any: der::Any<'_>) -> der::Result<Version> {
-        any.tag().assert_eq(Self::TAG)?;
-
-        match *any.as_bytes() {
-            [0x00] => Ok(Version::V1),
-            [0x01] => Ok(Version::V2),
-            _ => Err(der::ErrorKind::Value {
+    fn try_from(any: der::Any<'a>) -> der::Result<Version> {
+        u8::try_from(any)?.try_into().map_err(|_| {
+            der::ErrorKind::Value {
                 tag: der::Tag::Integer,
             }
-            .into()),
-        }
+            .into()
+        })
     }
 }
 
