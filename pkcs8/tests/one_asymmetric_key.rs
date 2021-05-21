@@ -1,4 +1,3 @@
-
 use std::convert::TryFrom;
 
 use der::Encodable;
@@ -10,8 +9,10 @@ const ED25519_DER_V2_EXAMPLE: &[u8] = include_bytes!("examples/ed25519-pkcs8-v2.
 
 #[test]
 fn roundtrip_ed25519_oak_der() {
-    const PRIV_KEY: [u8; 34] = hex!("04203A133DABADA2AA9CE54B0961CC3F1576B0943DC86EBF72A56E052C43F30FA3A5");
-    const PUB_KEY: [u8; 32] = hex!("A3A7EAE3A8373830BC47E1167BC50E1DB551999651E0E2DC587623438EAC3F31");
+    const PRIV_KEY: [u8; 34] =
+        hex!("04203A133DABADA2AA9CE54B0961CC3F1576B0943DC86EBF72A56E052C43F30FA3A5");
+    const PUB_KEY: [u8; 32] =
+        hex!("A3A7EAE3A8373830BC47E1167BC50E1DB551999651E0E2DC587623438EAC3F31");
 
     let oak = OneAsymmetricKey::try_from(ED25519_DER_V2_EXAMPLE).unwrap();
 
@@ -20,15 +21,9 @@ fn roundtrip_ed25519_oak_der() {
 
     // A3A7EAE3A8373830BC47E1167BC50E1DB551999651E0E2DC587623438EAC3F31
 
-    assert_eq!(
-        oak.private_key,
-        PRIV_KEY
-    );
+    assert_eq!(oak.private_key, PRIV_KEY);
 
-    assert_eq!(
-        oak.public_key,
-        Some(&PUB_KEY[..])
-    );
+    assert_eq!(oak.public_key, Some(&PUB_KEY[..]));
 
     assert_eq!(oak.version(), Version::V2);
 
