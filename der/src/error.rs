@@ -103,6 +103,12 @@ impl std::error::Error for ErrorKind {}
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum ErrorKind {
+    /// Indicates a field which is duplicated when only one is expected.
+    DuplicateField {
+        /// Tag of the duplicated field.
+        tag: Tag,
+    },
+
     /// This error indicates a previous DER parsing operation resulted in
     /// an error and tainted the state of a `Decoder` or `Encoder`.
     ///
@@ -205,6 +211,7 @@ impl ErrorKind {
 impl fmt::Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            ErrorKind::DuplicateField { tag } => write!(f, "duplicate field for {}", tag),
             ErrorKind::Failed => write!(f, "operation failed"),
             ErrorKind::Length { tag } => write!(f, "incorrect length for {}", tag),
             ErrorKind::Noncanonical => write!(f, "DER is not canonically encoded"),

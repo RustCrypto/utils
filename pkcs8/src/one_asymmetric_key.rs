@@ -1,11 +1,16 @@
 //! PKCS#8v2 `OneAsymmetricKey`.
 // TODO(tarcieri): merge this into `PrivateKeyInfo` in the next breaking release.
 
-use der::{Decodable, Encodable, Message};
+use der::{Decodable, Encodable, Message, Tag};
 
-use self::pubkey::PublicKeyBitString;
 use crate::{AlgorithmIdentifier, Attributes, Error, Result, Version};
 use core::{convert::TryFrom, fmt};
+
+/// Context-specific tag for [`Attributes`].
+const ATTRIBUTES_TAG: u8 = 0;
+
+/// Context-specific tag for the public key.
+const PUBLIC_KEY_TAG: u8 = 1;
 
 /// PKCS#8 `OneAsymmetricKey` as described in [RFC 5958 Section 2]:
 ///
@@ -88,17 +93,47 @@ impl<'a> TryFrom<der::Any<'a>> for OneAsymmetricKey<'a> {
             let algorithm = decoder.decode()?;
             let private_key = decoder.octet_string()?.into();
 
-            // TODO(tarcieri): handle extensions following attributes/public key.
-            // See: https://datatracker.ietf.org/doc/html/rfc6025#section-2.4.1
+            let mut attributes = None;
+            let mut public_key = None;
 
-            let attributes = decoder.optional()?;
-            let public_key = if version == Version::V2 {
-                decoder.context_specific_optional(1, |dec| {
-                    dec.bit_string().map(|bit_string| bit_string.as_bytes())
-                })?
-            } else {
-                None
-            };
+            while let Some(field) = decoder.context_specific_optional()? {
+                match field.tag() {
+                    ATTRIBUTES_TAG => {
+                        // Expect `attributes` before `public_key`
+                        if public_key.is_some() {
+                            return decoder.error(der::ErrorKind::UnexpectedTag {
+                                expected: None,
+                                actual: Tag::context_specific(ATTRIBUTES_TAG)?,
+                            });
+                        }
+
+                        if attributes.is_none() {
+                            attributes = Some(field.value())
+                        } else {
+                            return decoder.error(der::ErrorKind::DuplicateField {
+                                tag: Tag::context_specific(ATTRIBUTES_TAG)?,
+                            });
+                        }
+                    }
+                    PUBLIC_KEY_TAG => {
+                        if version == Version::V1 {
+                            return decoder.error(der::ErrorKind::UnexpectedTag {
+                                expected: None,
+                                actual: Tag::context_specific(PUBLIC_KEY_TAG)?,
+                            });
+                        }
+
+                        if public_key.is_none() {
+                            public_key = Some(field.value().bit_string()?.as_bytes())
+                        } else {
+                            return decoder.error(der::ErrorKind::DuplicateField {
+                                tag: Tag::context_specific(PUBLIC_KEY_TAG)?,
+                            });
+                        }
+                    }
+                    _ => (), // Ignore other context-specific fields as extensions
+                }
+            }
 
             Ok(Self {
                 algorithm,
@@ -119,10 +154,15 @@ impl<'a> Message<'a> for OneAsymmetricKey<'a> {
             &u8::from(self.version()),
             &self.algorithm,
             &der::OctetString::new(self.private_key)?,
-            &self.attributes,
+            &self
+                .attributes
+                .map(|attrs| der::ContextSpecific::new(ATTRIBUTES_TAG, attrs))
+                .transpose()?,
             &self
                 .public_key
-                .map(|pk| der::BitString::new(pk).map(PublicKeyBitString))
+                .map(|pk| {
+                    der::ContextSpecific::new(PUBLIC_KEY_TAG, der::BitString::new(pk)?.into())
+                })
                 .transpose()?,
         ])
     }
@@ -136,28 +176,5 @@ impl<'a> fmt::Debug for OneAsymmetricKey<'a> {
             .field("attributes", &self.attributes)
             .field("public_key", &self.public_key)
             .finish() // TODO: use `finish_non_exhaustive` when stable
-    }
-}
-
-mod pubkey {
-    use der::{BitString, Encodable, Encoder, Header, Length, Tag, Tagged};
-
-    pub(super) struct PublicKeyBitString<'a>(pub BitString<'a>);
-
-    impl<'a> Encodable for PublicKeyBitString<'a> {
-        fn encoded_len(&self) -> der::Result<Length> {
-            let inner_len = self.0.encoded_len()?;
-            Header::new(Self::TAG, inner_len)?.encoded_len()? + inner_len
-        }
-
-        fn encode(&self, encoder: &mut Encoder<'_>) -> der::Result<()> {
-            Header::new(Self::TAG, self.0.encoded_len()?)?.encode(encoder)?;
-
-            self.0.encode(encoder)
-        }
-    }
-
-    impl<'a> Tagged for PublicKeyBitString<'a> {
-        const TAG: Tag = Tag::ContextSpecific1;
     }
 }

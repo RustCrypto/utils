@@ -1,9 +1,7 @@
 //! Common handling for types backed by byte slices with enforcement of a
 //! library-level length limitation i.e. `Length::max()`.
-//!
-//! This limit is presently 65,535 bytes.
 
-use crate::{Error, Length, Result};
+use crate::{str_slice::StrSlice, Error, Length, Result};
 use core::convert::TryFrom;
 
 /// Byte slice newtype which respects the `Length::max()` limit.
@@ -62,5 +60,17 @@ impl<'a> TryFrom<&'a [u8]> for ByteSlice<'a> {
 
     fn try_from(slice: &'a [u8]) -> Result<Self> {
         Self::new(slice)
+    }
+}
+
+impl<'a> From<StrSlice<'a>> for ByteSlice<'a> {
+    fn from(s: StrSlice<'a>) -> ByteSlice<'a> {
+        let bytes = s.as_bytes();
+        debug_assert_eq!(bytes.len(), usize::try_from(s.length).expect("overflow"));
+
+        ByteSlice {
+            inner: bytes,
+            length: s.length,
+        }
     }
 }

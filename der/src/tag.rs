@@ -193,6 +193,11 @@ impl Tag {
         }
     }
 
+    /// Is this a context-specific tag?
+    pub fn is_context_specific(self) -> bool {
+        matches!(self as u8, 0xA0..=0xAF)
+    }
+
     /// Names of ASN.1 type which corresponds to a given [`Tag`].
     // TODO(tarcieri): move this to `Display` and consolidate "Context Specific N"?
     pub fn type_name(self) -> &'static str {

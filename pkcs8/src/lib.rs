@@ -75,8 +75,22 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+mod error;
+mod one_asymmetric_key;
+mod private_key_info;
+mod traits;
+mod version;
+
+#[cfg(feature = "alloc")]
+mod document;
+
+#[cfg(feature = "pkcs5")]
+pub(crate) mod encrypted_private_key_info;
+
+#[cfg(feature = "pem")]
+mod pem;
+
 pub use crate::{
-    attributes::Attributes,
     error::{Error, Result},
     one_asymmetric_key::OneAsymmetricKey,
     private_key_info::PrivateKeyInfo,
@@ -101,17 +115,22 @@ pub use crate::{
     traits::{ToPrivateKey, ToPublicKey},
 };
 
-mod attributes;
-mod error;
-mod one_asymmetric_key;
-mod private_key_info;
-mod traits;
-mod version;
-
-#[cfg(feature = "alloc")]
-mod document;
-
-#[cfg(feature = "pkcs5")]
-pub(crate) mod encrypted_private_key_info;
-#[cfg(feature = "pem")]
-mod pem;
+/// Attributes as defined in [RFC 5958 Section 2].
+///
+/// > attributes is OPTIONAL.  It contains information corresponding to
+/// > the public key (e.g., certificates).  The attributes field uses the
+/// > class `ATTRIBUTE` which is restricted by the
+/// > `OneAsymmetricKeyAttributes` information object set.
+/// > `OneAsymmetricKeyAttributes` is an open ended set in this document.
+/// > Others documents can constrain these values.  Attributes from
+/// > RFC2985 MAY be supported.
+///
+/// Attributes have the following ASN.1 schema:
+///
+/// ```text
+/// Attributes ::= SET OF Attribute { { OneAsymmetricKeyAttributes } }
+/// ```
+///
+/// [RFC 5958 Section 2]: https://datatracker.ietf.org/doc/html/rfc5958
+// TODO(tarcieri): support parsing attributes as a `der::SetOf`?
+pub type Attributes<'a> = der::Any<'a>;

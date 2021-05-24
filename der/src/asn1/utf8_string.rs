@@ -1,8 +1,6 @@
 //! ASN.1 `UTF8String` support.
 
-use crate::{
-    str_slice::StrSlice, Any, ByteSlice, Encodable, Encoder, Error, Length, Result, Tag, Tagged,
-};
+use crate::{str_slice::StrSlice, Any, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
 use core::{convert::TryFrom, fmt, str};
 
 #[cfg(feature = "alloc")]
@@ -84,11 +82,8 @@ impl<'a> TryFrom<Any<'a>> for Utf8String<'a> {
 }
 
 impl<'a> From<Utf8String<'a>> for Any<'a> {
-    fn from(utf8_string: Utf8String<'a>) -> Any<'a> {
-        Any {
-            tag: Tag::Utf8String,
-            value: ByteSlice::new(utf8_string.as_bytes()).expect("overlength string"),
-        }
+    fn from(printable_string: Utf8String<'a>) -> Any<'a> {
+        Any::from_tag_and_value(Tag::Utf8String, printable_string.inner.into())
     }
 }
 
