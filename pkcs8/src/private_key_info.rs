@@ -1,19 +1,21 @@
 //! PKCS#8 `PrivateKeyInfo`.
+// TODO(tarcieri): merge this into `OneAsymmetricKey` in the next breaking release.
 
+use crate::{AlgorithmIdentifier, Attributes, Error, Result, Version};
 use core::{convert::TryFrom, fmt};
-
 use der::{Decodable, Encodable, Message};
-#[cfg(feature = "pem")]
-use {crate::pem, zeroize::Zeroizing};
+
+#[cfg(feature = "alloc")]
+use crate::PrivateKeyDocument;
+
 #[cfg(feature = "encryption")]
 use {
     crate::EncryptedPrivateKeyDocument,
     rand_core::{CryptoRng, RngCore},
 };
 
-#[cfg(feature = "alloc")]
-use crate::PrivateKeyDocument;
-use crate::{attributes::Attributes, version::Version, AlgorithmIdentifier, Error, Result};
+#[cfg(feature = "pem")]
+use {crate::pem, zeroize::Zeroizing};
 
 /// PKCS#8 `PrivateKeyInfo`.
 ///
@@ -49,9 +51,7 @@ pub struct PrivateKeyInfo<'a> {
 
     /// Private key data
     pub private_key: &'a [u8],
-    // TODO(tarcieri): support for `Attributes` (are they used in practice?)
-    // PKCS#9 describes the possible attributes: https://tools.ietf.org/html/rfc2985
-    // Workaround for stripping attributes: https://stackoverflow.com/a/48039151
+    // TODO(tarcieri): support for `Attributes`
 }
 
 impl<'a> PrivateKeyInfo<'a> {
@@ -109,10 +109,7 @@ impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
 
             let algorithm = decoder.decode()?;
             let private_key = decoder.octet_string()?.into();
-
-            // run once, throw away an Attributes field (for now)
-            // TODO: Properly process and store attributes
-            decoder.decode::<Option<Attributes>>()?;
+            let _attributes: Option<Attributes<'_>> = decoder.optional()?;
 
             Ok(Self {
                 algorithm,
