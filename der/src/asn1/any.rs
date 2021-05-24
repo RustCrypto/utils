@@ -1,9 +1,9 @@
 //! ASN.1 `ANY` type.
 
 use crate::{
-    BitString, ByteSlice, Choice, Decodable, Decoder, Encodable, Encoder, Error, ErrorKind,
-    GeneralizedTime, Header, Ia5String, Length, Null, OctetString, PrintableString, Result,
-    Sequence, Tag, UtcTime, Utf8String,
+    BitString, ByteSlice, Choice, ContextSpecific, Decodable, Decoder, Encodable, Encoder, Error,
+    ErrorKind, GeneralizedTime, Header, Ia5String, Length, Null, OctetString, PrintableString,
+    Result, Sequence, Tag, UtcTime, Utf8String,
 };
 use core::convert::{TryFrom, TryInto};
 
@@ -84,46 +84,14 @@ impl<'a> Any<'a> {
         self.try_into()
     }
 
-    /// Attempt to decode an ASN.1 `CONTEXT-SPECIFIC` field, creating a new
-    /// nested [`Decoder`] and calling the provided argument with it.
-    ///
-    /// The provided `tag` should contain the lower 6-bits of the context
-    /// specific tag, sans the leading `10` high bits.
-    pub fn context_specific<F, T>(self, context_specific_tag: u8, f: F) -> Result<T>
-    where
-        F: FnOnce(&mut Decoder<'a>) -> Result<T>,
-    {
-        let tag = Tag::context_specific(context_specific_tag)?;
-
-        if self.tag != tag {
-            return Err(ErrorKind::UnexpectedTag {
-                expected: Some(tag),
-                actual: self.tag,
-            }
-            .into());
-        }
-
-        let mut decoder = Decoder::new(self.as_bytes());
-        let result = f(&mut decoder)?;
-        decoder.finish(result)
+    /// Attempt to decode an ASN.1 `CONTEXT-SPECIFIC` field.
+    pub fn context_specific(self) -> Result<ContextSpecific<'a>> {
+        self.try_into()
     }
 
     /// Attempt to decode an `OPTIONAL` ASN.1 `CONTEXT-SPECIFIC` field.
-    ///
-    /// Returns `Ok(None)` if the tag is not of the expected type.
-    pub fn context_specific_optional<F, T>(
-        self,
-        context_specific_tag: u8,
-        f: F,
-    ) -> Result<Option<T>>
-    where
-        F: FnOnce(&mut Decoder<'a>) -> Result<T>,
-    {
-        if self.tag == Tag::context_specific(context_specific_tag)? {
-            self.context_specific(context_specific_tag, f).map(Some)
-        } else {
-            Ok(None)
-        }
+    pub fn context_specific_optional(self) -> Result<Option<ContextSpecific<'a>>> {
+        self.optional()
     }
 
     /// Attempt to decode an ASN.1 `GeneralizedTime`.
@@ -146,6 +114,18 @@ impl<'a> Any<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
     pub fn oid(self) -> Result<ObjectIdentifier> {
         self.try_into()
+    }
+
+    /// Attempt to decode an ASN.1 `OPTIONAL` value.
+    pub fn optional<T>(self) -> Result<Option<T>>
+    where
+        T: Choice<'a> + TryFrom<Self, Error = Error>,
+    {
+        if T::can_decode(self.tag) {
+            T::try_from(self).map(Some)
+        } else {
+            Ok(None)
+        }
     }
 
     /// Attempt to decode an ASN.1 `PrintableString`.

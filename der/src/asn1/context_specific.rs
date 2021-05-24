@@ -1,8 +1,9 @@
 //! Context-specific field.
 
 use crate::{
-    Any, Choice, Decodable, Decoder, Encodable, Encoder, ErrorKind, Header, Length, Result, Tag,
+    Any, Choice, Decodable, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag,
 };
+use core::convert::TryFrom;
 
 /// Context-specific field.
 ///
@@ -59,25 +60,6 @@ impl<'a> Choice<'a> for ContextSpecific<'a> {
     }
 }
 
-impl<'a> Decodable<'a> for ContextSpecific<'a> {
-    fn decode(decoder: &mut Decoder<'a>) -> Result<Self> {
-        let header = Header::decode(decoder)?;
-
-        let tag = if header.tag.is_context_specific() {
-            (header.tag as u8)
-                .checked_sub(0xA0)
-                .ok_or(ErrorKind::Overflow)?
-        } else {
-            return decoder.error(ErrorKind::UnexpectedTag {
-                expected: None,
-                actual: header.tag,
-            });
-        };
-
-        Self::new(tag, decoder.any()?)
-    }
-}
-
 impl<'a> Encodable for ContextSpecific<'a> {
     fn encoded_len(&self) -> Result<Length> {
         self.value.encoded_len()?.for_tlv()
@@ -90,8 +72,55 @@ impl<'a> Encodable for ContextSpecific<'a> {
     }
 }
 
+impl<'a> From<&ContextSpecific<'a>> for ContextSpecific<'a> {
+    fn from(value: &ContextSpecific<'a>) -> ContextSpecific<'a> {
+        *value
+    }
+}
+
+impl<'a> TryFrom<Any<'a>> for ContextSpecific<'a> {
+    type Error = Error;
+
+    fn try_from(any: Any<'a>) -> Result<ContextSpecific<'a>> {
+        let tag = if any.tag().is_context_specific() {
+            (any.tag() as u8)
+                .checked_sub(0xA0)
+                .ok_or(ErrorKind::Overflow)?
+        } else {
+            return Err(ErrorKind::UnexpectedTag {
+                expected: None,
+                actual: any.tag(),
+            }
+            .into());
+        };
+
+        let value = Any::from_der(any.as_bytes())?;
+
+        Self::new(tag, value)
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::ContextSpecific;
+    use crate::{Decodable, Encodable, Tag};
+    use hex_literal::hex;
+
+    // Public key data from `pkcs8` crate's `ed25519-pkcs8-v2.der`
+    const EXAMPLE_BYTES: &[u8] =
+        &hex!("A123032100A3A7EAE3A8373830BC47E1167BC50E1DB551999651E0E2DC587623438EAC3F31");
+
     #[test]
-    fn round_trip() {}
+    fn round_trip() {
+        let field = ContextSpecific::from_der(EXAMPLE_BYTES).unwrap();
+        assert_eq!(field.tag(), 1);
+
+        let value = field.value();
+        assert_eq!(value.tag(), Tag::BitString);
+        assert_eq!(value.as_bytes(), &EXAMPLE_BYTES[5..]);
+
+        let mut buf = [0u8; 128];
+        let encoded = field.encode_to_slice(&mut buf).unwrap();
+        assert_eq!(encoded, EXAMPLE_BYTES);
+    }
 }
