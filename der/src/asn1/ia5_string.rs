@@ -1,8 +1,7 @@
 //! ASN.1 `IA5String` support.
 
 use crate::{
-    str_slice::StrSlice, Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag,
-    Tagged,
+    str_slice::StrSlice, Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged,
 };
 use core::{convert::TryFrom, fmt, str};
 
@@ -90,10 +89,7 @@ impl<'a> TryFrom<Any<'a>> for Ia5String<'a> {
 
 impl<'a> From<Ia5String<'a>> for Any<'a> {
     fn from(printable_string: Ia5String<'a>) -> Any<'a> {
-        Any {
-            tag: Tag::Ia5String,
-            value: ByteSlice::new(printable_string.as_bytes()).expect("overlength string"),
-        }
+        Any::from_tag_and_value(Tag::Ia5String, printable_string.inner.into())
     }
 }
 

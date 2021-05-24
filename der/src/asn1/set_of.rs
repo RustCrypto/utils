@@ -112,10 +112,7 @@ where
     T: Clone + Decodable<'a> + Encodable + Ord,
 {
     fn from(set: SetOfRef<'a, T>) -> Any<'a> {
-        Any {
-            tag: Tag::Set,
-            value: set.inner,
-        }
+        Any::from_tag_and_value(Tag::Set, set.inner)
     }
 }
 

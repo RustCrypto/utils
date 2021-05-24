@@ -55,10 +55,7 @@ impl<'a> TryFrom<Any<'a>> for Sequence<'a> {
 
 impl<'a> From<Sequence<'a>> for Any<'a> {
     fn from(seq: Sequence<'a>) -> Any<'a> {
-        Any {
-            tag: Tag::Sequence,
-            value: seq.inner,
-        }
+        Any::from_tag_and_value(Tag::Sequence, seq.inner)
     }
 }
 

@@ -1,8 +1,7 @@
 //! ASN.1 `PrintableString` support.
 
 use crate::{
-    str_slice::StrSlice, Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag,
-    Tagged,
+    str_slice::StrSlice, Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged,
 };
 use core::{convert::TryFrom, fmt, str};
 
@@ -123,10 +122,7 @@ impl<'a> TryFrom<Any<'a>> for PrintableString<'a> {
 
 impl<'a> From<PrintableString<'a>> for Any<'a> {
     fn from(printable_string: PrintableString<'a>) -> Any<'a> {
-        Any {
-            tag: Tag::PrintableString,
-            value: ByteSlice::new(printable_string.as_bytes()).expect("overlength string"),
-        }
+        Any::from_tag_and_value(Tag::PrintableString, printable_string.inner.into())
     }
 }
 

@@ -21,20 +21,37 @@ use crate::ObjectIdentifier;
 /// PKI-related RFCs.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Any<'a> {
-    /// Tag representing the type of the encoded value
-    pub(crate) tag: Tag,
+    /// Tag representing the type of the encoded value.
+    tag: Tag,
 
-    /// Inner value encoded as bytes
-    pub(crate) value: ByteSlice<'a>,
+    /// Encoded length of this [`Any`] value.
+    length: Length,
+
+    /// Inner value encoded as bytes.
+    value: ByteSlice<'a>,
 }
 
 impl<'a> Any<'a> {
-    /// Create a new [`Any`] from the provided [`Tag`] and slice.
-    pub fn new(tag: Tag, value: &'a [u8]) -> Result<Self> {
-        Ok(Self {
+    /// Create a new [`Any`] from the provided [`Tag`] and byte slice.
+    pub fn new(tag: Tag, bytes: &'a [u8]) -> Result<Self> {
+        let value = ByteSlice::new(bytes).map_err(|_| ErrorKind::Length { tag })?;
+
+        let length = if has_leading_zero_byte(tag) {
+            (value.len() + 1u8)?
+        } else {
+            value.len()
+        };
+
+        Ok(Self { tag, length, value })
+    }
+
+    /// Infallible creation of an [`Any`] from a [`ByteSlice`].
+    pub(crate) fn from_tag_and_value(tag: Tag, value: ByteSlice<'a>) -> Self {
+        Self {
             tag,
-            value: ByteSlice::new(value).map_err(|_| ErrorKind::Length { tag })?,
-        })
+            length: value.len(),
+            value,
+        }
     }
 
     /// Get the tag for this [`Any`] type.
@@ -44,7 +61,7 @@ impl<'a> Any<'a> {
 
     /// Get the [`Length`] of this [`Any`] type's value.
     pub fn len(self) -> Length {
-        self.value.len()
+        self.length
     }
 
     /// Is the body of this [`Any`] type empty?
@@ -166,9 +183,22 @@ impl<'a> Decodable<'a> for Any<'a> {
     fn decode(decoder: &mut Decoder<'a>) -> Result<Any<'a>> {
         let header = Header::decode(decoder)?;
         let tag = header.tag;
-        let value = decoder
+        let mut value = decoder
             .bytes(header.length)
             .map_err(|_| ErrorKind::Length { tag })?;
+
+        if has_leading_zero_byte(tag) {
+            let (byte, rest) = value.split_first().ok_or(ErrorKind::Truncated)?;
+
+            // The first octet of a BIT STRING encodes the number of unused bits.
+            // We presently constrain this to 0.
+            if *byte != 0 {
+                return Err(ErrorKind::Noncanonical.into());
+            }
+
+            value = rest;
+        }
+
         Self::new(tag, value)
     }
 }
@@ -180,6 +210,11 @@ impl<'a> Encodable for Any<'a> {
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
         Header::new(self.tag, self.len())?.encode(encoder)?;
+
+        if has_leading_zero_byte(self.tag) {
+            encoder.byte(0)?;
+        }
+
         encoder.bytes(self.as_bytes())
     }
 }
@@ -190,4 +225,38 @@ impl<'a> TryFrom<&'a [u8]> for Any<'a> {
     fn try_from(bytes: &'a [u8]) -> Result<Any<'a>> {
         Any::from_der(bytes)
     }
+}
+
+// Special handling for the leading `0` byte on [`BitString`]
+impl<'a> TryFrom<Any<'a>> for BitString<'a> {
+    type Error = Error;
+
+    fn try_from(any: Any<'a>) -> Result<BitString<'a>> {
+        any.tag().assert_eq(Tag::BitString)?;
+
+        Ok(BitString {
+            inner: any.value,
+            encoded_len: any.length,
+        })
+    }
+}
+
+// Special handling for the leading `0` byte on [`BitString`]
+impl<'a> From<BitString<'a>> for Any<'a> {
+    fn from(bit_string: BitString<'a>) -> Any<'a> {
+        Any {
+            tag: Tag::BitString,
+            length: bit_string.encoded_len,
+            value: bit_string.inner,
+        }
+    }
+}
+
+/// Does a value with this tag have a leading zero byte?
+///
+/// This is mostly a hack for `BIT STRING`, and permits simple `From`
+/// conversions from `BitString` into `Any`.
+// TODO(tarcieri): better generalize this? or is there a better solution?
+fn has_leading_zero_byte(tag: Tag) -> bool {
+    tag == Tag::BitString
 }

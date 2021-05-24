@@ -8,10 +8,10 @@ use core::{convert::TryFrom, str};
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub(crate) struct StrSlice<'a> {
     /// Inner value
-    inner: &'a str,
+    pub(crate) inner: &'a str,
 
     /// Precomputed `Length` (avoids possible panicking conversions)
-    length: Length,
+    pub(crate) length: Length,
 }
 
 impl<'a> StrSlice<'a> {

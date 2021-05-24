@@ -23,10 +23,7 @@ impl<'a> From<&'a ObjectIdentifier> for Any<'a> {
             .try_into()
             .expect("OID length invariant violated");
 
-        Any {
-            tag: Tag::ObjectIdentifier,
-            value,
-        }
+        Any::from_tag_and_value(Tag::ObjectIdentifier, value)
     }
 }
 

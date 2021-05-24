@@ -23,10 +23,7 @@ impl TryFrom<Any<'_>> for Null {
 
 impl<'a> From<Null> for Any<'a> {
     fn from(_: Null) -> Any<'a> {
-        Any {
-            tag: Tag::Null,
-            value: ByteSlice::default(),
-        }
+        Any::from_tag_and_value(Tag::Null, ByteSlice::default())
     }
 }
 

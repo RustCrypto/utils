@@ -57,10 +57,7 @@ impl<'a> TryFrom<Any<'a>> for OctetString<'a> {
 
 impl<'a> From<OctetString<'a>> for Any<'a> {
     fn from(octet_string: OctetString<'a>) -> Any<'a> {
-        Any {
-            tag: Tag::OctetString,
-            value: octet_string.inner,
-        }
+        Any::from_tag_and_value(Tag::OctetString, octet_string.inner)
     }
 }
 
