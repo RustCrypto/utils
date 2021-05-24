@@ -87,24 +87,17 @@ impl<'a> TryFrom<der::Any<'a>> for OneAsymmetricKey<'a> {
             let algorithm = decoder.decode()?;
             let private_key = decoder.octet_string()?.into();
 
-            let mut attributes = None;
-            let mut public_key = None;
+            // TODO(tarcieri): handle extensions following attributes/public key.
+            // See: https://datatracker.ietf.org/doc/html/rfc6025#section-2.4.1
 
-            while let Some(attrs) = decoder.decode()? {
-                // TODO(tarcieri): store multiple attribute fields?
-                attributes.get_or_insert(attrs);
-            }
-
-            if version == Version::V2 {
-                while let Some(pk) = decoder.context_specific_optional(1, |dec| dec.bit_string())? {
-                    // Throw away further public keys (for now)
-                    // FIXME: the documentation says "...,",
-                    //  meaning more fields of the same type can exist,
-                    //  considering that the rest of the documentation isn't talking about "multiple public keys",
-                    //  I assume it is okay to only get the first value, and ignore the rest.
-                    public_key.get_or_insert(pk.as_bytes());
-                }
-            }
+            let attributes = decoder.optional()?;
+            let public_key = if version == Version::V2 {
+                decoder.context_specific_optional(1, |dec| {
+                    dec.bit_string().map(|bit_string| bit_string.as_bytes())
+                })?
+            } else {
+                None
+            };
 
             Ok(Self {
                 algorithm,
