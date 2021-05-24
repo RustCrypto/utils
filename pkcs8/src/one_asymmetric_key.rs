@@ -3,6 +3,7 @@
 
 use der::{Decodable, Encodable, Message};
 
+use self::pubkey::PublicKeyBitString;
 use crate::{AlgorithmIdentifier, Attributes, Error, Result, Version};
 use core::{convert::TryFrom, fmt};
 
@@ -118,11 +119,11 @@ impl<'a> Message<'a> for OneAsymmetricKey<'a> {
             &u8::from(self.version()),
             &self.algorithm,
             &der::OctetString::new(self.private_key)?,
-            &if let Some(key) = self.public_key {
-                Some(pubkey::PublicKeyBitString(der::BitString::new(key)?))
-            } else {
-                None
-            },
+            &self.attributes,
+            &self
+                .public_key
+                .map(|pk| der::BitString::new(pk).map(PublicKeyBitString))
+                .transpose()?,
         ])
     }
 }
@@ -132,6 +133,7 @@ impl<'a> fmt::Debug for OneAsymmetricKey<'a> {
         f.debug_struct("OneAsymmetricKey")
             .field("version", &self.version())
             .field("algorithm", &self.algorithm)
+            .field("attributes", &self.attributes)
             .field("public_key", &self.public_key)
             .finish() // TODO: use `finish_non_exhaustive` when stable
     }
