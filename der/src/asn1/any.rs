@@ -165,21 +165,24 @@ impl<'a> Decodable<'a> for Any<'a> {
         let tag = header.tag;
         let mut value = decoder
             .bytes(header.length)
-            .map_err(|_| ErrorKind::Length { tag })?;
+            .or_else(|_| decoder.error(ErrorKind::Length { tag }))?;
 
         if has_leading_zero_byte(tag) {
-            let (byte, rest) = value.split_first().ok_or(ErrorKind::Truncated)?;
+            let (byte, rest) = value
+                .split_first()
+                .ok_or(ErrorKind::Truncated)
+                .or_else(|e| decoder.error(e))?;
 
             // The first octet of a BIT STRING encodes the number of unused bits.
             // We presently constrain this to 0.
             if *byte != 0 {
-                return Err(ErrorKind::Noncanonical.into());
+                return decoder.error(ErrorKind::Noncanonical);
             }
 
             value = rest;
         }
 
-        Self::new(tag, value)
+        Self::new(tag, value).or_else(|e| decoder.error(e.kind()))
     }
 }
 
