@@ -75,26 +75,30 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-pub use der::{self, ObjectIdentifier};
-#[cfg(feature = "pkcs5")]
-pub use encrypted_private_key_info::EncryptedPrivateKeyInfo;
-#[cfg(feature = "pkcs5")]
-pub use pkcs5;
-pub use spki::{AlgorithmIdentifier, SubjectPublicKeyInfo};
-
-#[cfg(all(feature = "alloc", feature = "pkcs5"))]
-pub use crate::document::encrypted_private_key::EncryptedPrivateKeyDocument;
-#[cfg(feature = "alloc")]
 pub use crate::{
-    document::{private_key::PrivateKeyDocument, public_key::PublicKeyDocument},
-    traits::{ToPrivateKey, ToPublicKey},
-};
-pub use crate::{
+    attributes::Attributes,
     error::{Error, Result},
     one_asymmetric_key::OneAsymmetricKey,
     private_key_info::PrivateKeyInfo,
     traits::{FromPrivateKey, FromPublicKey},
     version::Version,
+};
+pub use der::{self, ObjectIdentifier};
+pub use spki::{AlgorithmIdentifier, SubjectPublicKeyInfo};
+
+#[cfg(feature = "pkcs5")]
+pub use encrypted_private_key_info::EncryptedPrivateKeyInfo;
+
+#[cfg(feature = "pkcs5")]
+pub use pkcs5;
+
+#[cfg(all(feature = "alloc", feature = "pkcs5"))]
+pub use crate::document::encrypted_private_key::EncryptedPrivateKeyDocument;
+
+#[cfg(feature = "alloc")]
+pub use crate::{
+    document::{private_key::PrivateKeyDocument, public_key::PublicKeyDocument},
+    traits::{ToPrivateKey, ToPublicKey},
 };
 
 mod attributes;

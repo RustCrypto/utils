@@ -11,6 +11,7 @@ use crate::Error;
 pub enum Version {
     /// Denotes PKCS#8 v1, used for [`crate::PrivateKeyInfo`] and [`crate::OneAsymmetricKey`]
     V1 = 0,
+
     /// Denotes PKCS#8 v2, only used for [`crate::OneAsymmetricKey`]
     V2 = 1,
 }
@@ -31,6 +32,7 @@ impl TryFrom<u8> for Version {
         }
     }
 }
+
 impl<'a> TryFrom<der::Any<'a>> for Version {
     type Error = der::Error;
     fn try_from(any: der::Any<'a>) -> der::Result<Version> {
