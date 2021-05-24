@@ -89,11 +89,6 @@ impl<'a> Any<'a> {
         self.try_into()
     }
 
-    /// Attempt to decode an `OPTIONAL` ASN.1 `CONTEXT-SPECIFIC` field.
-    pub fn context_specific_optional(self) -> Result<Option<ContextSpecific<'a>>> {
-        self.optional()
-    }
-
     /// Attempt to decode an ASN.1 `GeneralizedTime`.
     pub fn generalized_time(self) -> Result<GeneralizedTime> {
         self.try_into()

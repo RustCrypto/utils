@@ -14,7 +14,7 @@ keywords = ["crypto", "key", "pkcs", "private"]
 readme = "README.md"
 
 [dependencies]
-der = { version = "0.3", features = ["oid"], path = "../der" }
+der = { version = "0.3.5", features = ["oid"], path = "../der" }
 spki = { version = "0.3", path = "../spki" }
 
 base64ct = { version = "1", optional = true, path = "../base64ct" }
