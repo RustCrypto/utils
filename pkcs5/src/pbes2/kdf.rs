@@ -18,6 +18,9 @@ pub const HMAC_WITH_SHA256_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.84
 /// [RFC 7914]: https://datatracker.ietf.org/doc/html/rfc7914#section-7
 pub const SCRYPT_OID: ObjectIdentifier = ObjectIdentifier::new("1.3.6.1.4.1.11591.4.11");
 
+/// Type used for expressing scrypt cost
+type ScryptCost = u16;
+
 /// Password-based key derivation function.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
@@ -308,7 +311,7 @@ pub struct ScryptParams<'a> {
     pub salt: &'a [u8],
 
     /// CPU/Memory cost parameter `N`.
-    pub cost_parameter: u16,
+    pub cost_parameter: ScryptCost,
 
     /// Block size parameter `r`.
     pub block_size: u16,
@@ -354,5 +357,29 @@ impl<'a> Message<'a> for ScryptParams<'a> {
             &self.parallelization,
             &self.key_length,
         ])
+    }
+}
+
+#[cfg(feature = "scrypt")]
+#[cfg_attr(docsrs, doc(cfg(feature = "scrypt")))]
+impl<'a> TryFrom<&ScryptParams<'a>> for scrypt::Params {
+    type Error = CryptoError;
+
+    fn try_from(params: &ScryptParams<'a>) -> Result<scrypt::Params, CryptoError> {
+        let n = params.cost_parameter;
+
+        // Compute log2 and verify its correctness
+        let log_n = ((8 * core::mem::size_of::<ScryptCost>() as u32) - n.leading_zeros() - 1) as u8;
+
+        if 1 << log_n != n {
+            return Err(CryptoError);
+        }
+
+        scrypt::Params::new(
+            log_n,
+            params.block_size.into(),
+            params.parallelization.into(),
+        )
+        .map_err(|_| CryptoError)
     }
 }
