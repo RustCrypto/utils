@@ -323,6 +323,25 @@ pub struct ScryptParams<'a> {
     pub key_length: Option<u16>,
 }
 
+impl<'a> ScryptParams<'a> {
+    /// Get the [`ScryptParams`] for the provided upstream [`scrypt::Params`]
+    /// and a provided salt string.
+    #[cfg(feature = "scrypt")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "scrypt")))]
+    pub fn from_params_and_salt(
+        params: scrypt::Params,
+        salt: &'a [u8],
+    ) -> Result<Self, CryptoError> {
+        Ok(Self {
+            salt,
+            cost_parameter: 1 << params.log_n(),
+            block_size: params.r().try_into().map_err(|_| CryptoError)?,
+            parallelization: params.p().try_into().map_err(|_| CryptoError)?,
+            key_length: None,
+        })
+    }
+}
+
 impl<'a> TryFrom<Any<'a>> for ScryptParams<'a> {
     type Error = Error;
 
@@ -357,6 +376,16 @@ impl<'a> Message<'a> for ScryptParams<'a> {
             &self.parallelization,
             &self.key_length,
         ])
+    }
+}
+
+#[cfg(feature = "scrypt")]
+#[cfg_attr(docsrs, doc(cfg(feature = "scrypt")))]
+impl<'a> TryFrom<ScryptParams<'a>> for scrypt::Params {
+    type Error = CryptoError;
+
+    fn try_from(params: ScryptParams<'a>) -> Result<scrypt::Params, CryptoError> {
+        scrypt::Params::try_from(&params)
     }
 }
 

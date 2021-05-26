@@ -25,21 +25,21 @@ pub fn encrypt_in_place<'b>(
     buffer: &'b mut [u8],
     pos: usize,
 ) -> Result<&'b [u8], CryptoError> {
-    let pbkdf2_params = params.kdf.pbkdf2().ok_or(CryptoError)?;
-
-    let key = EncryptionKey::derive_with_pbkdf2::<Sha256>(
+    let encryption_key = EncryptionKey::derive_from_password(
         password.as_ref(),
-        &pbkdf2_params,
+        &params.kdf,
         params.encryption.key_size(),
     )?;
 
     match params.encryption {
         EncryptionScheme::Aes128Cbc { iv } => {
-            let cipher = Aes128Cbc::new_from_slices(key.as_slice(), iv).map_err(|_| CryptoError)?;
+            let cipher = Aes128Cbc::new_from_slices(encryption_key.as_slice(), iv)
+                .map_err(|_| CryptoError)?;
             cipher.encrypt(buffer, pos).map_err(|_| CryptoError)
         }
         EncryptionScheme::Aes256Cbc { iv } => {
-            let cipher = Aes256Cbc::new_from_slices(key.as_slice(), iv).map_err(|_| CryptoError)?;
+            let cipher = Aes256Cbc::new_from_slices(encryption_key.as_slice(), iv)
+                .map_err(|_| CryptoError)?;
             cipher.encrypt(buffer, pos).map_err(|_| CryptoError)
         }
     }
@@ -51,26 +51,21 @@ pub fn decrypt_in_place<'a>(
     password: impl AsRef<[u8]>,
     buffer: &'a mut [u8],
 ) -> Result<&'a [u8], CryptoError> {
-    let key = match &params.kdf {
-        Kdf::Pbkdf2(pbkdf2_params) => EncryptionKey::derive_with_pbkdf2::<Sha256>(
-            password.as_ref(),
-            pbkdf2_params,
-            params.encryption.key_size(),
-        ),
-        Kdf::Scrypt(scrypt_params) => EncryptionKey::derive_with_scrypt(
-            password.as_ref(),
-            &scrypt_params,
-            params.encryption.key_size(),
-        ),
-    }?;
+    let encryption_key = EncryptionKey::derive_from_password(
+        password.as_ref(),
+        &params.kdf,
+        params.encryption.key_size(),
+    )?;
 
     match params.encryption {
         EncryptionScheme::Aes128Cbc { iv } => {
-            let cipher = Aes128Cbc::new_from_slices(key.as_slice(), iv).map_err(|_| CryptoError)?;
+            let cipher = Aes128Cbc::new_from_slices(encryption_key.as_slice(), iv)
+                .map_err(|_| CryptoError)?;
             cipher.decrypt(buffer).map_err(|_| CryptoError)
         }
         EncryptionScheme::Aes256Cbc { iv } => {
-            let cipher = Aes256Cbc::new_from_slices(key.as_slice(), iv).map_err(|_| CryptoError)?;
+            let cipher = Aes256Cbc::new_from_slices(encryption_key.as_slice(), iv)
+                .map_err(|_| CryptoError)?;
             cipher.decrypt(buffer).map_err(|_| CryptoError)
         }
     }
@@ -84,6 +79,22 @@ struct EncryptionKey {
 }
 
 impl EncryptionKey {
+    /// Derive an encryption key using the supplied PBKDF parameters.
+    pub fn derive_from_password(
+        password: &[u8],
+        kdf: &Kdf<'_>,
+        key_size: usize,
+    ) -> Result<Self, CryptoError> {
+        match kdf {
+            Kdf::Pbkdf2(pbkdf2_params) => {
+                EncryptionKey::derive_with_pbkdf2::<Sha256>(password, pbkdf2_params, key_size)
+            }
+            Kdf::Scrypt(scrypt_params) => {
+                EncryptionKey::derive_with_scrypt(password, &scrypt_params, key_size)
+            }
+        }
+    }
+
     /// Derive key using PBKDF2.
     fn derive_with_pbkdf2<D>(
         password: &[u8],
@@ -94,6 +105,7 @@ impl EncryptionKey {
         D: Update + BlockInput + FixedOutput + Reset + Default + Clone + Sync,
         D::BlockSize: ArrayLength<u8>,
     {
+        // TODO(tarcieri): move to `derive_from_password`?
         validate_key_length(length, params.key_length.map(Into::into))?;
 
         // We only support PBKDF2-SHA256 for now
@@ -118,6 +130,7 @@ impl EncryptionKey {
         params: &ScryptParams<'_>,
         length: usize,
     ) -> Result<Self, CryptoError> {
+        // TODO(tarcieri): move to `derive_from_password`?
         validate_key_length(length, params.key_length.map(Into::into))?;
 
         let mut buffer = [0u8; MAX_KEY_LEN];
@@ -139,6 +152,7 @@ impl EncryptionKey {
 }
 
 /// Validate key length
+// TODO(tarcieri): move to `EncryptionKey::derive_from_password`?
 fn validate_key_length(requested_len: usize, params_len: Option<usize>) -> Result<(), CryptoError> {
     // Ensure key length matches what is expected for the given algorithm
     if let Some(len) = params_len {
