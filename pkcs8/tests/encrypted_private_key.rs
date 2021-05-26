@@ -24,7 +24,7 @@ const ED25519_DER_PLAINTEXT_EXAMPLE: &[u8] = include_bytes!("examples/ed25519-pr
 /// $ openssl pkcs8 -v2 aes256-cbc -v2prf hmacWithSHA1 -topk8 -inform der -in ed25519-priv.der -outform der -out ed25519-encpriv-aes128-sha1.der
 /// ```
 const ED25519_DER_AES128_SHA1_EXAMPLE: &[u8] =
-    include_bytes!("examples/ed25519-encpriv-aes128-sha1.der");
+    include_bytes!("examples/ed25519-encpriv-aes128-pbkdf2-sha1.der");
 
 /// Ed25519 PKCS#8 encrypted private key (PBES2 + AES-256-CBC + PBKDF2-SHA256) encoded as ASN.1 DER.
 ///
@@ -34,12 +34,12 @@ const ED25519_DER_AES128_SHA1_EXAMPLE: &[u8] =
 /// $ openssl pkcs8 -v2 aes256-cbc -v2prf hmacWithSHA256 -topk8 -inform der -in ed25519-priv.der -outform der -out ed25519-encpriv-aes256-sha256.der
 /// ```
 const ED25519_DER_AES256_SHA256_EXAMPLE: &[u8] =
-    include_bytes!("examples/ed25519-encpriv-aes256-sha256.der");
+    include_bytes!("examples/ed25519-encpriv-aes256-pbkdf2-sha256.der");
 
 /// Ed25519 PKCS#8 encrypted private key encoded as PEM
 #[cfg(feature = "pem")]
 const ED25519_PEM_AES256_SHA256_EXAMPLE: &str =
-    include_str!("examples/ed25519-encpriv-aes256-sha256.pem");
+    include_str!("examples/ed25519-encpriv-aes256-pbkdf2-sha256.pem");
 
 /// Password used to encrypt the keys.
 #[cfg(feature = "encryption")]
@@ -165,7 +165,7 @@ fn encode_ed25519_encpriv_aes256_sha256_pem() {
 #[cfg(feature = "std")]
 fn read_der_file() {
     let pkcs8_doc = EncryptedPrivateKeyDocument::read_der_file(
-        "tests/examples/ed25519-encpriv-aes256-sha256.der",
+        "tests/examples/ed25519-encpriv-aes256-pbkdf2-sha256.der",
     )
     .unwrap();
     assert_eq!(pkcs8_doc.as_ref(), ED25519_DER_AES256_SHA256_EXAMPLE);
@@ -175,7 +175,7 @@ fn read_der_file() {
 #[cfg(all(feature = "pem", feature = "std"))]
 fn read_pem_file() {
     let pkcs8_doc = EncryptedPrivateKeyDocument::read_pem_file(
-        "tests/examples/ed25519-encpriv-aes256-sha256.pem",
+        "tests/examples/ed25519-encpriv-aes256-pbkdf2-sha256.pem",
     )
     .unwrap();
     assert_eq!(pkcs8_doc.as_ref(), ED25519_DER_AES256_SHA256_EXAMPLE);
