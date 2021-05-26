@@ -55,7 +55,7 @@ pub struct Parameters<'a> {
 
 impl<'a> Parameters<'a> {
     /// Initialize PBES2 parameters using PBKDF2-SHA256 as the password-based
-    /// key derivation algorithm and AES-128-CBC as the symmetric cipher.
+    /// key derivation function and AES-128-CBC as the symmetric cipher.
     pub fn pbkdf2_sha256_aes128cbc(
         pbkdf2_iterations: u16,
         pbkdf2_salt: &'a [u8],
@@ -67,13 +67,59 @@ impl<'a> Parameters<'a> {
     }
 
     /// Initialize PBES2 parameters using PBKDF2-SHA256 as the password-based
-    /// key derivation algorithm and AES-128-CBC as the symmetric cipher.
+    /// key derivation function and AES-256-CBC as the symmetric cipher.
     pub fn pbkdf2_sha256_aes256cbc(
         pbkdf2_iterations: u16,
         pbkdf2_salt: &'a [u8],
         aes_iv: &'a [u8; AES_BLOCK_SIZE],
     ) -> Result<Self, CryptoError> {
         let kdf = Pbkdf2Params::hmac_with_sha256(pbkdf2_iterations, pbkdf2_salt)?.into();
+        let encryption = EncryptionScheme::Aes256Cbc { iv: aes_iv };
+        Ok(Self { kdf, encryption })
+    }
+
+    /// Initialize PBES2 parameters using scrypt as the password-based
+    /// key derivation function and AES-128-CBC as the symmetric cipher.
+    ///
+    /// For more information on scrypt parameters, see documentation for the
+    /// [`scrypt::Params`] struct.
+    #[cfg(feature = "scrypt")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "scrypt")))]
+    pub fn scrypt_aes128cbc(
+        scrypt_log_n: u8,
+        scrypt_r: u32,
+        scrypt_p: u32,
+        scrypt_salt: &'a [u8],
+        aes_iv: &'a [u8; AES_BLOCK_SIZE],
+    ) -> Result<Self, CryptoError> {
+        let kdf = ScryptParams::from_params_and_salt(
+            scrypt::Params::new(scrypt_log_n, scrypt_r, scrypt_p).map_err(|_| CryptoError)?,
+            scrypt_salt,
+        )?
+        .into();
+        let encryption = EncryptionScheme::Aes128Cbc { iv: aes_iv };
+        Ok(Self { kdf, encryption })
+    }
+
+    /// Initialize PBES2 parameters using scrypt as the password-based
+    /// key derivation function and AES-256-CBC as the symmetric cipher.
+    ///
+    /// For more information on scrypt parameters, see documentation for the
+    /// [`scrypt::Params`] struct.
+    #[cfg(feature = "scrypt")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "scrypt")))]
+    pub fn scrypt_aes256cbc(
+        scrypt_log_n: u8,
+        scrypt_r: u32,
+        scrypt_p: u32,
+        scrypt_salt: &'a [u8],
+        aes_iv: &'a [u8; AES_BLOCK_SIZE],
+    ) -> Result<Self, CryptoError> {
+        let kdf = ScryptParams::from_params_and_salt(
+            scrypt::Params::new(scrypt_log_n, scrypt_r, scrypt_p).map_err(|_| CryptoError)?,
+            scrypt_salt,
+        )?
+        .into();
         let encryption = EncryptionScheme::Aes256Cbc { iv: aes_iv };
         Ok(Self { kdf, encryption })
     }
