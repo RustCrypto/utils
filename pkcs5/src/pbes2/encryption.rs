@@ -1,14 +1,16 @@
 //! PBES2 encryption implementation
 
-use super::{EncryptionScheme, Parameters, Pbkdf2Params, Pbkdf2Prf};
+use super::{EncryptionScheme, Kdf, Parameters, Pbkdf2Params, Pbkdf2Prf, ScryptParams};
 use crate::CryptoError;
 use block_modes::block_padding::Pkcs7;
 use block_modes::{BlockMode, Cbc};
+use core::convert::TryInto;
 use hmac::{
     digest::{generic_array::ArrayLength, BlockInput, FixedOutput, Reset, Update},
     Hmac,
 };
 use pbkdf2::pbkdf2;
+use scrypt::scrypt;
 use sha2::Sha256;
 
 type Aes128Cbc = Cbc<aes::Aes128, Pkcs7>;
@@ -49,13 +51,18 @@ pub fn decrypt_in_place<'a>(
     password: impl AsRef<[u8]>,
     buffer: &'a mut [u8],
 ) -> Result<&'a [u8], CryptoError> {
-    let pbkdf2_params = params.kdf.pbkdf2().ok_or(CryptoError)?;
-
-    let key = EncryptionKey::derive_with_pbkdf2::<Sha256>(
-        password.as_ref(),
-        &pbkdf2_params,
-        params.encryption.key_size(),
-    )?;
+    let key = match &params.kdf {
+        Kdf::Pbkdf2(pbkdf2_params) => EncryptionKey::derive_with_pbkdf2::<Sha256>(
+            password.as_ref(),
+            pbkdf2_params,
+            params.encryption.key_size(),
+        ),
+        Kdf::Scrypt(scrypt_params) => EncryptionKey::derive_with_scrypt(
+            password.as_ref(),
+            &scrypt_params,
+            params.encryption.key_size(),
+        ),
+    }?;
 
     match params.encryption {
         EncryptionScheme::Aes128Cbc { iv } => {
@@ -87,24 +94,14 @@ impl EncryptionKey {
         D: Update + BlockInput + FixedOutput + Reset + Default + Clone + Sync,
         D::BlockSize: ArrayLength<u8>,
     {
+        validate_key_length(length, params.key_length.map(Into::into))?;
+
         // We only support PBKDF2-SHA256 for now
         if params.prf != Pbkdf2Prf::HmacWithSha256 {
             return Err(CryptoError);
         }
 
-        // Ensure key length matches what is expected for the given algorithm
-        if let Some(len) = params.key_length {
-            if length != len as usize {
-                return Err(CryptoError);
-            }
-        }
-
-        if length > MAX_KEY_LEN {
-            return Err(CryptoError);
-        }
-
         let mut buffer = [0u8; MAX_KEY_LEN];
-
         pbkdf2::<Hmac<D>>(
             password,
             params.salt,
@@ -115,8 +112,44 @@ impl EncryptionKey {
         Ok(Self { buffer, length })
     }
 
+    /// Derive key using scrypt.
+    fn derive_with_scrypt(
+        password: &[u8],
+        params: &ScryptParams<'_>,
+        length: usize,
+    ) -> Result<Self, CryptoError> {
+        validate_key_length(length, params.key_length.map(Into::into))?;
+
+        let mut buffer = [0u8; MAX_KEY_LEN];
+        scrypt(
+            password,
+            params.salt,
+            &params.try_into()?,
+            &mut buffer[..length],
+        )
+        .map_err(|_| CryptoError)?;
+
+        Ok(Self { buffer, length })
+    }
+
     /// Get the key material as a slice
     fn as_slice(&self) -> &[u8] {
         &self.buffer[..self.length]
     }
+}
+
+/// Validate key length
+fn validate_key_length(requested_len: usize, params_len: Option<usize>) -> Result<(), CryptoError> {
+    // Ensure key length matches what is expected for the given algorithm
+    if let Some(len) = params_len {
+        if requested_len != len {
+            return Err(CryptoError);
+        }
+    }
+
+    if requested_len > MAX_KEY_LEN {
+        return Err(CryptoError);
+    }
+
+    Ok(())
 }

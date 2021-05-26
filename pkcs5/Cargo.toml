@@ -21,6 +21,7 @@ aes = { version = "0.7.3", optional = true }
 block-modes = { version = "0.8", optional = true, default-features = false }
 hmac = { version = "0.11", optional = true, default-features = false }
 pbkdf2 = { version = "0.8", optional = true, default-features = false }
+scrypt = { version = "0.7", optional = true, default-features = false }
 sha2 = { version = "0.9", optional = true, default-features = false }
 
 [dev-dependencies]
@@ -28,7 +29,7 @@ hex-literal = "0.3"
 
 [features]
 alloc = []
-pbes2 = ["aes", "block-modes", "hmac", "pbkdf2", "sha2"]
+pbes2 = ["aes", "block-modes", "hmac", "pbkdf2", "scrypt", "sha2"]
 
 [package.metadata.docs.rs]
 all-features = true

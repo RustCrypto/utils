@@ -7,7 +7,10 @@ mod kdf;
 #[cfg(feature = "pbes2")]
 mod encryption;
 
-pub use self::kdf::*;
+pub use self::kdf::{
+    Kdf, Pbkdf2Params, Pbkdf2Prf, ScryptParams, HMAC_WITH_SHA1_OID, HMAC_WITH_SHA256_OID,
+    PBKDF2_OID, SCRYPT_OID,
+};
 
 use crate::{AlgorithmIdentifier, CryptoError, ObjectIdentifier};
 use core::convert::{TryFrom, TryInto};
