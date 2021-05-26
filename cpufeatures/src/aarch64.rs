@@ -135,8 +135,31 @@ pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
     value != 0
 }
 
+// iOS `check!` macro.
+//
+// Unfortunately iOS does not provide access to the `sysctl(3)` API which means
+// we can only return static values for CPU features which  can be assumed to
+// be present on all Apple ARM64 hardware.
+//
+// See discussion on this issue for more information:
+// <https://github.com/RustCrypto/utils/issues/378>
+#[cfg(target_os = "ios")]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! check {
+    ("aes") => {
+        true
+    };
+    ("sha2") => {
+        true
+    };
+    ("sha3") => {
+        false
+    };
+}
+
 // On other targets, runtime CPU feature detection is unavailable
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(not(any(target_os = "ios", target_os = "linux", target_os = "macos")))]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __detect_target_features {
