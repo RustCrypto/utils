@@ -19,7 +19,7 @@ spki = { version = "0.3", path = "../spki" }
 
 base64ct = { version = "1", optional = true, path = "../base64ct" }
 rand_core = { version = "0.6", optional = true, default-features = false }
-pkcs5 = { version = "0.2", optional = true, path = "../pkcs5" }
+pkcs5 = { version = "0.2.2", optional = true, path = "../pkcs5" }
 zeroize = { version = "1", optional = true, default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
