@@ -27,6 +27,11 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     /// The value `1`.
     pub const ONE: Self = Self::from_u8(1);
 
+    /// Maximum value this [`UInt`] can express.
+    pub const MAX: Self = Self {
+        limbs: [Limb::MAX; LIMBS],
+    };
+
     /// Create a [`UInt`] from a `u8` (const-friendly)
     // TODO(tarcieri): replace with `const impl From<u8>`
     pub const fn from_u8(n: u8) -> Self {
@@ -185,6 +190,11 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         }
     }
 
+    /// Borrow the limbs of this [`UInt`].
+    pub const fn limbs(&self) -> &[Limb; LIMBS] {
+        &self.limbs
+    }
+
     /// Determine if this [`UInt`] is equal to zero.
     ///
     /// # Returns
@@ -211,16 +221,16 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         (Self { limbs }, carry)
     }
 
+    /// Perform wrapping addition, discarding the carry output.
+    pub const fn wrapping_add(&self, rhs: &Self) -> Self {
+        self.adc(rhs, 0).0
+    }
+
     /// Perform checked addition, returning [`CtOption`] only if the operation
     /// did not overflow.
     pub fn checked_add(&self, rhs: &Self) -> CtOption<Self> {
         let (result, carry) = self.adc(rhs, 0);
         CtOption::new(result, !Choice::from(carry as u8))
-    }
-
-    /// Borrow the limbs of this [`UInt`].
-    pub fn limbs(&self) -> &[Limb; LIMBS] {
-        &self.limbs
     }
 }
 
@@ -370,7 +380,6 @@ impl_biguint_aliases! {
 
 #[cfg(test)]
 mod tests {
-    use crate::LIMB_BYTES;
     use hex_literal::hex;
 
     // 2-limb example that's twice as wide as the native word size
@@ -378,12 +387,6 @@ mod tests {
     use super::U128 as UIntEx;
     #[cfg(target_pointer_width = "32")]
     use super::U64 as UIntEx;
-
-    /// Maximum value for `UIntEx`
-    #[cfg(target_pointer_width = "32")]
-    const MAX_UINT_HEX: [u8; LIMB_BYTES * 2] = hex!("FFFFFFFFFFFFFFFF");
-    #[cfg(target_pointer_width = "64")]
-    const MAX_UINT_HEX: [u8; LIMB_BYTES * 2] = hex!("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
 
     /// Byte array that corresponds to `UIntEx`
     #[cfg(feature = "generic-array")]
@@ -551,12 +554,21 @@ mod tests {
     }
 
     #[test]
-    fn adc_carry_out() {
-        let n = UIntEx::from_be_bytes(&MAX_UINT_HEX);
-        let (res, carry) = n.adc(&UIntEx::ONE, 0);
+    fn adc_with_carry() {
+        let (res, carry) = UIntEx::MAX.adc(&UIntEx::ONE, 0);
 
         assert_eq!(res, UIntEx::ZERO);
         assert_eq!(carry, 1);
+    }
+
+    #[test]
+    fn wrapping_add_no_carry() {
+        assert_eq!(UIntEx::ZERO.wrapping_add(&UIntEx::ONE), UIntEx::ONE);
+    }
+
+    #[test]
+    fn wrapping_add_with_carry() {
+        assert_eq!(UIntEx::MAX.wrapping_add(&UIntEx::ONE), UIntEx::ZERO);
     }
 
     #[test]
@@ -567,8 +579,7 @@ mod tests {
 
     #[test]
     fn checked_add_overflow() {
-        let n = UIntEx::from_be_bytes(&MAX_UINT_HEX);
-        let result = n.checked_add(&UIntEx::ONE);
+        let result = UIntEx::MAX.checked_add(&UIntEx::ONE);
         assert!(!bool::from(result.is_some()));
     }
 }
