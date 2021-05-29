@@ -154,6 +154,37 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         decoder.finish()
     }
 
+    /// Serialize this [`UInt`] as big-endian, writing it into the provided
+    /// byte slice.
+    // TODO(tarcieri): const generics support when possible
+    #[cfg(feature = "generic-array")]
+    #[inline]
+    pub(crate) fn to_be_bytes(&self, out: &mut [u8]) {
+        debug_assert_eq!(out.len(), LIMB_BYTES * LIMBS);
+
+        for (src, dst) in self
+            .limbs
+            .iter()
+            .rev()
+            .zip(out.chunks_exact_mut(LIMB_BYTES))
+        {
+            dst.copy_from_slice(&src.to_be_bytes());
+        }
+    }
+
+    /// Serialize this [`UInt`] as little-endian, writing it into the provided
+    /// byte slice.
+    // TODO(tarcieri): const generics support when possible
+    #[cfg(feature = "generic-array")]
+    #[inline]
+    pub(crate) fn to_le_bytes(&self, out: &mut [u8]) {
+        debug_assert_eq!(out.len(), LIMB_BYTES * LIMBS);
+
+        for (src, dst) in self.limbs.iter().zip(out.chunks_exact_mut(LIMB_BYTES)) {
+            dst.copy_from_slice(&src.to_le_bytes());
+        }
+    }
+
     /// Determine if this [`UInt`] is equal to zero.
     ///
     /// # Returns
@@ -414,8 +445,7 @@ mod tests {
     #[cfg(feature = "generic-array")]
     #[cfg(target_pointer_width = "32")]
     fn from_be_byte_array() {
-        let bytes = ByteArray::from(hex!("0011223344556677"));
-        let n = UIntEx::from_be_byte_array(&bytes);
+        let n = UIntEx::from_be_byte_array(&hex!("0011223344556677").into());
         assert_eq!(&n.limbs, &[0x44556677, 0x00112233]);
     }
 
@@ -423,8 +453,7 @@ mod tests {
     #[cfg(feature = "generic-array")]
     #[cfg(target_pointer_width = "64")]
     fn from_be_byte_array() {
-        let bytes = ByteArray::from(hex!("00112233445566778899aabbccddeeff"));
-        let n = UIntEx::from_be_byte_array(&bytes);
+        let n = UIntEx::from_be_byte_array(&hex!("00112233445566778899aabbccddeeff").into());
         assert_eq!(&n.limbs, &[0x8899aabbccddeeff, 0x0011223344556677]);
     }
 
@@ -432,8 +461,7 @@ mod tests {
     #[cfg(feature = "generic-array")]
     #[cfg(target_pointer_width = "32")]
     fn from_le_byte_array() {
-        let bytes = ByteArray::from(hex!("7766554433221100"));
-        let n = UIntEx::from_le_byte_array(&bytes);
+        let n = UIntEx::from_le_byte_array(&hex!("7766554433221100").into());
         assert_eq!(&n.limbs, &[0x44556677, 0x00112233]);
     }
 
@@ -441,9 +469,44 @@ mod tests {
     #[cfg(feature = "generic-array")]
     #[cfg(target_pointer_width = "64")]
     fn from_le_byte_array() {
-        let bytes = ByteArray::from(hex!("ffeeddccbbaa99887766554433221100"));
-        let n = UIntEx::from_le_byte_array(&bytes);
+        let n = UIntEx::from_le_byte_array(&hex!("ffeeddccbbaa99887766554433221100").into());
         assert_eq!(&n.limbs, &[0x8899aabbccddeeff, 0x0011223344556677]);
+    }
+
+    #[test]
+    #[cfg(feature = "generic-array")]
+    #[cfg(target_pointer_width = "32")]
+    fn to_be_byte_array() {
+        let expected_bytes = ByteArray::from(hex!("0011223344556677"));
+        let actual_bytes = UIntEx::from_be_byte_array(&expected_bytes).to_be_byte_array();
+        assert_eq!(expected_bytes, actual_bytes);
+    }
+
+    #[test]
+    #[cfg(feature = "generic-array")]
+    #[cfg(target_pointer_width = "64")]
+    fn to_be_byte_array() {
+        let expected_bytes = ByteArray::from(hex!("00112233445566778899aabbccddeeff"));
+        let actual_bytes = UIntEx::from_be_byte_array(&expected_bytes).to_be_byte_array();
+        assert_eq!(expected_bytes, actual_bytes);
+    }
+
+    #[test]
+    #[cfg(feature = "generic-array")]
+    #[cfg(target_pointer_width = "32")]
+    fn to_le_byte_array() {
+        let expected_bytes = ByteArray::from(hex!("7766554433221100"));
+        let actual_bytes = UIntEx::from_le_byte_array(&expected_bytes).to_le_byte_array();
+        assert_eq!(expected_bytes, actual_bytes);
+    }
+
+    #[test]
+    #[cfg(feature = "generic-array")]
+    #[cfg(target_pointer_width = "64")]
+    fn to_le_byte_array() {
+        let expected_bytes = ByteArray::from(hex!("ffeeddccbbaa99887766554433221100"));
+        let actual_bytes = UIntEx::from_le_byte_array(&expected_bytes).to_le_byte_array();
+        assert_eq!(expected_bytes, actual_bytes);
     }
 
     #[test]
