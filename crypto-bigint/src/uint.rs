@@ -8,9 +8,6 @@ use self::decoder::Decoder;
 use crate::{ops, Limb, NumBits, NumBytes, LIMB_BYTES};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
-#[cfg(feature = "generic-array")]
-use crate::{ArrayEncoding, ByteArray};
-
 /// Big unsigned integer.
 ///
 /// Generic over the given number of `LIMBS`
@@ -295,7 +292,7 @@ const fn decode_hex_byte(bytes: [u8; 2]) -> u8 {
 }
 
 macro_rules! impl_biguint_aliases {
-    ($(($name:tt, $bits:expr, $doc:expr)),+) => {
+    ($(($name:ident, $bits:expr, $doc:expr)),+) => {
         $(
             #[doc = $doc]
             #[doc="unsigned big integer"]
@@ -313,22 +310,6 @@ macro_rules! impl_biguint_aliases {
 
             impl NumBytes for $name {
                 const NUM_BYTES: usize = $bits / 8;
-            }
-
-            #[cfg(feature = "generic-array")]
-            #[cfg_attr(docsrs, doc(cfg(feature = "generic-array")))]
-            impl ArrayEncoding for $name {
-                type ByteSize = crate::consts::$name;
-
-                #[inline]
-                fn from_be_byte_array(bytes: &ByteArray<Self>) -> Self {
-                    Self::from_be_bytes(bytes)
-                }
-
-                #[inline]
-                fn from_le_byte_array(bytes: &ByteArray<Self>) -> Self {
-                    Self::from_le_bytes(bytes)
-                }
             }
         )+
      };
@@ -367,11 +348,17 @@ mod tests {
     #[cfg(target_pointer_width = "32")]
     use super::U64 as UIntEx;
 
-    // Maximum value for `UIntEx`
+    /// Maximum value for `UIntEx`
     #[cfg(target_pointer_width = "32")]
     const MAX_UINT_HEX: [u8; LIMB_BYTES * 2] = hex!("FFFFFFFFFFFFFFFF");
     #[cfg(target_pointer_width = "64")]
     const MAX_UINT_HEX: [u8; LIMB_BYTES * 2] = hex!("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+
+    /// Byte array that corresponds to `UIntEx`
+    #[cfg(feature = "generic-array")]
+    use crate::ArrayEncoding;
+    #[cfg(feature = "generic-array")]
+    type ByteArray = crate::ByteArray<UIntEx>;
 
     #[test]
     fn from_u8() {
@@ -409,20 +396,6 @@ mod tests {
 
     #[test]
     #[cfg(target_pointer_width = "32")]
-    fn from_be_hex() {
-        let n = UIntEx::from_be_hex("0011223344556677");
-        assert_eq!(&n.limbs, &[0x44556677, 0x00112233]);
-    }
-
-    #[test]
-    #[cfg(target_pointer_width = "64")]
-    fn from_be_hex() {
-        let n = UIntEx::from_be_hex("00112233445566778899aabbccddeeff");
-        assert_eq!(&n.limbs, &[0x8899aabbccddeeff, 0x0011223344556677]);
-    }
-
-    #[test]
-    #[cfg(target_pointer_width = "32")]
     fn from_le_bytes() {
         let bytes = hex!("7766554433221100");
         let n = UIntEx::from_le_bytes(&bytes);
@@ -434,6 +407,56 @@ mod tests {
     fn from_le_bytes() {
         let bytes = hex!("ffeeddccbbaa99887766554433221100");
         let n = UIntEx::from_le_bytes(&bytes);
+        assert_eq!(&n.limbs, &[0x8899aabbccddeeff, 0x0011223344556677]);
+    }
+
+    #[test]
+    #[cfg(feature = "generic-array")]
+    #[cfg(target_pointer_width = "32")]
+    fn from_be_byte_array() {
+        let bytes = ByteArray::from(hex!("0011223344556677"));
+        let n = UIntEx::from_be_byte_array(&bytes);
+        assert_eq!(&n.limbs, &[0x44556677, 0x00112233]);
+    }
+
+    #[test]
+    #[cfg(feature = "generic-array")]
+    #[cfg(target_pointer_width = "64")]
+    fn from_be_byte_array() {
+        let bytes = ByteArray::from(hex!("00112233445566778899aabbccddeeff"));
+        let n = UIntEx::from_be_byte_array(&bytes);
+        assert_eq!(&n.limbs, &[0x8899aabbccddeeff, 0x0011223344556677]);
+    }
+
+    #[test]
+    #[cfg(feature = "generic-array")]
+    #[cfg(target_pointer_width = "32")]
+    fn from_le_byte_array() {
+        let bytes = ByteArray::from(hex!("7766554433221100"));
+        let n = UIntEx::from_le_byte_array(&bytes);
+        assert_eq!(&n.limbs, &[0x44556677, 0x00112233]);
+    }
+
+    #[test]
+    #[cfg(feature = "generic-array")]
+    #[cfg(target_pointer_width = "64")]
+    fn from_le_byte_array() {
+        let bytes = ByteArray::from(hex!("ffeeddccbbaa99887766554433221100"));
+        let n = UIntEx::from_le_byte_array(&bytes);
+        assert_eq!(&n.limbs, &[0x8899aabbccddeeff, 0x0011223344556677]);
+    }
+
+    #[test]
+    #[cfg(target_pointer_width = "32")]
+    fn from_be_hex() {
+        let n = UIntEx::from_be_hex("0011223344556677");
+        assert_eq!(&n.limbs, &[0x44556677, 0x00112233]);
+    }
+
+    #[test]
+    #[cfg(target_pointer_width = "64")]
+    fn from_be_hex() {
+        let n = UIntEx::from_be_hex("00112233445566778899aabbccddeeff");
         assert_eq!(&n.limbs, &[0x8899aabbccddeeff, 0x0011223344556677]);
     }
 
