@@ -78,6 +78,10 @@ impl_biguint_array_encoding! {
     (U896, typenum::U112),
     (U960, typenum::U120),
     (U1024, typenum::U128),
+    (U1536, typenum::U192),
     (U2048, typenum::U256),
-    (U4096, typenum::U512)
+    (U3072, typenum::U384),
+    (U4096, typenum::U512),
+    (U6144, typenum::U768),
+    (U8192, typenum::U1024)
 }

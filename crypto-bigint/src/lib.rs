@@ -26,7 +26,7 @@ extern crate std;
 #[macro_use]
 mod macros;
 
-mod ops;
+mod limb;
 mod traits;
 mod uint;
 
@@ -34,6 +34,7 @@ mod uint;
 mod array;
 
 pub use crate::{
+    limb::Limb,
     traits::{NumBits, NumBytes},
     uint::*,
 };
@@ -43,14 +44,6 @@ pub use {
     self::array::{ArrayEncoding, ByteArray},
     generic_array::{self, typenum::consts},
 };
-
-/// Big integers are modeled as an array of smaller integers called "limbs".
-#[cfg(target_pointer_width = "32")]
-pub type Limb = u32;
-
-/// Big integers are modeled as an array of smaller integers called "limbs".
-#[cfg(target_pointer_width = "64")]
-pub type Limb = u64;
 
 #[cfg(not(any(target_pointer_width = "32", target_pointer_width = "64")))]
 compile_error!("this crate builds on 32-bit and 64-bit platforms only");
