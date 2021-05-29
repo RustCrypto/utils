@@ -9,7 +9,7 @@
 
 Pure Rust implementation of a big integer library designed from the ground-up
 for use in cryptographic applications only. Provides constant-time,
-no_std-friendly implementations of modern formulas using const generics.
+`no_std`-friendly implementations of modern formulas using const generics.
 
 [Documentation][docs-link]
 
