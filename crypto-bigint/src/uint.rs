@@ -1,12 +1,16 @@
 //! Big unsigned integers.
 
-#![allow(clippy::needless_range_loop)]
+#![allow(clippy::needless_range_loop, clippy::many_single_char_names)]
 
 mod decoder;
 
 use self::decoder::Decoder;
-use crate::{ops, Limb, NumBits, NumBytes, LIMB_BYTES};
+use crate::{limb, Limb, NumBits, NumBytes, LIMB_BYTES};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
+
+/// "Wide" unsigned integer: twice the size of the provided value.
+// TODO(tarcieri): return a wide result which has 2*LIMBS instead of a 2-tuple?
+pub type Wide<N> = (N, N);
 
 /// Big unsigned integer.
 ///
@@ -14,9 +18,7 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 // TODO(tarcieri): make generic around a specified number of bits.
 #[derive(Copy, Clone, Debug)]
 pub struct UInt<const LIMBS: usize> {
-    /// Inner limb array.
-    ///
-    /// Stored from least significant to most significant.
+    /// Inner limb array. Stored from least significant to most significant.
     limbs: [Limb; LIMBS],
 }
 
@@ -65,7 +67,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     pub const fn from_u64(n: u64) -> Self {
         const_assert!(LIMBS >= 2, "number of limbs must be two or greater");
         let mut limbs = [0; LIMBS];
-        limbs[0] = (n & 0xFFFF) as u32;
+        limbs[0] = (n & 0xFFFFFFFF) as u32;
         limbs[1] = (n >> 32) as u32;
         Self { limbs }
     }
@@ -204,24 +206,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         self.ct_eq(&Self::ZERO)
     }
 
-    /// Computes `a + b + carry`, returning the result along with the new carry.
-    /// 64-bit version.
-    #[inline(always)]
-    pub const fn adc(&self, rhs: &Self, mut carry: Limb) -> (Self, Limb) {
-        let mut limbs = [0; LIMBS];
-        let mut i = 0;
-
-        while i < LIMBS {
-            let (w, c) = ops::adc(self.limbs[i], rhs.limbs[i], carry);
-            limbs[i] = w;
-            carry = c;
-            i += 1;
-        }
-
-        (Self { limbs }, carry)
-    }
-
-    /// Perform wrapping addition, discarding the carry output.
+    /// Perform wrapping addition, discarding overflow.
     pub const fn wrapping_add(&self, rhs: &Self) -> Self {
         self.adc(rhs, 0).0
     }
@@ -231,6 +216,76 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     pub fn checked_add(&self, rhs: &Self) -> CtOption<Self> {
         let (result, carry) = self.adc(rhs, 0);
         CtOption::new(result, !Choice::from(carry as u8))
+    }
+
+    /// Compute "wide" multiplication, with a product twice the size of the input.
+    // TODO(tarcieri): return a wide result which has 2*LIMBS instead of a 2-tuple?
+    pub const fn mul_wide(&self, rhs: &Self) -> Wide<Self> {
+        let mut i = 0;
+        let mut lo = Self::ZERO;
+        let mut hi = Self::ZERO;
+
+        // Schoolbook multiplication.
+        // TODO(tarcieri): use Karatsuba instead?
+        while i < LIMBS {
+            let mut j = 0;
+            let mut carry = 0;
+
+            while j < LIMBS {
+                let k = i + j;
+
+                if k >= LIMBS {
+                    let (n, c) = limb::mac(hi.limbs[k - LIMBS], self.limbs[i], rhs.limbs[j], carry);
+                    hi.limbs[k - LIMBS] = n;
+                    carry = c;
+                } else {
+                    let (n, c) = limb::mac(lo.limbs[k], self.limbs[i], rhs.limbs[j], carry);
+                    lo.limbs[k] = n;
+                    carry = c;
+                }
+
+                j += 1;
+            }
+
+            hi.limbs[i + j - LIMBS] = carry;
+            i += 1;
+        }
+
+        (lo, hi)
+    }
+
+    /// Square self, returning a "wide" result.
+    // TODO(tarcieri): return a wide result which has 2*LIMBS instead of a 2-tuple?
+    pub const fn square(&self) -> Wide<Self> {
+        self.mul_wide(self)
+    }
+
+    /// Perform wrapping multiplication, discarding overflow.
+    pub const fn wrapping_mul(&self, rhs: &Self) -> Self {
+        self.mul_wide(rhs).0
+    }
+
+    /// Perform checked multiplication, returning [`CtOption`] only if the
+    /// operation did not overflow.
+    pub fn checked_mul(&self, rhs: &Self) -> CtOption<Self> {
+        let (lo, hi) = self.mul_wide(rhs);
+        CtOption::new(lo, hi.is_zero())
+    }
+
+    /// Computes `a + b + carry`, returning the result along with the new carry.
+    #[inline(always)]
+    const fn adc(&self, rhs: &Self, mut carry: Limb) -> (Self, Limb) {
+        let mut limbs = [0; LIMBS];
+        let mut i = 0;
+
+        while i < LIMBS {
+            let (w, c) = limb::adc(self.limbs[i], rhs.limbs[i], carry);
+            limbs[i] = w;
+            carry = c;
+            i += 1;
+        }
+
+        (Self { limbs }, carry)
     }
 }
 
@@ -374,12 +429,17 @@ impl_biguint_aliases! {
     (U896, 896, "896-bit"),
     (U960, 960, "960-bit"),
     (U1024, 1024, "1024-bit"),
+    (U1536, 1536, "1536-bit"),
     (U2048, 2048, "2048-bit"),
-    (U4096, 4096, "4096-bit")
+    (U3072, 3072, "3072-bit"),
+    (U4096, 4096, "4096-bit"),
+    (U6144, 6144, "6144-bit"),
+    (U8192, 8192, "8192-bit")
 }
 
 #[cfg(test)]
 mod tests {
+    use super::U64;
     use hex_literal::hex;
 
     // 2-limb example that's twice as wide as the native word size
@@ -581,5 +641,67 @@ mod tests {
     fn checked_add_overflow() {
         let result = UIntEx::MAX.checked_add(&UIntEx::ONE);
         assert!(!bool::from(result.is_some()));
+    }
+
+    #[test]
+    fn mul_wide_zero_and_one() {
+        assert_eq!(
+            UIntEx::ZERO.mul_wide(&UIntEx::ZERO),
+            (UIntEx::ZERO, UIntEx::ZERO)
+        );
+        assert_eq!(
+            UIntEx::ZERO.mul_wide(&UIntEx::ONE),
+            (UIntEx::ZERO, UIntEx::ZERO)
+        );
+        assert_eq!(
+            UIntEx::ONE.mul_wide(&UIntEx::ZERO),
+            (UIntEx::ZERO, UIntEx::ZERO)
+        );
+        assert_eq!(
+            UIntEx::ONE.mul_wide(&UIntEx::ONE),
+            (UIntEx::ONE, UIntEx::ZERO)
+        );
+    }
+
+    // TODO(tarcieri): add proptests for multiplication
+    #[test]
+    fn mul_wide_lo_only() {
+        let primes: &[u32] = &[3, 5, 17, 256, 65537];
+
+        for &a_int in primes {
+            for &b_int in primes {
+                let a_big = U64::from_u32(a_int);
+                let b_big = U64::from_u32(b_int);
+
+                let (lo, hi) = a_big.mul_wide(&b_big);
+
+                let expected = U64::from_u64(a_int as u64 * b_int as u64);
+                assert_eq!(lo, expected);
+                assert!(bool::from(hi.is_zero()));
+            }
+        }
+    }
+
+    #[test]
+    fn square() {
+        let n = U64::from_u64(0xffff_ffff_ffff_ffff);
+        let (lo, hi) = n.square();
+        assert_eq!(lo, U64::from_u64(1));
+        assert_eq!(hi, U64::from_u64(0xffff_ffff_ffff_fffe));
+    }
+
+    #[test]
+    fn checked_mul_ok() {
+        let n = U64::from_u32(0xffff_ffff);
+        assert_eq!(
+            n.checked_mul(&n).unwrap(),
+            U64::from_u64(0xffff_fffe_0000_0001)
+        );
+    }
+
+    #[test]
+    fn checked_mul_overflow() {
+        let n = U64::from_u64(0xffff_ffff_ffff_ffff);
+        assert!(bool::from(n.checked_mul(&n).is_none()));
     }
 }
