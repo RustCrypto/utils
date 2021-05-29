@@ -111,6 +111,7 @@ dependencies = [
 name = "crypto-bigint"
 version = "0.0.0"
 dependencies = [
+ "generic-array",
  "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "subtle",
 ]

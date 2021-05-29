@@ -8,6 +8,9 @@ use self::decoder::Decoder;
 use crate::{ops, Limb, NumBits, NumBytes, LIMB_BYTES};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
+#[cfg(feature = "generic-array")]
+use crate::{ArrayEncoding, ByteArray};
+
 /// Big unsigned integer.
 ///
 /// Generic over the given number of `LIMBS`
@@ -292,7 +295,7 @@ const fn decode_hex_byte(bytes: [u8; 2]) -> u8 {
 }
 
 macro_rules! impl_biguint_aliases {
-    ($(($name:ident, $bits:expr, $doc:expr)),+) => {
+    ($(($name:tt, $bits:expr, $doc:expr)),+) => {
         $(
             #[doc = $doc]
             #[doc="unsigned big integer"]
@@ -310,6 +313,22 @@ macro_rules! impl_biguint_aliases {
 
             impl NumBytes for $name {
                 const NUM_BYTES: usize = $bits / 8;
+            }
+
+            #[cfg(feature = "generic-array")]
+            #[cfg_attr(docsrs, doc(cfg(feature = "generic-array")))]
+            impl ArrayEncoding for $name {
+                type ByteSize = crate::consts::$name;
+
+                #[inline]
+                fn from_be_byte_array(bytes: &ByteArray<Self>) -> Self {
+                    Self::from_be_bytes(bytes)
+                }
+
+                #[inline]
+                fn from_le_byte_array(bytes: &ByteArray<Self>) -> Self {
+                    Self::from_le_bytes(bytes)
+                }
             }
         )+
      };
@@ -333,53 +352,7 @@ impl_biguint_aliases! {
     (U896, 896, "896-bit"),
     (U960, 960, "960-bit"),
     (U1024, 1024, "1024-bit"),
-    (U1088, 1088, "1088-bit"),
-    (U1152, 1152, "1152-bit"),
-    (U1216, 1216, "1216-bit"),
-    (U1280, 1280, "1280-bit"),
-    (U1344, 1344, "1344-bit"),
-    (U1408, 1408, "1408-bit"),
-    (U1472, 1472, "1472-bit"),
-    (U1536, 1536, "1536-bit"),
-    (U1600, 1600, "1600-bit"),
-    (U1664, 1664, "1664-bit"),
-    (U1728, 1728, "1728-bit"),
-    (U1792, 1792, "1792-bit"),
-    (U1856, 1856, "1856-bit"),
-    (U1920, 1920, "1920-bit"),
-    (U1984, 1984, "1984-bit"),
     (U2048, 2048, "2048-bit"),
-    (U2112, 2112, "2112-bit"),
-    (U2176, 2176, "2176-bit"),
-    (U2240, 2240, "2240-bit"),
-    (U2304, 2304, "2304-bit"),
-    (U2368, 2368, "2368-bit"),
-    (U2432, 2432, "2432-bit"),
-    (U2496, 2496, "2496-bit"),
-    (U2560, 2560, "2560-bit"),
-    (U2624, 2624, "2624-bit"),
-    (U2688, 2688, "2688-bit"),
-    (U2752, 2752, "2752-bit"),
-    (U2816, 2816, "2816-bit"),
-    (U2880, 2880, "2880-bit"),
-    (U2944, 2944, "2944-bit"),
-    (U3008, 3008, "3008-bit"),
-    (U3072, 3072, "3072-bit"),
-    (U3136, 3136, "3136-bit"),
-    (U3200, 3200, "3200-bit"),
-    (U3264, 3264, "3264-bit"),
-    (U3328, 3328, "3328-bit"),
-    (U3392, 3392, "3392-bit"),
-    (U3456, 3456, "3456-bit"),
-    (U3520, 3520, "3520-bit"),
-    (U3584, 3584, "3584-bit"),
-    (U3648, 3648, "3648-bit"),
-    (U3712, 3712, "3712-bit"),
-    (U3776, 3776, "3776-bit"),
-    (U3840, 3840, "3840-bit"),
-    (U3904, 3904, "3904-bit"),
-    (U3968, 3968, "3968-bit"),
-    (U4032, 4032, "4032-bit"),
     (U4096, 4096, "4096-bit")
 }
 
