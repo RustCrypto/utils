@@ -1,6 +1,14 @@
-//! Pure Rust implementation of a big integer library designed from the ground-up
-//! for use in cryptographic applications only. Provides constant-time,
-//! no_std-friendly implementations of modern formulas using const generics.
+//! Pure Rust implementation of a big integer library designed for cryptography.
+//!
+//! # About
+//! This library has been designed  from the ground-up for use in cryptographic
+//! applications. It provides constant-time, `no_std`-friendly implementations
+//! of modern formulas implemented using const generics.
+//!
+//! # `generic-array` interop
+//! When the optional `generic-array` feature is enabled, this library provides
+//! an [`ArrayEncoding`] trait which can be used to serialize/deserialize big
+//! integer values as `GenericArray<u8, N>`.
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -36,11 +44,11 @@ pub use {
     generic_array::{self, typenum::consts},
 };
 
-/// Big integers modeled as an array of smaller integers called "limbs"
+/// Big integers are modeled as an array of smaller integers called "limbs".
 #[cfg(target_pointer_width = "32")]
 pub type Limb = u32;
 
-/// Big integers modeled as an array of smaller integers called "limbs"
+/// Big integers are modeled as an array of smaller integers called "limbs".
 #[cfg(target_pointer_width = "64")]
 pub type Limb = u64;
 
