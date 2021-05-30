@@ -6,6 +6,7 @@ mod decoder;
 
 use self::decoder::Decoder;
 use crate::{limb, Concat, Limb, NumBits, NumBytes, Split, LIMB_BYTES};
+use core::fmt;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
 
 /// Big unsigned integer.
@@ -441,6 +442,30 @@ impl<const LIMBS: usize> PartialEq for UInt<LIMBS> {
 }
 
 impl<const LIMBS: usize> Eq for UInt<LIMBS> {}
+
+impl<const LIMBS: usize> fmt::Display for UInt<LIMBS> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::UpperHex::fmt(self, f)
+    }
+}
+
+impl<const LIMBS: usize> fmt::LowerHex for UInt<LIMBS> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for limb in self.limbs.iter().rev() {
+            fmt::LowerHex::fmt(limb, f)?;
+        }
+        Ok(())
+    }
+}
+
+impl<const LIMBS: usize> fmt::UpperHex for UInt<LIMBS> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for limb in self.limbs.iter().rev() {
+            fmt::UpperHex::fmt(limb, f)?;
+        }
+        Ok(())
+    }
+}
 
 /// Decode a single byte encoded as two hexadecimal characters.
 const fn decode_hex_byte(bytes: [u8; 2]) -> u8 {
