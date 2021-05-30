@@ -29,14 +29,17 @@ mod uint;
 
 #[cfg(feature = "generic-array")]
 mod array;
+mod checked;
 mod wrapping;
 
 pub use crate::{
+    checked::Checked,
     limb::Limb,
     traits::{Concat, NumBits, NumBytes, Split},
     uint::*,
     wrapping::Wrapping,
 };
+pub use subtle;
 
 #[cfg(feature = "generic-array")]
 pub use {
