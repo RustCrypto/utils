@@ -5,12 +5,8 @@
 mod decoder;
 
 use self::decoder::Decoder;
-use crate::{limb, Limb, NumBits, NumBytes, LIMB_BYTES};
+use crate::{limb, Concat, Limb, NumBits, NumBytes, Split, LIMB_BYTES};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, CtOption};
-
-/// "Wide" unsigned integer: twice the size of the provided value.
-// TODO(tarcieri): return a wide result which has 2*LIMBS instead of a 2-tuple?
-pub type Wide<N> = (N, N);
 
 /// Big unsigned integer.
 ///
@@ -35,7 +31,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     };
 
     /// Create a [`UInt`] from a `u8` (const-friendly)
-    // TODO(tarcieri): replace with `const impl From<u8>`
+    // TODO(tarcieri): replace with `const impl From<u8>` when stable
     pub const fn from_u8(n: u8) -> Self {
         const_assert!(LIMBS >= 1, "number of limbs must be greater than zero");
         let mut limbs = [0; LIMBS];
@@ -44,7 +40,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     }
 
     /// Create a [`UInt`] from a `u16` (const-friendly)
-    // TODO(tarcieri): replace with `const impl From<u16>`
+    // TODO(tarcieri): replace with `const impl From<u16>` when stable
     pub const fn from_u16(n: u16) -> Self {
         const_assert!(LIMBS >= 1, "number of limbs must be greater than zero");
         let mut limbs = [0; LIMBS];
@@ -53,7 +49,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     }
 
     /// Create a [`UInt`] from a `u32` (const-friendly)
-    // TODO(tarcieri): replace with `const impl From<u32>`
+    // TODO(tarcieri): replace with `const impl From<u32>` when stable
     pub const fn from_u32(n: u32) -> Self {
         const_assert!(LIMBS >= 1, "number of limbs must be greater than zero");
         let mut limbs = [0; LIMBS];
@@ -62,7 +58,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     }
 
     /// Create a [`UInt`] from a `u64` (const-friendly)
-    // TODO(tarcieri): replace with `const impl From<u64>`
+    // TODO(tarcieri): replace with `const impl From<u64>` when stable
     #[cfg(target_pointer_width = "32")]
     pub const fn from_u64(n: u64) -> Self {
         const_assert!(LIMBS >= 2, "number of limbs must be two or greater");
@@ -73,12 +69,35 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     }
 
     /// Create a [`UInt`] from a `u64` (const-friendly)
-    // TODO(tarcieri): replace with `const impl From<u64>`
+    // TODO(tarcieri): replace with `const impl From<u64>` when stable
     #[cfg(target_pointer_width = "64")]
     pub const fn from_u64(n: u64) -> Self {
         const_assert!(LIMBS >= 1, "number of limbs must be greater than zero");
         let mut limbs = [0; LIMBS];
         limbs[0] = n as Limb;
+        Self { limbs }
+    }
+
+    /// Create a [`UInt`] from a `u128` (const-friendly)
+    // TODO(tarcieri): replace with `const impl From<u128>` when stable
+    pub const fn from_u128(n: u128) -> Self {
+        const_assert!(
+            LIMBS >= (16 / LIMB_BYTES),
+            "number of limbs must be greater than zero"
+        );
+
+        let lo = Self::from_u64((n & 0xffff_ffff_ffff_ffff) as u64);
+        let hi = Self::from_u64((n >> 64) as u64);
+
+        let mut i = 0;
+        let mut limbs = [0; LIMBS];
+
+        while i < LIMBS {
+            limbs[i] = lo.limbs[i];
+            limbs[i + LIMBS] = hi.limbs[i];
+            i += 1;
+        }
+
         Self { limbs }
     }
 
@@ -219,8 +238,8 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     }
 
     /// Compute "wide" multiplication, with a product twice the size of the input.
-    // TODO(tarcieri): return a wide result which has 2*LIMBS instead of a 2-tuple?
-    pub const fn mul_wide(&self, rhs: &Self) -> Wide<Self> {
+    // TODO(tarcieri): use `concat` (or replacement) when traits are const-friendly
+    pub const fn mul_wide(&self, rhs: &Self) -> (Self, Self) {
         let mut i = 0;
         let mut lo = Self::ZERO;
         let mut hi = Self::ZERO;
@@ -251,13 +270,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
             i += 1;
         }
 
-        (lo, hi)
-    }
-
-    /// Square self, returning a "wide" result.
-    // TODO(tarcieri): return a wide result which has 2*LIMBS instead of a 2-tuple?
-    pub const fn square(&self) -> Wide<Self> {
-        self.mul_wide(self)
+        (hi, lo)
     }
 
     /// Perform wrapping multiplication, discarding overflow.
@@ -268,8 +281,17 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     /// Perform checked multiplication, returning [`CtOption`] only if the
     /// operation did not overflow.
     pub fn checked_mul(&self, rhs: &Self) -> CtOption<Self> {
-        let (lo, hi) = self.mul_wide(rhs);
+        let (hi, lo) = self.mul_wide(rhs);
         CtOption::new(lo, hi.is_zero())
+    }
+
+    /// Square self, returning a "wide" result.
+    pub fn square(&self) -> <Self as Concat>::Output
+    where
+        Self: Concat,
+    {
+        let (hi, lo) = self.mul_wide(self);
+        hi.concat(&lo)
     }
 
     /// Computes `a + b + carry`, returning the result along with the new carry.
@@ -349,8 +371,37 @@ impl<const LIMBS: usize> From<u32> for UInt<LIMBS> {
 impl<const LIMBS: usize> From<u64> for UInt<LIMBS> {
     fn from(n: u64) -> Self {
         // TODO(tarcieri): const where clause when possible
-        debug_assert!(LIMBS > 0, "limbs must be non-zero");
+        debug_assert!(LIMBS > (8 / LIMB_BYTES), "not enough limbs");
         Self::from_u64(n)
+    }
+}
+
+impl<const LIMBS: usize> From<u128> for UInt<LIMBS> {
+    fn from(n: u128) -> Self {
+        // TODO(tarcieri): const where clause when possible
+        debug_assert!(LIMBS > (16 / LIMB_BYTES), "not enough limbs");
+        Self::from_u128(n)
+    }
+}
+
+#[cfg(target_pointer_width = "32")]
+impl From<U64> for u64 {
+    fn from(n: U64) -> u64 {
+        (n.limbs[0] as u64) | ((n.limbs[1] as u64) << 32)
+    }
+}
+
+#[cfg(target_pointer_width = "64")]
+impl From<U64> for u64 {
+    fn from(n: U64) -> u64 {
+        n.limbs[0]
+    }
+}
+
+impl From<U128> for u128 {
+    fn from(n: U128) -> u128 {
+        let (hi, lo) = n.split();
+        (u64::from(hi) as u128) << 64 | (u64::from(lo) as u128)
     }
 }
 
@@ -362,6 +413,7 @@ impl<const LIMBS: usize> PartialEq for UInt<LIMBS> {
 
 impl<const LIMBS: usize> Eq for UInt<LIMBS> {}
 
+/// Decode a single byte encoded as two hexadecimal characters.
 const fn decode_hex_byte(bytes: [u8; 2]) -> u8 {
     let mut i = 0;
     let mut result = 0u8;
@@ -387,6 +439,7 @@ const fn decode_hex_byte(bytes: [u8; 2]) -> u8 {
     result
 }
 
+// TODO(tarcieri): use `const_evaluatable_checked` when stable to make generic around bits.
 macro_rules! impl_biguint_aliases {
     ($(($name:ident, $bits:expr, $doc:expr)),+) => {
         $(
@@ -411,35 +464,131 @@ macro_rules! impl_biguint_aliases {
      };
 }
 
-// TODO(tarcieri): make generic around a specified number of bits.
+// TODO(tarcieri): use `const_evaluatable_checked` when stable to make generic around bits.
+macro_rules! impl_concat {
+    ($(($name:ident, $bits:expr)),+) => {
+        $(
+            impl Concat for $name {
+                #[cfg(target_pointer_width = "32")]
+                type Output = UInt<{($bits / 32) * 2}>;
+                #[cfg(target_pointer_width = "64")]
+                type Output = UInt<{($bits / 64) * 2}>;
+
+                fn concat(&self, rhs: &Self) -> Self::Output {
+                    let mut output = Self::Output::default();
+                    let (lo, hi) = output.limbs.split_at_mut(self.limbs.len());
+                    lo.copy_from_slice(&rhs.limbs);
+                    hi.copy_from_slice(&self.limbs);
+                    output
+                }
+            }
+
+            #[cfg(target_pointer_width = "32")]
+            impl From<($name, $name)> for UInt<{($bits / 32) * 2}> {
+                fn from(nums: ($name, $name)) -> UInt<{($bits / 32) * 2}> {
+                    nums.0.concat(&nums.1)
+                }
+            }
+
+            #[cfg(target_pointer_width = "64")]
+            impl From<($name, $name)> for UInt<{($bits / 64) * 2}> {
+                fn from(nums: ($name, $name)) -> UInt<{($bits / 64) * 2}> {
+                    nums.0.concat(&nums.1)
+                }
+            }
+        )+
+     };
+}
+
+// TODO(tarcieri): use `const_evaluatable_checked` when stable to make generic around bits.
+macro_rules! impl_split {
+    ($(($name:ident, $bits:expr)),+) => {
+        $(
+            impl Split for $name {
+                #[cfg(target_pointer_width = "32")]
+                type Output = UInt<{($bits / 32) / 2}>;
+                #[cfg(target_pointer_width = "64")]
+                type Output = UInt<{($bits / 64) / 2}>;
+
+                fn split(&self) -> (Self::Output, Self::Output) {
+                    let mut hi_out = Self::Output::default();
+                    let mut lo_out = Self::Output::default();
+                    let (lo_in, hi_in) = self.limbs.split_at(self.limbs.len() / 2);
+                    hi_out.limbs.copy_from_slice(&hi_in);
+                    lo_out.limbs.copy_from_slice(&lo_in);
+                    (hi_out, lo_out)
+                }
+            }
+        )+
+     };
+}
+
+// TODO(tarcieri): use `const_evaluatable_checked` when stable to make generic around bits.
 impl_biguint_aliases! {
     (U64, 64, "64-bit"),
     (U128, 128, "128-bit"),
     (U192, 192, "192-bit"),
     (U256, 256, "256-bit"),
-    (U320, 320, "320-bit"),
     (U384, 384, "384-bit"),
     (U448, 448, "448-bit"),
     (U512, 512, "512-bit"),
-    (U576, 576, "576-bit"),
-    (U640, 640, "640-bit"),
-    (U704, 704, "704-bit"),
     (U768, 768, "768-bit"),
-    (U832, 832, "832-bit"),
     (U896, 896, "896-bit"),
-    (U960, 960, "960-bit"),
     (U1024, 1024, "1024-bit"),
     (U1536, 1536, "1536-bit"),
+    (U1792, 1792, "1792-bit"),
     (U2048, 2048, "2048-bit"),
     (U3072, 3072, "3072-bit"),
+    (U3584, 3584, "3584-bit"),
     (U4096, 4096, "4096-bit"),
     (U6144, 6144, "6144-bit"),
     (U8192, 8192, "8192-bit")
 }
 
+// TODO(tarcieri): use `const_evaluatable_checked` when stable to make generic around bits.
+impl_concat! {
+    (U64, 64),
+    (U128, 128),
+    (U192, 192),
+    (U256, 256),
+    (U384, 384),
+    (U448, 448),
+    (U512, 512),
+    (U768, 768),
+    (U896, 896),
+    (U1024, 1024),
+    (U1536, 1536),
+    (U1792, 1792),
+    (U2048, 2048),
+    (U3072, 3072),
+    (U4096, 4096)
+}
+
+// TODO(tarcieri): use `const_evaluatable_checked` when stable to make generic around bits.
+impl_split! {
+    (U128, 128),
+    (U192, 192),
+    (U256, 256),
+    (U384, 384),
+    (U448, 448),
+    (U512, 512),
+    (U768, 768),
+    (U896, 896),
+    (U1024, 1024),
+    (U1536, 1536),
+    (U1792, 1792),
+    (U2048, 2048),
+    (U3072, 3072),
+    (U3584, 3584),
+    (U4096, 4096),
+    (U6144, 6144),
+    (U8192, 8192)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::U64;
+    use super::{U128, U64};
+    use crate::{Concat, Split};
     use hex_literal::hex;
 
     // 2-limb example that's twice as wide as the native word size
@@ -659,7 +808,7 @@ mod tests {
         );
         assert_eq!(
             UIntEx::ONE.mul_wide(&UIntEx::ONE),
-            (UIntEx::ONE, UIntEx::ZERO)
+            (UIntEx::ZERO, UIntEx::ONE)
         );
     }
 
@@ -670,11 +819,7 @@ mod tests {
 
         for &a_int in primes {
             for &b_int in primes {
-                let a_big = U64::from_u32(a_int);
-                let b_big = U64::from_u32(b_int);
-
-                let (lo, hi) = a_big.mul_wide(&b_big);
-
+                let (hi, lo) = U64::from_u32(a_int).mul_wide(&U64::from_u32(b_int));
                 let expected = U64::from_u64(a_int as u64 * b_int as u64);
                 assert_eq!(lo, expected);
                 assert!(bool::from(hi.is_zero()));
@@ -685,7 +830,7 @@ mod tests {
     #[test]
     fn square() {
         let n = U64::from_u64(0xffff_ffff_ffff_ffff);
-        let (lo, hi) = n.square();
+        let (hi, lo) = n.square().split();
         assert_eq!(lo, U64::from_u64(1));
         assert_eq!(hi, U64::from_u64(0xffff_ffff_ffff_fffe));
     }
@@ -703,5 +848,22 @@ mod tests {
     fn checked_mul_overflow() {
         let n = U64::from_u64(0xffff_ffff_ffff_ffff);
         assert!(bool::from(n.checked_mul(&n).is_none()));
+    }
+
+    #[test]
+    fn concat() {
+        let hi = U64::from_u64(0x0011223344556677);
+        let lo = U64::from_u64(0x8899aabbccddeeff);
+        assert_eq!(
+            hi.concat(&lo),
+            U128::from_be_hex("00112233445566778899aabbccddeeff")
+        );
+    }
+
+    #[test]
+    fn split() {
+        let (hi, lo) = U128::from_be_hex("00112233445566778899aabbccddeeff").split();
+        assert_eq!(hi, U64::from_u64(0x0011223344556677));
+        assert_eq!(lo, U64::from_u64(0x8899aabbccddeeff));
     }
 }
