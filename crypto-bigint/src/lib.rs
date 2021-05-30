@@ -5,17 +5,38 @@
 //! applications. It provides constant-time, `no_std`-friendly implementations
 //! of modern formulas implemented using const generics.
 //!
+//! # Minimum Supported Rust Version
+//! **Rust 1.51** at a minimum.
+//!
+//! # Goals
+//! - No heap allocations (`no_std`-friendly)
+//! - Constant-time by default: if we add variable-time operations in the future
+//!   they will be secondary and explicitly labeled.
+//! - Leverage what is possible today with const generics on `stable` rust.
+//! - Support `const fn` as much as possible, including decoding big integers from
+//!   bytes/hex and performing arithmetic operations on them, with the goal of
+//!   being able to compute values at compile-time.
+//!
+//! # Status
+//! This library presently provides only a baseline level of functionality.
+//! It's new, unaudited, and may contain bugs. We recommend that it only be
+//! used in an experimental capacity for now.
+//!
+//! Please see the [feature wishlist tracking ticket] for more information.
+//!
 //! # `generic-array` interop
 //! When the optional `generic-array` feature is enabled, this library provides
 //! an [`ArrayEncoding`] trait which can be used to serialize/deserialize big
 //! integer values as `GenericArray<u8, N>`.
+//!
+//! [feature wishlist tracking ticket]: https://github.com/RustCrypto/utils/issues/453
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/crypto-bigint/0.0.0"
+    html_root_url = "https://docs.rs/crypto-bigint/0.1.0"
 )]
 #![forbid(unsafe_code, clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]

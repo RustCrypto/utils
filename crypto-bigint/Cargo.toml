@@ -1,9 +1,9 @@
 [package]
 name = "crypto-bigint"
-version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.1.0" # Also update html_root_url in lib.rs when bumping this
 description = """
-Pure Rust implementation of a big integer library designed from the ground-up
-for use in cryptographic applications only. Provides constant-time,
+Pure Rust implementation of a big integer library which has been designed from
+the ground-up for use in cryptographic applications. Provides constant-time,
 no_std-friendly implementations of modern formulas using const generics.
 """
 authors = ["RustCrypto Developers"]
