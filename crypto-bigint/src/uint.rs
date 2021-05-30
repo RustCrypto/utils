@@ -553,6 +553,12 @@ macro_rules! impl_split {
                     (hi_out, lo_out)
                 }
             }
+
+            impl From<$name> for (UInt<{nlimbs!($bits) / 2}>, UInt<{nlimbs!($bits) / 2}>) {
+                fn from(num: $name) -> (UInt<{nlimbs!($bits) / 2}>, UInt<{nlimbs!($bits) / 2}>) {
+                    num.split()
+                }
+            }
         )+
      };
 }
