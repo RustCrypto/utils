@@ -499,13 +499,7 @@ macro_rules! impl_biguint_aliases {
         $(
             #[doc = $doc]
             #[doc="unsigned big integer"]
-            #[cfg(target_pointer_width = "32")]
-            pub type $name = UInt<{$bits / 32}>;
-
-            #[doc = $doc]
-            #[doc="unsigned big integer"]
-            #[cfg(target_pointer_width = "64")]
-            pub type $name = UInt<{$bits / 64}>;
+            pub type $name = UInt<{nlimbs!($bits)}>;
 
             impl NumBits for $name {
                 const NUM_BITS: usize = $bits;
@@ -523,10 +517,7 @@ macro_rules! impl_concat {
     ($(($name:ident, $bits:expr)),+) => {
         $(
             impl Concat for $name {
-                #[cfg(target_pointer_width = "32")]
-                type Output = UInt<{($bits / 32) * 2}>;
-                #[cfg(target_pointer_width = "64")]
-                type Output = UInt<{($bits / 64) * 2}>;
+                type Output = UInt<{nlimbs!($bits) * 2}>;
 
                 fn concat(&self, rhs: &Self) -> Self::Output {
                     let mut output = Self::Output::default();
@@ -537,16 +528,8 @@ macro_rules! impl_concat {
                 }
             }
 
-            #[cfg(target_pointer_width = "32")]
-            impl From<($name, $name)> for UInt<{($bits / 32) * 2}> {
-                fn from(nums: ($name, $name)) -> UInt<{($bits / 32) * 2}> {
-                    nums.0.concat(&nums.1)
-                }
-            }
-
-            #[cfg(target_pointer_width = "64")]
-            impl From<($name, $name)> for UInt<{($bits / 64) * 2}> {
-                fn from(nums: ($name, $name)) -> UInt<{($bits / 64) * 2}> {
+            impl From<($name, $name)> for UInt<{nlimbs!($bits) * 2}> {
+                fn from(nums: ($name, $name)) -> UInt<{nlimbs!($bits) * 2}> {
                     nums.0.concat(&nums.1)
                 }
             }
@@ -559,10 +542,7 @@ macro_rules! impl_split {
     ($(($name:ident, $bits:expr)),+) => {
         $(
             impl Split for $name {
-                #[cfg(target_pointer_width = "32")]
-                type Output = UInt<{($bits / 32) / 2}>;
-                #[cfg(target_pointer_width = "64")]
-                type Output = UInt<{($bits / 64) / 2}>;
+                type Output = UInt<{nlimbs!($bits) / 2}>;
 
                 fn split(&self) -> (Self::Output, Self::Output) {
                     let mut hi_out = Self::Output::default();
