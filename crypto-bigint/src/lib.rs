@@ -29,11 +29,13 @@ mod uint;
 
 #[cfg(feature = "generic-array")]
 mod array;
+mod wrapping;
 
 pub use crate::{
     limb::Limb,
     traits::{Concat, NumBits, NumBytes, Split},
     uint::*,
+    wrapping::Wrapping,
 };
 
 #[cfg(feature = "generic-array")]
