@@ -87,16 +87,21 @@ impl<const LIMBS: usize> UInt<LIMBS> {
             "number of limbs must be greater than zero"
         );
 
-        let lo = Self::from_u64((n & 0xffff_ffff_ffff_ffff) as u64);
-        let hi = Self::from_u64((n >> 64) as u64);
+        let lo = U64::from_u64((n & 0xffff_ffff_ffff_ffff) as u64);
+        let hi = U64::from_u64((n >> 64) as u64);
 
-        let mut i = 0;
         let mut limbs = [0; LIMBS];
 
-        while i < LIMBS {
+        let mut i = 0;
+        while i < lo.limbs.len() {
             limbs[i] = lo.limbs[i];
-            limbs[i + LIMBS] = hi.limbs[i];
             i += 1;
+        }
+
+        let mut j = 0;
+        while j < hi.limbs.len() {
+            limbs[i + j] = hi.limbs[j];
+            j += 1;
         }
 
         Self { limbs }
@@ -401,7 +406,7 @@ impl<const LIMBS: usize> From<u32> for UInt<LIMBS> {
 impl<const LIMBS: usize> From<u64> for UInt<LIMBS> {
     fn from(n: u64) -> Self {
         // TODO(tarcieri): const where clause when possible
-        debug_assert!(LIMBS > (8 / LIMB_BYTES), "not enough limbs");
+        debug_assert!(LIMBS >= (8 / LIMB_BYTES), "not enough limbs");
         Self::from_u64(n)
     }
 }
@@ -409,7 +414,7 @@ impl<const LIMBS: usize> From<u64> for UInt<LIMBS> {
 impl<const LIMBS: usize> From<u128> for UInt<LIMBS> {
     fn from(n: u128) -> Self {
         // TODO(tarcieri): const where clause when possible
-        debug_assert!(LIMBS > (16 / LIMB_BYTES), "not enough limbs");
+        debug_assert!(LIMBS >= (16 / LIMB_BYTES), "not enough limbs");
         Self::from_u128(n)
     }
 }
