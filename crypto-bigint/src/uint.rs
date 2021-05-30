@@ -216,25 +216,36 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         &self.limbs
     }
 
-    /// Determine if this [`UInt`] is equal to zero.
-    ///
-    /// # Returns
-    ///
-    /// If zero, return `Choice(1)`.  Otherwise, return `Choice(0)`.
-    pub fn is_zero(&self) -> Choice {
-        self.ct_eq(&Self::ZERO)
+    /// Computes `a + b + carry`, returning the result along with the new carry.
+    #[inline(always)]
+    pub const fn adc(&self, rhs: &Self, mut carry: Limb) -> (Self, Limb) {
+        let mut limbs = [0; LIMBS];
+        let mut i = 0;
+
+        while i < LIMBS {
+            let (w, c) = limb::adc(self.limbs[i], rhs.limbs[i], carry);
+            limbs[i] = w;
+            carry = c;
+            i += 1;
+        }
+
+        (Self { limbs }, carry)
     }
 
-    /// Perform wrapping addition, discarding overflow.
-    pub const fn wrapping_add(&self, rhs: &Self) -> Self {
-        self.adc(rhs, 0).0
-    }
+    /// Computes `a - (b + borrow)`, returning the result along with the new borrow.
+    #[inline(always)]
+    pub const fn sbb(&self, rhs: &Self, mut borrow: Limb) -> (Self, Limb) {
+        let mut limbs = [0; LIMBS];
+        let mut i = 0;
 
-    /// Perform checked addition, returning [`CtOption`] only if the operation
-    /// did not overflow.
-    pub fn checked_add(&self, rhs: &Self) -> CtOption<Self> {
-        let (result, carry) = self.adc(rhs, 0);
-        CtOption::new(result, !Choice::from(carry as u8))
+        while i < LIMBS {
+            let (w, b) = limb::sbb(self.limbs[i], rhs.limbs[i], borrow);
+            limbs[i] = w;
+            borrow = b;
+            i += 1;
+        }
+
+        (Self { limbs }, borrow)
     }
 
     /// Compute "wide" multiplication, with a product twice the size of the input.
@@ -245,7 +256,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         let mut hi = Self::ZERO;
 
         // Schoolbook multiplication.
-        // TODO(tarcieri): use Karatsuba instead?
+        // TODO(tarcieri): use Karatsuba for better performance?
         while i < LIMBS {
             let mut j = 0;
             let mut carry = 0;
@@ -273,9 +284,34 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         (hi, lo)
     }
 
+    /// Perform wrapping addition, discarding overflow.
+    pub const fn wrapping_add(&self, rhs: &Self) -> Self {
+        self.adc(rhs, 0).0
+    }
+
+    /// Perform wrapping subtraction, discarding underflow and wrapping around
+    /// the boundary of the type.
+    pub const fn wrapping_sub(&self, rhs: &Self) -> Self {
+        self.sbb(rhs, 0).0
+    }
+
     /// Perform wrapping multiplication, discarding overflow.
     pub const fn wrapping_mul(&self, rhs: &Self) -> Self {
         self.mul_wide(rhs).0
+    }
+
+    /// Perform checked addition, returning [`CtOption`] only if the operation
+    /// did not overflow.
+    pub fn checked_add(&self, rhs: &Self) -> CtOption<Self> {
+        let (result, carry) = self.adc(rhs, 0);
+        CtOption::new(result, carry.ct_eq(&0))
+    }
+
+    /// Perform checked subtraction, returning [`CtOption`] only if the operation
+    /// did not underflow.
+    pub fn checked_sub(&self, rhs: &Self) -> CtOption<Self> {
+        let (result, underflow) = self.sbb(rhs, 0);
+        CtOption::new(result, underflow.ct_eq(&0))
     }
 
     /// Perform checked multiplication, returning [`CtOption`] only if the
@@ -294,20 +330,13 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         hi.concat(&lo)
     }
 
-    /// Computes `a + b + carry`, returning the result along with the new carry.
-    #[inline(always)]
-    const fn adc(&self, rhs: &Self, mut carry: Limb) -> (Self, Limb) {
-        let mut limbs = [0; LIMBS];
-        let mut i = 0;
-
-        while i < LIMBS {
-            let (w, c) = limb::adc(self.limbs[i], rhs.limbs[i], carry);
-            limbs[i] = w;
-            carry = c;
-            i += 1;
-        }
-
-        (Self { limbs }, carry)
+    /// Determine if this [`UInt`] is equal to zero.
+    ///
+    /// # Returns
+    ///
+    /// If zero, return `Choice(1)`.  Otherwise, return `Choice(0)`.
+    pub fn is_zero(&self) -> Choice {
+        self.ct_eq(&Self::ZERO)
     }
 }
 
@@ -588,7 +617,7 @@ impl_split! {
 #[cfg(test)]
 mod tests {
     use super::{U128, U64};
-    use crate::{Concat, Split};
+    use crate::{Concat, Limb, Split};
     use hex_literal::hex;
 
     // 2-limb example that's twice as wide as the native word size
@@ -771,6 +800,21 @@ mod tests {
     }
 
     #[test]
+    fn sbb_no_borrow() {
+        let (res, borrow) = UIntEx::ONE.sbb(&UIntEx::ONE, 0);
+        assert_eq!(res, UIntEx::ZERO);
+        assert_eq!(borrow, 0);
+    }
+
+    #[test]
+    fn sbb_with_borrow() {
+        let (res, borrow) = UIntEx::ZERO.sbb(&UIntEx::ONE, 0);
+
+        assert_eq!(res, UIntEx::MAX);
+        assert_eq!(borrow, Limb::MAX);
+    }
+
+    #[test]
     fn wrapping_add_no_carry() {
         assert_eq!(UIntEx::ZERO.wrapping_add(&UIntEx::ONE), UIntEx::ONE);
     }
@@ -789,6 +833,28 @@ mod tests {
     #[test]
     fn checked_add_overflow() {
         let result = UIntEx::MAX.checked_add(&UIntEx::ONE);
+        assert!(!bool::from(result.is_some()));
+    }
+
+    #[test]
+    fn wrapping_sub_no_borrow() {
+        assert_eq!(UIntEx::ONE.wrapping_sub(&UIntEx::ONE), UIntEx::ZERO);
+    }
+
+    #[test]
+    fn wrapping_sub_with_borrow() {
+        assert_eq!(UIntEx::ZERO.wrapping_sub(&UIntEx::ONE), UIntEx::MAX);
+    }
+
+    #[test]
+    fn checked_sub_ok() {
+        let result = UIntEx::ONE.checked_sub(&UIntEx::ONE);
+        assert_eq!(result.unwrap(), UIntEx::ZERO);
+    }
+
+    #[test]
+    fn checked_sub_overflow() {
+        let result = UIntEx::ZERO.checked_sub(&UIntEx::ONE);
         assert!(!bool::from(result.is_some()));
     }
 
