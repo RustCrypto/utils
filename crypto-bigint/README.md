@@ -7,22 +7,35 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-Pure Rust implementation of a big integer library designed from the ground-up
-for use in cryptographic applications only. Provides constant-time,
-`no_std`-friendly implementations of modern formulas using const generics.
+Pure Rust implementation of a big integer library which has been designed from
+the ground-up for use in cryptographic applications.
+
+Provides constant-time, `no_std`-friendly implementations of modern formulas
+using const generics.
 
 [Documentation][docs-link]
 
+# Minimum Supported Rust Version
+
+**Rust 1.51** at a minimum.
+
+## Goals
+
+- No heap allocations (`no_std`-friendly)
+- Constant-time by default. We may add variable-time operations in the future
+  but they will be secondary and explicitly marked as such.
+- Leverage what is possible today with const generics on `stable` rust.
+- Support `const fn` as much as possible, including decoding big integers from
+  bytes/hex and performing arithmetic operations on them, with the goal of
+  being able to compute values at compile-time.
+
 ## Status
 
-tl;dr: not ready to use.
+This library presently provides only a baseline level of functionality.
+It's new, unaudited, and may contain bugs. We recommend that it only be
+used in an experimental capacity for now.
 
-This is a work-in-progress prototype of what is possible in a const generics-based
-big integer library oriented towards cryptography.
-
-However, const generics support in Rust is still in a very early stage and thus
-so is this library. We intend to evolve it along with Rust's support for const
-generics until they meet our baseline requirements.
+Please see the [feature wishlist tracking ticket] for more information.
 
 ## License
 
@@ -55,3 +68,4 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (general links)
 
 [RustCrypto]: https://github.com/rustcrypto
+[feature wishlist tracking ticket]: https://github.com/RustCrypto/utils/issues/453
