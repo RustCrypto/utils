@@ -35,7 +35,7 @@ mod array;
 
 pub use crate::{
     limb::Limb,
-    traits::{NumBits, NumBytes},
+    traits::{Concat, NumBits, NumBytes, Split},
     uint::*,
 };
 
