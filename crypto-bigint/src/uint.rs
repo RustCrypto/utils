@@ -6,6 +6,7 @@
 mod macros;
 
 mod add;
+mod ct;
 mod decode;
 mod from;
 mod mul;
@@ -15,8 +16,8 @@ mod sub;
 mod array;
 
 use crate::{Concat, Limb, NumBits, NumBytes, Split};
-use core::fmt;
-use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
+use core::{cmp::Ordering, fmt};
+use subtle::{Choice, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess};
 
 /// Big unsigned integer.
 ///
@@ -61,30 +62,30 @@ impl<const LIMBS: usize> AsRef<[Limb]> for UInt<LIMBS> {
     }
 }
 
-impl<const LIMBS: usize> ConditionallySelectable for UInt<LIMBS> {
-    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        let mut limbs = [0; LIMBS];
-
-        for i in 0..LIMBS {
-            limbs[i] = Limb::conditional_select(&a.limbs[0], &b.limbs[0], choice);
-        }
-
-        Self { limbs }
-    }
-}
-
-impl<const LIMBS: usize> ConstantTimeEq for UInt<LIMBS> {
-    fn ct_eq(&self, other: &Self) -> Choice {
-        self.limbs
-            .iter()
-            .zip(other.limbs.iter())
-            .fold(Choice::from(1), |acc, (a, b)| acc & a.ct_eq(b))
-    }
-}
-
 impl<const LIMBS: usize> Default for UInt<LIMBS> {
     fn default() -> Self {
         Self::ZERO
+    }
+}
+
+impl<const LIMBS: usize> Eq for UInt<LIMBS> {}
+
+impl<const LIMBS: usize> Ord for UInt<LIMBS> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.ct_lt(other).into() {
+            Ordering::Less
+        } else if self.ct_gt(other).into() {
+            Ordering::Greater
+        } else {
+            debug_assert!(bool::from(self.ct_eq(other)));
+            Ordering::Equal
+        }
+    }
+}
+
+impl<const LIMBS: usize> PartialOrd for UInt<LIMBS> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -93,8 +94,6 @@ impl<const LIMBS: usize> PartialEq for UInt<LIMBS> {
         self.ct_eq(other).into()
     }
 }
-
-impl<const LIMBS: usize> Eq for UInt<LIMBS> {}
 
 impl<const LIMBS: usize> fmt::Display for UInt<LIMBS> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
