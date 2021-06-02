@@ -42,6 +42,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     };
 
     /// Borrow the limbs of this [`UInt`].
+    // TODO(tarcieri): eventually phase this out?
     pub const fn limbs(&self) -> &[Limb; LIMBS] {
         &self.limbs
     }
@@ -56,6 +57,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     }
 }
 
+// TODO(tarcieri): eventually phase this out?
 impl<const LIMBS: usize> AsRef<[Limb]> for UInt<LIMBS> {
     fn as_ref(&self) -> &[Limb] {
         self.limbs()
