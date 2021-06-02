@@ -17,6 +17,7 @@ readme = "README.md"
 [dependencies]
 generic-array = { version = "0.14", optional = true }
 subtle = { version = "2.4", default-features = false }
+zeroize = { version = "1", optional = true,  default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3"
