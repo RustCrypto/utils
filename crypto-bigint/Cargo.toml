@@ -21,6 +21,9 @@ subtle = { version = "2.4", default-features = false }
 [dev-dependencies]
 hex-literal = "0.3"
 
+[features]
+alloc = []
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

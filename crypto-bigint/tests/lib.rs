@@ -1,3 +1,0 @@
-//! Integration tests
-
-mod uint;

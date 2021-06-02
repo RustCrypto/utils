@@ -1,4 +1,5 @@
 //! Limbs are smaller integers into which a big integer is subdivided.
+// TODO(tarcieri): `Limb` newtype?
 
 /// Big integers are modeled as an array of smaller integers called "limbs".
 #[cfg(target_pointer_width = "32")]
