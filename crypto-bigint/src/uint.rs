@@ -19,6 +19,9 @@ use crate::{Concat, Limb, NumBits, NumBytes, Split};
 use core::{cmp::Ordering, fmt};
 use subtle::{Choice, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess};
 
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
+
 /// Big unsigned integer.
 ///
 /// Generic over the given number of `LIMBS`
@@ -61,6 +64,13 @@ impl<const LIMBS: usize> UInt<LIMBS> {
 impl<const LIMBS: usize> AsRef<[Limb]> for UInt<LIMBS> {
     fn as_ref(&self) -> &[Limb] {
         self.limbs()
+    }
+}
+
+// TODO(tarcieri): eventually phase this out?
+impl<const LIMBS: usize> AsMut<[Limb]> for UInt<LIMBS> {
+    fn as_mut(&mut self) -> &mut [Limb] {
+        &mut self.limbs
     }
 }
 
@@ -118,6 +128,14 @@ impl<const LIMBS: usize> fmt::UpperHex for UInt<LIMBS> {
             fmt::UpperHex::fmt(limb, f)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(feature = "zeroize")]
+#[cfg_attr(docsrs, doc(cfg(feature = "zeroize")))]
+impl<const LIMBS: usize> Zeroize for UInt<LIMBS> {
+    fn zeroize(&mut self) {
+        self.limbs.zeroize();
     }
 }
 
