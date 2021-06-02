@@ -141,6 +141,20 @@ impl From<U128> for u128 {
     }
 }
 
+// TODO(tarcieri): eventually phase this out?
+impl<const LIMBS: usize> From<[Limb; LIMBS]> for UInt<LIMBS> {
+    fn from(limbs: [Limb; LIMBS]) -> Self {
+        Self { limbs }
+    }
+}
+
+// TODO(tarcieri): eventually phase this out?
+impl<const LIMBS: usize> From<UInt<LIMBS>> for [Limb; LIMBS] {
+    fn from(n: UInt<LIMBS>) -> [Limb; LIMBS] {
+        n.limbs
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::U128;
