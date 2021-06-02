@@ -4,7 +4,7 @@
 //!
 //! # Minimum Supported Rust Version
 //!
-//! This crate requires **Rust 1.49** at a minimum.
+//! This crate requires **Rust 1.51** at a minimum.
 //!
 //! # Usage
 //!
@@ -20,7 +20,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/pkcs5/0.2.2"
+    html_root_url = "https://docs.rs/pkcs5/0.3.0-pre"
 )]
 #![forbid(unsafe_code, clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]

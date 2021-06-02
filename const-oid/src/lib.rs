@@ -44,7 +44,7 @@
 //!
 //! # Minimum Supported Rust Version
 //!
-//! This crate requires **Rust 1.47** at a minimum.
+//! This crate requires **Rust 1.51** at a minimum.
 //!
 //! Minimum supported Rust version may be changed in the future, but it will be
 //! accompanied with a minor version bump.
@@ -56,7 +56,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/const-oid/0.5.2"
+    html_root_url = "https://docs.rs/const-oid/0.6.0-pre"
 )]
 #![forbid(unsafe_code, clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms)]
@@ -108,12 +108,6 @@ pub struct ObjectIdentifier {
 impl ObjectIdentifier {
     /// Maximum length of a BER/DER-encoded OID in bytes.
     pub const MAX_LENGTH: usize = 23; // 24-bytes total w\ 1-byte length
-
-    /// Maximum length of a BER/DER-encoded OID in bytes.
-    #[deprecated(since = "0.5.1", note = "please use ObjectIdentifier::MAX_LENGTH")]
-    pub const fn max_len() -> usize {
-        Self::MAX_LENGTH
-    }
 
     /// Parse an [`ObjectIdentifier`] from the dot-delimited string form, e.g.:
     ///

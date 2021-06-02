@@ -37,12 +37,6 @@ impl UtcTime {
     /// Length of an RFC 5280-flavored ASN.1 DER-encoded [`UtcTime`].
     pub const LENGTH: Length = Length::new(13);
 
-    /// Length of an RFC 5280-flavored ASN.1 DER-encoded [`UtcTime`].
-    #[deprecated(since = "0.3.3", note = "please use UtcTime::LENGTH")]
-    pub const fn length() -> Length {
-        Self::LENGTH
-    }
-
     /// Create a new [`UtcTime`] given a [`Duration`] since `UNIX_EPOCH`
     /// (a.k.a. "Unix time")
     pub fn new(unix_duration: Duration) -> Result<Self> {

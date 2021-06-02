@@ -30,12 +30,6 @@ impl GeneralizedTime {
     /// Length of an RFC 5280-flavored ASN.1 DER-encoded [`GeneralizedTime`].
     pub const LENGTH: Length = Length::new(15);
 
-    /// Length of an RFC 5280-flavored ASN.1 DER-encoded [`GeneralizedTime`].
-    #[deprecated(since = "0.3.3", note = "please use GeneralizedTime::LENGTH")]
-    pub const fn length() -> Length {
-        Self::LENGTH
-    }
-
     /// Create a new [`GeneralizedTime`] given a [`Duration`] since `UNIX_EPOCH`
     /// (a.k.a. "Unix time")
     pub fn new(unix_duration: Duration) -> Result<Self> {
