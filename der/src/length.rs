@@ -33,24 +33,6 @@ impl Length {
         Length(value as u32)
     }
 
-    /// Return a length of `0`.
-    #[deprecated(since = "0.3.3", note = "please use Length::ZERO")]
-    pub const fn zero() -> Self {
-        Self::ZERO
-    }
-
-    /// Return a length of `1`.
-    #[deprecated(since = "0.3.3", note = "please use Length::ONE")]
-    pub const fn one() -> Self {
-        Self::ONE
-    }
-
-    /// Get the maximum length supported by this crate
-    #[deprecated(since = "0.3.3", note = "please use Length::MAX")]
-    pub const fn max() -> Self {
-        Self::MAX
-    }
-
     /// Get the length of DER Tag-Length-Value (TLV) encoded data if `self`
     /// is the length of the inner "value" portion of the message.
     pub fn for_tlv(self) -> Result<Self> {
