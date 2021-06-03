@@ -10,11 +10,21 @@ use crate::Error;
 /// (RFC 5958 designates `0` and `1` as the only valid versions for PKCS#8 documents)
 #[derive(Clone, Debug, Copy, PartialEq)]
 pub enum Version {
-    /// Denotes PKCS#8 v1, used for [`crate::PrivateKeyInfo`] and [`crate::OneAsymmetricKey`]
+    /// Denotes PKCS#8 v1: no public key field.
     V1 = 0,
 
-    /// Denotes PKCS#8 v2, only used for [`crate::OneAsymmetricKey`]
+    /// Denotes PKCS#8 v2: `OneAsymmetricKey` with public key field.
     V2 = 1,
+}
+
+impl Version {
+    /// Is this version expected to have a public key?
+    pub fn has_public_key(self) -> bool {
+        match self {
+            Version::V1 => false,
+            Version::V2 => true,
+        }
+    }
 }
 
 impl From<Version> for u8 {

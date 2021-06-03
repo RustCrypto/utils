@@ -14,7 +14,7 @@ use pkcs8::EncryptedPrivateKeyDocument;
 
 /// Ed25519 PKCS#8 private key plaintext encoded as ASN.1 DER
 #[cfg(feature = "encryption")]
-const ED25519_DER_PLAINTEXT_EXAMPLE: &[u8] = include_bytes!("examples/ed25519-priv.der");
+const ED25519_DER_PLAINTEXT_EXAMPLE: &[u8] = include_bytes!("examples/ed25519-priv-pkcs8v1.der");
 
 /// Ed25519 PKCS#8 encrypted private key (PBES2 + AES-128-CBC + PBKDF2-SHA1) encoded as ASN.1 DER.
 ///
