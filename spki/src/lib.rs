@@ -42,4 +42,4 @@ mod algorithm;
 mod spki;
 
 pub use crate::{algorithm::AlgorithmIdentifier, spki::SubjectPublicKeyInfo};
-pub use der::{self, ObjectIdentifier};
+pub use der::{self, asn1::ObjectIdentifier};

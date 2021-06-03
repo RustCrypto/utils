@@ -1,6 +1,7 @@
 //! ASN.1 `OBJECT IDENTIFIER`
 
-use crate::{Any, Encodable, Encoder, Error, Length, ObjectIdentifier, Result, Tag, Tagged};
+use crate::{asn1::Any, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
+use const_oid::ObjectIdentifier;
 use core::convert::{TryFrom, TryInto};
 
 impl TryFrom<Any<'_>> for ObjectIdentifier {
@@ -43,7 +44,8 @@ impl<'a> Tagged for ObjectIdentifier {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Decodable, Encodable, Length, ObjectIdentifier};
+    use super::ObjectIdentifier;
+    use crate::{Decodable, Encodable, Length};
     use core::convert::TryInto;
 
     const EXAMPLE_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549");

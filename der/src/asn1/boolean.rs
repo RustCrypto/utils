@@ -1,6 +1,6 @@
 //! ASN.1 `BOOLEAN` support.
 
-use crate::{Any, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged};
+use crate::{asn1::Any, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 /// Byte used to encode `true` in ASN.1 DER. From X.690 Section 11.1:

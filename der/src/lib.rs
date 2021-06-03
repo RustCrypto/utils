@@ -87,7 +87,10 @@
 //! // It does leverage the `alloc` feature, but also provides instructions for
 //! // "heapless" usage when the `alloc` feature is disabled.
 //! use core::convert::{TryFrom, TryInto};
-//! use der::{Any, Decodable, Encodable, Message, ObjectIdentifier};
+//! use der::{
+//!     asn1::{Any, ObjectIdentifier},
+//!     Decodable, Encodable, Message
+//! };
 //!
 //! /// X.509 `AlgorithmIdentifier`.
 //! #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -103,11 +106,11 @@
 //! // Note: types which impl `TryFrom<Any<'a>, Error = der::Error>` receive a
 //! // blanket impl of the `Decodable` trait, therefore satisfying the
 //! // `Decodable` trait bounds on `Message`, which is impl'd below.
-//! impl<'a> TryFrom<der::Any<'a>> for AlgorithmIdentifier<'a> {
+//! impl<'a> TryFrom<Any<'a>> for AlgorithmIdentifier<'a> {
 //!    type Error = der::Error;
 //!
-//!     fn try_from(any: der::Any<'a>) -> der::Result<AlgorithmIdentifier> {
-//!         // The `der::Any::sequence` method asserts that a `der::Any` value
+//!     fn try_from(any: Any<'a>) -> der::Result<AlgorithmIdentifier> {
+//!         // The `Any::sequence` method asserts that an `Any` value
 //!         // contains an ASN.1 `SEQUENCE` then calls the provided `FnOnce`
 //!         // with a `der::Decoder` which can be used to decode it.
 //!         any.sequence(|decoder| {
@@ -152,7 +155,7 @@
 //!     // message serialization.
 //!     //
 //!     // Trait objects are used because they allow for slices containing
-//!     // heterogenous field types, and a callback is used to allow for the
+//!     // heterogeneous field types, and a callback is used to allow for the
 //!     // construction of temporary field encoder types. The latter means
 //!     // that the fields of your Rust struct don't necessarily need to
 //!     // impl the `Encodable` trait, but if they don't you must construct
@@ -172,8 +175,8 @@
 //! // Example parameters value: OID for the NIST P-256 elliptic curve.
 //! let parameters = "1.2.840.10045.3.1.7".parse::<ObjectIdentifier>().unwrap();
 //!
-//! // We need to convert `parameters` into a `der::Any<'a>` type, which wraps
-//! // a `&'a [u8]` byte slice.
+//! // We need to convert `parameters` into an `Any<'a>` type, which wraps a
+//! // `&'a [u8]` byte slice.
 //! //
 //! // To do that, we need owned DER-encoded data so that we can have
 //! // `Any` borrow a reference to it, so we have to serialize the OID.
@@ -191,7 +194,7 @@
 //!     // OID for `id-ecPublicKey`, if you're curious
 //!     algorithm: "1.2.840.10045.2.1".parse().unwrap(),
 //!
-//!     // `der::Any<'a>` impls `TryFrom<&'a [u8]>`, which parses the provided
+//!     // `Any<'a>` impls `TryFrom<&'a [u8]>`, which parses the provided
 //!     // slice as an ASN.1 DER-encoded message.
 //!     parameters: Some(der_encoded_parameters.as_slice().try_into().unwrap())
 //! };
@@ -201,7 +204,7 @@
 //! //
 //! // As mentioned earlier, if you don't have the `alloc` feature enabled you
 //! // can create a fix-sized array instead, then call `Encoder::new` with a
-//! // refernce to it, then encode the message using
+//! // reference to it, then encode the message using
 //! // `encoder.encode(algorithm_identifier)`, then finally `encoder.finish()`
 //! // to obtain a byte slice containing the encoded message.
 //! let der_encoded_algorithm_identifier = algorithm_identifier.to_vec().unwrap();
@@ -233,7 +236,7 @@
 //! ```
 //! # #[cfg(all(feature = "alloc", feature = "derive", feature = "oid"))]
 //! # {
-//! use der::{Any, Encodable, Decodable, Message, ObjectIdentifier};
+//! use der::{asn1::{Any, ObjectIdentifier}, Encodable, Decodable, Message};
 //! use core::convert::TryInto;
 //!
 //! /// X.509 `AlgorithmIdentifier` (same as above)
@@ -255,7 +258,7 @@
 //!     // OID for `id-ecPublicKey`, if you're curious
 //!     algorithm: "1.2.840.10045.2.1".parse().unwrap(),
 //!
-//!     // `der::Any<'a>` impls `TryFrom<&'a [u8]>`, which parses the provided
+//!     // `Any<'a>` impls `TryFrom<&'a [u8]>`, which parses the provided
 //!     // slice as an ASN.1 DER-encoded message.
 //!     parameters: Some(der_encoded_parameters.as_slice().try_into().unwrap())
 //! };
@@ -287,7 +290,7 @@
 //! ```rust
 //! # #[cfg(all(feature = "alloc", feature = "derive", feature = "oid"))]
 //! # {
-//! # use der::{Any, Message, ObjectIdentifier};
+//! # use der::{asn1::{Any, ObjectIdentifier}, Message};
 //! #
 //! # #[derive(Copy, Clone, Debug, Eq, PartialEq, Message)]
 //! # pub struct AlgorithmIdentifier<'a> {
@@ -322,6 +325,20 @@
 //! [RFC 5280 Section 4.1.1.2]: https://tools.ietf.org/html/rfc5280#section-4.1.1.2
 //! [A Layman's Guide to a Subset of ASN.1, BER, and DER]: https://luca.ntop.org/Teaching/Appunti/asn1.html
 //! [A Warm Welcome to ASN.1 and DER]: https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/
+//!
+//! [`Any`]: asn1::Any
+//! [`BigUInt`]: asn1::BigUInt
+//! [`BitString`]: asn1::BitString
+//! [`GeneralizedTime`]: asn1::GeneralizedTime
+//! [`Ia5String`]: asn1::Ia5String
+//! [`Null`]: asn1::Null
+//! [`ObjectIdentifier`]: asn1::ObjectIdentifier
+//! [`OctetString`]: asn1::OctetString
+//! [`PrintableString`]: asn1::PrintableString
+//! [`Sequence`]: asn1::Sequence
+//! [`SetOfRef`]: asn1::SetOfRef
+//! [`UtcTime`]: asn1::UtcTime
+//! [`Utf8String`]: asn1::Utf8String
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
@@ -339,10 +356,11 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
+pub mod asn1;
 pub mod message;
 
-mod asn1;
 mod byte_slice;
+mod choice;
 mod datetime;
 mod decodable;
 mod decoder;
@@ -355,21 +373,7 @@ mod str_slice;
 mod tag;
 
 pub use crate::{
-    asn1::{
-        any::Any,
-        bit_string::BitString,
-        choice::Choice,
-        context_specific::ContextSpecific,
-        generalized_time::GeneralizedTime,
-        ia5_string::Ia5String,
-        null::Null,
-        octet_string::OctetString,
-        printable_string::PrintableString,
-        sequence::Sequence,
-        set_of::{SetOf, SetOfRef, SetOfRefIter},
-        utc_time::UtcTime,
-        utf8_string::Utf8String,
-    },
+    choice::Choice,
     decodable::Decodable,
     decoder::Decoder,
     encodable::Encodable,
@@ -381,16 +385,8 @@ pub use crate::{
     tag::{Class, Tag, TagNumber, Tagged},
 };
 
-pub(crate) use crate::byte_slice::ByteSlice;
-
-#[cfg(feature = "big-uint")]
-#[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
-pub use {crate::asn1::big_uint::BigUInt, typenum::consts};
-
 #[cfg(feature = "derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
 pub use der_derive::{Choice, Message};
 
-#[cfg(feature = "oid")]
-#[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
-pub use const_oid::ObjectIdentifier;
+pub(crate) use crate::byte_slice::ByteSlice;

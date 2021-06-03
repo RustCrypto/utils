@@ -1,7 +1,7 @@
 //! "Big" ASN.1 `INTEGER` types.
 
 use crate::{
-    Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged,
+    asn1::Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged,
 };
 use core::{convert::TryFrom, marker::PhantomData};
 use typenum::{NonZero, Unsigned};
@@ -159,7 +159,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::BigUInt;
-    use crate::{asn1::integer::tests::*, Any, Decodable, ErrorKind, Result, Tag};
+    use crate::{
+        asn1::{integer::tests::*, Any},
+        Decodable, ErrorKind, Result, Tag,
+    };
     use core::convert::TryInto;
 
     // TODO(tarcieri): tests for more integer sizes

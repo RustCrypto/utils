@@ -3,7 +3,10 @@
 
 use crate::{AlgorithmIdentifier, Attributes, Error, Result, Version};
 use core::{convert::TryFrom, fmt};
-use der::{Decodable, Encodable, Message};
+use der::{
+    asn1::{Any, OctetString},
+    Decodable, Encodable, Message, Tag,
+};
 
 #[cfg(feature = "alloc")]
 use crate::PrivateKeyDocument;
@@ -93,18 +96,15 @@ impl<'a> TryFrom<&'a [u8]> for PrivateKeyInfo<'a> {
     }
 }
 
-impl<'a> TryFrom<der::Any<'a>> for PrivateKeyInfo<'a> {
+impl<'a> TryFrom<Any<'a>> for PrivateKeyInfo<'a> {
     type Error = der::Error;
 
-    fn try_from(any: der::Any<'a>) -> der::Result<PrivateKeyInfo<'a>> {
+    fn try_from(any: Any<'a>) -> der::Result<PrivateKeyInfo<'a>> {
         any.sequence(|decoder| {
             // Parse and validate `version` INTEGER.
             // For PrivateKeyInfo, only v1 is valid.
             if Version::V1 != Version::decode(decoder)? {
-                return Err(der::ErrorKind::Value {
-                    tag: der::Tag::Integer,
-                }
-                .into());
+                return Err(der::ErrorKind::Value { tag: Tag::Integer }.into());
             }
 
             let algorithm = decoder.decode()?;
@@ -127,7 +127,7 @@ impl<'a> Message<'a> for PrivateKeyInfo<'a> {
         f(&[
             &u8::from(Version::V1),
             &self.algorithm,
-            &der::OctetString::new(self.private_key)?,
+            &OctetString::new(self.private_key)?,
         ])
     }
 }

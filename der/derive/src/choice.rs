@@ -19,7 +19,7 @@ pub(crate) struct DeriveChoice {
     /// Tags included in the impl body for `der::Choice`.
     choice_body: TokenStream,
 
-    /// Enum match arms for the impl body for `TryFrom<der::Any<'_>>`.
+    /// Enum match arms for the impl body for `TryFrom<der::asn1::Any<'_>>`.
     decode_body: TokenStream,
 
     /// Enum match arms for the impl body for `der::Encodable::encode`.
@@ -86,7 +86,7 @@ impl DeriveChoice {
         .to_tokens(&mut self.choice_body);
     }
 
-    /// Derive a match arm of the impl body for `TryFrom<der::Any<'_>>`.
+    /// Derive a match arm of the impl body for `TryFrom<der::asn1::Any<'_>>`.
     fn derive_variant_decoder(&mut self, asn1_type: Asn1Type) {
         let tag = asn1_type.tag();
 
@@ -181,10 +181,10 @@ impl DeriveChoice {
                 }
             }
 
-            gen impl core::convert::TryFrom<der::Any<#lifetime>> for @Self {
+            gen impl core::convert::TryFrom<::der::asn1::Any<#lifetime>> for @Self {
                 type Error = der::Error;
 
-                fn try_from(any: der::Any<#lifetime>) -> der::Result<Self> {
+                fn try_from(any: ::der::asn1::Any<#lifetime>) -> der::Result<Self> {
                     #[allow(unused_imports)]
                     use core::convert::TryInto;
 

@@ -1,8 +1,11 @@
 //! Key derivation functions.
 
-use crate::{AlgorithmIdentifier, CryptoError, Error, ObjectIdentifier};
+use crate::{AlgorithmIdentifier, CryptoError, Error};
 use core::convert::{TryFrom, TryInto};
-use der::{Any, Encodable, Encoder, ErrorKind, Length, Message, OctetString};
+use der::{
+    asn1::{Any, ObjectIdentifier, OctetString},
+    Encodable, Encoder, ErrorKind, Length, Message,
+};
 
 /// Password-Based Key Derivation Function (PBKDF2) OID.
 pub const PBKDF2_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.1.5.12");
@@ -273,7 +276,7 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Pbkdf2Prf {
 impl<'a> From<Pbkdf2Prf> for AlgorithmIdentifier<'a> {
     fn from(prf: Pbkdf2Prf) -> Self {
         // TODO(tarcieri): support non-NULL parameters?
-        let parameters = der::Null;
+        let parameters = der::asn1::Null;
 
         AlgorithmIdentifier {
             oid: prf.oid(),

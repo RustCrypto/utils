@@ -1,7 +1,8 @@
 //! ASN.1 `SEQUENCE` support.
 
 use crate::{
-    Any, ByteSlice, Decoder, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged,
+    asn1::Any, ByteSlice, Decoder, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag,
+    Tagged,
 };
 use core::convert::TryFrom;
 

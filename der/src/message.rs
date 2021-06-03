@@ -1,5 +1,5 @@
-//! The [`Message`] pattern provided by this crate simplifies writing ASN.1 DER
-//! decoders and encoders which map ASN.1 `SEQUENCE` types to Rust structs.
+//! The [`Message`] trait simplifies writing decoders/encoders which map ASN.1
+//! `SEQUENCE`s to Rust structs.
 
 use crate::{Decodable, Encodable, Encoder, Header, Length, Result, Tag, Tagged};
 

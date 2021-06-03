@@ -12,9 +12,12 @@ pub use self::kdf::{
     PBKDF2_OID, SCRYPT_OID,
 };
 
-use crate::{AlgorithmIdentifier, CryptoError, ObjectIdentifier};
+use crate::{AlgorithmIdentifier, CryptoError};
 use core::convert::{TryFrom, TryInto};
-use der::{Any, Decodable, Encodable, Encoder, Error, ErrorKind, Length, Message, OctetString};
+use der::{
+    asn1::{Any, ObjectIdentifier, OctetString},
+    Decodable, Encodable, Encoder, Error, ErrorKind, Length, Message,
+};
 
 #[cfg(all(feature = "alloc", feature = "pbes2"))]
 use alloc::vec::Vec;

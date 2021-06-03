@@ -1,7 +1,10 @@
 //! PKCS#8v2 `OneAsymmetricKey`.
 // TODO(tarcieri): merge this into `PrivateKeyInfo` in the next breaking release.
 
-use der::{Decodable, Encodable, Message, Tag, TagNumber};
+use der::{
+    asn1::{Any, BitString, ContextSpecific, OctetString},
+    Decodable, Encodable, Message, Tag, TagNumber,
+};
 
 use crate::{AlgorithmIdentifier, Attributes, Error, Result, Version};
 use core::{convert::TryFrom, fmt};
@@ -83,10 +86,10 @@ impl<'a> TryFrom<&'a [u8]> for OneAsymmetricKey<'a> {
     }
 }
 
-impl<'a> TryFrom<der::Any<'a>> for OneAsymmetricKey<'a> {
+impl<'a> TryFrom<Any<'a>> for OneAsymmetricKey<'a> {
     type Error = der::Error;
 
-    fn try_from(any: der::Any<'a>) -> der::Result<OneAsymmetricKey<'a>> {
+    fn try_from(any: Any<'a>) -> der::Result<OneAsymmetricKey<'a>> {
         any.sequence(|decoder| {
             // Parse and validate `version` INTEGER.
             let version = Version::decode(decoder)?;
@@ -153,15 +156,15 @@ impl<'a> Message<'a> for OneAsymmetricKey<'a> {
         f(&[
             &u8::from(self.version()),
             &self.algorithm,
-            &der::OctetString::new(self.private_key)?,
-            &self.attributes.map(|value| der::ContextSpecific {
+            &OctetString::new(self.private_key)?,
+            &self.attributes.map(|value| ContextSpecific {
                 tag_number: ATTRIBUTES_TAG,
                 value,
             }),
             &self
                 .public_key
                 .map(|pk| {
-                    der::BitString::new(pk).map(|value| der::ContextSpecific {
+                    BitString::new(pk).map(|value| ContextSpecific {
                         tag_number: PUBLIC_KEY_TAG,
                         value: value.into(),
                     })

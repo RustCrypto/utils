@@ -206,7 +206,7 @@ impl fmt::Debug for Tag {
     }
 }
 
-/// Tag numbers.
+/// ASN.1 tag numbers (i.e. lower 5 bits of a [`Tag`]).
 ///
 /// From X.690 Section 8.1.2.2:
 ///

@@ -97,7 +97,7 @@ pub use crate::{
     traits::{FromPrivateKey, FromPublicKey},
     version::Version,
 };
-pub use der::{self, ObjectIdentifier};
+pub use der::{self, asn1::ObjectIdentifier};
 pub use spki::{AlgorithmIdentifier, SubjectPublicKeyInfo};
 
 #[cfg(feature = "pkcs5")]
@@ -133,4 +133,4 @@ pub use crate::{
 ///
 /// [RFC 5958 Section 2]: https://datatracker.ietf.org/doc/html/rfc5958
 // TODO(tarcieri): support parsing attributes as a `der::SetOf`?
-pub type Attributes<'a> = der::Any<'a>;
+pub type Attributes<'a> = der::asn1::Any<'a>;

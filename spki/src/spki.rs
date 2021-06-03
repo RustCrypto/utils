@@ -2,7 +2,10 @@
 
 use crate::AlgorithmIdentifier;
 use core::convert::TryFrom;
-use der::{Decodable, Encodable, Error, Message, Result};
+use der::{
+    asn1::{Any, BitString},
+    Decodable, Encodable, Error, Message, Result,
+};
 
 /// X.509 `SubjectPublicKeyInfo` (SPKI) as defined in [RFC 5280 Section 4.1.2.7].
 ///
@@ -33,10 +36,10 @@ impl<'a> TryFrom<&'a [u8]> for SubjectPublicKeyInfo<'a> {
     }
 }
 
-impl<'a> TryFrom<der::Any<'a>> for SubjectPublicKeyInfo<'a> {
+impl<'a> TryFrom<Any<'a>> for SubjectPublicKeyInfo<'a> {
     type Error = Error;
 
-    fn try_from(any: der::Any<'a>) -> Result<SubjectPublicKeyInfo<'a>> {
+    fn try_from(any: Any<'a>) -> Result<SubjectPublicKeyInfo<'a>> {
         any.sequence(|decoder| {
             Ok(Self {
                 algorithm: decoder.decode()?,
@@ -51,9 +54,6 @@ impl<'a> Message<'a> for SubjectPublicKeyInfo<'a> {
     where
         F: FnOnce(&[&dyn Encodable]) -> Result<T>,
     {
-        f(&[
-            &self.algorithm,
-            &der::BitString::new(self.subject_public_key)?,
-        ])
+        f(&[&self.algorithm, &BitString::new(self.subject_public_key)?])
     }
 }

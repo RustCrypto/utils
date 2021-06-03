@@ -3,7 +3,10 @@
 
 #![cfg(feature = "derive")]
 
-use der::{Choice, Decodable, Encodable, Encoder, GeneralizedTime, UtcTime};
+use der::{
+    asn1::{GeneralizedTime, UtcTime},
+    Choice, Decodable, Encodable, Encoder,
+};
 use hex_literal::hex;
 use std::time::Duration;
 
