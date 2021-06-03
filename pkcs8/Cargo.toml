@@ -3,7 +3,8 @@ name = "pkcs8"
 version = "0.7.0-pre" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #8:
-Private-Key Information Syntax Specification (RFC 5208)
+Private-Key Information Syntax Specification (RFC 5208), with additional
+support for PKCS#8v2 asymmetric key packages (RFC 5958)
 """
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
