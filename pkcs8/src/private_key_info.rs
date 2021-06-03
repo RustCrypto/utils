@@ -84,8 +84,8 @@ const PUBLIC_KEY_TAG: TagNumber = TagNumber::new(1);
 /// PublicKey ::= BIT STRING
 /// ```
 ///
-/// [RFC 5208 Section 5]: https://tools.ietf.org/html/rfc5208#section-5
-/// [RFC 5958 Section 2]: https://datatracker.ietf.org/doc/html/rfc5958#section-2
+/// [RFC 5208]: https://tools.ietf.org/html/rfc5208
+/// [RFC 5958]: https://datatracker.ietf.org/doc/html/rfc5958
 /// [RFC 5208 Section 5]: https://tools.ietf.org/html/rfc5208#section-5
 /// [RFC 5958 Section 2]: https://datatracker.ietf.org/doc/html/rfc5958#section-2
 #[derive(Clone)]
@@ -117,6 +117,8 @@ impl<'a> PrivateKeyInfo<'a> {
 
     /// Encrypt this private key using a symmetric encryption key derived
     /// from the provided password.
+    ///
+    /// See [`PrivateKeyDocument::encrypt`] for more information.
     #[cfg(feature = "encryption")]
     #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
     pub fn encrypt(

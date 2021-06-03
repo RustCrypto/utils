@@ -89,17 +89,11 @@ impl<'a> Parameters<'a> {
     #[cfg(feature = "scrypt")]
     #[cfg_attr(docsrs, doc(cfg(feature = "scrypt")))]
     pub fn scrypt_aes128cbc(
-        scrypt_log_n: u8,
-        scrypt_r: u32,
-        scrypt_p: u32,
-        scrypt_salt: &'a [u8],
+        params: scrypt::Params,
+        salt: &'a [u8],
         aes_iv: &'a [u8; AES_BLOCK_SIZE],
     ) -> Result<Self, CryptoError> {
-        let kdf = ScryptParams::from_params_and_salt(
-            scrypt::Params::new(scrypt_log_n, scrypt_r, scrypt_p).map_err(|_| CryptoError)?,
-            scrypt_salt,
-        )?
-        .into();
+        let kdf = ScryptParams::from_params_and_salt(params, salt)?.into();
         let encryption = EncryptionScheme::Aes128Cbc { iv: aes_iv };
         Ok(Self { kdf, encryption })
     }
@@ -109,20 +103,17 @@ impl<'a> Parameters<'a> {
     ///
     /// For more information on scrypt parameters, see documentation for the
     /// [`scrypt::Params`] struct.
+    ///
+    /// When in doubt, use `Default::default()` as the [`scrypt::Params`].
+    /// This also avoids the need to import the type from the `scrypt` crate.
     #[cfg(feature = "scrypt")]
     #[cfg_attr(docsrs, doc(cfg(feature = "scrypt")))]
     pub fn scrypt_aes256cbc(
-        scrypt_log_n: u8,
-        scrypt_r: u32,
-        scrypt_p: u32,
-        scrypt_salt: &'a [u8],
+        params: scrypt::Params,
+        salt: &'a [u8],
         aes_iv: &'a [u8; AES_BLOCK_SIZE],
     ) -> Result<Self, CryptoError> {
-        let kdf = ScryptParams::from_params_and_salt(
-            scrypt::Params::new(scrypt_log_n, scrypt_r, scrypt_p).map_err(|_| CryptoError)?,
-            scrypt_salt,
-        )?
-        .into();
+        let kdf = ScryptParams::from_params_and_salt(params, salt)?.into();
         let encryption = EncryptionScheme::Aes256Cbc { iv: aes_iv };
         Ok(Self { kdf, encryption })
     }

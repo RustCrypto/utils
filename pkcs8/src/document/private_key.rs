@@ -96,6 +96,13 @@ impl PrivateKeyDocument {
 
     /// Encrypt this private key using a symmetric encryption key derived
     /// from the provided password.
+    ///
+    /// Uses the following algorithms for encryption:
+    /// - PBKDF: scrypt with default parameters:
+    ///   - log₂(N): 15
+    ///   - r: 8
+    ///   - p: 1
+    /// - Cipher: AES-256-CBC (best available option for PKCS#5 encryption)
     #[cfg(feature = "encryption")]
     #[cfg_attr(docsrs, doc(cfg(feature = "encryption")))]
     pub fn encrypt(
@@ -109,10 +116,8 @@ impl PrivateKeyDocument {
         let mut iv = [0u8; 16];
         rng.fill_bytes(&mut iv);
 
-        let pbkdf2_iterations = 10_000;
-        let pbes2_params =
-            pbes2::Parameters::pbkdf2_sha256_aes256cbc(pbkdf2_iterations, &salt, &iv)
-                .map_err(|_| Error::Crypto)?;
+        let pbes2_params = pbes2::Parameters::scrypt_aes256cbc(Default::default(), &salt, &iv)
+            .map_err(|_| Error::Crypto)?;
 
         self.encrypt_with_params(pbes2_params, password)
     }
