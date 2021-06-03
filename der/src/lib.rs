@@ -5,7 +5,8 @@
 //!
 //! This crate provides a `no_std`-friendly implementation of a subset of ASN.1
 //! DER necessary for decoding/encoding various cryptography-related formats
-//! implemented as part of the [RustCrypto] project, e.g. the [`pkcs8`] crate.
+//! implemented as part of the [RustCrypto] project, e.g. the [`pkcs5`] and
+//! [`pkcs8`] crates.
 //!
 //! The core implementation avoids any heap usage (with convenience methods
 //! that allocate gated under the off-by-default `alloc` feature).
@@ -315,6 +316,7 @@
 //!
 //! [X.690]: https://www.itu.int/rec/T-REC-X.690/
 //! [RustCrypto]: https://github.com/rustcrypto
+//! [`pkcs5`]: https://docs.rs/pkcs5/
 //! [`pkcs8`]: https://docs.rs/pkcs8/
 //! [RustCrypto/utils#370]: https://github.com/RustCrypto/utils/issues/370
 //! [RFC 5280 Section 4.1.1.2]: https://tools.ietf.org/html/rfc5280#section-4.1.1.2
@@ -376,7 +378,7 @@ pub use crate::{
     header::Header,
     length::Length,
     message::Message,
-    tag::{Class, Tag, Tagged},
+    tag::{Class, Tag, TagNumber, Tagged},
 };
 
 pub(crate) use crate::byte_slice::ByteSlice;

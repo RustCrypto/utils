@@ -1,16 +1,16 @@
 //! PKCS#8v2 `OneAsymmetricKey`.
 // TODO(tarcieri): merge this into `PrivateKeyInfo` in the next breaking release.
 
-use der::{Decodable, Encodable, Message, Tag};
+use der::{Decodable, Encodable, Message, Tag, TagNumber};
 
 use crate::{AlgorithmIdentifier, Attributes, Error, Result, Version};
 use core::{convert::TryFrom, fmt};
 
-/// Context-specific tag for [`Attributes`].
-const ATTRIBUTES_TAG: u8 = 0;
+/// Context-specific tag number for [`Attributes`].
+const ATTRIBUTES_TAG: TagNumber = TagNumber::new(0);
 
-/// Context-specific tag for the public key.
-const PUBLIC_KEY_TAG: u8 = 1;
+/// Context-specific tag number for the public key.
+const PUBLIC_KEY_TAG: TagNumber = TagNumber::new(1);
 
 /// PKCS#8 `OneAsymmetricKey` as described in [RFC 5958 Section 2]:
 ///
@@ -97,21 +97,21 @@ impl<'a> TryFrom<der::Any<'a>> for OneAsymmetricKey<'a> {
             let mut public_key = None;
 
             while let Some(field) = decoder.context_specific_optional()? {
-                match field.tag() {
+                match field.tag_number {
                     ATTRIBUTES_TAG => {
                         // Expect `attributes` before `public_key`
                         if public_key.is_some() {
                             return decoder.error(der::ErrorKind::UnexpectedTag {
                                 expected: None,
-                                actual: Tag::context_specific(ATTRIBUTES_TAG)?,
+                                actual: Tag::ContextSpecific(ATTRIBUTES_TAG),
                             });
                         }
 
                         if attributes.is_none() {
-                            attributes = Some(field.value())
+                            attributes = Some(field.value)
                         } else {
                             return decoder.error(der::ErrorKind::DuplicateField {
-                                tag: Tag::context_specific(ATTRIBUTES_TAG)?,
+                                tag: Tag::ContextSpecific(ATTRIBUTES_TAG),
                             });
                         }
                     }
@@ -119,15 +119,15 @@ impl<'a> TryFrom<der::Any<'a>> for OneAsymmetricKey<'a> {
                         if version == Version::V1 {
                             return decoder.error(der::ErrorKind::UnexpectedTag {
                                 expected: None,
-                                actual: Tag::context_specific(PUBLIC_KEY_TAG)?,
+                                actual: Tag::ContextSpecific(PUBLIC_KEY_TAG),
                             });
                         }
 
                         if public_key.is_none() {
-                            public_key = Some(field.value().bit_string()?.as_bytes())
+                            public_key = Some(field.value.bit_string()?.as_bytes())
                         } else {
                             return decoder.error(der::ErrorKind::DuplicateField {
-                                tag: Tag::context_specific(PUBLIC_KEY_TAG)?,
+                                tag: Tag::ContextSpecific(PUBLIC_KEY_TAG),
                             });
                         }
                     }
@@ -154,14 +154,17 @@ impl<'a> Message<'a> for OneAsymmetricKey<'a> {
             &u8::from(self.version()),
             &self.algorithm,
             &der::OctetString::new(self.private_key)?,
-            &self
-                .attributes
-                .map(|attrs| der::ContextSpecific::new(ATTRIBUTES_TAG, attrs))
-                .transpose()?,
+            &self.attributes.map(|value| der::ContextSpecific {
+                tag_number: ATTRIBUTES_TAG,
+                value,
+            }),
             &self
                 .public_key
                 .map(|pk| {
-                    der::ContextSpecific::new(PUBLIC_KEY_TAG, der::BitString::new(pk)?.into())
+                    der::BitString::new(pk).map(|value| der::ContextSpecific {
+                        tag_number: PUBLIC_KEY_TAG,
+                        value: value.into(),
+                    })
                 })
                 .transpose()?,
         ])
