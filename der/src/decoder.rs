@@ -1,19 +1,10 @@
 //! DER decoder.
 
-use crate::{
-    Any, BitString, Choice, ContextSpecific, Decodable, ErrorKind, GeneralizedTime, Ia5String,
-    Length, Null, OctetString, PrintableString, Result, Sequence, UtcTime, Utf8String,
-};
+use crate::{asn1::*, Choice, Decodable, ErrorKind, Length, Result};
 use core::convert::{TryFrom, TryInto};
 
 #[cfg(feature = "big-uint")]
-use {
-    crate::BigUInt,
-    typenum::{NonZero, Unsigned},
-};
-
-#[cfg(feature = "oid")]
-use crate::ObjectIdentifier;
+use typenum::{NonZero, Unsigned};
 
 /// DER decoder.
 #[derive(Debug)]

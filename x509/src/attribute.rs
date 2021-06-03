@@ -1,6 +1,9 @@
 //! X.509 Attributes
 
-use der::{Any, Message, ObjectIdentifier};
+use der::{
+    asn1::{Any, ObjectIdentifier},
+    Message,
+};
 
 /// Attribute type/value pairs as defined in [RFC 5280 Section 4.1.2.4].
 ///

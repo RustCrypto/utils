@@ -1,7 +1,10 @@
 //! Validity [`Time`] as defined in RFC 5280
 
 use core::time::Duration;
-use der::{Choice, GeneralizedTime, UtcTime};
+use der::{
+    asn1::{GeneralizedTime, UtcTime},
+    Choice,
+};
 
 /// Validity [`Time`] as defined in [RFC 5280 Section 4.1.2.5].
 ///

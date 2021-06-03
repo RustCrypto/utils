@@ -56,11 +56,11 @@ impl Asn1Type {
     /// Get a `der::Encoder` object for a particular ASN.1 type
     pub fn encoder(&self, binding: TokenStream) -> TokenStream {
         match self {
-            Asn1Type::BitString => quote!(::der::BitString::new(#binding)),
-            Asn1Type::GeneralizedTime => quote!(::der::GeneralizedTime::try_from(#binding)),
-            Asn1Type::OctetString => quote!(::der::OctetString::new(#binding)),
-            Asn1Type::PrintableString => quote!(::der::PrintableString::new(#binding)),
-            Asn1Type::UtcTime => quote!(::der::UtcTime::try_from(#binding)),
+            Asn1Type::BitString => quote!(::der::asn1::BitString::new(#binding)),
+            Asn1Type::GeneralizedTime => quote!(::der::asn1::GeneralizedTime::try_from(#binding)),
+            Asn1Type::OctetString => quote!(::der::asn1::OctetString::new(#binding)),
+            Asn1Type::PrintableString => quote!(::der::asn1::PrintableString::new(#binding)),
+            Asn1Type::UtcTime => quote!(::der::asn1::UtcTime::try_from(#binding)),
             Asn1Type::Utf8String => quote!(&::der::Utf8String::new(#binding)),
         }
     }

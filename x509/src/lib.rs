@@ -23,7 +23,7 @@ mod rdn;
 mod time;
 
 pub use crate::{attribute::AttributeTypeAndValue, rdn::RelativeDistinguishedName, time::Time};
-pub use der::{self, ObjectIdentifier};
+pub use der::{self, asn1::ObjectIdentifier};
 pub use spki::{self, AlgorithmIdentifier, SubjectPublicKeyInfo};
 
 use alloc::collections::BTreeSet as Set;

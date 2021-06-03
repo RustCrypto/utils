@@ -100,10 +100,10 @@ impl DeriveMessage {
         let encode_fields = self.encode_fields;
 
         s.gen_impl(quote! {
-            gen impl core::convert::TryFrom<der::Any<#lifetime>> for @Self {
+            gen impl core::convert::TryFrom<::der::asn1::Any<#lifetime>> for @Self {
                 type Error = ::der::Error;
 
-                fn try_from(any: ::der::Any<#lifetime>) -> ::der::Result<Self> {
+                fn try_from(any: ::der::asn1::Any<#lifetime>) -> ::der::Result<Self> {
                     #[allow(unused_imports)]
                     use core::convert::TryInto;
 

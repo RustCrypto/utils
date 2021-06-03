@@ -1,6 +1,8 @@
 //! ASN.1 `OCTET STRING` support.
 
-use crate::{Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
+use crate::{
+    asn1::Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged,
+};
 use core::convert::TryFrom;
 
 /// ASN.1 `OCTET STRING` type.

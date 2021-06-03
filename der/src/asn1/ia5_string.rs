@@ -1,7 +1,8 @@
 //! ASN.1 `IA5String` support.
 
 use crate::{
-    str_slice::StrSlice, Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged,
+    asn1::Any, str_slice::StrSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag,
+    Tagged,
 };
 use core::{convert::TryFrom, fmt, str};
 
@@ -12,7 +13,7 @@ use core::{convert::TryFrom, fmt, str};
 /// technically known as the International Reference Alphabet or IRA as
 /// specified in the ITU-T's T.50 recommendation).
 ///
-/// For UTF-8, use [`Utf8String`][`crate::Utf8String`].
+/// For UTF-8, use [`Utf8String`][`crate::asn1::Utf8String`].
 ///
 /// [International Alphabet No. 5 (IA5)]: https://en.wikipedia.org/wiki/T.50_%28standard%29
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]

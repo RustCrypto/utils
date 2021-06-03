@@ -1,13 +1,7 @@
 //! DER encoder.
 
-use crate::{
-    message, BitString, Encodable, ErrorKind, GeneralizedTime, Header, Ia5String, Length, Null,
-    OctetString, PrintableString, Result, Tag, UtcTime, Utf8String,
-};
+use crate::{asn1::*, message, Encodable, ErrorKind, Header, Length, Result, Tag};
 use core::convert::{TryFrom, TryInto};
-
-#[cfg(feature = "oid")]
-use crate::ObjectIdentifier;
 
 /// DER encoder.
 #[derive(Debug)]

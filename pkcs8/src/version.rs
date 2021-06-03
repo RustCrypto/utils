@@ -1,10 +1,11 @@
-use core::convert::{TryFrom, TryInto};
+//! PKCS#8 version identifier.
 
-use der::{Encodable, Encoder, Tagged};
+use core::convert::{TryFrom, TryInto};
+use der::{asn1::Any, Encodable, Encoder, Tag, Tagged};
 
 use crate::Error;
 
-/// Version marker for PKCS#8 documents.
+/// Version identifier for PKCS#8 documents.
 ///
 /// (RFC 5958 designates `0` and `1` as the only valid versions for PKCS#8 documents)
 #[derive(Clone, Debug, Copy, PartialEq)]
@@ -33,15 +34,12 @@ impl TryFrom<u8> for Version {
     }
 }
 
-impl<'a> TryFrom<der::Any<'a>> for Version {
+impl<'a> TryFrom<Any<'a>> for Version {
     type Error = der::Error;
-    fn try_from(any: der::Any<'a>) -> der::Result<Version> {
-        u8::try_from(any)?.try_into().map_err(|_| {
-            der::ErrorKind::Value {
-                tag: der::Tag::Integer,
-            }
-            .into()
-        })
+    fn try_from(any: Any<'a>) -> der::Result<Version> {
+        u8::try_from(any)?
+            .try_into()
+            .map_err(|_| der::ErrorKind::Value { tag: Tag::Integer }.into())
     }
 }
 
@@ -52,7 +50,6 @@ impl Encodable for Version {
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> der::Result<()> {
         der::Header::new(Self::TAG, 1u8)?.encode(encoder)?;
-
         encoder.encode(self)
     }
 }

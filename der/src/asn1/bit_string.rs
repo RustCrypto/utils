@@ -73,7 +73,7 @@ impl<'a> Tagged for BitString<'a> {
 #[cfg(test)]
 mod tests {
     use super::{BitString, Result, Tag};
-    use crate::Any;
+    use crate::asn1::Any;
     use core::convert::TryInto;
 
     /// Parse a `BitString` from an ASN.1 `Any` value to test decoding behaviors.

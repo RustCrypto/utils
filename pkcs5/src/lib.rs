@@ -31,14 +31,14 @@ extern crate alloc;
 pub mod pbes1;
 pub mod pbes2;
 
-pub use der::{self, Error, ObjectIdentifier};
+pub use der::{self, asn1::ObjectIdentifier, Error};
 pub use spki::AlgorithmIdentifier;
 
 use core::{
     convert::{TryFrom, TryInto},
     fmt,
 };
-use der::{message, Any, Encodable, Encoder, Length};
+use der::{asn1::Any, message, Encodable, Encoder, Length};
 
 #[cfg(all(feature = "alloc", feature = "pbes2"))]
 use alloc::vec::Vec;

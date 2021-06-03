@@ -38,23 +38,23 @@
 //! traits but do impl `From` and `TryInto` and `From` for one of the ASN.1 types
 //! listed below (use the ASN.1 type keywords as the `type`):
 //!
-//! - `BIT STRING`: performs an intermediate conversion to [`der::BitString`]
-//! - `GeneralizedTime`: performs an intermediate conversion to [`der::GeneralizedTime`]
-//! - `OCTET STRING`: performs an intermediate conversion to [`der::OctetString`]
-//! - `PrintableString`: performs an intermediate conversion to [`der::PrintableString`]
-//! - `UTCTime`: performs an intermediate conversion to [`der::UtcTime`]
-//! - `UTF8String`: performs an intermediate conversion to [`der::Utf8String`]
+//! - `BIT STRING`: performs an intermediate conversion to [`der::asn1::BitString`]
+//! - `GeneralizedTime`: performs an intermediate conversion to [`der::asn1::GeneralizedTime`]
+//! - `OCTET STRING`: performs an intermediate conversion to [`der::asn1::OctetString`]
+//! - `PrintableString`: performs an intermediate conversion to [`der::asn1::PrintableString`]
+//! - `UTCTime`: performs an intermediate conversion to [`der::asn1::UtcTime`]
+//! - `UTF8String`: performs an intermediate conversion to [`der::asn1::Utf8String`]
 //!
 //! Note: please open a GitHub Issue if you would like to request support
 //! for additional ASN.1 types.
 //!
 //! [`der`]: https://docs.rs/der/
-//! [`der::BitString`]: https://docs.rs/der/latest/der/struct.BitString.html
-//! [`der::GeneralizedTime`]: https://docs.rs/der/latest/der/struct.GeneralizedTime.html
-//! [`der::OctetString`]: https://docs.rs/der/latest/der/struct.OctetString.html
-//! [`der::PrintableString`]: https://docs.rs/der/latest/der/struct.PrintableString.html
-//! [`der::UtcTime`]: https://docs.rs/der/latest/der/struct.UtcTime.html
-//! [`der::Utf8String`]: https://docs.rs/der/latest/der/struct.Utf8String.html
+//! [`der::asn1::BitString`]: https://docs.rs/der/latest/der/asn1/struct.BitString.html
+//! [`der::asn1::GeneralizedTime`]: https://docs.rs/der/latest/der/asn1/struct.GeneralizedTime.html
+//! [`der::asn1::OctetString`]: https://docs.rs/der/latest/der/asn1/struct.OctetString.html
+//! [`der::asn1::PrintableString`]: https://docs.rs/der/latest/der/asn1/struct.PrintableString.html
+//! [`der::asn1::UtcTime`]: https://docs.rs/der/latest/der/asn1/struct.UtcTime.html
+//! [`der::asn1::Utf8String`]: https://docs.rs/der/latest/der/asn1/struct.Utf8String.html
 
 #![crate_type = "proc-macro"]
 #![warn(rust_2018_idioms, trivial_casts, unused_qualifications)]
@@ -124,7 +124,10 @@ decl_derive!(
     /// # Usage
     ///
     /// ```ignore
-    /// use der::{Any, Message, ObjectIdentifier};
+    /// use der::{
+    ///     asn1::{Any, ObjectIdentifier},
+    ///     Message
+    /// };
     ///
     /// /// X.509 `AlgorithmIdentifier`
     /// #[derive(Message)]

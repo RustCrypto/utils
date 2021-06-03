@@ -1,24 +1,44 @@
-//! ASN.1 types.
-//!
-//! Includes built-in ASN.1 types and helper types for modeling ASN.1 concepts.
+//! ASN.1 built-in types.
 
-pub(crate) mod any;
+mod any;
 #[cfg(feature = "big-uint")]
-pub(crate) mod big_uint;
-pub(crate) mod bit_string;
-pub(crate) mod boolean;
-pub(crate) mod choice;
-pub(crate) mod context_specific;
-pub(crate) mod generalized_time;
-pub(crate) mod ia5_string;
-pub(crate) mod integer;
-pub(crate) mod null;
-pub(crate) mod octet_string;
+mod big_uint;
+mod bit_string;
+mod boolean;
+mod context_specific;
+mod generalized_time;
+mod ia5_string;
+mod integer;
+mod null;
+mod octet_string;
 #[cfg(feature = "oid")]
-pub(crate) mod oid;
-pub(crate) mod optional;
-pub(crate) mod printable_string;
-pub(crate) mod sequence;
-pub(crate) mod set_of;
-pub(crate) mod utc_time;
-pub(crate) mod utf8_string;
+mod oid;
+mod optional;
+mod printable_string;
+mod sequence;
+mod set_of;
+mod utc_time;
+mod utf8_string;
+
+pub use self::{
+    any::Any,
+    bit_string::BitString,
+    context_specific::ContextSpecific,
+    generalized_time::GeneralizedTime,
+    ia5_string::Ia5String,
+    null::Null,
+    octet_string::OctetString,
+    printable_string::PrintableString,
+    sequence::Sequence,
+    set_of::{SetOf, SetOfRef, SetOfRefIter},
+    utc_time::UtcTime,
+    utf8_string::Utf8String,
+};
+
+#[cfg(feature = "oid")]
+#[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
+pub use const_oid::ObjectIdentifier;
+
+#[cfg(feature = "big-uint")]
+#[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
+pub use self::big_uint::BigUInt;

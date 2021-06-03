@@ -1,6 +1,8 @@
 //! ASN.1 `UTF8String` support.
 
-use crate::{str_slice::StrSlice, Any, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
+use crate::{
+    asn1::Any, str_slice::StrSlice, Encodable, Encoder, Error, Length, Result, Tag, Tagged,
+};
 use core::{convert::TryFrom, fmt, str};
 
 #[cfg(feature = "alloc")]
@@ -17,7 +19,7 @@ use alloc::{borrow::ToOwned, string::String};
 /// You are free to use [`str`][`prim@str`] instead of this type, however it's
 /// still provided for explicitness in cases where it might be ambiguous with
 /// other ASN.1 string encodings such as
-/// [`PrintableString`][`crate::PrintableString`].
+/// [`PrintableString`][`crate::asn1::PrintableString`].
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Utf8String<'a> {
     /// Inner value

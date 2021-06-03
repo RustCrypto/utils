@@ -2,7 +2,10 @@
 
 use crate::{Error, Result};
 use core::{convert::TryFrom, fmt};
-use der::{Decodable, Encodable, Message};
+use der::{
+    asn1::{Any, OctetString},
+    Decodable, Encodable, Message,
+};
 use pkcs5::EncryptionScheme;
 
 #[cfg(feature = "alloc")]
@@ -82,10 +85,10 @@ impl<'a> TryFrom<&'a [u8]> for EncryptedPrivateKeyInfo<'a> {
     }
 }
 
-impl<'a> TryFrom<der::Any<'a>> for EncryptedPrivateKeyInfo<'a> {
+impl<'a> TryFrom<Any<'a>> for EncryptedPrivateKeyInfo<'a> {
     type Error = der::Error;
 
-    fn try_from(any: der::Any<'a>) -> der::Result<EncryptedPrivateKeyInfo<'a>> {
+    fn try_from(any: Any<'a>) -> der::Result<EncryptedPrivateKeyInfo<'a>> {
         any.sequence(|decoder| {
             Ok(Self {
                 encryption_algorithm: decoder.decode()?,
@@ -102,7 +105,7 @@ impl<'a> Message<'a> for EncryptedPrivateKeyInfo<'a> {
     {
         f(&[
             &self.encryption_algorithm,
-            &der::OctetString::new(self.encrypted_data)?,
+            &OctetString::new(self.encrypted_data)?,
         ])
     }
 }

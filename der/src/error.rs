@@ -6,7 +6,7 @@ use crate::{Length, Tag};
 use core::{convert::Infallible, fmt};
 
 #[cfg(feature = "oid")]
-use crate::ObjectIdentifier;
+use crate::asn1::ObjectIdentifier;
 
 /// Result type.
 pub type Result<T> = core::result::Result<T, Error>;

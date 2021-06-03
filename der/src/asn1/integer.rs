@@ -2,7 +2,7 @@
 
 // TODO(tarcieri): add support for `i32`/`u32`
 
-use crate::{Any, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged};
+use crate::{asn1::Any, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 //

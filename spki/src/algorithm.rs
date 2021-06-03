@@ -1,7 +1,10 @@
 //! X.509 `AlgorithmIdentifier`
 
 use core::convert::{TryFrom, TryInto};
-use der::{Any, Decodable, Encodable, Error, ErrorKind, Message, ObjectIdentifier, Result};
+use der::{
+    asn1::{Any, ObjectIdentifier},
+    Decodable, Encodable, Error, ErrorKind, Message, Result,
+};
 
 /// X.509 `AlgorithmIdentifier` as defined in [RFC 5280 Section 4.1.1.2].
 ///

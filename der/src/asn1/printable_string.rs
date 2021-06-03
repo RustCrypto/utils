@@ -1,7 +1,8 @@
 //! ASN.1 `PrintableString` support.
 
 use crate::{
-    str_slice::StrSlice, Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged,
+    asn1::Any, str_slice::StrSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag,
+    Tagged,
 };
 use core::{convert::TryFrom, fmt, str};
 
@@ -9,8 +10,8 @@ use core::{convert::TryFrom, fmt, str};
 ///
 /// Supports a subset the ASCII character set (desribed below).
 ///
-/// For UTF-8, use [`Utf8String`][`crate::Utf8String`] instead. For the full
-/// ASCII character set, use [`Ia5String`][`crate::Ia5String`].
+/// For UTF-8, use [`Utf8String`][`crate::asn1::Utf8String`] instead. For the
+/// full ASCII character set, use [`Ia5String`][`crate::asn1::Ia5String`].
 ///
 /// # Supported characters
 ///

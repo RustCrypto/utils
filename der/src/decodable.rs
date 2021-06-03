@@ -1,6 +1,6 @@
 //! Trait definition for [`Decodable`].
 
-use crate::{Any, Decoder, Error, Result};
+use crate::{asn1::Any, Decoder, Error, Result};
 use core::convert::TryFrom;
 
 /// Decoding trait.
