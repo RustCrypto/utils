@@ -3,7 +3,7 @@
 
 use der::{
     asn1::{Any, BitString, ContextSpecific, OctetString},
-    Decodable, Encodable, Message, Tag, TagNumber,
+    Decodable, Encodable, Message, TagNumber,
 };
 
 use crate::{AlgorithmIdentifier, Attributes, Error, Result, Version};
@@ -95,47 +95,24 @@ impl<'a> TryFrom<Any<'a>> for OneAsymmetricKey<'a> {
             let version = Version::decode(decoder)?;
             let algorithm = decoder.decode()?;
             let private_key = decoder.octet_string()?.into();
+            let attributes = decoder.context_specific(ATTRIBUTES_TAG)?;
+            let public_key = decoder
+                .context_specific(PUBLIC_KEY_TAG)?
+                .map(|any| any.bit_string())
+                .transpose()?
+                .map(|bs| bs.as_bytes());
 
-            let mut attributes = None;
-            let mut public_key = None;
+            if (version == Version::V1 && public_key.is_some())
+                || (version == Version::V2 && public_key.is_none())
+            {
+                return decoder.error(der::ErrorKind::Value {
+                    tag: der::Tag::ContextSpecific(PUBLIC_KEY_TAG),
+                });
+            }
 
-            while let Some(field) = decoder.context_specific_optional()? {
-                match field.tag_number {
-                    ATTRIBUTES_TAG => {
-                        // Expect `attributes` before `public_key`
-                        if public_key.is_some() {
-                            return decoder.error(der::ErrorKind::UnexpectedTag {
-                                expected: None,
-                                actual: Tag::ContextSpecific(ATTRIBUTES_TAG),
-                            });
-                        }
-
-                        if attributes.is_none() {
-                            attributes = Some(field.value)
-                        } else {
-                            return decoder.error(der::ErrorKind::DuplicateField {
-                                tag: Tag::ContextSpecific(ATTRIBUTES_TAG),
-                            });
-                        }
-                    }
-                    PUBLIC_KEY_TAG => {
-                        if version == Version::V1 {
-                            return decoder.error(der::ErrorKind::UnexpectedTag {
-                                expected: None,
-                                actual: Tag::ContextSpecific(PUBLIC_KEY_TAG),
-                            });
-                        }
-
-                        if public_key.is_none() {
-                            public_key = Some(field.value.bit_string()?.as_bytes())
-                        } else {
-                            return decoder.error(der::ErrorKind::DuplicateField {
-                                tag: Tag::ContextSpecific(PUBLIC_KEY_TAG),
-                            });
-                        }
-                    }
-                    _ => (), // Ignore other context-specific fields as extensions
-                }
+            // Ignore any remaining extension fields
+            while !decoder.is_finished() {
+                decoder.decode::<ContextSpecific<'_>>()?;
             }
 
             Ok(Self {

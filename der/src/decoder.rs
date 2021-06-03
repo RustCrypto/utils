@@ -1,7 +1,10 @@
 //! DER decoder.
 
-use crate::{asn1::*, Choice, Decodable, ErrorKind, Length, Result};
-use core::convert::{TryFrom, TryInto};
+use crate::{asn1::*, Choice, Decodable, ErrorKind, Length, Result, Tag, TagNumber};
+use core::{
+    cmp::Ordering,
+    convert::{TryFrom, TryInto},
+};
 
 #[cfg(feature = "big-uint")]
 use typenum::{NonZero, Unsigned};
@@ -121,14 +124,42 @@ impl<'a> Decoder<'a> {
         self.decode()
     }
 
-    /// Attempt to decode an ASN.1 `CONTEXT-SPECIFIC` field.
-    pub fn context_specific(&mut self) -> Result<ContextSpecific<'a>> {
-        self.decode()
-    }
-
-    /// Attempt to decode an `OPTIONAL` ASN.1 `CONTEXT-SPECIFIC` field.
-    pub fn context_specific_optional(&mut self) -> Result<Option<ContextSpecific<'a>>> {
-        self.decode()
+    /// Attempt to decode an ASN.1 `CONTEXT-SPECIFIC` field with the
+    /// provided [`TagNumber`].
+    ///
+    /// This method has the following behavior which is designed to simplify
+    /// handling of extension fields, which are denoted in an ASN.1 schema
+    /// using the `...` ellipsis extension marker:
+    ///
+    /// - Skips over [`ContextSpecific`] fields with a tag number lower than
+    ///   the current one, consuming and ignoring them.
+    /// - Returns `Ok(None)` if a [`ContextSpecific`] field with a higher tag
+    ///   number is encountered. These fields are not consumed in this case,
+    ///   allowing a field with a lower tag number to be omitted, then the
+    ///   higher numbered field consumed as a follow-up.
+    /// - Returns `Ok(None)` if anything other than a [`ContextSpecific`] field
+    ///   is encountered.
+    pub fn context_specific(&mut self, tag: TagNumber) -> Result<Option<Any<'a>>> {
+        loop {
+            match self.peek().map(Tag::try_from).transpose()? {
+                Some(Tag::ContextSpecific(actual_tag)) => {
+                    match actual_tag.cmp(&tag) {
+                        Ordering::Less => {
+                            // Decode and ignore lower-numbered fields if
+                            // they parse correctly.
+                            self.decode::<ContextSpecific<'_>>()?;
+                        }
+                        Ordering::Equal => {
+                            return self
+                                .decode::<ContextSpecific<'_>>()
+                                .map(|cs| Some(cs.value))
+                        }
+                        Ordering::Greater => return Ok(None),
+                    }
+                }
+                _ => return Ok(None),
+            }
+        }
     }
 
     /// Attempt to decode an ASN.1 `GeneralizedTime`.
@@ -250,7 +281,42 @@ impl<'a> From<&'a [u8]> for Decoder<'a> {
 #[cfg(test)]
 mod tests {
     use super::Decoder;
-    use crate::{Decodable, ErrorKind, Length, Tag};
+    use crate::{Decodable, ErrorKind, Length, Tag, TagNumber};
+    use core::convert::TryFrom;
+    use hex_literal::hex;
+
+    #[test]
+    fn context_specific_with_expected_field() {
+        let tag = TagNumber::new(0);
+
+        // Empty message
+        let mut decoder = Decoder::new(&[]);
+        assert_eq!(decoder.context_specific(tag).unwrap(), None);
+
+        // Message containing a non-context-specific type
+        let mut decoder = Decoder::new(&hex!("020100"));
+        assert_eq!(decoder.context_specific(tag).unwrap(), None);
+
+        //
+        let mut decoder = Decoder::new(&hex!("A003020100"));
+        let field = decoder.context_specific(tag).unwrap().unwrap();
+        assert_eq!(u8::try_from(field).unwrap(), 0);
+    }
+
+    #[test]
+    fn context_specific_skipping_unknown_field() {
+        let tag = TagNumber::new(1);
+        let mut decoder = Decoder::new(&hex!("A003020100A103020101"));
+        let field = decoder.context_specific(tag).unwrap().unwrap();
+        assert_eq!(u8::try_from(field).unwrap(), 1);
+    }
+
+    #[test]
+    fn context_specific_returns_none_on_greater_tag_number() {
+        let tag = TagNumber::new(0);
+        let mut decoder = Decoder::new(&hex!("A103020101"));
+        assert_eq!(decoder.context_specific(tag).unwrap(), None);
+    }
 
     #[test]
     fn truncated_message() {

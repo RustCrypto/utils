@@ -15,21 +15,15 @@ fn roundtrip_ed25519_oak_der() {
         hex!("A3A7EAE3A8373830BC47E1167BC50E1DB551999651E0E2DC587623438EAC3F31");
 
     let oak = OneAsymmetricKey::try_from(ED25519_DER_V2_EXAMPLE).unwrap();
-
     assert_eq!(oak.algorithm.oid, "1.3.101.112".parse().unwrap());
     assert_eq!(oak.algorithm.parameters, None);
 
     // A3A7EAE3A8373830BC47E1167BC50E1DB551999651E0E2DC587623438EAC3F31
-
     assert_eq!(oak.private_key, PRIV_KEY);
-
     assert_eq!(oak.public_key, Some(&PUB_KEY[..]));
-
     assert_eq!(oak.version(), Version::V2);
 
     let mut slice = [0u8; ED25519_DER_V2_EXAMPLE.len()];
-
     oak.encode_to_slice(&mut slice[..]).unwrap();
-
     assert_eq!(slice, ED25519_DER_V2_EXAMPLE);
 }
