@@ -224,9 +224,6 @@ impl DeriveChoice {
 /// ASN.1 `CHOICE` alternative: one of the ASN.1 types comprising the `CHOICE`
 /// which maps to an enum variant.
 struct Alternative {
-    /// ASN.1 type for this alternative.
-    pub asn1_type: Asn1Type,
-
     /// [`Ident`] for the corresponding enum variant.
     pub ident: Ident,
 
@@ -246,7 +243,6 @@ impl Alternative {
         };
 
         let alternative = Self {
-            asn1_type,
             ident: variant.ident.clone(),
             field_type,
         };

@@ -1,10 +1,7 @@
 //! ASN.1 tags.
 
 use crate::{Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Length, Result};
-use core::{
-    convert::{TryFrom, TryInto},
-    fmt,
-};
+use core::{convert::TryFrom, fmt};
 
 /// Indicator bit for constructed form encoding (i.e. vs primitive form)
 const CONSTRUCTED_FLAG: u8 = 0b100000;
@@ -17,103 +14,69 @@ pub trait Tagged {
 
 /// ASN.1 tags.
 ///
-/// Tags are the leading byte of the Tag-Length-Value encoding used by ASN.1
-/// DER and identify the type of the subsequent value.
+/// Tags are the leading identifier octet of the Tag-Length-Value encoding
+/// used by ASN.1 DER and identify the type of the subsequent value.
+///
+/// They are described in X.690 Section 8.1.2: Identifier octets, and
+/// structured as follows:
+///
+/// ```text
+/// | Class | P/C | Tag Number |
+/// ```
+///
+/// - Bits 8/7: [`Class`]
+/// - Bit 6: primitive (0) or constructed (1)
+/// - Bits 5-1: tag number
 #[derive(Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
-#[allow(clippy::identity_op)]
 #[non_exhaustive]
-#[repr(u8)]
 pub enum Tag {
-    /// `BOOLEAN` tag.
-    Boolean = 0x01,
+    /// `BOOLEAN` tag: 0x01
+    Boolean,
 
-    /// `INTEGER` tag.
-    Integer = 0x02,
+    /// `INTEGER` tag: 0x02
+    Integer,
 
-    /// `BIT STRING` tag.
-    BitString = 0x03,
+    /// `BIT STRING` tag: 0x03
+    BitString,
 
-    /// `OCTET STRING` tag.
-    OctetString = 0x04,
+    /// `OCTET STRING` tag: 0x04
+    OctetString,
 
-    /// `NULL` tag.
-    Null = 0x05,
+    /// `NULL` tag: 0x05
+    Null,
 
-    /// `OBJECT IDENTIFIER` tag.
-    ObjectIdentifier = 0x06,
+    /// `OBJECT IDENTIFIER` tag: 0x06
+    ObjectIdentifier,
 
-    /// `UTF8String` tag.
-    Utf8String = 0x0C,
+    /// `UTF8String` tag: 0x0C
+    Utf8String,
 
-    /// `SET` and `SET OF` tag.
-    Set = 0x11,
+    /// `SEQUENCE` tag: 0x10
+    Sequence,
 
-    /// `PrintableString` tag.
-    PrintableString = 0x13,
+    /// `SET` and `SET OF` tag: 0x11
+    Set,
 
-    /// `IA5String` tag.
-    Ia5String = 0x16,
+    /// `PrintableString` tag: 0x13
+    PrintableString,
 
-    /// `UTCTime` tag.
-    UtcTime = 0x17,
+    /// `IA5String` tag: 0x16
+    Ia5String,
 
-    /// `GeneralizedTime` tag.
-    GeneralizedTime = 0x18,
+    /// `UTCTime` tag: 0x17
+    UtcTime,
 
-    /// `SEQUENCE` tag.
-    ///
-    /// Note that the universal tag number for `SEQUENCE` is technically `0x10`
-    /// however we presently only support the constructed form, which has the
-    /// 6th bit (i.e. `0x20`) set.
-    Sequence = 0x10 | CONSTRUCTED_FLAG,
+    /// `GeneralizedTime` tag: 0x18
+    GeneralizedTime,
 
-    /// Context-specific tag (0) unique to a particular structure.
-    ContextSpecific0 = 0 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+    /// Application tag.
+    Application(TagNumber),
 
-    /// Context-specific tag (1) unique to a particular structure.
-    ContextSpecific1 = 1 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+    /// Context-specific tag.
+    ContextSpecific(TagNumber),
 
-    /// Context-specific tag (2) unique to a particular structure.
-    ContextSpecific2 = 2 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (3) unique to a particular structure.
-    ContextSpecific3 = 3 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (4) unique to a particular structure.
-    ContextSpecific4 = 4 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (5) unique to a particular structure.
-    ContextSpecific5 = 5 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (6) unique to a particular structure.
-    ContextSpecific6 = 6 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (7) unique to a particular structure.
-    ContextSpecific7 = 7 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (8) unique to a particular structure.
-    ContextSpecific8 = 8 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (9) unique to a particular structure.
-    ContextSpecific9 = 9 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (10) unique to a particular structure.
-    ContextSpecific10 = 10 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (11) unique to a particular structure.
-    ContextSpecific11 = 11 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (12) unique to a particular structure.
-    ContextSpecific12 = 12 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (13) unique to a particular structure.
-    ContextSpecific13 = 13 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (14) unique to a particular structure.
-    ContextSpecific14 = 14 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
-
-    /// Context-specific tag (15) unique to a particular structure.
-    ContextSpecific15 = 15 | Class::ContextSpecific as u8 | CONSTRUCTED_FLAG,
+    /// Private tag number.
+    Private(TagNumber),
 }
 
 impl TryFrom<u8> for Tag {
@@ -133,25 +96,41 @@ impl TryFrom<u8> for Tag {
             0x16 => Ok(Tag::Ia5String),
             0x17 => Ok(Tag::UtcTime),
             0x18 => Ok(Tag::GeneralizedTime),
-            0x30 => Ok(Tag::Sequence),
-            0xA0 => Ok(Tag::ContextSpecific0),
-            0xA1 => Ok(Tag::ContextSpecific1),
-            0xA2 => Ok(Tag::ContextSpecific2),
-            0xA3 => Ok(Tag::ContextSpecific3),
-            0xA4 => Ok(Tag::ContextSpecific4),
-            0xA5 => Ok(Tag::ContextSpecific5),
-            0xA6 => Ok(Tag::ContextSpecific6),
-            0xA7 => Ok(Tag::ContextSpecific7),
-            0xA8 => Ok(Tag::ContextSpecific8),
-            0xA9 => Ok(Tag::ContextSpecific9),
-            0xAA => Ok(Tag::ContextSpecific10),
-            0xAB => Ok(Tag::ContextSpecific11),
-            0xAC => Ok(Tag::ContextSpecific12),
-            0xAD => Ok(Tag::ContextSpecific13),
-            0xAE => Ok(Tag::ContextSpecific14),
-            0xAF => Ok(Tag::ContextSpecific15),
+            0x30 => Ok(Tag::Sequence), // constructed
+            0x60..=0x7E => Ok(Tag::Application(TagNumber(byte & 0b11111))), // constructed
+            0xA0..=0xBE => Ok(Tag::ContextSpecific(TagNumber(byte & 0b11111))), // constructed
+            0xE0..=0xFE => Ok(Tag::Private(TagNumber(byte & 0b11111))), // constructed
             _ => Err(ErrorKind::UnknownTag { byte }.into()),
         }
+    }
+}
+
+impl From<Tag> for u8 {
+    fn from(tag: Tag) -> u8 {
+        match tag {
+            Tag::Boolean => 0x01,
+            Tag::Integer => 0x02,
+            Tag::BitString => 0x03,
+            Tag::OctetString => 0x04,
+            Tag::Null => 0x05,
+            Tag::ObjectIdentifier => 0x06,
+            Tag::Utf8String => 0x0C,
+            Tag::Sequence => 0x10 | CONSTRUCTED_FLAG,
+            Tag::Set => 0x11,
+            Tag::PrintableString => 0x13,
+            Tag::Ia5String => 0x16,
+            Tag::UtcTime => 0x17,
+            Tag::GeneralizedTime => 0x18,
+            Tag::Application(number) | Tag::ContextSpecific(number) | Tag::Private(number) => {
+                tag.class().octet(number, true)
+            }
+        }
+    }
+}
+
+impl From<&Tag> for u8 {
+    fn from(tag: &Tag) -> u8 {
+        u8::from(*tag)
     }
 }
 
@@ -173,64 +152,11 @@ impl Tag {
 
     /// Get the [`Class`] that corresponds to this [`Tag`].
     pub fn class(self) -> Class {
-        match self as u8 & 0b11000000 {
-            0b01000000 => Class::Application,
-            0b10000000 => Class::ContextSpecific,
-            0b11000000 => Class::Private,
-            _ => Class::Universal,
-        }
-    }
-
-    /// Get the [`Tag`] value that corresponds to a context-specific tag value
-    /// (i.e. lower 6-bits of the tag, sans leading `10` bits)
-    pub fn context_specific(tag: u8) -> Result<Tag> {
-        let byte = Class::ContextSpecific as u8 | CONSTRUCTED_FLAG | tag;
-
-        if tag < 16 {
-            byte.try_into()
-        } else {
-            Err(ErrorKind::UnknownTag { byte }.into())
-        }
-    }
-
-    /// Is this a context-specific tag?
-    pub fn is_context_specific(self) -> bool {
-        matches!(self as u8, 0xA0..=0xAF)
-    }
-
-    /// Names of ASN.1 type which corresponds to a given [`Tag`].
-    // TODO(tarcieri): move this to `Display` and consolidate "Context Specific N"?
-    pub fn type_name(self) -> &'static str {
         match self {
-            Self::Boolean => "BOOLEAN",
-            Self::Integer => "INTEGER",
-            Self::BitString => "BIT STRING",
-            Self::OctetString => "OCTET STRING",
-            Self::Null => "NULL",
-            Self::ObjectIdentifier => "OBJECT IDENTIFIER",
-            Self::Utf8String => "UTF8String",
-            Self::Set => "SET",
-            Self::PrintableString => "PrintableString",
-            Self::Ia5String => "IA5String",
-            Self::UtcTime => "UTCTime",
-            Self::GeneralizedTime => "GeneralizedTime",
-            Self::Sequence => "SEQUENCE",
-            Self::ContextSpecific0 => "Context Specific 0",
-            Self::ContextSpecific1 => "Context Specific 1",
-            Self::ContextSpecific2 => "Context Specific 2",
-            Self::ContextSpecific3 => "Context Specific 3",
-            Self::ContextSpecific4 => "Context Specific 4",
-            Self::ContextSpecific5 => "Context Specific 5",
-            Self::ContextSpecific6 => "Context Specific 6",
-            Self::ContextSpecific7 => "Context Specific 7",
-            Self::ContextSpecific8 => "Context Specific 8",
-            Self::ContextSpecific9 => "Context Specific 9",
-            Self::ContextSpecific10 => "Context Specific 10",
-            Self::ContextSpecific11 => "Context Specific 11",
-            Self::ContextSpecific12 => "Context Specific 12",
-            Self::ContextSpecific13 => "Context Specific 13",
-            Self::ContextSpecific14 => "Context Specific 14",
-            Self::ContextSpecific15 => "Context Specific 15",
+            Tag::Application(_) => Class::Application,
+            Tag::ContextSpecific(_) => Class::ContextSpecific,
+            Tag::Private(_) => Class::Private,
+            _ => Class::Universal,
         }
     }
 }
@@ -247,19 +173,97 @@ impl Encodable for Tag {
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        encoder.byte(*self as u8)
+        encoder.byte(self.into())
     }
 }
 
 impl fmt::Display for Tag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.type_name())
+        match self {
+            Tag::Boolean => f.write_str("BOOLEAN"),
+            Tag::Integer => f.write_str("INTEGER"),
+            Tag::BitString => f.write_str("BIT STRING"),
+            Tag::OctetString => f.write_str("OCTET STRING"),
+            Tag::Null => f.write_str("NULL"),
+            Tag::ObjectIdentifier => f.write_str("OBJECT IDENTIFIER"),
+            Tag::Utf8String => f.write_str("UTF8String"),
+            Tag::Set => f.write_str("SET"),
+            Tag::PrintableString => f.write_str("PrintableString"),
+            Tag::Ia5String => f.write_str("IA5String"),
+            Tag::UtcTime => f.write_str("UTCTime"),
+            Tag::GeneralizedTime => f.write_str("GeneralizedTime"),
+            Tag::Sequence => f.write_str("SEQUENCE"),
+            Tag::Application(n) => write!(f, "APPLICATION {}", n),
+            Tag::ContextSpecific(n) => write!(f, "CONTEXT-SPECIFIC {}", n),
+            Tag::Private(n) => write!(f, "PRIVATE {}", n),
+        }
     }
 }
 
 impl fmt::Debug for Tag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Tag(0x{:02x}: {})", *self as u8, self.type_name())
+        write!(f, "Tag(0x{:02x}: {})", u8::from(*self), self)
+    }
+}
+
+/// Tag numbers.
+///
+/// From X.690 Section 8.1.2.2:
+///
+/// > bits 5 to 1 shall encode the number of the tag as a binary integer with
+/// > bit 5 as the most significant bit.
+///
+/// This library supports tag numbers ranging from zero to 30 (inclusive),
+/// which can be represented as a single identifier octet.
+///
+/// Section 8.1.2.4 describes how to support multi-byte tag numbers, which are
+/// encoded by using a leading tag number of 31 (`0b11111`). This library
+/// deliberately does not support this: tag numbers greater than 30 are
+/// disallowed.
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+pub struct TagNumber(u8);
+
+impl TagNumber {
+    /// Maximum tag number supported (inclusive).
+    pub const MAX: u8 = 30;
+
+    /// Create a new tag number (const-friendly).
+    ///
+    /// Panics if the tag number is greater than [`TagNumber::MAX`]. For a fallible
+    /// conversion, use [`TryFrom`] instead.
+    #[allow(clippy::no_effect)]
+    pub const fn new(byte: u8) -> Self {
+        // TODO(tarcieri): hax! use const panic when available
+        ["tag number out of range"][(byte > Self::MAX) as usize];
+        Self(byte)
+    }
+
+    /// Get the inner value.
+    pub fn value(self) -> u8 {
+        self.0
+    }
+}
+
+impl TryFrom<u8> for TagNumber {
+    type Error = Error;
+
+    fn try_from(byte: u8) -> Result<Self> {
+        match byte {
+            0..=Self::MAX => Ok(Self(byte)),
+            _ => Err(ErrorKind::UnknownTag { byte }.into()),
+        }
+    }
+}
+
+impl From<TagNumber> for u8 {
+    fn from(tag_number: TagNumber) -> u8 {
+        tag_number.0
+    }
+}
+
+impl fmt::Display for TagNumber {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -267,17 +271,18 @@ impl fmt::Debug for Tag {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Class {
-    /// Types whose meaning is the same in all applications.
+    /// `UNIVERSAL`: built-in types whose meaning is the same in all
+    /// applications.
     Universal = 0b00000000,
 
-    /// Types whose meaning is specific to an application, such as X.500
-    /// directory services.
+    /// `APPLICATION`: types whose meaning is specific to an application,
     ///
     /// Types in two different applications may have the same
     /// application-specific tag and different meanings.
     Application = 0b01000000,
 
-    /// Types whose meaning is specific to a given structured type.
+    /// `CONTEXT-SPECIFIC`: types whose meaning is specific to a given
+    /// structured type.
     ///
     /// Context-specific tags are used to distinguish between component types
     /// with the same underlying tag within the context of a given structured
@@ -285,12 +290,31 @@ pub enum Class {
     /// the same tag and different meanings.
     ContextSpecific = 0b10000000,
 
-    /// Types whose meaning is specific to a given enterprise.
+    /// `PRIVATE`: types whose meaning is specific to a given enterprise.
     Private = 0b11000000,
+}
+
+impl Class {
+    /// Compute the identifier octet for a tag number of this class.
+    fn octet(self, number: TagNumber, constructed: bool) -> u8 {
+        self as u8 | number.0 | (constructed as u8 * CONSTRUCTED_FLAG)
+    }
+}
+
+impl fmt::Display for Class {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            Class::Universal => "UNIVERSAL",
+            Class::Application => "APPLICATION",
+            Class::ContextSpecific => "CONTEXT-SPECIFIC",
+            Class::Private => "PRIVATE",
+        })
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::TagNumber;
     use super::{Class, Tag};
 
     #[test]
@@ -309,21 +333,14 @@ mod tests {
         assert_eq!(Tag::GeneralizedTime.class(), Class::Universal);
         assert_eq!(Tag::Sequence.class(), Class::Universal);
 
-        assert_eq!(Tag::ContextSpecific0.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific1.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific2.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific3.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific4.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific5.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific6.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific7.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific8.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific9.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific10.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific11.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific12.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific13.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific14.class(), Class::ContextSpecific);
-        assert_eq!(Tag::ContextSpecific15.class(), Class::ContextSpecific);
+        for num in 0..=30 {
+            let tag_num = TagNumber::new(num);
+            assert_eq!(Tag::Application(tag_num).class(), Class::Application);
+            assert_eq!(
+                Tag::ContextSpecific(tag_num).class(),
+                Class::ContextSpecific
+            );
+            assert_eq!(Tag::Private(tag_num).class(), Class::Private);
+        }
     }
 }
