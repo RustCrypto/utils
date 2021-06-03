@@ -176,9 +176,7 @@ fn encrypt_ed25519_der_encpriv_aes256_pbkdf2_sha256() {
 #[test]
 fn encrypt_ed25519_der_encpriv_aes256_scrypt() {
     let scrypt_params = pkcs5::pbes2::Parameters::scrypt_aes256cbc(
-        14,
-        8,
-        1,
+        Default::default(),
         &hex!("E6211E2348AD69E0"),
         &hex!("9BD0A6251F2254F9FD5963887C27CF01"),
     )
