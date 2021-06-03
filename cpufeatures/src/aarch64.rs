@@ -66,21 +66,27 @@ macro_rules! __expand_check_macro {
 // Linux `expand_check_macro`
 #[cfg(target_os = "linux")]
 __expand_check_macro! {
-    ("aes",  HWCAP_AES),  // Enable AES support.
-    ("sha2", HWCAP_SHA2), // Enable SHA1 and SHA256 support.
-    ("sha3", HWCAP_SHA3), // Enable SHA512 and SHA3 support.
+    ("aes",    AES),    // Enable AES support.
+    ("crypto", CRYPTO), // Enable cryptographic instructions.
+    ("sha2",   SHA2),   // Enable SHA1 and SHA256 support.
+    ("sha3",   SHA3),   // Enable SHA512 and SHA3 support.
 }
 
-/// Linux hardware capabilities
+/// Linux hardware capabilities mapped to target features.
 ///
-/// Workaround for these being missing from certain environments (i.e. Musl)
-/// See: <https://github.com/rust-lang/libc/issues/2171>
+/// Note that LLVM target features are coarser grained than what Linux supports
+/// and imply more capabilities under each feature. This module attempts to
+/// provide that mapping accordingly.
+///
+/// See this issue for more info: <https://github.com/RustCrypto/utils/issues/395>
 #[cfg(target_os = "linux")]
 pub mod hwcaps {
-    pub const HWCAP_AES: libc::c_ulong = 1 << 3;
-    pub const HWCAP_NEON: libc::c_ulong = 1 << 12;
-    pub const HWCAP_SHA2: libc::c_ulong = 1 << 6;
-    pub const HWCAP_SHA3: libc::c_ulong = 1 << 17;
+    use libc::c_ulong;
+
+    pub const AES: c_ulong = libc::HWCAP_AES | libc::HWCAP_PMULL;
+    pub const CRYPTO: c_ulong = AES | SHA2;
+    pub const SHA2: c_ulong = libc::HWCAP_SHA2;
+    pub const SHA3: c_ulong = libc::HWCAP_SHA3 | libc::HWCAP_SHA512;
 }
 
 // macOS `check!` macro.
@@ -101,11 +107,18 @@ macro_rules! check {
     ("aes") => {
         true
     };
+    ("crypto") => {
+        true
+    };
     ("sha2") => {
         true
     };
     ("sha3") => {
-        unsafe { $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha3\0") }
+        unsafe {
+            // `sha3` target feature implies SHA-512 as well
+            $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha512\0")
+                && $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha3\0")
+        }
     };
 }
 
