@@ -13,16 +13,17 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Error {
+    /// ASN.1 DER-related errors
+    Asn1(der::Error),
+
     /// Cryptographic errors
     Crypto,
 
-    /// Decoding errors
-    Decode,
+    /// PEM encoding errors
+    #[cfg(feature = "pem")]
+    Pem,
 
-    /// Encoding errors
-    Encode,
-
-    /// General I/O errors
+    /// I/O errors
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     Io,
@@ -42,8 +43,9 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Crypto => f.write_str("PKCS#8 cryptographic error"),
-            Error::Decode => f.write_str("PKCS#8 decoding error"),
-            Error::Encode => f.write_str("PKCS#8 encoding error"),
+            Error::Asn1(err) => write!(f, "PKCS#8 ASN.1 error: {}", err),
+            #[cfg(feature = "pem")]
+            Error::Pem => f.write_str("PKCS#8 PEM error"),
             #[cfg(feature = "std")]
             Error::Io => f.write_str("I/O error"),
             #[cfg(feature = "std")]
@@ -58,8 +60,14 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {}
 
 impl From<der::Error> for Error {
-    fn from(_: der::Error) -> Error {
-        Error::Decode
+    fn from(err: der::Error) -> Error {
+        Error::Asn1(err)
+    }
+}
+
+impl From<der::ErrorKind> for Error {
+    fn from(err: der::ErrorKind) -> Error {
+        Error::Asn1(err.into())
     }
 }
 

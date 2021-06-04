@@ -39,7 +39,7 @@ impl TryFrom<u8> for Version {
         match byte {
             0 => Ok(Version::V1),
             1 => Ok(Version::V2),
-            _ => Err(Error::Decode),
+            _ => Err(der::ErrorKind::Value { tag: Tag::Integer }.into()),
         }
     }
 }

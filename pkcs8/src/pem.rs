@@ -50,8 +50,8 @@ pub(crate) fn decode(s: &str, boundary: Boundary) -> Result<Zeroizing<Vec<u8>>> 
     let s = s.trim_end();
 
     // TODO(tarcieri): handle missing newlines
-    let s = s.strip_prefix(boundary.pre).ok_or(Error::Decode)?;
-    let s = s.strip_suffix(boundary.post).ok_or(Error::Decode)?;
+    let s = s.strip_prefix(boundary.pre).ok_or(Error::Pem)?;
+    let s = s.strip_suffix(boundary.post).ok_or(Error::Pem)?;
 
     let mut s = Zeroizing::new(s.to_owned());
 
@@ -60,7 +60,7 @@ pub(crate) fn decode(s: &str, boundary: Boundary) -> Result<Zeroizing<Vec<u8>>> 
 
     Base64::decode_vec(&*s)
         .map(Zeroizing::new)
-        .map_err(|_| Error::Decode)
+        .map_err(|_| Error::Pem)
 }
 
 /// Serialize "PEM encoding" as described in RFC 7468:

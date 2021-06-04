@@ -104,6 +104,19 @@ pub struct PrivateKeyInfo<'a> {
 }
 
 impl<'a> PrivateKeyInfo<'a> {
+    /// Create a new PKCS#8 [`PrivateKeyInfo`] message.
+    ///
+    /// This is a helper method which initializes `attributes` and `public_key`
+    /// to `None`, helpful if you aren't using those.
+    pub fn new(algorithm: AlgorithmIdentifier<'a>, private_key: &'a [u8]) -> Self {
+        Self {
+            algorithm,
+            private_key,
+            attributes: None,
+            public_key: None,
+        }
+    }
+
     /// Get the PKCS#8 [`Version`] for this structure.
     ///
     /// [`Version::V1`] if `public_key` is `None`, [`Version::V2`] if `Some`.
