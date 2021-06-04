@@ -7,7 +7,6 @@ use core::convert::TryFrom;
 /// zeroes removed.
 ///
 /// Returns a byte array of the requested size containing a big endian integer.
-// TODO(tarcieri): consolidate this with the implementation in `bigint`.
 pub(crate) fn decode_slice(any: Any<'_>) -> Result<&[u8]> {
     let tag = any.tag().assert_eq(Tag::Integer)?;
     let bytes = any.as_bytes();
@@ -18,15 +17,13 @@ pub(crate) fn decode_slice(any: Any<'_>) -> Result<&[u8]> {
     // We also disallow a leading byte which would overflow a signed ASN.1
     // integer (since we're decoding an unsigned integer).
     // We expect all such cases to have a leading `0x00` byte.
-    match bytes.get(0).cloned() {
-        Some(byte) if byte >= 0x80 => Err(ErrorKind::Value { tag }.into()),
-        Some(0) => match bytes.get(1).cloned() {
-            Some(byte) if byte < 0x80 => Err(ErrorKind::Noncanonical { tag }.into()),
-            Some(_) => Ok(&bytes[1..]),
-            None => Ok(bytes),
-        },
-        Some(_) => Ok(bytes),
-        None => Err(ErrorKind::Value { tag: Tag::Integer }.into()),
+    match bytes {
+        [] => Err(ErrorKind::Noncanonical { tag }.into()),
+        [0] => Ok(bytes),
+        [0, byte, ..] if *byte < 0x80 => Err(ErrorKind::Noncanonical { tag }.into()),
+        [0, rest @ ..] => Ok(&rest),
+        [byte, ..] if *byte >= 0x80 => Err(ErrorKind::Value { tag }.into()),
+        _ => Ok(bytes),
     }
 }
 
