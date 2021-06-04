@@ -1,8 +1,6 @@
 //! ASN.1 built-in types.
 
 mod any;
-#[cfg(feature = "bigint")]
-mod bigint;
 mod bit_string;
 mod boolean;
 mod context_specific;
@@ -26,6 +24,7 @@ pub use self::{
     context_specific::ContextSpecific,
     generalized_time::GeneralizedTime,
     ia5_string::Ia5String,
+    integer::bigint::UIntBytes,
     null::Null,
     octet_string::OctetString,
     printable_string::PrintableString,
@@ -38,7 +37,3 @@ pub use self::{
 #[cfg(feature = "oid")]
 #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
 pub use const_oid::ObjectIdentifier;
-
-#[cfg(feature = "bigint")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
-pub use self::bigint::UIntBytes;

@@ -1,7 +1,8 @@
 //! ASN.1 `INTEGER` support.
 
-pub(crate) mod int;
-pub(crate) mod uint;
+pub(super) mod bigint;
+mod int;
+mod uint;
 
 use crate::{asn1::Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;

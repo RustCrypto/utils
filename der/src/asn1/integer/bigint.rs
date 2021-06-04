@@ -1,13 +1,16 @@
 //! "Big" ASN.1 `INTEGER` types.
-// TODO(tarcieri): completely replace `UIntBytes` with `crypto_bigint::UInt`
-// It should be possible to leverage the encoding logic in `asn1::integer::uint`
 
+use super::uint;
 use crate::{
-    asn1::{integer::uint, Any},
-    ByteSlice, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged,
+    asn1::Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged,
 };
-use core::convert::{TryFrom, TryInto};
-use crypto_bigint::{generic_array::GenericArray, ArrayEncoding, UInt};
+use core::convert::TryFrom;
+
+#[cfg(feature = "bigint")]
+use {
+    core::convert::TryInto,
+    crypto_bigint::{generic_array::GenericArray, ArrayEncoding, UInt},
+};
 
 /// "Big" unsigned ASN.1 `INTEGER` type.
 ///
@@ -16,13 +19,7 @@ use crypto_bigint::{generic_array::GenericArray, ArrayEncoding, UInt};
 ///
 /// Intended for use cases like very large integers that are used in
 /// cryptographic applications (e.g. keys, signatures).
-///
-/// Generic over a `Size` value (e.g. [`der::consts::U64`][`typenum::U64`]),
-/// indicating the size of an integer in bytes.
-///
-/// Currently supported sizes are 1 - 512 bytes.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd)]
-#[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
 pub struct UIntBytes<'a> {
     /// Inner value
     inner: ByteSlice<'a>,
@@ -94,6 +91,8 @@ impl<'a> Tagged for UIntBytes<'a> {
     const TAG: Tag = Tag::Integer;
 }
 
+#[cfg(feature = "bigint")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
 impl<'a, const LIMBS: usize> TryFrom<Any<'a>> for UInt<LIMBS>
 where
     UInt<LIMBS>: ArrayEncoding,
@@ -105,6 +104,8 @@ where
     }
 }
 
+#[cfg(feature = "bigint")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
 impl<'a, const LIMBS: usize> TryFrom<UIntBytes<'a>> for UInt<LIMBS>
 where
     UInt<LIMBS>: ArrayEncoding,
@@ -119,6 +120,8 @@ where
     }
 }
 
+#[cfg(feature = "bigint")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
 impl<'a, const LIMBS: usize> Encodable for UInt<LIMBS>
 where
     UInt<LIMBS>: ArrayEncoding,
@@ -135,6 +138,8 @@ where
     }
 }
 
+#[cfg(feature = "bigint")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
 impl<'a, const LIMBS: usize> Tagged for UInt<LIMBS>
 where
     UInt<LIMBS>: ArrayEncoding,
