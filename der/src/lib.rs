@@ -386,6 +386,10 @@ pub use crate::{
     tag::{Class, Tag, TagNumber, Tagged},
 };
 
+#[cfg(feature = "bigint")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
+pub use crypto_bigint as bigint;
+
 #[cfg(feature = "derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
 pub use der_derive::{Choice, Message};

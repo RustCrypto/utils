@@ -1,8 +1,8 @@
 //! ASN.1 built-in types.
 
 mod any;
-#[cfg(feature = "big-uint")]
-mod big_uint;
+#[cfg(feature = "bigint")]
+mod bigint;
 mod bit_string;
 mod boolean;
 mod context_specific;
@@ -39,6 +39,6 @@ pub use self::{
 #[cfg_attr(docsrs, doc(cfg(feature = "oid")))]
 pub use const_oid::ObjectIdentifier;
 
-#[cfg(feature = "big-uint")]
-#[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
-pub use self::big_uint::BigUInt;
+#[cfg(feature = "bigint")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
+pub use self::bigint::BigUInt;

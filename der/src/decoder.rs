@@ -6,7 +6,7 @@ use core::{
     convert::{TryFrom, TryInto},
 };
 
-#[cfg(feature = "big-uint")]
+#[cfg(feature = "bigint")]
 use typenum::{NonZero, Unsigned};
 
 /// DER decoder.
@@ -110,8 +110,8 @@ impl<'a> Decoder<'a> {
     }
 
     /// Attempt to decode an ASN.1 `INTEGER` as a [`BigUInt`].
-    #[cfg(feature = "big-uint")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
+    #[cfg(feature = "bigint")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
     pub fn big_uint<N>(&mut self) -> Result<BigUInt<'a, N>>
     where
         N: Unsigned + NonZero,
