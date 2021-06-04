@@ -6,9 +6,6 @@ use core::{
     convert::{TryFrom, TryInto},
 };
 
-#[cfg(feature = "bigint")]
-use typenum::{NonZero, Unsigned};
-
 /// DER decoder.
 #[derive(Debug)]
 pub struct Decoder<'a> {
@@ -112,10 +109,7 @@ impl<'a> Decoder<'a> {
     /// Attempt to decode an ASN.1 `INTEGER` as a [`UIntBytes`].
     #[cfg(feature = "bigint")]
     #[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
-    pub fn uint_bytes<N>(&mut self) -> Result<UIntBytes<'a, N>>
-    where
-        N: Unsigned + NonZero,
-    {
+    pub fn uint_bytes(&mut self) -> Result<UIntBytes<'a>> {
         self.decode()
     }
 
