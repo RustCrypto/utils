@@ -1,5 +1,5 @@
 //! "Big" ASN.1 `INTEGER` types.
-// TODO(tarcieri): completely replace `BigUInt` with `crypto_bigint::UInt`
+// TODO(tarcieri): completely replace `UIntBytes` with `crypto_bigint::UInt`
 // It should be possible to leverage the encoding logic in `asn1::integer::uint`
 
 use crate::{
@@ -29,7 +29,7 @@ type ByteSize<const LIMBS: usize> = <UInt<LIMBS> as ArrayEncoding>::ByteSize;
 /// Currently supported sizes are 1 - 512 bytes.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd)]
 #[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
-pub struct BigUInt<'a, N: Unsigned + NonZero> {
+pub struct UIntBytes<'a, N: Unsigned + NonZero> {
     /// Inner value
     inner: ByteSlice<'a>,
 
@@ -37,11 +37,11 @@ pub struct BigUInt<'a, N: Unsigned + NonZero> {
     size: PhantomData<N>,
 }
 
-impl<'a, N> BigUInt<'a, N>
+impl<'a, N> UIntBytes<'a, N>
 where
     N: Unsigned + NonZero,
 {
-    /// Create a new [`BigUInt`] from a byte slice.
+    /// Create a new [`UIntBytes`] from a byte slice.
     ///
     /// Slice may be less than or equal to `N` bytes.
     pub fn new(mut bytes: &'a [u8]) -> Result<Self> {
@@ -69,7 +69,7 @@ where
         self.inner.as_bytes()
     }
 
-    /// Get the length of this [`BigUInt`] in bytes.
+    /// Get the length of this [`UIntBytes`] in bytes.
     pub fn len(&self) -> Length {
         self.inner.len()
     }
@@ -90,22 +90,22 @@ where
     }
 }
 
-impl<'a, N> From<&BigUInt<'a, N>> for BigUInt<'a, N>
+impl<'a, N> From<&UIntBytes<'a, N>> for UIntBytes<'a, N>
 where
     N: Unsigned + NonZero,
 {
-    fn from(value: &BigUInt<'a, N>) -> BigUInt<'a, N> {
+    fn from(value: &UIntBytes<'a, N>) -> UIntBytes<'a, N> {
         *value
     }
 }
 
-impl<'a, N> TryFrom<Any<'a>> for BigUInt<'a, N>
+impl<'a, N> TryFrom<Any<'a>> for UIntBytes<'a, N>
 where
     N: Unsigned + NonZero,
 {
     type Error = Error;
 
-    fn try_from(any: Any<'a>) -> Result<BigUInt<'a, N>> {
+    fn try_from(any: Any<'a>) -> Result<UIntBytes<'a, N>> {
         any.tag().assert_eq(Tag::Integer)?;
         let mut bytes = any.as_bytes();
 
@@ -138,7 +138,7 @@ where
     }
 }
 
-impl<'a, N> Encodable for BigUInt<'a, N>
+impl<'a, N> Encodable for UIntBytes<'a, N>
 where
     N: Unsigned + NonZero,
 {
@@ -158,7 +158,7 @@ where
     }
 }
 
-impl<'a, N> Tagged for BigUInt<'a, N>
+impl<'a, N> Tagged for UIntBytes<'a, N>
 where
     N: Unsigned + NonZero,
 {
@@ -173,8 +173,8 @@ where
     type Error = Error;
 
     fn try_from(any: Any<'a>) -> Result<UInt<LIMBS>> {
-        // TODO(tarcieri): get rid of intermediate `BigUInt` conversion
-        let uint_bytes = BigUInt::<ByteSize<LIMBS>>::try_from(any)?;
+        // TODO(tarcieri): get rid of intermediate `UIntBytes` conversion
+        let uint_bytes = UIntBytes::<ByteSize<LIMBS>>::try_from(any)?;
         let mut array = GenericArray::default();
         let offset = array.len().saturating_sub(uint_bytes.len().try_into()?);
         array[offset..].copy_from_slice(uint_bytes.as_bytes());
@@ -190,12 +190,12 @@ where
     fn encoded_len(&self) -> Result<Length> {
         // TODO(tarcieri): more efficient length calculation
         let array = self.to_be_byte_array();
-        BigUInt::<ByteSize<LIMBS>>::new(&array)?.encoded_len()
+        UIntBytes::<ByteSize<LIMBS>>::new(&array)?.encoded_len()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
         let array = self.to_be_byte_array();
-        BigUInt::<ByteSize<LIMBS>>::new(&array)?.encode(encoder)
+        UIntBytes::<ByteSize<LIMBS>>::new(&array)?.encode(encoder)
     }
 }
 
@@ -209,7 +209,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::BigUInt;
+    use super::UIntBytes;
     use crate::{
         asn1::{integer::tests::*, Any},
         Decodable, ErrorKind, Result, Tag,
@@ -217,8 +217,8 @@ mod tests {
     use core::convert::TryInto;
 
     // TODO(tarcieri): tests for more integer sizes
-    type BigU8<'a> = BigUInt<'a, typenum::U1>;
-    type BigU16<'a> = BigUInt<'a, typenum::U2>;
+    type BigU8<'a> = UIntBytes<'a, typenum::U1>;
+    type BigU16<'a> = UIntBytes<'a, typenum::U2>;
 
     /// Parse a `BitU1` from an ASN.1 `Any` value to test decoding behaviors.
     fn parse_bigu8_from_any(bytes: &[u8]) -> Result<BigU8<'_>> {

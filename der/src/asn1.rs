@@ -41,4 +41,4 @@ pub use const_oid::ObjectIdentifier;
 
 #[cfg(feature = "bigint")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
-pub use self::bigint::BigUInt;
+pub use self::bigint::UIntBytes;

@@ -41,7 +41,6 @@
 //! The following ASN.1 types provided by this crate also impl these traits:
 //!
 //! - [`Any`]: ASN.1 `ANY`
-//! - [`BigUInt`]: ASN.1 unsigned `INTEGER` with raw access to encoded bytes
 //! - [`BitString`]: ASN.1 `BIT STRING`
 //! - [`GeneralizedTime`]: ASN.1 `GeneralizedTime`
 //! - [`Ia5String`]: ASN.1 `IA5String`
@@ -51,6 +50,7 @@
 //! - [`PrintableString`]: ASN.1 `PrintableString` (ASCII subset)
 //! - [`Sequence`]: ASN.1 `SEQUENCE`
 //! - [`SetOfRef`]: ASN.1 `SET OF`
+//! - [`UIntBytes`]: ASN.1 unsigned `INTEGER` with raw access to encoded bytes
 //! - [`UtcTime`]: ASN.1 `UTCTime`
 //! - [`Utf8String`]: ASN.1 `UTF8String`
 //!
@@ -328,7 +328,7 @@
 //! [A Warm Welcome to ASN.1 and DER]: https://letsencrypt.org/docs/a-warm-welcome-to-asn1-and-der/
 //!
 //! [`Any`]: asn1::Any
-//! [`BigUInt`]: asn1::BigUInt
+//! [`UIntBytes`]: asn1::UIntBytes
 //! [`BitString`]: asn1::BitString
 //! [`GeneralizedTime`]: asn1::GeneralizedTime
 //! [`Ia5String`]: asn1::Ia5String
