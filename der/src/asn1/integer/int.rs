@@ -1,7 +1,5 @@
 //! Support for encoding negative integers
 
-//! Unsigned integer decoders/encoders.
-
 use super::is_highest_bit_set;
 use crate::{asn1::Any, Encodable, Encoder, Header, Length, Result, Tag};
 use core::convert::TryFrom;
