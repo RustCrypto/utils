@@ -144,12 +144,12 @@ impl TryFrom<Vec<u8>> for EncryptedPrivateKeyDocument {
 
     fn try_from(mut bytes: Vec<u8>) -> Result<Self> {
         // Ensure document is well-formed
-        if EncryptedPrivateKeyInfo::try_from(bytes.as_slice()).is_ok() {
-            Ok(Self(Zeroizing::new(bytes)))
-        } else {
+        if let Err(err) = EncryptedPrivateKeyInfo::try_from(bytes.as_slice()) {
             bytes.zeroize();
-            Err(Error::Decode)
+            return Err(err);
         }
+
+        Ok(Self(Zeroizing::new(bytes)))
     }
 }
 
