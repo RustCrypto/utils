@@ -6,7 +6,7 @@ use core::convert::TryFrom;
 /// Decode an unsigned integer of the specified size.
 ///
 /// Returns a byte array of the requested size containing a big endian integer.
-// TODO(tarcieri): consolidate this with the implementation in `big_uint`.
+// TODO(tarcieri): consolidate this with the implementation in `bigint`.
 pub(crate) fn decode<const N: usize>(any: Any<'_>) -> Result<[u8; N]> {
     any.tag().assert_eq(Tag::Integer)?;
     let mut input = any.as_bytes();

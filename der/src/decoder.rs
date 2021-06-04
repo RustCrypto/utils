@@ -109,10 +109,10 @@ impl<'a> Decoder<'a> {
         self.decode()
     }
 
-    /// Attempt to decode an ASN.1 `INTEGER` as a [`BigUInt`].
+    /// Attempt to decode an ASN.1 `INTEGER` as a [`UIntBytes`].
     #[cfg(feature = "bigint")]
     #[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
-    pub fn big_uint<N>(&mut self) -> Result<BigUInt<'a, N>>
+    pub fn uint_bytes<N>(&mut self) -> Result<UIntBytes<'a, N>>
     where
         N: Unsigned + NonZero,
     {
