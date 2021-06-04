@@ -1,84 +1,63 @@
 //! ASN.1 `INTEGER` support.
 
+mod int;
 mod uint;
 
-// TODO(tarcieri): add support for `i32`, `i64`, etc
+use crate::{asn1::Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
+use core::{convert::TryFrom, mem};
 
-use crate::{asn1::Any, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged};
-use core::convert::TryFrom;
+// TODO(tarcieri): less convoluted signed integer decoding logic
+macro_rules! impl_int_encoding {
+    ($($int:ty => $uint:ty),+) => {
+        $(
+            impl TryFrom<Any<'_>> for $int {
+                type Error = Error;
 
-//
-// i8
-//
+                fn try_from(any: Any<'_>) -> Result<Self> {
+                    let result = if is_highest_bit_set(any.as_bytes()) {
+                        let neg = Self::from_be_bytes(int::decode(any)?);
+                        let pos: $int = 1 << (8 * any.as_bytes().len()).saturating_sub(1);
+                        if mem::size_of::<$int>() == any.as_bytes().len() {
+                            pos.checked_add(neg).ok_or(ErrorKind::Overflow)?
+                        } else {
+                            -(pos.checked_sub(neg).ok_or(ErrorKind::Overflow)?)
+                        }
+                    } else {
+                        Self::from_be_bytes(uint::decode(any)?)
+                    };
 
-impl TryFrom<Any<'_>> for i8 {
-    type Error = Error;
+                    // Ensure we compute the same encoded length as the original any value
+                    if any.encoded_len()? != result.encoded_len()? {
+                        return Err(ErrorKind::Noncanonical { tag: Self::TAG }.into());
+                    }
 
-    fn try_from(any: Any<'_>) -> Result<i8> {
-        let tag = any.tag().assert_eq(Tag::Integer)?;
+                    Ok(result)
+                }
+            }
 
-        match *any.as_bytes() {
-            [x] => Ok(x as i8),
-            _ => Err(ErrorKind::Length { tag }.into()),
-        }
-    }
-}
+            impl Encodable for $int {
+                fn encoded_len(&self) -> Result<Length> {
+                    if *self < 0 {
+                        int::encoded_len((*self as $uint).to_be_bytes())?.for_tlv()
+                    } else {
+                        uint::encoded_len(self.to_be_bytes())?.for_tlv()
+                    }
+                }
 
-impl Encodable for i8 {
-    fn encoded_len(&self) -> Result<Length> {
-        Length::ONE.for_tlv()
-    }
+                fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+                    if *self < 0 {
+                        int::encode(encoder, (*self as $uint).to_be_bytes())
+                    } else {
+                        uint::encode(encoder, self.to_be_bytes())
+                    }
+                }
+            }
 
-    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Header::new(Self::TAG, Length::ONE)?.encode(encoder)?;
-        encoder.byte(*self as u8)
-    }
-}
-
-impl Tagged for i8 {
-    const TAG: Tag = Tag::Integer;
-}
-
-//
-// i16
-//
-
-impl TryFrom<Any<'_>> for i16 {
-    type Error = Error;
-
-    fn try_from(any: Any<'_>) -> Result<i16> {
-        let tag = any.tag().assert_eq(Tag::Integer)?;
-
-        match *any.as_bytes() {
-            [_] => i8::try_from(any).map(|x| x as i16),
-            [0, lo] if lo < 0x80 => Err(ErrorKind::Noncanonical { tag: Self::TAG }.into()),
-            [hi, lo] => Ok(i16::from_be_bytes([hi, lo])),
-            _ => Err(ErrorKind::Length { tag }.into()),
-        }
-    }
-}
-
-impl Encodable for i16 {
-    fn encoded_len(&self) -> Result<Length> {
-        if let Ok(x) = i8::try_from(*self) {
-            return x.encoded_len();
-        }
-
-        Length::from(2u8).for_tlv()
-    }
-
-    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        if let Ok(x) = i8::try_from(*self) {
-            return x.encode(encoder);
-        }
-
-        Header::new(Self::TAG, Length::from(2u8))?.encode(encoder)?;
-        encoder.bytes(&self.to_be_bytes())
-    }
-}
-
-impl Tagged for i16 {
-    const TAG: Tag = Tag::Integer;
+            impl Tagged for $int {
+                const TAG: Tag = Tag::Integer;
+            }
+        )+
+    };
 }
 
 macro_rules! impl_uint_encoding {
@@ -101,11 +80,11 @@ macro_rules! impl_uint_encoding {
 
             impl Encodable for $uint {
                 fn encoded_len(&self) -> Result<Length> {
-                    uint::encoded_len(&self.to_be_bytes())?.for_tlv()
+                    uint::encoded_len(self.to_be_bytes())?.for_tlv()
                 }
 
                 fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-                    uint::encode(encoder, &self.to_be_bytes())
+                    uint::encode(encoder, self.to_be_bytes())
                 }
             }
 
@@ -116,7 +95,17 @@ macro_rules! impl_uint_encoding {
     };
 }
 
+impl_int_encoding!(i8 => u8, i16 => u16, i32 => u32, i64 => u64, i128 => u128);
 impl_uint_encoding!(u8, u16, u32, u64, u128);
+
+/// Is the highest bit of the first byte in the slice 1? (if present)
+#[inline]
+fn is_highest_bit_set(bytes: &[u8]) -> bool {
+    bytes
+        .get(0)
+        .map(|byte| byte & 0b10000000 != 0)
+        .unwrap_or(false)
+}
 
 #[cfg(test)]
 pub(crate) mod tests {
