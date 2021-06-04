@@ -1,7 +1,7 @@
 //! ASN.1 `INTEGER` support.
 
-mod int;
-mod uint;
+pub(crate) mod int;
+pub(crate) mod uint;
 
 use crate::{asn1::Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
@@ -14,9 +14,9 @@ macro_rules! impl_int_encoding {
 
                 fn try_from(any: Any<'_>) -> Result<Self> {
                     let result = if is_highest_bit_set(any.as_bytes()) {
-                        <$uint>::from_be_bytes(int::decode(any)?) as $int
+                        <$uint>::from_be_bytes(int::decode_array(any)?) as $int
                     } else {
-                        Self::from_be_bytes(uint::decode(any)?)
+                        Self::from_be_bytes(uint::decode_array(any)?)
                     };
 
                     // Ensure we compute the same encoded length as the original any value
@@ -31,17 +31,17 @@ macro_rules! impl_int_encoding {
             impl Encodable for $int {
                 fn encoded_len(&self) -> Result<Length> {
                     if *self < 0 {
-                        int::encoded_len((*self as $uint).to_be_bytes())?.for_tlv()
+                        int::encoded_len(&(*self as $uint).to_be_bytes())?.for_tlv()
                     } else {
-                        uint::encoded_len(self.to_be_bytes())?.for_tlv()
+                        uint::encoded_len(&self.to_be_bytes())?.for_tlv()
                     }
                 }
 
                 fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
                     if *self < 0 {
-                        int::encode(encoder, (*self as $uint).to_be_bytes())
+                        int::encode(encoder, &(*self as $uint).to_be_bytes())
                     } else {
-                        uint::encode(encoder, self.to_be_bytes())
+                        uint::encode(encoder, &self.to_be_bytes())
                     }
                 }
             }
@@ -60,7 +60,7 @@ macro_rules! impl_uint_encoding {
                 type Error = Error;
 
                 fn try_from(any: Any<'_>) -> Result<Self> {
-                    let result = Self::from_be_bytes(uint::decode(any)?);
+                    let result = Self::from_be_bytes(uint::decode_array(any)?);
 
                     // Ensure we compute the same encoded length as the original any value
                     if any.encoded_len()? != result.encoded_len()? {
@@ -73,11 +73,11 @@ macro_rules! impl_uint_encoding {
 
             impl Encodable for $uint {
                 fn encoded_len(&self) -> Result<Length> {
-                    uint::encoded_len(self.to_be_bytes())?.for_tlv()
+                    uint::encoded_len(&self.to_be_bytes())?.for_tlv()
                 }
 
                 fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-                    uint::encode(encoder, self.to_be_bytes())
+                    uint::encode(encoder, &self.to_be_bytes())
                 }
             }
 

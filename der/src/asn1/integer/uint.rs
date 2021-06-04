@@ -3,46 +3,46 @@
 use crate::{asn1::Any, Encodable, Encoder, ErrorKind, Header, Length, Result, Tag};
 use core::convert::TryFrom;
 
-/// Decode an unsigned integer of the specified size.
+/// Decode an unsigned integer into a big endian byte slice with all leading
+/// zeroes removed.
 ///
 /// Returns a byte array of the requested size containing a big endian integer.
 // TODO(tarcieri): consolidate this with the implementation in `bigint`.
-pub(crate) fn decode<const N: usize>(any: Any<'_>) -> Result<[u8; N]> {
-    any.tag().assert_eq(Tag::Integer)?;
-    let mut input = any.as_bytes();
-
-    // Disallow a leading byte which would overflow a signed ASN.1 integer
-    // (since we're decoding an unsigned integer).
-    //
-    // We expect all such cases to have a leading `0x00` byte
-    // (see comment below)
-    if let Some(byte) = input.get(0).cloned() {
-        if byte > 0x80 {
-            return Err(ErrorKind::Value { tag: Tag::Integer }.into());
-        }
-    }
+pub(crate) fn decode_slice(any: Any<'_>) -> Result<&[u8]> {
+    let tag = any.tag().assert_eq(Tag::Integer)?;
+    let bytes = any.as_bytes();
 
     // The `INTEGER` type always encodes a signed value, so for unsigned
     // values the leading `0x00` byte may need to be removed.
-    if input.len() > N {
-        if input.len().saturating_sub(1) != N {
-            return Err(ErrorKind::Length { tag: Tag::Integer }.into());
-        }
-
-        if input.get(0).cloned() != Some(0) {
-            return Err(ErrorKind::Value { tag: Tag::Integer }.into());
-        }
-
-        input = &input[1..];
+    //
+    // We also disallow a leading byte which would overflow a signed ASN.1
+    // integer (since we're decoding an unsigned integer).
+    // We expect all such cases to have a leading `0x00` byte.
+    match bytes.get(0).cloned() {
+        Some(byte) if byte >= 0x80 => Err(ErrorKind::Value { tag }.into()),
+        Some(0) => match bytes.get(1).cloned() {
+            Some(byte) if byte < 0x80 => Err(ErrorKind::Noncanonical { tag }.into()),
+            Some(_) => Ok(&bytes[1..]),
+            None => Ok(bytes),
+        },
+        Some(_) => Ok(bytes),
+        None => Err(ErrorKind::Value { tag: Tag::Integer }.into()),
     }
+}
 
+/// Decode an unsigned integer into a byte array of the requested size
+/// containing a big endian integer.
+pub(crate) fn decode_array<const N: usize>(any: Any<'_>) -> Result<[u8; N]> {
+    let input = decode_slice(any)?;
+
+    // Input has leading zeroes removed, so we need to add them back
     let mut output = [0u8; N];
     output[N.saturating_sub(input.len())..].copy_from_slice(input);
     Ok(output)
 }
 
 /// Encode the given big endian bytes representing an integer as ASN.1 DER.
-pub(crate) fn encode<const N: usize>(encoder: &mut Encoder<'_>, bytes: [u8; N]) -> Result<()> {
+pub(crate) fn encode(encoder: &mut Encoder<'_>, bytes: &[u8]) -> Result<()> {
     let bytes = strip_leading_zeroes(&bytes);
     let leading_zero = needs_leading_zero(bytes);
     let len = (Length::try_from(bytes.len())? + leading_zero as u8)?;
@@ -57,13 +57,13 @@ pub(crate) fn encode<const N: usize>(encoder: &mut Encoder<'_>, bytes: [u8; N]) 
 
 /// Get the encoded length for the given unsigned integer serialized as bytes.
 #[inline]
-pub(crate) fn encoded_len<const N: usize>(bytes: [u8; N]) -> Result<Length> {
+pub(crate) fn encoded_len(bytes: &[u8]) -> Result<Length> {
     let bytes = strip_leading_zeroes(&bytes);
     Length::try_from(bytes.len())? + needs_leading_zero(bytes) as u8
 }
 
 /// Strip the leading zeroes from the given byte slice
-fn strip_leading_zeroes(mut bytes: &[u8]) -> &[u8] {
+pub(crate) fn strip_leading_zeroes(mut bytes: &[u8]) -> &[u8] {
     while let Some((byte, rest)) = bytes.split_first() {
         if *byte == 0 && !rest.is_empty() {
             bytes = rest;
