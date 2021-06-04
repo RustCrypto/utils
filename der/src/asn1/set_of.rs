@@ -56,7 +56,6 @@ where
     /// Create a new [`SetOfRef`] from a slice.
     pub fn new(slice: &'a [u8]) -> Result<Self> {
         let inner = ByteSlice::new(slice).map_err(|_| ErrorKind::Length { tag: Self::TAG })?;
-
         let mut decoder = Decoder::new(slice);
         let mut last_value = None;
 
@@ -67,7 +66,7 @@ where
 
             if let Some(last) = last_value.as_ref() {
                 if last >= &value {
-                    return Err(ErrorKind::Noncanonical.into());
+                    return Err(ErrorKind::Noncanonical { tag: Self::TAG }.into());
                 }
             }
 
@@ -210,7 +209,7 @@ where
 
             if let Some(last) = last_value.take() {
                 if last >= value {
-                    return Err(ErrorKind::Noncanonical.into());
+                    return Err(ErrorKind::Noncanonical { tag: Self::TAG }.into());
                 }
 
                 result.insert(last);

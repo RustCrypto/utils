@@ -1,6 +1,8 @@
 //! ASN.1 `INTEGER` support.
 
-// TODO(tarcieri): add support for `i32`/`u32`
+mod uint;
+
+// TODO(tarcieri): add support for `i32`, `i64`, etc
 
 use crate::{asn1::Any, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
@@ -49,7 +51,7 @@ impl TryFrom<Any<'_>> for i16 {
 
         match *any.as_bytes() {
             [_] => i8::try_from(any).map(|x| x as i16),
-            [0, lo] if lo < 0x80 => Err(ErrorKind::Noncanonical.into()),
+            [0, lo] if lo < 0x80 => Err(ErrorKind::Noncanonical { tag: Self::TAG }.into()),
             [hi, lo] => Ok(i16::from_be_bytes([hi, lo])),
             _ => Err(ErrorKind::Length { tag }.into()),
         }
@@ -79,96 +81,42 @@ impl Tagged for i16 {
     const TAG: Tag = Tag::Integer;
 }
 
-//
-// u8
-//
+macro_rules! impl_uint_encoding {
+    ($($uint:ty),+) => {
+        $(
+            impl TryFrom<Any<'_>> for $uint {
+                type Error = Error;
 
-impl TryFrom<Any<'_>> for u8 {
-    type Error = Error;
+                fn try_from(any: Any<'_>) -> Result<Self> {
+                    let result = Self::from_be_bytes(uint::decode(any)?);
 
-    fn try_from(any: Any<'_>) -> Result<u8> {
-        let tag = any.tag().assert_eq(Tag::Integer)?;
+                    // Ensure we compute the same encoded length as the original any value
+                    if any.encoded_len()? != result.encoded_len()? {
+                        return Err(ErrorKind::Noncanonical { tag: Self::TAG }.into());
+                    }
 
-        match *any.as_bytes() {
-            [x] if x < 0x80 => Ok(x),
-            [x] if x >= 0x80 => Err(ErrorKind::Noncanonical.into()),
-            [0, x] if x < 0x80 => Err(ErrorKind::Noncanonical.into()),
-            [0, x] if x >= 0x80 => Ok(x),
-            _ => Err(ErrorKind::Length { tag }.into()),
-        }
-    }
+                    Ok(result)
+                }
+            }
+
+            impl Encodable for $uint {
+                fn encoded_len(&self) -> Result<Length> {
+                    uint::encoded_len(&self.to_be_bytes())?.for_tlv()
+                }
+
+                fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+                    uint::encode(encoder, &self.to_be_bytes())
+                }
+            }
+
+            impl Tagged for $uint {
+                const TAG: Tag = Tag::Integer;
+            }
+        )+
+    };
 }
 
-impl Encodable for u8 {
-    fn encoded_len(&self) -> Result<Length> {
-        let inner_len = if *self < 0x80 { 1u8 } else { 2u8 };
-        Length::from(inner_len).for_tlv()
-    }
-
-    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        Header::new(Self::TAG, if *self < 0x80 { 1u8 } else { 2u8 })?.encode(encoder)?;
-
-        if *self >= 0x80 {
-            encoder.byte(0)?;
-        }
-
-        encoder.byte(*self as u8)
-    }
-}
-
-impl Tagged for u8 {
-    const TAG: Tag = Tag::Integer;
-}
-
-//
-// u16
-//
-
-impl TryFrom<Any<'_>> for u16 {
-    type Error = Error;
-
-    fn try_from(any: Any<'_>) -> Result<u16> {
-        let tag = any.tag().assert_eq(Tag::Integer)?;
-
-        match *any.as_bytes() {
-            [x] if x < 0x80 => Ok(x as u16),
-            [x] if x >= 0x80 => Err(ErrorKind::Noncanonical.into()),
-            [0, x] if x < 0x80 => Err(ErrorKind::Noncanonical.into()),
-            [hi, lo] if hi < 0x80 => Ok(u16::from_be_bytes([hi, lo])),
-            [0, hi, lo] if hi >= 0x80 => Ok(u16::from_be_bytes([hi, lo])),
-            _ => Err(ErrorKind::Length { tag }.into()),
-        }
-    }
-}
-
-impl Encodable for u16 {
-    fn encoded_len(&self) -> Result<Length> {
-        if let Ok(x) = u8::try_from(*self) {
-            return x.encoded_len();
-        }
-
-        let inner_len = if *self < 0x8000 { 2u16 } else { 3u16 };
-        Length::from(inner_len).for_tlv()
-    }
-
-    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
-        if let Ok(x) = u8::try_from(*self) {
-            return x.encode(encoder);
-        }
-
-        Header::new(Self::TAG, if *self < 0x8000 { 2u16 } else { 3u16 })?.encode(encoder)?;
-
-        if *self >= 0x8000 {
-            encoder.byte(0)?;
-        }
-
-        encoder.bytes(&self.to_be_bytes())
-    }
-}
-
-impl Tagged for u16 {
-    const TAG: Tag = Tag::Integer;
-}
+impl_uint_encoding!(u8, u16, u32, u64, u128);
 
 #[cfg(test)]
 pub(crate) mod tests {

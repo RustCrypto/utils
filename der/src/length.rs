@@ -175,7 +175,7 @@ impl Decodable<'_> for Length {
                 if length.initial_octet() == Some(tag) {
                     Ok(length)
                 } else {
-                    Err(ErrorKind::Noncanonical.into())
+                    Err(ErrorKind::Overlength.into())
                 }
             }
             _ => {

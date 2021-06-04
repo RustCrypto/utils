@@ -170,7 +170,7 @@ impl<'a> Decodable<'a> for Any<'a> {
             // The first octet of a BIT STRING encodes the number of unused bits.
             // We presently constrain this to 0.
             if *byte != 0 {
-                return decoder.error(ErrorKind::Noncanonical);
+                return decoder.error(ErrorKind::Noncanonical { tag });
             }
 
             value = rest;

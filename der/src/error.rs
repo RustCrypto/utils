@@ -118,12 +118,15 @@ pub enum ErrorKind {
 
     /// Incorrect length for a given field.
     Length {
-        /// Tag type of the value being decoded.
+        /// Tag of the value being decoded.
         tag: Tag,
     },
 
     /// Message is not canonically encoded.
-    Noncanonical,
+    Noncanonical {
+        /// Tag of the value which is not canonically encoded.
+        tag: Tag,
+    },
 
     /// Malformed OID
     MalformedOid,
@@ -214,7 +217,9 @@ impl fmt::Display for ErrorKind {
             ErrorKind::DuplicateField { tag } => write!(f, "duplicate field for {}", tag),
             ErrorKind::Failed => write!(f, "operation failed"),
             ErrorKind::Length { tag } => write!(f, "incorrect length for {}", tag),
-            ErrorKind::Noncanonical => write!(f, "DER is not canonically encoded"),
+            ErrorKind::Noncanonical { tag } => {
+                write!(f, "ASN.1 {} not canonically encoded as DER", tag)
+            }
             ErrorKind::MalformedOid => write!(f, "malformed OID"),
             ErrorKind::Overflow => write!(f, "integer overflow"),
             ErrorKind::Overlength => write!(f, "DER message is too long"),
