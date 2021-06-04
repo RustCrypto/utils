@@ -16,12 +16,12 @@ impl TryFrom<Any<'_>> for bool {
     type Error = Error;
 
     fn try_from(any: Any<'_>) -> Result<bool> {
-        any.tag().assert_eq(Tag::Boolean)?;
+        let tag = any.tag().assert_eq(Tag::Boolean)?;
 
         match any.as_bytes() {
             [FALSE_OCTET] => Ok(false),
             [TRUE_OCTET] => Ok(true),
-            _ => Err(ErrorKind::Noncanonical.into()),
+            _ => Err(ErrorKind::Noncanonical { tag }.into()),
         }
     }
 }
