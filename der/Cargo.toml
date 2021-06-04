@@ -16,6 +16,7 @@ readme = "README.md"
 
 [dependencies]
 const-oid = { version = "0.6", optional = true, path = "../const-oid" }
+crypto-bigint = { version = "0.1", optional = true, features = ["generic-array"], path = "../crypto-bigint" }
 der_derive = { version = "0.3", optional = true, path = "derive" }
 typenum = { version = "1", optional = true }
 
@@ -25,7 +26,7 @@ hex-literal = "0.3"
 [features]
 alloc = []
 derive = ["der_derive"]
-big-uint = ["typenum"]
+bigint = ["crypto-bigint", "typenum"]
 oid = ["const-oid"]
 std = ["alloc"]
 

@@ -1,10 +1,19 @@
 //! "Big" ASN.1 `INTEGER` types.
+// TODO(tarcieri): completely replace `BigUInt` with `crypto_bigint::UInt`
+// It should be possible to leverage the encoding logic in `asn1::integer::uint`
 
 use crate::{
     asn1::Any, ByteSlice, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged,
 };
-use core::{convert::TryFrom, marker::PhantomData};
+use core::{
+    convert::{TryFrom, TryInto},
+    marker::PhantomData,
+};
+use crypto_bigint::{generic_array::GenericArray, ArrayEncoding, UInt};
 use typenum::{NonZero, Unsigned};
+
+/// Alias for getting the size of a [`UInt`] with the given number of limbs in bytes.
+type ByteSize<const LIMBS: usize> = <UInt<LIMBS> as ArrayEncoding>::ByteSize;
 
 /// "Big" unsigned ASN.1 `INTEGER` type.
 ///
@@ -19,7 +28,7 @@ use typenum::{NonZero, Unsigned};
 ///
 /// Currently supported sizes are 1 - 512 bytes.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd)]
-#[cfg_attr(docsrs, doc(cfg(feature = "big-uint")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "bigint")))]
 pub struct BigUInt<'a, N: Unsigned + NonZero> {
     /// Inner value
     inner: ByteSlice<'a>,
@@ -152,6 +161,48 @@ where
 impl<'a, N> Tagged for BigUInt<'a, N>
 where
     N: Unsigned + NonZero,
+{
+    const TAG: Tag = Tag::Integer;
+}
+
+impl<'a, const LIMBS: usize> TryFrom<Any<'a>> for UInt<LIMBS>
+where
+    UInt<LIMBS>: ArrayEncoding,
+    ByteSize<LIMBS>: Unsigned + NonZero,
+{
+    type Error = Error;
+
+    fn try_from(any: Any<'a>) -> Result<UInt<LIMBS>> {
+        // TODO(tarcieri): get rid of intermediate `BigUInt` conversion
+        let uint_bytes = BigUInt::<ByteSize<LIMBS>>::try_from(any)?;
+        let mut array = GenericArray::default();
+        let offset = array.len().saturating_sub(uint_bytes.len().try_into()?);
+        array[offset..].copy_from_slice(uint_bytes.as_bytes());
+        Ok(UInt::from_be_byte_array(&array))
+    }
+}
+
+impl<'a, const LIMBS: usize> Encodable for UInt<LIMBS>
+where
+    UInt<LIMBS>: ArrayEncoding,
+    ByteSize<LIMBS>: Unsigned + NonZero,
+{
+    fn encoded_len(&self) -> Result<Length> {
+        // TODO(tarcieri): more efficient length calculation
+        let array = self.to_be_byte_array();
+        BigUInt::<ByteSize<LIMBS>>::new(&array)?.encoded_len()
+    }
+
+    fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
+        let array = self.to_be_byte_array();
+        BigUInt::<ByteSize<LIMBS>>::new(&array)?.encode(encoder)
+    }
+}
+
+impl<'a, const LIMBS: usize> Tagged for UInt<LIMBS>
+where
+    UInt<LIMBS>: ArrayEncoding,
+    ByteSize<LIMBS>: Unsigned + NonZero,
 {
     const TAG: Tag = Tag::Integer;
 }
