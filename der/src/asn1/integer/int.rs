@@ -7,7 +7,7 @@ use core::convert::TryFrom;
 /// Decode an unsigned integer of the specified size.
 ///
 /// Returns a byte array of the requested size containing a big endian integer.
-pub(crate) fn decode_array<const N: usize>(any: Any<'_>) -> Result<[u8; N]> {
+pub(super) fn decode_array<const N: usize>(any: Any<'_>) -> Result<[u8; N]> {
     any.tag().assert_eq(Tag::Integer)?;
     let mut output = [0xFFu8; N];
     let offset = N.saturating_sub(any.as_bytes().len());
@@ -16,7 +16,7 @@ pub(crate) fn decode_array<const N: usize>(any: Any<'_>) -> Result<[u8; N]> {
 }
 
 /// Encode the given big endian bytes representing an integer as ASN.1 DER.
-pub(crate) fn encode(encoder: &mut Encoder<'_>, bytes: &[u8]) -> Result<()> {
+pub(super) fn encode(encoder: &mut Encoder<'_>, bytes: &[u8]) -> Result<()> {
     let bytes = strip_leading_ones(&bytes);
     let len = Length::try_from(bytes.len())?;
     Header::new(Tag::Integer, len)?.encode(encoder)?;
@@ -25,7 +25,7 @@ pub(crate) fn encode(encoder: &mut Encoder<'_>, bytes: &[u8]) -> Result<()> {
 
 /// Get the encoded length for the given unsigned integer serialized as bytes.
 #[inline]
-pub(crate) fn encoded_len(bytes: &[u8]) -> Result<Length> {
+pub(super) fn encoded_len(bytes: &[u8]) -> Result<Length> {
     Length::try_from(strip_leading_ones(&bytes).len())
 }
 
