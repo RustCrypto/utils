@@ -4,9 +4,8 @@ mod int;
 mod uint;
 
 use crate::{asn1::Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
-use core::{convert::TryFrom, mem};
+use core::convert::TryFrom;
 
-// TODO(tarcieri): less convoluted signed integer decoding logic
 macro_rules! impl_int_encoding {
     ($($int:ty => $uint:ty),+) => {
         $(
@@ -15,13 +14,7 @@ macro_rules! impl_int_encoding {
 
                 fn try_from(any: Any<'_>) -> Result<Self> {
                     let result = if is_highest_bit_set(any.as_bytes()) {
-                        let neg = Self::from_be_bytes(int::decode(any)?);
-                        let pos: $int = 1 << (8 * any.as_bytes().len()).saturating_sub(1);
-                        if mem::size_of::<$int>() == any.as_bytes().len() {
-                            pos.checked_add(neg).ok_or(ErrorKind::Overflow)?
-                        } else {
-                            -(pos.checked_sub(neg).ok_or(ErrorKind::Overflow)?)
-                        }
+                        <$uint>::from_be_bytes(int::decode(any)?) as $int
                     } else {
                         Self::from_be_bytes(uint::decode(any)?)
                     };

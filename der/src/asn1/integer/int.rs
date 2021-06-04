@@ -11,10 +11,9 @@ use core::convert::TryFrom;
 /// Returns a byte array of the requested size containing a big endian integer.
 pub(crate) fn decode<const N: usize>(any: Any<'_>) -> Result<[u8; N]> {
     any.tag().assert_eq(Tag::Integer)?;
-    let mut output = [0u8; N];
+    let mut output = [0xFFu8; N];
     let offset = N.saturating_sub(any.as_bytes().len());
     output[offset..].copy_from_slice(any.as_bytes());
-    output[offset] &= 0b1111111;
     Ok(output)
 }
 
