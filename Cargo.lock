@@ -225,6 +225,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "pkcs1"
+version = "0.0.0"
+dependencies = [
+ "crypto-bigint",
+ "der",
+ "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "pkcs5"
 version = "0.3.0-pre"
 dependencies = [

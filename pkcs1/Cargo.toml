@@ -1,0 +1,29 @@
+[package]
+name = "pkcs1"
+version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
+description = """
+Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #1:
+RSA Cryptography Specifications Version 2.2 (RFC 8017)
+"""
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+edition = "2018"
+repository = "https://github.com/RustCrypto/utils/tree/master/pkcs1"
+categories = ["cryptography", "data-structures", "encoding", "no-std"]
+keywords = ["crypto", "key", "pkcs", "rsa"]
+readme = "README.md"
+
+[dependencies]
+crypto-bigint = { version = "0.1", path = "../crypto-bigint" }
+der = { version = "=0.4.0-pre", features = ["bigint", "oid"], path = "../der" }
+
+[dev-dependencies]
+hex-literal = "0.3"
+
+[features]
+alloc = ["der/alloc"]
+std = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
