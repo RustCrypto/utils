@@ -5,7 +5,7 @@
 // Copyright (c) 2016 The humantime Developers
 // Released under the MIT OR Apache 2.0 licenses
 
-use crate::{Encoder, ErrorKind, Result, Tag};
+use crate::{Encoder, Result, Tag};
 use core::time::Duration;
 
 /// Minimum year allowed in [`DateTime`] values.
@@ -20,7 +20,7 @@ pub(crate) fn decode_decimal(tag: Tag, hi: u8, lo: u8) -> Result<u16> {
     if (b'0'..=b'9').contains(&hi) && (b'0'..=b'9').contains(&lo) {
         Ok((hi - b'0') as u16 * 10 + (lo - b'0') as u16)
     } else {
-        Err(ErrorKind::Value { tag }.into())
+        Err(tag.value_error())
     }
 }
 
@@ -29,7 +29,7 @@ pub(crate) fn encode_decimal(encoder: &mut Encoder<'_>, tag: Tag, value: u16) ->
     let hi_val = value / 10;
 
     if hi_val >= 10 {
-        return Err(ErrorKind::Value { tag }.into());
+        return Err(tag.value_error());
     }
 
     encoder.byte(hi_val as u8 + b'0')?;

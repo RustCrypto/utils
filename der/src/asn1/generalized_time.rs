@@ -3,7 +3,7 @@
 use crate::{
     asn1::Any,
     datetime::{self, DateTime},
-    Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged,
+    Encodable, Encoder, Error, Header, Length, Result, Tag, Tagged,
 };
 use core::{convert::TryFrom, time::Duration};
 
@@ -37,10 +37,7 @@ impl GeneralizedTime {
         if unix_duration < MAX_UNIX_DURATION {
             Ok(Self(unix_duration))
         } else {
-            Err(ErrorKind::Value {
-                tag: Tag::GeneralizedTime,
-            }
-            .into())
+            Err(Self::TAG.value_error())
         }
     }
 
@@ -54,12 +51,7 @@ impl GeneralizedTime {
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     pub fn from_system_time(time: SystemTime) -> Result<Self> {
         time.duration_since(UNIX_EPOCH)
-            .map_err(|_| {
-                ErrorKind::Value {
-                    tag: Tag::GeneralizedTime,
-                }
-                .into()
-            })
+            .map_err(|_| Self::TAG.value_error())
             .and_then(Self::new)
     }
 
@@ -104,18 +96,10 @@ impl TryFrom<Any<'_>> for GeneralizedTime {
 
                 DateTime::new(year, month, day, hour, minute, second)
                     .and_then(|dt| dt.unix_duration())
-                    .ok_or_else(|| {
-                        ErrorKind::Value {
-                            tag: Tag::GeneralizedTime,
-                        }
-                        .into()
-                    })
+                    .ok_or_else(|| Self::TAG.value_error())
                     .and_then(Self::new)
             }
-            _ => Err(ErrorKind::Value {
-                tag: Tag::GeneralizedTime,
-            }
-            .into()),
+            _ => Err(Self::TAG.value_error()),
         }
     }
 }
@@ -129,7 +113,7 @@ impl Encodable for GeneralizedTime {
         Header::new(Self::TAG, Self::LENGTH)?.encode(encoder)?;
 
         let datetime =
-            DateTime::from_unix_duration(self.0).ok_or(ErrorKind::Value { tag: Self::TAG })?;
+            DateTime::from_unix_duration(self.0).ok_or_else(|| Self::TAG.value_error())?;
 
         let year_hi = datetime.year() / 100;
         let year_lo = datetime.year() % 100;

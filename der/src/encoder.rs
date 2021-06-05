@@ -1,6 +1,6 @@
 //! DER encoder.
 
-use crate::{asn1::*, message, Encodable, ErrorKind, Header, Length, Result, Tag};
+use crate::{asn1::*, message, Encodable, Error, ErrorKind, Header, Length, Result, Tag};
 use core::convert::{TryFrom, TryInto};
 
 /// DER encoder.
@@ -36,9 +36,17 @@ impl<'a> Encoder<'a> {
 
     /// Return an error with the given [`ErrorKind`], annotating it with
     /// context about where the error occurred.
+    // TODO(tarcieri): change return type to `Error`
     pub fn error<T>(&mut self, kind: ErrorKind) -> Result<T> {
         self.bytes.take();
         Err(kind.at(self.position))
+    }
+
+    /// Return an error for an invalid value with the given tag.
+    // TODO(tarcieri): compose this with `Encoder::error` after changing its return type
+    pub fn value_error(&mut self, tag: Tag) -> Error {
+        self.bytes.take();
+        tag.value_error().kind().at(self.position)
     }
 
     /// Did the decoding operation fail due to an error?
@@ -62,11 +70,7 @@ impl<'a> Encoder<'a> {
     pub fn bit_string(&mut self, value: impl TryInto<BitString<'a>>) -> Result<()> {
         value
             .try_into()
-            .or_else(|_| {
-                self.error(ErrorKind::Value {
-                    tag: Tag::BitString,
-                })
-            })
+            .map_err(|_| self.value_error(Tag::BitString))
             .and_then(|value| self.encode(&value))
     }
 
@@ -74,11 +78,7 @@ impl<'a> Encoder<'a> {
     pub fn generalized_time(&mut self, value: impl TryInto<GeneralizedTime>) -> Result<()> {
         value
             .try_into()
-            .or_else(|_| {
-                self.error(ErrorKind::Value {
-                    tag: Tag::GeneralizedTime,
-                })
-            })
+            .map_err(|_| self.value_error(Tag::GeneralizedTime))
             .and_then(|value| self.encode(&value))
     }
 
@@ -86,11 +86,7 @@ impl<'a> Encoder<'a> {
     pub fn ia5_string(&mut self, value: impl TryInto<Ia5String<'a>>) -> Result<()> {
         value
             .try_into()
-            .or_else(|_| {
-                self.error(ErrorKind::Value {
-                    tag: Tag::Ia5String,
-                })
-            })
+            .map_err(|_| self.value_error(Tag::Ia5String))
             .and_then(|value| self.encode(&value))
     }
 
@@ -117,11 +113,7 @@ impl<'a> Encoder<'a> {
     pub fn octet_string(&mut self, value: impl TryInto<OctetString<'a>>) -> Result<()> {
         value
             .try_into()
-            .or_else(|_| {
-                self.error(ErrorKind::Value {
-                    tag: Tag::OctetString,
-                })
-            })
+            .map_err(|_| self.value_error(Tag::OctetString))
             .and_then(|value| self.encode(&value))
     }
 
@@ -131,11 +123,7 @@ impl<'a> Encoder<'a> {
     pub fn oid(&mut self, value: impl TryInto<ObjectIdentifier>) -> Result<()> {
         value
             .try_into()
-            .or_else(|_| {
-                self.error(ErrorKind::Value {
-                    tag: Tag::ObjectIdentifier,
-                })
-            })
+            .map_err(|_| self.value_error(Tag::ObjectIdentifier))
             .and_then(|value| self.encode(&value))
     }
 
@@ -143,11 +131,7 @@ impl<'a> Encoder<'a> {
     pub fn printable_string(&mut self, value: impl TryInto<PrintableString<'a>>) -> Result<()> {
         value
             .try_into()
-            .or_else(|_| {
-                self.error(ErrorKind::Value {
-                    tag: Tag::PrintableString,
-                })
-            })
+            .map_err(|_| self.value_error(Tag::PrintableString))
             .and_then(|value| self.encode(&value))
     }
 
@@ -175,7 +159,7 @@ impl<'a> Encoder<'a> {
     pub fn utc_time(&mut self, value: impl TryInto<UtcTime>) -> Result<()> {
         value
             .try_into()
-            .or_else(|_| self.error(ErrorKind::Value { tag: Tag::UtcTime }))
+            .map_err(|_| self.value_error(Tag::UtcTime))
             .and_then(|value| self.encode(&value))
     }
 
@@ -183,11 +167,7 @@ impl<'a> Encoder<'a> {
     pub fn utf8_string(&mut self, value: impl TryInto<Utf8String<'a>>) -> Result<()> {
         value
             .try_into()
-            .or_else(|_| {
-                self.error(ErrorKind::Value {
-                    tag: Tag::Utf8String,
-                })
-            })
+            .map_err(|_| self.value_error(Tag::Utf8String))
             .and_then(|value| self.encode(&value))
     }
 

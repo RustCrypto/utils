@@ -266,9 +266,7 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for EncryptionScheme<'a> {
             .octet_string()?
             .as_bytes()
             .try_into()
-            .map_err(|_| ErrorKind::Value {
-                tag: der::Tag::OctetString,
-            })?;
+            .map_err(|_| der::Tag::OctetString.value_error())?;
 
         match alg.oid {
             AES_128_CBC_OID => Ok(Self::Aes128Cbc { iv }),

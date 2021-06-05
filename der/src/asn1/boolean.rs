@@ -1,6 +1,6 @@
 //! ASN.1 `BOOLEAN` support.
 
-use crate::{asn1::Any, Encodable, Encoder, Error, ErrorKind, Header, Length, Result, Tag, Tagged};
+use crate::{asn1::Any, Encodable, Encoder, Error, Header, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 /// Byte used to encode `true` in ASN.1 DER. From X.690 Section 11.1:
@@ -21,7 +21,7 @@ impl TryFrom<Any<'_>> for bool {
         match any.as_bytes() {
             [FALSE_OCTET] => Ok(false),
             [TRUE_OCTET] => Ok(true),
-            _ => Err(ErrorKind::Noncanonical { tag }.into()),
+            _ => Err(tag.non_canonical_error()),
         }
     }
 }

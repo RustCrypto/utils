@@ -66,7 +66,7 @@ where
 
             if let Some(last) = last_value.as_ref() {
                 if last >= &value {
-                    return Err(ErrorKind::Noncanonical { tag: Self::TAG }.into());
+                    return Err(Self::TAG.non_canonical_error());
                 }
             }
 
@@ -209,7 +209,7 @@ where
 
             if let Some(last) = last_value.take() {
                 if last >= value {
-                    return Err(ErrorKind::Noncanonical { tag: Self::TAG }.into());
+                    return Err(Self::TAG.non_canonical_error());
                 }
 
                 result.insert(last);

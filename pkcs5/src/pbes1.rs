@@ -80,19 +80,15 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Parameters {
 
     fn try_from(alg: AlgorithmIdentifier<'a>) -> Result<Self> {
         // Ensure that we have a supported PBES1 algorithm identifier
-        let encryption = EncryptionScheme::try_from(alg.oid).map_err(|_| ErrorKind::Value {
-            tag: der::Tag::ObjectIdentifier,
-        })?;
+        let encryption = EncryptionScheme::try_from(alg.oid)
+            .map_err(|_| der::Tag::ObjectIdentifier.value_error())?;
 
         alg.parameters_any()?.sequence(|params| {
-            let salt =
-                params
-                    .octet_string()?
-                    .as_bytes()
-                    .try_into()
-                    .map_err(|_| ErrorKind::Value {
-                        tag: der::Tag::OctetString,
-                    })?;
+            let salt = params
+                .octet_string()?
+                .as_bytes()
+                .try_into()
+                .map_err(|_| der::Tag::OctetString.value_error())?;
 
             let iteration_count = params.decode()?;
 

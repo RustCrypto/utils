@@ -1,6 +1,6 @@
 //! DER decoder.
 
-use crate::{asn1::*, Choice, Decodable, ErrorKind, Length, Result, Tag, TagNumber};
+use crate::{asn1::*, Choice, Decodable, Error, ErrorKind, Length, Result, Tag, TagNumber};
 use core::{
     cmp::Ordering,
     convert::{TryFrom, TryInto},
@@ -42,9 +42,17 @@ impl<'a> Decoder<'a> {
 
     /// Return an error with the given [`ErrorKind`], annotating it with
     /// context about where the error occurred.
+    // TODO(tarcieri): change return type to `Error`
     pub fn error<T>(&mut self, kind: ErrorKind) -> Result<T> {
         self.bytes.take();
         Err(kind.at(self.position))
+    }
+
+    /// Return an error for an invalid value with the given tag.
+    // TODO(tarcieri): compose this with `Decoder::error` after changing its return type
+    pub fn value_error(&mut self, tag: Tag) -> Error {
+        self.bytes.take();
+        tag.value_error().kind().at(self.position)
     }
 
     /// Did the decoding operation fail due to an error?

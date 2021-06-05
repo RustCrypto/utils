@@ -2,6 +2,9 @@
 
 use core::fmt;
 
+/// Result type
+pub type Result<T> = core::result::Result<T, Error>;
+
 /// Error type
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Error;
@@ -14,6 +17,3 @@ impl fmt::Display for Error {
 
 #[cfg(feature = "std")]
 impl std::error::Error for Error {}
-
-/// Result type
-pub type Result<T> = core::result::Result<T, Error>;

@@ -39,7 +39,7 @@ impl TryFrom<u8> for Version {
         match byte {
             0 => Ok(Version::V1),
             1 => Ok(Version::V2),
-            _ => Err(der::ErrorKind::Value { tag: Tag::Integer }.into()),
+            _ => Err(Self::TAG.value_error().into()),
         }
     }
 }
@@ -49,7 +49,7 @@ impl<'a> TryFrom<Any<'a>> for Version {
     fn try_from(any: Any<'a>) -> der::Result<Version> {
         u8::try_from(any)?
             .try_into()
-            .map_err(|_| der::ErrorKind::Value { tag: Tag::Integer }.into())
+            .map_err(|_| Self::TAG.value_error())
     }
 }
 
@@ -65,5 +65,5 @@ impl Encodable for Version {
 }
 
 impl Tagged for Version {
-    const TAG: der::Tag = der::Tag::Integer;
+    const TAG: Tag = Tag::Integer;
 }
