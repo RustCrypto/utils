@@ -4,7 +4,7 @@ pub(super) mod bigint;
 mod int;
 mod uint;
 
-use crate::{asn1::Any, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag, Tagged};
+use crate::{asn1::Any, Encodable, Encoder, Error, Length, Result, Tag, Tagged};
 use core::convert::TryFrom;
 
 macro_rules! impl_int_encoding {
@@ -22,7 +22,7 @@ macro_rules! impl_int_encoding {
 
                     // Ensure we compute the same encoded length as the original any value
                     if any.encoded_len()? != result.encoded_len()? {
-                        return Err(ErrorKind::Noncanonical { tag: Self::TAG }.into());
+                        return Err(Self::TAG.non_canonical_error());
                     }
 
                     Ok(result)
@@ -65,7 +65,7 @@ macro_rules! impl_uint_encoding {
 
                     // Ensure we compute the same encoded length as the original any value
                     if any.encoded_len()? != result.encoded_len()? {
-                        return Err(ErrorKind::Noncanonical { tag: Self::TAG }.into());
+                        return Err(Self::TAG.non_canonical_error());
                     }
 
                     Ok(result)

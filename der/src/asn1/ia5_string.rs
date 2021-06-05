@@ -1,8 +1,7 @@
 //! ASN.1 `IA5String` support.
 
 use crate::{
-    asn1::Any, str_slice::StrSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag,
-    Tagged,
+    asn1::Any, str_slice::StrSlice, Encodable, Encoder, Error, Length, Result, Tag, Tagged,
 };
 use core::{convert::TryFrom, fmt, str};
 
@@ -32,12 +31,12 @@ impl<'a> Ia5String<'a> {
 
         // Validate all characters are within IA5String's allowed set
         if input.iter().any(|&c| c > 0x7F) {
-            return Err(ErrorKind::Value { tag: Self::TAG }.into());
+            return Err(Self::TAG.value_error());
         }
 
         StrSlice::from_bytes(input)
             .map(|inner| Self { inner })
-            .map_err(|_| ErrorKind::Value { tag: Self::TAG }.into())
+            .map_err(|_| Self::TAG.value_error())
     }
 
     /// Borrow the string as a `str`.

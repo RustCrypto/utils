@@ -1,6 +1,6 @@
 //! Unsigned integer decoders/encoders.
 
-use crate::{asn1::Any, Encodable, Encoder, ErrorKind, Header, Length, Result, Tag};
+use crate::{asn1::Any, Encodable, Encoder, Header, Length, Result, Tag};
 use core::convert::TryFrom;
 
 /// Decode an unsigned integer into a big endian byte slice with all leading
@@ -18,11 +18,11 @@ pub(super) fn decode_slice(any: Any<'_>) -> Result<&[u8]> {
     // integer (since we're decoding an unsigned integer).
     // We expect all such cases to have a leading `0x00` byte.
     match bytes {
-        [] => Err(ErrorKind::Noncanonical { tag }.into()),
+        [] => Err(tag.non_canonical_error()),
         [0] => Ok(bytes),
-        [0, byte, ..] if *byte < 0x80 => Err(ErrorKind::Noncanonical { tag }.into()),
+        [0, byte, ..] if *byte < 0x80 => Err(tag.non_canonical_error()),
         [0, rest @ ..] => Ok(&rest),
-        [byte, ..] if *byte >= 0x80 => Err(ErrorKind::Value { tag }.into()),
+        [byte, ..] if *byte >= 0x80 => Err(tag.value_error()),
         _ => Ok(bytes),
     }
 }

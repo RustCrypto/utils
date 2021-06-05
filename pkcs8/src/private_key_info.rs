@@ -190,9 +190,7 @@ impl<'a> TryFrom<Any<'a>> for PrivateKeyInfo<'a> {
                 .map(|bs| bs.as_bytes());
 
             if version.has_public_key() != public_key.is_some() {
-                return decoder.error(der::ErrorKind::Value {
-                    tag: der::Tag::ContextSpecific(PUBLIC_KEY_TAG),
-                });
+                return Err(decoder.value_error(der::Tag::ContextSpecific(PUBLIC_KEY_TAG)));
             }
 
             // Ignore any remaining extension fields

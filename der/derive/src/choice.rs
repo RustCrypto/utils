@@ -101,11 +101,10 @@ impl DeriveChoice {
 
         {
             quote! {
-                #tag => {
-                    #decoder.ok().and_then(|val| val.try_into().ok()).ok_or_else(|| {
-                        ::der::ErrorKind::Value { tag: #tag }.into()
-                    })
-                }
+                #tag => #decoder
+                    .ok()
+                    .and_then(|val| val.try_into().ok())
+                    .ok_or_else(|| #tag.value_error()),
             }
         }
         .to_tokens(&mut self.decode_body);

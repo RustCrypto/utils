@@ -258,7 +258,7 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Pbkdf2Prf {
         if let Some(params) = alg.parameters {
             // TODO(tarcieri): support non-NULL parameters?
             if !params.is_null() {
-                return Err(ErrorKind::Value { tag: params.tag() }.into());
+                return Err(params.tag().value_error());
             }
         } else {
             // TODO(tarcieri): support OPTIONAL parameters?

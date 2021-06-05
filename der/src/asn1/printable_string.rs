@@ -1,8 +1,7 @@
 //! ASN.1 `PrintableString` support.
 
 use crate::{
-    asn1::Any, str_slice::StrSlice, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag,
-    Tagged,
+    asn1::Any, str_slice::StrSlice, Encodable, Encoder, Error, Length, Result, Tag, Tagged,
 };
 use core::{convert::TryFrom, fmt, str};
 
@@ -64,13 +63,13 @@ impl<'a> PrintableString<'a> {
                 | b':'
                 | b'='
                 | b'?' => (),
-                _ => return Err(ErrorKind::Value { tag: Self::TAG }.into()),
+                _ => return Err(Self::TAG.value_error()),
             }
         }
 
         StrSlice::from_bytes(input)
             .map(|inner| Self { inner })
-            .map_err(|_| ErrorKind::Value { tag: Self::TAG }.into())
+            .map_err(|_| Self::TAG.value_error())
     }
 
     /// Borrow the string as a `str`.

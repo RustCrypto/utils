@@ -106,6 +106,18 @@ impl Tag {
             }
         }
     }
+
+    /// Create an [`Error`] for an non-canonical value with the ASN.1 type
+    /// identified by this tag.
+    pub fn non_canonical_error(self) -> Error {
+        ErrorKind::Value { tag: self }.into()
+    }
+
+    /// Create an [`Error`] for an invalid value with the ASN.1 type identified
+    /// by this tag.
+    pub fn value_error(self) -> Error {
+        ErrorKind::Value { tag: self }.into()
+    }
 }
 
 impl TryFrom<u8> for Tag {
