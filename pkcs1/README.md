@@ -1,4 +1,4 @@
-# RustCrypto: PKCS#8 (Private Keys)
+# RustCrypto: PKCS#1 (RSA)
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -7,8 +7,8 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #8:
-Private-Key Information Syntax Specification ([RFC 5208]).
+Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #1:
+RSA Cryptography Specifications Version 2.2 ([RFC 8017]).
 
 [Documentation][docs-link]
 
@@ -29,17 +29,17 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/pkcs8.svg
-[crate-link]: https://crates.io/crates/pkcs8
-[docs-image]: https://docs.rs/pkcs8/badge.svg
-[docs-link]: https://docs.rs/pkcs8/
+[crate-image]: https://img.shields.io/crates/v/pkcs1.svg
+[crate-link]: https://crates.io/crates/pkcs1
+[docs-image]: https://docs.rs/pkcs1/badge.svg
+[docs-link]: https://docs.rs/pkcs1/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.51+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
-[build-image]: https://github.com/RustCrypto/utils/workflows/pkcs8/badge.svg?branch=master&event=push
+[build-image]: https://github.com/RustCrypto/utils/workflows/pkcs1/badge.svg?branch=master&event=push
 [build-link]: https://github.com/RustCrypto/utils/actions
 
 [//]: # (general links)
 
-[RFC 5208]: https://tools.ietf.org/html/rfc5208
+[RFC 8017]: https://datatracker.ietf.org/doc/html/rfc8017
