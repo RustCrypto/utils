@@ -72,7 +72,7 @@ impl<'a> TryFrom<Any<'a>> for UIntBytes<'a> {
 
 impl<'a> Encodable for UIntBytes<'a> {
     fn encoded_len(&self) -> Result<Length> {
-        uint::encoded_len(self.inner.as_bytes())
+        self.inner_len()?.for_tlv()
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> Result<()> {
@@ -152,7 +152,7 @@ mod tests {
     use super::UIntBytes;
     use crate::{
         asn1::{integer::tests::*, Any},
-        Decodable, ErrorKind, Tag,
+        Decodable, Encodable, Encoder, ErrorKind, Tag,
     };
     use core::convert::TryFrom;
 
@@ -172,6 +172,27 @@ mod tests {
             &[0x7F, 0xFF],
             UIntBytes::from_der(I32767_BYTES).unwrap().as_bytes()
         );
+    }
+
+    #[test]
+    fn encode_uint_bytes() {
+        for &example in &[
+            I0_BYTES,
+            I127_BYTES,
+            I128_BYTES,
+            I255_BYTES,
+            I256_BYTES,
+            I32767_BYTES,
+        ] {
+            let uint = UIntBytes::from_der(example).unwrap();
+
+            let mut buf = [0u8; 128];
+            let mut encoder = Encoder::new(&mut buf);
+            uint.encode(&mut encoder).unwrap();
+
+            let result = encoder.finish().unwrap();
+            assert_eq!(example, result);
+        }
     }
 
     #[test]
