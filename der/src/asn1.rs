@@ -28,7 +28,7 @@ pub use self::{
     null::Null,
     octet_string::OctetString,
     printable_string::PrintableString,
-    sequence::Sequence,
+    sequence::{iter::SequenceIter, Sequence},
     set_of::{SetOf, SetOfRef, SetOfRefIter},
     utc_time::UtcTime,
     utf8_string::Utf8String,

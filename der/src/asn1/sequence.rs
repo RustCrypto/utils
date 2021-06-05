@@ -1,8 +1,11 @@
 //! ASN.1 `SEQUENCE` support.
 
+pub(super) mod iter;
+
+use self::iter::SequenceIter;
 use crate::{
-    asn1::Any, ByteSlice, Decoder, Encodable, Encoder, Error, ErrorKind, Length, Result, Tag,
-    Tagged,
+    asn1::Any, ByteSlice, Decodable, Decoder, Encodable, Encoder, Error, ErrorKind, Length, Result,
+    Tag, Tagged,
 };
 use core::convert::TryFrom;
 
@@ -36,6 +39,11 @@ impl<'a> Sequence<'a> {
         let mut seq_decoder = Decoder::new(self.as_bytes());
         let result = f(&mut seq_decoder)?;
         seq_decoder.finish(result)
+    }
+
+    /// Iterate over the values in a heterogenously typed sequence.
+    pub fn iter<T: Decodable<'a>>(&self) -> SequenceIter<'a, T> {
+        SequenceIter::new(Decoder::new(self.as_bytes()))
     }
 }
 

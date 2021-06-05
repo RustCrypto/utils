@@ -1,8 +1,9 @@
+//! Class of an ASN.1 tag.
+
 use super::{TagNumber, CONSTRUCTED_FLAG};
-/// Class of an ASN.1 [`Tag`].
 use core::fmt;
 
-/// Class of an ASN.1 [`Tag`].
+/// Class of an ASN.1 tag.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Class {
