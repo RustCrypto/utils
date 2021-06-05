@@ -84,6 +84,30 @@ pub enum Tag {
     Private(TagNumber),
 }
 
+impl Tag {
+    /// Get the octet encoding for this [`Tag`].
+    pub fn octet(self) -> u8 {
+        match self {
+            Tag::Boolean => 0x01,
+            Tag::Integer => 0x02,
+            Tag::BitString => 0x03,
+            Tag::OctetString => 0x04,
+            Tag::Null => 0x05,
+            Tag::ObjectIdentifier => 0x06,
+            Tag::Utf8String => 0x0C,
+            Tag::Sequence => 0x10 | CONSTRUCTED_FLAG,
+            Tag::Set => 0x11,
+            Tag::PrintableString => 0x13,
+            Tag::Ia5String => 0x16,
+            Tag::UtcTime => 0x17,
+            Tag::GeneralizedTime => 0x18,
+            Tag::Application(number) | Tag::ContextSpecific(number) | Tag::Private(number) => {
+                self.class().octet(number, true)
+            }
+        }
+    }
+}
+
 impl TryFrom<u8> for Tag {
     type Error = Error;
 
@@ -112,24 +136,7 @@ impl TryFrom<u8> for Tag {
 
 impl From<Tag> for u8 {
     fn from(tag: Tag) -> u8 {
-        match tag {
-            Tag::Boolean => 0x01,
-            Tag::Integer => 0x02,
-            Tag::BitString => 0x03,
-            Tag::OctetString => 0x04,
-            Tag::Null => 0x05,
-            Tag::ObjectIdentifier => 0x06,
-            Tag::Utf8String => 0x0C,
-            Tag::Sequence => 0x10 | CONSTRUCTED_FLAG,
-            Tag::Set => 0x11,
-            Tag::PrintableString => 0x13,
-            Tag::Ia5String => 0x16,
-            Tag::UtcTime => 0x17,
-            Tag::GeneralizedTime => 0x18,
-            Tag::Application(number) | Tag::ContextSpecific(number) | Tag::Private(number) => {
-                tag.class().octet(number, true)
-            }
-        }
+        tag.octet()
     }
 }
 
