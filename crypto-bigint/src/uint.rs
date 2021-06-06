@@ -50,6 +50,12 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         &self.limbs
     }
 
+    /// Convert this [`UInt`] into its inner limbs.
+    // TODO(tarcieri): eventually phase this out?
+    pub const fn into_limbs(self) -> [Limb; LIMBS] {
+        self.limbs
+    }
+
     /// Determine if this [`UInt`] is equal to zero.
     ///
     /// # Returns
