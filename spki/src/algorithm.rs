@@ -26,6 +26,29 @@ pub struct AlgorithmIdentifier<'a> {
 }
 
 impl<'a> AlgorithmIdentifier<'a> {
+    /// Assert the `algorithm` OID is an expected value.
+    pub fn assert_algorithm_oid(&self, expected_oid: ObjectIdentifier) -> Result<ObjectIdentifier> {
+        if self.oid == expected_oid {
+            Ok(expected_oid)
+        } else {
+            Err(ErrorKind::UnknownOid { oid: expected_oid }.into())
+        }
+    }
+
+    /// Assert `parameters` is an OID and has the expected value.
+    pub fn assert_parameters_oid(
+        &self,
+        expected_oid: ObjectIdentifier,
+    ) -> Result<ObjectIdentifier> {
+        let actual_oid = self.parameters_oid()?;
+
+        if actual_oid == expected_oid {
+            Ok(actual_oid)
+        } else {
+            Err(ErrorKind::UnknownOid { oid: expected_oid }.into())
+        }
+    }
+
     /// Get the `parameters` field as an [`Any`].
     ///
     /// Returns an error if `parameters` are `None`.
