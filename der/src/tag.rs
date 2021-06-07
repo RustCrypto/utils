@@ -85,6 +85,31 @@ pub enum Tag {
 }
 
 impl Tag {
+    /// Assert that this [`Tag`] matches the provided expected tag.
+    ///
+    /// On mismatch, returns an [`Error`] with [`ErrorKind::UnexpectedTag`].
+    pub fn assert_eq(self, expected: Tag) -> Result<Tag> {
+        if self == expected {
+            Ok(self)
+        } else {
+            Err(ErrorKind::UnexpectedTag {
+                expected: Some(expected),
+                actual: self,
+            }
+            .into())
+        }
+    }
+
+    /// Get the [`Class`] that corresponds to this [`Tag`].
+    pub fn class(self) -> Class {
+        match self {
+            Tag::Application(_) => Class::Application,
+            Tag::ContextSpecific(_) => Class::ContextSpecific,
+            Tag::Private(_) => Class::Private,
+            _ => Class::Universal,
+        }
+    }
+
     /// Get the octet encoding for this [`Tag`].
     pub fn octet(self) -> u8 {
         match self {
@@ -155,33 +180,6 @@ impl From<Tag> for u8 {
 impl From<&Tag> for u8 {
     fn from(tag: &Tag) -> u8 {
         u8::from(*tag)
-    }
-}
-
-impl Tag {
-    /// Assert that this [`Tag`] matches the provided expected tag.
-    ///
-    /// On mismatch, returns an [`Error`] with [`ErrorKind::UnexpectedTag`].
-    pub fn assert_eq(self, expected: Tag) -> Result<Tag> {
-        if self == expected {
-            Ok(self)
-        } else {
-            Err(ErrorKind::UnexpectedTag {
-                expected: Some(expected),
-                actual: self,
-            }
-            .into())
-        }
-    }
-
-    /// Get the [`Class`] that corresponds to this [`Tag`].
-    pub fn class(self) -> Class {
-        match self {
-            Tag::Application(_) => Class::Application,
-            Tag::ContextSpecific(_) => Class::ContextSpecific,
-            Tag::Private(_) => Class::Private,
-            _ => Class::Universal,
-        }
     }
 }
 
