@@ -49,6 +49,17 @@ impl<'a> AlgorithmIdentifier<'a> {
         }
     }
 
+    /// Assert the values of the `algorithm` and `parameters` OIDs.
+    pub fn assert_oids(
+        &self,
+        algorithm: ObjectIdentifier,
+        parameters: ObjectIdentifier,
+    ) -> Result<()> {
+        self.assert_algorithm_oid(algorithm)?;
+        self.assert_parameters_oid(parameters)?;
+        Ok(())
+    }
+
     /// Get the `parameters` field as an [`Any`].
     ///
     /// Returns an error if `parameters` are `None`.
