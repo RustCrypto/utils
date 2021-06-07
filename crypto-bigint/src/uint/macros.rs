@@ -9,12 +9,33 @@ macro_rules! impl_uint_aliases {
             #[doc="unsigned big integer"]
             pub type $name = UInt<{nlimbs!($bits)}>;
 
-            impl NumBits for $name {
-                const NUM_BITS: usize = $bits;
-            }
+            impl Encoding for $name {
+                const BIT_SIZE: usize = $bits;
+                const BYTE_SIZE: usize = $bits / 8;
 
-            impl NumBytes for $name {
-                const NUM_BYTES: usize = $bits / 8;
+                type Repr = [u8; $bits / 8];
+
+                fn from_be_bytes(bytes: Self::Repr) -> Self {
+                    Self::from_be_slice(&bytes)
+                }
+
+                fn from_le_bytes(bytes: Self::Repr) -> Self {
+                    Self::from_be_slice(&bytes)
+                }
+
+                #[inline]
+                fn to_be_bytes(&self) -> Self::Repr {
+                    let mut result = [0u8; $bits / 8];
+                    self.write_be_bytes(&mut result);
+                    result
+                }
+
+                #[inline]
+                fn to_le_bytes(&self) -> Self::Repr {
+                    let mut result = [0u8; $bits / 8];
+                    self.write_le_bytes(&mut result);
+                    result
+                }
             }
         )+
      };

@@ -7,7 +7,7 @@ mod macros;
 
 mod add;
 mod ct;
-mod decode;
+mod encoding;
 mod from;
 mod mul;
 mod sub;
@@ -15,7 +15,7 @@ mod sub;
 #[cfg(feature = "generic-array")]
 mod array;
 
-use crate::{Concat, Limb, NumBits, NumBytes, Split};
+use crate::{Concat, Encoding, Limb, Split};
 use core::{cmp::Ordering, fmt};
 use subtle::{Choice, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess};
 

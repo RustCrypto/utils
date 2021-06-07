@@ -14,7 +14,6 @@ keywords = ["crypto", "key", "pkcs", "rsa"]
 readme = "README.md"
 
 [dependencies]
-crypto-bigint = { version = "0.1", path = "../crypto-bigint" }
 der = { version = "=0.4.0-pre", features = ["bigint", "oid"], path = "../der" }
 
 [dev-dependencies]
