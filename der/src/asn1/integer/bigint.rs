@@ -116,7 +116,7 @@ where
         let mut array = GenericArray::default();
         let offset = array.len().saturating_sub(bytes.len().try_into()?);
         array[offset..].copy_from_slice(bytes.as_bytes());
-        Ok(UInt::from_be_byte_array(&array))
+        Ok(UInt::from_be_byte_array(array))
     }
 }
 

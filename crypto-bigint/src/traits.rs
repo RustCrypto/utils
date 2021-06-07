@@ -11,16 +11,28 @@ pub trait Concat<Rhs = Self> {
     fn concat(&self, rhs: &Self) -> Self::Output;
 }
 
-/// Number of bits required to express a given big integer.
-pub trait NumBits {
-    /// Number of bits required to express this integer.
-    const NUM_BITS: usize;
-}
+/// Encoding support.
+pub trait Encoding: Sized {
+    /// Size of this integer in bits.
+    const BIT_SIZE: usize;
 
-/// Number of bytes required to express a given big integer.
-pub trait NumBytes {
-    /// Number of bytes required to express this integer.
-    const NUM_BYTES: usize;
+    /// Size of this integer in bytes.
+    const BYTE_SIZE: usize;
+
+    /// Byte array representation.
+    type Repr: Copy + Clone + AsRef<[u8]> + AsMut<[u8]> + Sized;
+
+    /// Decode from big endian bytes.
+    fn from_be_bytes(bytes: Self::Repr) -> Self;
+
+    /// Decode from little endian bytes.
+    fn from_le_bytes(bytes: Self::Repr) -> Self;
+
+    /// Encode to big endian bytes.
+    fn to_be_bytes(&self) -> Self::Repr;
+
+    /// Encode to little endian bytes.
+    fn to_le_bytes(&self) -> Self::Repr;
 }
 
 /// Split a number in half, returning the most significant half followed by
