@@ -32,6 +32,6 @@ where
     fn decode(decoder: &mut Decoder<'a>) -> Result<T> {
         Any::decode(decoder)
             .and_then(Self::try_from)
-            .or_else(|e| decoder.error(e.kind()))
+            .map_err(|e| decoder.error(e.kind()))
     }
 }
