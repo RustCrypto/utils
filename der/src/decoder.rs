@@ -31,7 +31,7 @@ impl<'a> Decoder<'a> {
     /// Decode a value which impls the [`Decodable`] trait.
     pub fn decode<T: Decodable<'a>>(&mut self) -> Result<T> {
         if self.is_failed() {
-            self.error(ErrorKind::Failed)?;
+            return Err(self.error(ErrorKind::Failed));
         }
 
         T::decode(self).map_err(|e| {
@@ -42,17 +42,14 @@ impl<'a> Decoder<'a> {
 
     /// Return an error with the given [`ErrorKind`], annotating it with
     /// context about where the error occurred.
-    // TODO(tarcieri): change return type to `Error`
-    pub fn error<T>(&mut self, kind: ErrorKind) -> Result<T> {
+    pub fn error(&mut self, kind: ErrorKind) -> Error {
         self.bytes.take();
-        Err(kind.at(self.position))
+        kind.at(self.position)
     }
 
     /// Return an error for an invalid value with the given tag.
-    // TODO(tarcieri): compose this with `Decoder::error` after changing its return type
     pub fn value_error(&mut self, tag: Tag) -> Error {
-        self.bytes.take();
-        tag.value_error().kind().at(self.position)
+        self.error(tag.value_error().kind())
     }
 
     /// Did the decoding operation fail due to an error?
@@ -227,7 +224,7 @@ impl<'a> Decoder<'a> {
     pub(crate) fn byte(&mut self) -> Result<u8> {
         match self.bytes(1u8)? {
             [byte] => Ok(*byte),
-            _ => self.error(ErrorKind::Truncated),
+            _ => Err(self.error(ErrorKind::Truncated)),
         }
     }
 
@@ -235,12 +232,12 @@ impl<'a> Decoder<'a> {
     /// position, or return an error if we have insufficient data.
     pub(crate) fn bytes(&mut self, len: impl TryInto<Length>) -> Result<&'a [u8]> {
         if self.is_failed() {
-            self.error(ErrorKind::Failed)?;
+            return Err(self.error(ErrorKind::Failed));
         }
 
         let len = len
             .try_into()
-            .or_else(|_| self.error(ErrorKind::Overflow))?;
+            .map_err(|_| self.error(ErrorKind::Overflow))?;
 
         let result = self
             .remaining()?
