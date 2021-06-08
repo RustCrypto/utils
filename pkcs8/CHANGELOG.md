@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.0 (2021-06-07)
+### Added
+- ASN.1 error improvements ([#478])
+
+### Changed
+- Merge `OneAsymmetricKey` into `PrivateKeyInfo` ([#467])
+- Use scrypt as the default PBES2 KDF ([#468])
+- Return `Result`(s) when encoding ([#478]) 
+- Bump `der` to v0.4 ([#490])
+- Bump `spki` to v0.4 ([#491])
+- Bump `pkcs5` to v0.3 ([#492])
+
+[#467]: https://github.com/RustCrypto/utils/pull/467
+[#468]: https://github.com/RustCrypto/utils/pull/468
+[#478]: https://github.com/RustCrypto/utils/pull/478
+[#490]: https://github.com/RustCrypto/utils/pull/490
+[#491]: https://github.com/RustCrypto/utils/pull/491
+[#492]: https://github.com/RustCrypto/utils/pull/492
+
 ## 0.6.1 (2021-05-24)
 ### Added
 - Support for RFC5958's `OneAsymmetricKey` ([#424], [#425])
