@@ -16,7 +16,7 @@ readme = "README.md"
 
 [dependencies]
 der = { version = "0.4", features = ["oid"], path = "../der" }
-spki = { version = "=0.4.0-pre", path = "../spki" }
+spki = { version = "0.4", path = "../spki" }
 
 base64ct = { version = "1", optional = true, path = "../base64ct" }
 rand_core = { version = "0.6", optional = true, default-features = false }
