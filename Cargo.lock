@@ -136,7 +136,7 @@ dependencies = [
 
 [[package]]
 name = "der"
-version = "0.4.0-pre"
+version = "0.4.0"
 dependencies = [
  "const-oid",
  "crypto-bigint",
@@ -146,7 +146,7 @@ dependencies = [
 
 [[package]]
 name = "der_derive"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "proc-macro2",
  "quote",
