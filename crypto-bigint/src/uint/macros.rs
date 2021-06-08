@@ -1,4 +1,4 @@
-//! Macros for defining aliases and relationships between [`UInt`] types.
+//! Macros for defining aliases and relationships between `UInt` types.
 // TODO(tarcieri): replace these with `const_evaluatable_checked` exprs when stable
 
 // TODO(tarcieri): use `const_evaluatable_checked` when stable to make generic around bits.

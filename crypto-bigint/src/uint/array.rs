@@ -1,4 +1,4 @@
-//! `generic-array` integration with [`UInt`]
+//! `generic-array` integration with `UInt`.
 // TODO(tarcieri): completely phase out `generic-array` when const generics are powerful enough
 
 use crate::{ArrayEncoding, ByteArray};
