@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 (2021-06-07)
+### Added
+- `TagNumber` type ([#464])
+- Const generic integer de/encoders with support for all of Rust's integer
+  primitives ([#469], [#470])
+- `crypto-bigint` support ([#472])
+- `Tag` number helpers ([#477])
+- `Tag::octet` ([#479])
+- `ErrorKind::Value` helpers ([#481])
+- `SequenceIter` ([#483])
+
+### Changed
+- Bump `const-oid` crate dependency to v0.6 ([#463])
+- Make `Tag` structured ([#464])
+- Namespace ASN.1 types in `asn1` module ([#465])
+- Refactor context-specific field decoding ([#466])
+- MSRV 1.51 ([#469], [#470])
+- Rename `big-uint` crate feature to `bigint` ([#472])
+- Rename `BigUInt` to `UIntBytes` ([#473])
+- Have `Decoder::error()` return an `Error` ([#487])
+  
+### Removed
+- Deprecated methods replaced by associated constants ([#458])
+
+[#458]: https://github.com/RustCrypto/utils/pull/458
+[#463]: https://github.com/RustCrypto/utils/pull/463
+[#464]: https://github.com/RustCrypto/utils/pull/464
+[#465]: https://github.com/RustCrypto/utils/pull/465
+[#466]: https://github.com/RustCrypto/utils/pull/466
+[#469]: https://github.com/RustCrypto/utils/pull/469
+[#470]: https://github.com/RustCrypto/utils/pull/470
+[#472]: https://github.com/RustCrypto/utils/pull/472
+[#473]: https://github.com/RustCrypto/utils/pull/473
+[#477]: https://github.com/RustCrypto/utils/pull/477
+[#479]: https://github.com/RustCrypto/utils/pull/479
+[#481]: https://github.com/RustCrypto/utils/pull/481
+[#483]: https://github.com/RustCrypto/utils/pull/483
+[#487]: https://github.com/RustCrypto/utils/pull/487
+
 ## 0.3.5 (2021-05-24)
 ### Added
 - Helper methods for context-specific fields ([#422], [#423], [#428], [#429])

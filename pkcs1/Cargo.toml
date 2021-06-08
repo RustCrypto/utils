@@ -14,7 +14,7 @@ keywords = ["crypto", "key", "pkcs", "rsa"]
 readme = "README.md"
 
 [dependencies]
-der = { version = "=0.4.0-pre", features = ["bigint", "oid"], path = "../der" }
+der = { version = "0.4", features = ["bigint", "oid"], path = "../der" }
 
 [dev-dependencies]
 hex-literal = "0.3"
