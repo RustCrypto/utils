@@ -9,9 +9,8 @@
 //! **Rust 1.51** at a minimum.
 //!
 //! # Goals
-//! - No heap allocations (`no_std`-friendly)
-//! - Constant-time by default: if we add variable-time operations in the future
-//!   they will be secondary and explicitly labeled.
+//! - No heap allocations i.e. `no_std`-friendly.
+//! - Constant-time by default using traits from the [`subtle`] crate.
 //! - Leverage what is possible today with const generics on `stable` rust.
 //! - Support `const fn` as much as possible, including decoding big integers from
 //!   bytes/hex and performing arithmetic operations on them, with the goal of
@@ -36,7 +35,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/crypto-bigint/0.1.0"
+    html_root_url = "https://docs.rs/crypto-bigint/0.2.0"
 )]
 #![forbid(unsafe_code, clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
