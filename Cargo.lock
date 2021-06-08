@@ -234,7 +234,7 @@ dependencies = [
 
 [[package]]
 name = "pkcs5"
-version = "0.3.0-pre"
+version = "0.3.0"
 dependencies = [
  "aes",
  "block-modes",
