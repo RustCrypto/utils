@@ -295,7 +295,7 @@ impl Encodable for Pbkdf2Prf {
     }
 }
 
-/// scrypt parameters as defined in [RFC 8914 Section 7.1].
+/// scrypt parameters as defined in [RFC 7914 Section 7.1].
 ///
 /// ```text
 /// scrypt-params ::= SEQUENCE {
@@ -307,7 +307,7 @@ impl Encodable for Pbkdf2Prf {
 /// }
 /// ```
 ///
-/// [RFC 8914 Section 7.1]: https://datatracker.ietf.org/doc/html/rfc7914#section-7.1
+/// [RFC 7914 Section 7.1]: https://datatracker.ietf.org/doc/html/rfc7914#section-7.1
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct ScryptParams<'a> {
     /// scrypt salt

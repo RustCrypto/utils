@@ -51,8 +51,8 @@
 //! algorithms:
 //!
 //! - [PKCS#5v2 Password Based Encryption Scheme 2 (RFC 8018)]
-//!   - Key derivation function: PBKDF2 with HMAC-SHA256 as the PRF
-//!   - Symmetric encryption: AES-128-CBC or AES-256-CBC
+//!   - Key derivation function: [scrypt] ([RFC 7914], also supports PBKDF2-HMAC-SHA256)
+//!   - Symmetric encryption: AES-128-CBC or AES-256-CBC (best available options for PKCS#5v2)
 //!
 //! # Minimum Supported Rust Version
 //!
@@ -60,7 +60,9 @@
 //!
 //! [RFC 5208]: https://tools.ietf.org/html/rfc5208
 //! [RFC 5958]: https://tools.ietf.org/html/rfc5958
+//! [RFC 7914]: https://datatracker.ietf.org/doc/html/rfc7914
 //! [PKCS#5v2 Password Based Encryption Scheme 2 (RFC 8018)]: https://tools.ietf.org/html/rfc8018#section-6.2
+//! [scrypt]: https://en.wikipedia.org/wiki/Scrypt
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
