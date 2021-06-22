@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.5 (2021-06-21)
+### Added
+- iOS support ([#435], [#501])
+
+### Changed
+- Map `aarch64` HWCAPs to target features; add `crypto` ([#456])
+
+[#435]: https://github.com/RustCrypto/utils/pull/435
+[#456]: https://github.com/RustCrypto/utils/pull/456
+[#501]: https://github.com/RustCrypto/utils/pull/501
+
 ## 0.1.4 (2021-05-14)
 ### Added
 - Support compiling on non-Linux/macOS aarch64 targets ([#408])
