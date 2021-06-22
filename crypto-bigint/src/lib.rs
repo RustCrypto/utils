@@ -64,9 +64,6 @@ pub use {
     generic_array::{self, typenum::consts},
 };
 
-#[cfg(not(any(target_pointer_width = "32", target_pointer_width = "64")))]
-compile_error!("this crate builds on 32-bit and 64-bit platforms only");
-
 /// Number of bytes in a [`Limb`].
 #[cfg(target_pointer_width = "32")]
 pub const LIMB_BYTES: usize = 4;

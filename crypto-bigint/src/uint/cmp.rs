@@ -1,22 +1,11 @@
-//! `subtle`-based constant time operations on [`UInt`].
+//! [`UInt`] comparisons.
+//!
+//! By default these are all constant-time and use the `subtle` crate.
 
 use super::UInt;
 use crate::Limb;
-use subtle::{
-    Choice, ConditionallySelectable, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess,
-};
-
-impl<const LIMBS: usize> ConditionallySelectable for UInt<LIMBS> {
-    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        let mut limbs = [0; LIMBS];
-
-        for i in 0..LIMBS {
-            limbs[i] = Limb::conditional_select(&a.limbs[0], &b.limbs[0], choice);
-        }
-
-        Self { limbs }
-    }
-}
+use core::cmp::Ordering;
+use subtle::{Choice, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess};
 
 impl<const LIMBS: usize> ConstantTimeEq for UInt<LIMBS> {
     fn ct_eq(&self, other: &Self) -> Choice {
@@ -29,15 +18,47 @@ impl<const LIMBS: usize> ConstantTimeEq for UInt<LIMBS> {
 
 impl<const LIMBS: usize> ConstantTimeGreater for UInt<LIMBS> {
     fn ct_gt(&self, other: &Self) -> Choice {
-        let underflow = other.sbb(self, 0).1;
-        !underflow.ct_eq(&0)
+        let underflow = other.sbb(self, Limb::ZERO).1;
+        !underflow.is_zero()
     }
 }
 
 impl<const LIMBS: usize> ConstantTimeLess for UInt<LIMBS> {
     fn ct_lt(&self, other: &Self) -> Choice {
-        let underflow = self.sbb(other, 0).1;
-        !underflow.ct_eq(&0)
+        let underflow = self.sbb(other, Limb::ZERO).1;
+        !underflow.is_zero()
+    }
+}
+
+impl<const LIMBS: usize> Eq for UInt<LIMBS> {}
+
+impl<const LIMBS: usize> Ord for UInt<LIMBS> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let mut n = 0i8;
+        n -= self.ct_lt(other).unwrap_u8() as i8;
+        n += self.ct_gt(other).unwrap_u8() as i8;
+
+        match n {
+            -1 => Ordering::Less,
+            1 => Ordering::Greater,
+            _ => {
+                debug_assert_eq!(n, 0);
+                debug_assert!(bool::from(self.ct_eq(other)));
+                Ordering::Equal
+            }
+        }
+    }
+}
+
+impl<const LIMBS: usize> PartialOrd for UInt<LIMBS> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<const LIMBS: usize> PartialEq for UInt<LIMBS> {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other).into()
     }
 }
 

@@ -6,7 +6,7 @@
 mod macros;
 
 mod add;
-mod ct;
+mod cmp;
 mod encoding;
 mod from;
 mod mul;
@@ -16,8 +16,8 @@ mod sub;
 mod array;
 
 use crate::{Concat, Encoding, Limb, Split};
-use core::{cmp::Ordering, fmt};
-use subtle::{Choice, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess};
+use core::fmt;
+use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -80,36 +80,21 @@ impl<const LIMBS: usize> AsMut<[Limb]> for UInt<LIMBS> {
     }
 }
 
+impl<const LIMBS: usize> ConditionallySelectable for UInt<LIMBS> {
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+        let mut limbs = [Limb::ZERO; LIMBS];
+
+        for i in 0..LIMBS {
+            limbs[i] = Limb::conditional_select(&a.limbs[0], &b.limbs[0], choice);
+        }
+
+        Self { limbs }
+    }
+}
+
 impl<const LIMBS: usize> Default for UInt<LIMBS> {
     fn default() -> Self {
         Self::ZERO
-    }
-}
-
-impl<const LIMBS: usize> Eq for UInt<LIMBS> {}
-
-impl<const LIMBS: usize> Ord for UInt<LIMBS> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        if self.ct_lt(other).into() {
-            Ordering::Less
-        } else if self.ct_gt(other).into() {
-            Ordering::Greater
-        } else {
-            debug_assert!(bool::from(self.ct_eq(other)));
-            Ordering::Equal
-        }
-    }
-}
-
-impl<const LIMBS: usize> PartialOrd for UInt<LIMBS> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl<const LIMBS: usize> PartialEq for UInt<LIMBS> {
-    fn eq(&self, other: &Self) -> bool {
-        self.ct_eq(other).into()
     }
 }
 

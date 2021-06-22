@@ -1,7 +1,7 @@
 //! Const-friendly decoding operations for [`UInt`]
 
 use super::UInt;
-use crate::{Limb, LIMB_BYTES};
+use crate::{limb, Encoding, Limb, LIMB_BYTES};
 
 impl<const LIMBS: usize> UInt<LIMBS> {
     /// Create a new [`UInt`] from the provided big endian bytes.
@@ -94,6 +94,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
             .limbs
             .iter()
             .rev()
+            .cloned()
             .zip(out.chunks_exact_mut(LIMB_BYTES))
         {
             dst.copy_from_slice(&src.to_be_bytes());
@@ -107,7 +108,12 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     pub(crate) fn write_le_bytes(&self, out: &mut [u8]) {
         debug_assert_eq!(out.len(), LIMB_BYTES * LIMBS);
 
-        for (src, dst) in self.limbs.iter().zip(out.chunks_exact_mut(LIMB_BYTES)) {
+        for (src, dst) in self
+            .limbs
+            .iter()
+            .cloned()
+            .zip(out.chunks_exact_mut(LIMB_BYTES))
+        {
             dst.copy_from_slice(&src.to_le_bytes());
         }
     }
@@ -131,7 +137,7 @@ impl<const LIMBS: usize> Decoder<LIMBS> {
     /// Create a new decoder.
     pub const fn new() -> Self {
         Self {
-            limbs: [0; LIMBS],
+            limbs: [Limb::ZERO; LIMBS],
             index: 0,
             bytes: 0,
         }
@@ -145,7 +151,7 @@ impl<const LIMBS: usize> Decoder<LIMBS> {
             self.bytes = 0;
         }
 
-        self.limbs[self.index] |= (byte as Limb) << (self.bytes * 8);
+        self.limbs[self.index].0 |= (byte as limb::Inner) << (self.bytes * 8);
         self.bytes += 1;
         self
     }
@@ -193,6 +199,7 @@ const fn decode_hex_byte(bytes: [u8; 2]) -> u8 {
 
 #[cfg(test)]
 mod tests {
+    use crate::Limb;
     use hex_literal::hex;
 
     #[cfg(feature = "alloc")]
@@ -209,7 +216,7 @@ mod tests {
     fn from_be_bytes() {
         let bytes = hex!("0011223344556677");
         let n = UIntEx::from_be_slice(&bytes);
-        assert_eq!(n.limbs(), &[0x44556677, 0x00112233]);
+        assert_eq!(n.limbs(), &[Limb(0x44556677), Limb(0x00112233)]);
     }
 
     #[test]
@@ -217,7 +224,10 @@ mod tests {
     fn from_be_bytes() {
         let bytes = hex!("00112233445566778899aabbccddeeff");
         let n = UIntEx::from_be_slice(&bytes);
-        assert_eq!(n.limbs(), &[0x8899aabbccddeeff, 0x0011223344556677]);
+        assert_eq!(
+            n.limbs(),
+            &[Limb(0x8899aabbccddeeff), Limb(0x0011223344556677)]
+        );
     }
 
     #[test]
@@ -225,7 +235,7 @@ mod tests {
     fn from_le_bytes() {
         let bytes = hex!("7766554433221100");
         let n = UIntEx::from_le_slice(&bytes);
-        assert_eq!(n.limbs(), &[0x44556677, 0x00112233]);
+        assert_eq!(n.limbs(), &[Limb(0x44556677), Limb(0x00112233)]);
     }
 
     #[test]
@@ -233,35 +243,44 @@ mod tests {
     fn from_le_bytes() {
         let bytes = hex!("ffeeddccbbaa99887766554433221100");
         let n = UIntEx::from_le_slice(&bytes);
-        assert_eq!(n.limbs(), &[0x8899aabbccddeeff, 0x0011223344556677]);
+        assert_eq!(
+            n.limbs(),
+            &[Limb(0x8899aabbccddeeff), Limb(0x0011223344556677)]
+        );
     }
 
     #[test]
     #[cfg(target_pointer_width = "32")]
     fn from_be_hex() {
         let n = UIntEx::from_be_hex("0011223344556677");
-        assert_eq!(n.limbs(), &[0x44556677, 0x00112233]);
+        assert_eq!(n.limbs(), &[Limb(0x44556677), Limb(0x00112233)]);
     }
 
     #[test]
     #[cfg(target_pointer_width = "64")]
     fn from_be_hex() {
         let n = UIntEx::from_be_hex("00112233445566778899aabbccddeeff");
-        assert_eq!(n.limbs(), &[0x8899aabbccddeeff, 0x0011223344556677]);
+        assert_eq!(
+            n.limbs(),
+            &[Limb(0x8899aabbccddeeff), Limb(0x0011223344556677)]
+        );
     }
 
     #[test]
     #[cfg(target_pointer_width = "32")]
     fn from_le_hex() {
         let n = UIntEx::from_le_hex("7766554433221100");
-        assert_eq!(n.limbs(), &[0x44556677, 0x00112233]);
+        assert_eq!(n.limbs(), &[Limb(0x44556677), Limb(0x00112233)]);
     }
 
     #[test]
     #[cfg(target_pointer_width = "64")]
     fn from_le_hex() {
         let n = UIntEx::from_le_hex("ffeeddccbbaa99887766554433221100");
-        assert_eq!(n.limbs(), &[0x8899aabbccddeeff, 0x0011223344556677]);
+        assert_eq!(
+            n.limbs(),
+            &[Limb(0x8899aabbccddeeff), Limb(0x0011223344556677)]
+        );
     }
 
     #[cfg(feature = "alloc")]

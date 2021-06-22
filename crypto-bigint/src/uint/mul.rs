@@ -1,7 +1,8 @@
 //! [`UInt`] addition operations.
 
 use super::UInt;
-use crate::{limb, Concat};
+use crate::{Concat, Limb, Wrapping};
+use core::ops::{Mul, MulAssign};
 use subtle::CtOption;
 
 impl<const LIMBS: usize> UInt<LIMBS> {
@@ -16,17 +17,17 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         // TODO(tarcieri): use Karatsuba for better performance?
         while i < LIMBS {
             let mut j = 0;
-            let mut carry = 0;
+            let mut carry = Limb::ZERO;
 
             while j < LIMBS {
                 let k = i + j;
 
                 if k >= LIMBS {
-                    let (n, c) = limb::mac(hi.limbs[k - LIMBS], self.limbs[i], rhs.limbs[j], carry);
+                    let (n, c) = hi.limbs[k - LIMBS].mac(self.limbs[i], rhs.limbs[j], carry);
                     hi.limbs[k - LIMBS] = n;
                     carry = c;
                 } else {
-                    let (n, c) = limb::mac(lo.limbs[k], self.limbs[i], rhs.limbs[j], carry);
+                    let (n, c) = lo.limbs[k].mac(self.limbs[i], rhs.limbs[j], carry);
                     lo.limbs[k] = n;
                     carry = c;
                 }
@@ -46,8 +47,8 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         self.mul_wide(rhs).0
     }
 
-    /// Perform checked multiplication, returning [`CtOption`] only if the
-    /// operation did not overflow.
+    /// Perform checked multiplication, returning a [`CtOption`] which `is_some`
+    /// only if the operation did not overflow.
     pub fn checked_mul(&self, rhs: &Self) -> CtOption<Self> {
         let (hi, lo) = self.mul_wide(rhs);
         CtOption::new(lo, hi.is_zero())
@@ -60,6 +61,50 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     {
         let (hi, lo) = self.mul_wide(self);
         hi.concat(&lo)
+    }
+}
+
+impl<const LIMBS: usize> Mul for Wrapping<UInt<LIMBS>> {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Wrapping<UInt<LIMBS>> {
+        Wrapping(self.0.wrapping_mul(&rhs.0))
+    }
+}
+
+impl<const LIMBS: usize> Mul<&Wrapping<UInt<LIMBS>>> for Wrapping<UInt<LIMBS>> {
+    type Output = Wrapping<UInt<LIMBS>>;
+
+    fn mul(self, rhs: &Wrapping<UInt<LIMBS>>) -> Wrapping<UInt<LIMBS>> {
+        Wrapping(self.0.wrapping_mul(&rhs.0))
+    }
+}
+
+impl<const LIMBS: usize> Mul<Wrapping<UInt<LIMBS>>> for &Wrapping<UInt<LIMBS>> {
+    type Output = Wrapping<UInt<LIMBS>>;
+
+    fn mul(self, rhs: Wrapping<UInt<LIMBS>>) -> Wrapping<UInt<LIMBS>> {
+        Wrapping(self.0.wrapping_mul(&rhs.0))
+    }
+}
+
+impl<const LIMBS: usize> Mul<&Wrapping<UInt<LIMBS>>> for &Wrapping<UInt<LIMBS>> {
+    type Output = Wrapping<UInt<LIMBS>>;
+
+    fn mul(self, rhs: &Wrapping<UInt<LIMBS>>) -> Wrapping<UInt<LIMBS>> {
+        Wrapping(self.0.wrapping_mul(&rhs.0))
+    }
+}
+
+impl<const LIMBS: usize> MulAssign for Wrapping<UInt<LIMBS>> {
+    fn mul_assign(&mut self, other: Self) {
+        *self = *self * other;
+    }
+}
+
+impl<const LIMBS: usize> MulAssign<&Wrapping<UInt<LIMBS>>> for Wrapping<UInt<LIMBS>> {
+    fn mul_assign(&mut self, other: &Self) {
+        *self = *self * other;
     }
 }
 
