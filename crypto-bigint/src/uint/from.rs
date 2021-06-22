@@ -1,6 +1,6 @@
 //! `From`-like conversions for [`UInt`].
 
-use crate::{limb, Limb, Split, UInt, LIMB_BYTES, U128, U64};
+use crate::{limb, Limb, Split, UInt, U128, U64};
 
 impl<const LIMBS: usize> UInt<LIMBS> {
     /// Create a [`UInt`] from a `u8` (const-friendly)
@@ -55,7 +55,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     // TODO(tarcieri): replace with `const impl From<u128>` when stable
     pub const fn from_u128(n: u128) -> Self {
         const_assert!(
-            LIMBS >= (16 / LIMB_BYTES),
+            LIMBS >= (128 / limb::BIT_SIZE),
             "number of limbs must be greater than zero"
         );
 
@@ -107,7 +107,7 @@ impl<const LIMBS: usize> From<u32> for UInt<LIMBS> {
 impl<const LIMBS: usize> From<u64> for UInt<LIMBS> {
     fn from(n: u64) -> Self {
         // TODO(tarcieri): const where clause when possible
-        debug_assert!(LIMBS >= (8 / LIMB_BYTES), "not enough limbs");
+        debug_assert!(LIMBS >= (64 / limb::BIT_SIZE), "not enough limbs");
         Self::from_u64(n)
     }
 }
@@ -115,7 +115,7 @@ impl<const LIMBS: usize> From<u64> for UInt<LIMBS> {
 impl<const LIMBS: usize> From<u128> for UInt<LIMBS> {
     fn from(n: u128) -> Self {
         // TODO(tarcieri): const where clause when possible
-        debug_assert!(LIMBS >= (16 / LIMB_BYTES), "not enough limbs");
+        debug_assert!(LIMBS >= (128 / limb::BIT_SIZE), "not enough limbs");
         Self::from_u128(n)
     }
 }

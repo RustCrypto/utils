@@ -13,6 +13,18 @@ use subtle::{Choice, ConditionallySelectable};
 #[cfg(not(any(target_pointer_width = "32", target_pointer_width = "64")))]
 compile_error!("this crate builds on 32-bit and 64-bit platforms only");
 
+/// Size of the inner integer in bits
+#[cfg(target_pointer_width = "32")]
+pub(crate) const BIT_SIZE: usize = 32;
+#[cfg(target_pointer_width = "64")]
+pub(crate) const BIT_SIZE: usize = 64;
+
+/// Size of the inner integer in bytes
+#[cfg(target_pointer_width = "32")]
+pub(crate) const BYTE_SIZE: usize = 4;
+#[cfg(target_pointer_width = "64")]
+pub(crate) const BYTE_SIZE: usize = 8;
+
 /// Inner integer type.
 // TODO(tarcieri): expose this?
 #[cfg(target_pointer_width = "32")]
