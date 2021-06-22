@@ -163,6 +163,9 @@ macro_rules! check {
     ("aes") => {
         true
     };
+    ("crypto") => {
+        true
+    };
     ("sha2") => {
         true
     };
