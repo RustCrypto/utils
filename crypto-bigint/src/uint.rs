@@ -44,6 +44,11 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         limbs: [Limb::MAX; LIMBS],
     };
 
+    /// Const-friendly [`UInt`] constructor.
+    pub const fn new(limbs: [Limb; LIMBS]) -> Self {
+        Self { limbs }
+    }
+
     /// Borrow the limbs of this [`UInt`].
     // TODO(tarcieri): eventually phase this out?
     pub const fn limbs(&self) -> &[Limb; LIMBS] {
