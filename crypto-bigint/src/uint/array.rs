@@ -63,7 +63,7 @@ impl_uint_array_encoding! {
 
 #[cfg(test)]
 mod tests {
-    use crate::ArrayEncoding;
+    use crate::{ArrayEncoding, Limb};
     use hex_literal::hex;
 
     #[cfg(target_pointer_width = "32")]
@@ -79,28 +79,34 @@ mod tests {
     #[cfg(target_pointer_width = "32")]
     fn from_be_byte_array() {
         let n = UIntEx::from_be_byte_array(hex!("0011223344556677").into());
-        assert_eq!(n.limbs(), &[0x44556677, 0x00112233]);
+        assert_eq!(n.limbs(), &[Limb(0x44556677), Limb(0x00112233)]);
     }
 
     #[test]
     #[cfg(target_pointer_width = "64")]
     fn from_be_byte_array() {
         let n = UIntEx::from_be_byte_array(hex!("00112233445566778899aabbccddeeff").into());
-        assert_eq!(n.limbs(), &[0x8899aabbccddeeff, 0x0011223344556677]);
+        assert_eq!(
+            n.limbs(),
+            &[Limb(0x8899aabbccddeeff), Limb(0x0011223344556677)]
+        );
     }
 
     #[test]
     #[cfg(target_pointer_width = "32")]
     fn from_le_byte_array() {
         let n = UIntEx::from_le_byte_array(hex!("7766554433221100").into());
-        assert_eq!(n.limbs(), &[0x44556677, 0x00112233]);
+        assert_eq!(n.limbs(), &[Limb(0x44556677), Limb(0x00112233)]);
     }
 
     #[test]
     #[cfg(target_pointer_width = "64")]
     fn from_le_byte_array() {
         let n = UIntEx::from_le_byte_array(hex!("ffeeddccbbaa99887766554433221100").into());
-        assert_eq!(n.limbs(), &[0x8899aabbccddeeff, 0x0011223344556677]);
+        assert_eq!(
+            n.limbs(),
+            &[Limb(0x8899aabbccddeeff), Limb(0x0011223344556677)]
+        );
     }
 
     #[test]

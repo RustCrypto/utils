@@ -1,64 +1,76 @@
-//! Limbs are smaller integers into which a big integer is subdivided.
-// TODO(tarcieri): `Limb` newtype?
+//! Limb newtype.
 
-/// Big integers are modeled as an array of smaller integers called "limbs".
+mod add;
+mod cmp;
+mod encoding;
+mod from;
+mod mul;
+mod sub;
+
+use core::fmt;
+use subtle::{Choice, ConditionallySelectable};
+
+#[cfg(not(any(target_pointer_width = "32", target_pointer_width = "64")))]
+compile_error!("this crate builds on 32-bit and 64-bit platforms only");
+
+/// Inner integer type.
+// TODO(tarcieri): expose this?
 #[cfg(target_pointer_width = "32")]
-pub type Limb = u32;
-
-/// Big integers are modeled as an array of smaller integers called "limbs".
+pub(crate) type Inner = u32;
 #[cfg(target_pointer_width = "64")]
-pub type Limb = u64;
+pub(crate) type Inner = u64;
 
-/// Computes `a + b + carry`, returning the result along with the new carry.
-/// 32-bit version.
+/// Wide integer type: double the width of [`Inner`].
 #[cfg(target_pointer_width = "32")]
-#[inline(always)]
-pub(crate) const fn adc(a: Limb, b: Limb, carry: Limb) -> (Limb, Limb) {
-    let ret = (a as u64) + (b as u64) + (carry as u64);
-    (ret as u32, (ret >> 32) as u32)
-}
-
-/// Computes `a + b + carry`, returning the result along with the new carry.
-/// 64-bit version.
+pub(crate) type Wide = u64;
 #[cfg(target_pointer_width = "64")]
-#[inline(always)]
-pub(crate) const fn adc(a: Limb, b: Limb, carry: Limb) -> (Limb, Limb) {
-    let ret = (a as u128) + (b as u128) + (carry as u128);
-    (ret as u64, (ret >> 64) as u64)
+pub(crate) type Wide = u128;
+
+/// Big integers are represented as an array of smaller CPU word-size integers
+/// called "limbs".
+#[derive(Copy, Clone, Debug, Default)]
+#[repr(transparent)]
+pub struct Limb(pub(crate) Inner);
+
+impl Limb {
+    /// The value `0`.
+    pub const ZERO: Self = Limb(0);
+
+    /// The value `1`.
+    pub const ONE: Self = Limb(1);
+
+    /// Maximum value this [`Limb`] can express.
+    pub const MAX: Self = Limb(Inner::MAX);
 }
 
-/// Computes `a - (b + borrow)`, returning the result along with the new borrow.
-/// 32-bit version.
-#[cfg(target_pointer_width = "32")]
-#[inline(always)]
-pub const fn sbb(a: Limb, b: Limb, borrow: Limb) -> (Limb, Limb) {
-    let ret = (a as u64).wrapping_sub((b as u64) + ((borrow >> 31) as u64));
-    (ret as u32, (ret >> 32) as u32)
+impl ConditionallySelectable for Limb {
+    #[inline]
+    fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
+        Limb(Inner::conditional_select(&a.0, &b.0, choice))
+    }
 }
 
-/// Computes `a - (b + borrow)`, returning the result along with the new borrow.
-/// 64-bit version.
-#[cfg(target_pointer_width = "64")]
-#[inline(always)]
-pub const fn sbb(a: Limb, b: Limb, borrow: Limb) -> (Limb, Limb) {
-    let ret = (a as u128).wrapping_sub((b as u128) + ((borrow >> 63) as u128));
-    (ret as u64, (ret >> 64) as u64)
+impl fmt::Display for Limb {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::UpperHex::fmt(self, f)
+    }
 }
 
-/// Computes `a + (b * c) + carry`, returning the result along with the new carry.
-/// 32-bit version.
-#[cfg(target_pointer_width = "32")]
-#[inline(always)]
-pub(crate) const fn mac(a: Limb, b: Limb, c: Limb, carry: Limb) -> (Limb, Limb) {
-    let ret = (a as u64) + ((b as u64) * (c as u64)) + (carry as u64);
-    (ret as u32, (ret >> 32) as u32)
+impl fmt::LowerHex for Limb {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::LowerHex::fmt(&self.0, f)
+    }
 }
 
-/// Computes `a + (b * c) + carry`, returning the result along with the new carry.
-/// 64-bit version.
-#[cfg(target_pointer_width = "64")]
-#[inline(always)]
-pub(crate) const fn mac(a: Limb, b: Limb, c: Limb, carry: Limb) -> (Limb, Limb) {
-    let ret = (a as u128) + ((b as u128) * (c as u128)) + (carry as u128);
-    (ret as u64, (ret >> 64) as u64)
+impl fmt::UpperHex for Limb {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::UpperHex::fmt(&self.0, f)
+    }
 }
+
+#[cfg(feature = "zeroize")]
+#[cfg_attr(docsrs, doc(cfg(feature = "zeroize")))]
+impl zeroize::DefaultIsZeroes for Limb {}

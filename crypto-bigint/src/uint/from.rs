@@ -1,14 +1,14 @@
 //! `From`-like conversions for [`UInt`].
 
-use crate::{Limb, Split, UInt, LIMB_BYTES, U128, U64};
+use crate::{limb, Limb, Split, UInt, LIMB_BYTES, U128, U64};
 
 impl<const LIMBS: usize> UInt<LIMBS> {
     /// Create a [`UInt`] from a `u8` (const-friendly)
     // TODO(tarcieri): replace with `const impl From<u8>` when stable
     pub const fn from_u8(n: u8) -> Self {
         const_assert!(LIMBS >= 1, "number of limbs must be greater than zero");
-        let mut limbs = [0; LIMBS];
-        limbs[0] = n as Limb;
+        let mut limbs = [Limb::ZERO; LIMBS];
+        limbs[0].0 = n as limb::Inner;
         Self { limbs }
     }
 
@@ -16,8 +16,8 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     // TODO(tarcieri): replace with `const impl From<u16>` when stable
     pub const fn from_u16(n: u16) -> Self {
         const_assert!(LIMBS >= 1, "number of limbs must be greater than zero");
-        let mut limbs = [0; LIMBS];
-        limbs[0] = n as Limb;
+        let mut limbs = [Limb::ZERO; LIMBS];
+        limbs[0].0 = n as limb::Inner;
         Self { limbs }
     }
 
@@ -25,8 +25,8 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     // TODO(tarcieri): replace with `const impl From<u32>` when stable
     pub const fn from_u32(n: u32) -> Self {
         const_assert!(LIMBS >= 1, "number of limbs must be greater than zero");
-        let mut limbs = [0; LIMBS];
-        limbs[0] = n as Limb;
+        let mut limbs = [Limb::ZERO; LIMBS];
+        limbs[0].0 = n as limb::Inner;
         Self { limbs }
     }
 
@@ -35,9 +35,9 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     #[cfg(target_pointer_width = "32")]
     pub const fn from_u64(n: u64) -> Self {
         const_assert!(LIMBS >= 2, "number of limbs must be two or greater");
-        let mut limbs = [0; LIMBS];
-        limbs[0] = (n & 0xFFFFFFFF) as u32;
-        limbs[1] = (n >> 32) as u32;
+        let mut limbs = [Limb::ZERO; LIMBS];
+        limbs[0].0 = (n & 0xFFFFFFFF) as u32;
+        limbs[1].0 = (n >> 32) as u32;
         Self { limbs }
     }
 
@@ -46,8 +46,8 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     #[cfg(target_pointer_width = "64")]
     pub const fn from_u64(n: u64) -> Self {
         const_assert!(LIMBS >= 1, "number of limbs must be greater than zero");
-        let mut limbs = [0; LIMBS];
-        limbs[0] = n as Limb;
+        let mut limbs = [Limb::ZERO; LIMBS];
+        limbs[0].0 = n as limb::Inner;
         Self { limbs }
     }
 
@@ -62,7 +62,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         let lo = U64::from_u64((n & 0xffff_ffff_ffff_ffff) as u64);
         let hi = U64::from_u64((n >> 64) as u64);
 
-        let mut limbs = [0; LIMBS];
+        let mut limbs = [Limb::ZERO; LIMBS];
 
         let mut i = 0;
         while i < lo.limbs.len() {
@@ -123,14 +123,14 @@ impl<const LIMBS: usize> From<u128> for UInt<LIMBS> {
 #[cfg(target_pointer_width = "32")]
 impl From<U64> for u64 {
     fn from(n: U64) -> u64 {
-        (n.limbs[0] as u64) | ((n.limbs[1] as u64) << 32)
+        (n.limbs[0].0 as u64) | ((n.limbs[1].0 as u64) << 32)
     }
 }
 
 #[cfg(target_pointer_width = "64")]
 impl From<U64> for u64 {
     fn from(n: U64) -> u64 {
-        n.limbs[0]
+        n.limbs[0].into()
     }
 }
 
@@ -157,7 +157,7 @@ impl<const LIMBS: usize> From<UInt<LIMBS>> for [Limb; LIMBS] {
 
 #[cfg(test)]
 mod tests {
-    use crate::U128;
+    use crate::{Limb, U128};
 
     #[cfg(target_pointer_width = "32")]
     use crate::U64 as UIntEx;
@@ -168,25 +168,25 @@ mod tests {
     #[test]
     fn from_u8() {
         let n = UIntEx::from(42u8);
-        assert_eq!(n.limbs(), &[42, 0]);
+        assert_eq!(n.limbs(), &[Limb(42), Limb(0)]);
     }
 
     #[test]
     fn from_u16() {
         let n = UIntEx::from(42u16);
-        assert_eq!(n.limbs(), &[42, 0]);
+        assert_eq!(n.limbs(), &[Limb(42), Limb(0)]);
     }
 
     #[test]
     fn from_u64() {
         let n = UIntEx::from(42u64);
-        assert_eq!(n.limbs(), &[42, 0]);
+        assert_eq!(n.limbs(), &[Limb(42), Limb(0)]);
     }
 
     #[test]
     fn from_u128() {
         let n = U128::from(42u128);
-        assert_eq!(&n.limbs()[..2], &[42, 0]);
+        assert_eq!(&n.limbs()[..2], &[Limb(42), Limb(0)]);
         assert_eq!(u128::from(n), 42u128);
     }
 }
