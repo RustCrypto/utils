@@ -7,6 +7,26 @@ use crate::Limb;
 use core::cmp::Ordering;
 use subtle::{Choice, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess};
 
+impl<const LIMBS: usize> UInt<LIMBS> {
+    /// Determine if this [`UInt`] is equal to zero.
+    ///
+    /// # Returns
+    ///
+    /// If zero, return `Choice(1)`.  Otherwise, return `Choice(0)`.
+    pub fn is_zero(&self) -> Choice {
+        self.ct_eq(&Self::ZERO)
+    }
+
+    /// Is this [`UInt`] an odd number?
+    #[inline]
+    pub fn is_odd(&self) -> Choice {
+        self.limbs
+            .first()
+            .map(|limb| limb.is_odd())
+            .unwrap_or_else(|| Choice::from(0))
+    }
+}
+
 impl<const LIMBS: usize> ConstantTimeEq for UInt<LIMBS> {
     fn ct_eq(&self, other: &Self) -> Choice {
         self.limbs
@@ -68,6 +88,20 @@ mod tests {
     use subtle::{
         Choice, ConditionallySelectable, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess,
     };
+
+    #[test]
+    fn is_zero() {
+        assert!(bool::from(U128::ZERO.is_zero()));
+        assert!(!bool::from(U128::ONE.is_zero()));
+        assert!(!bool::from(U128::MAX.is_zero()));
+    }
+
+    #[test]
+    fn is_odd() {
+        assert!(!bool::from(U128::ZERO.is_odd()));
+        assert!(bool::from(U128::ONE.is_odd()));
+        assert!(bool::from(U128::MAX.is_odd()));
+    }
 
     #[test]
     fn conditional_select() {

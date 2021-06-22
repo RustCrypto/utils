@@ -17,7 +17,7 @@ mod array;
 
 use crate::{Concat, Encoding, Limb, Split};
 use core::fmt;
-use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
+use subtle::{Choice, ConditionallySelectable};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -54,15 +54,6 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     // TODO(tarcieri): eventually phase this out?
     pub const fn into_limbs(self) -> [Limb; LIMBS] {
         self.limbs
-    }
-
-    /// Determine if this [`UInt`] is equal to zero.
-    ///
-    /// # Returns
-    ///
-    /// If zero, return `Choice(1)`.  Otherwise, return `Choice(0)`.
-    pub fn is_zero(&self) -> Choice {
-        self.ct_eq(&Self::ZERO)
     }
 }
 
@@ -196,13 +187,6 @@ impl_split! {
 mod tests {
     use crate::{Concat, Split, U128, U64};
 
-    // 2-limb example that's twice as wide as the native word size
-    #[cfg(target_pointer_width = "32")]
-    use crate::U64 as UIntEx;
-
-    #[cfg(target_pointer_width = "64")]
-    use crate::U128 as UIntEx;
-
     #[test]
     #[cfg(feature = "alloc")]
     fn display() {
@@ -211,12 +195,6 @@ mod tests {
 
         use alloc::string::ToString;
         assert_eq!(hex, n.to_string());
-    }
-
-    #[test]
-    fn is_zero() {
-        assert!(bool::from(UIntEx::ZERO.is_zero()));
-        assert!(!bool::from(UIntEx::ONE.is_zero()));
     }
 
     #[test]
