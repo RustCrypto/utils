@@ -1,4 +1,4 @@
-# RustCrypto: CPU Feature Detection
+# [RustCrypto]: CPU Feature Detection
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -82,4 +82,5 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (general links)
 
+[RustCrypto]: https://github.com/rustcrypto
 [RustCrypto/utils#378]: https://github.com/RustCrypto/utils/issues/378
