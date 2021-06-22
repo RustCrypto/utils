@@ -121,6 +121,7 @@ impl<const LIMBS: usize> From<u128> for UInt<LIMBS> {
 }
 
 #[cfg(target_pointer_width = "32")]
+#[cfg_attr(docsrs, doc(cfg(target_pointer_width = "32")))]
 impl From<U64> for u64 {
     fn from(n: U64) -> u64 {
         (n.limbs[0].0 as u64) | ((n.limbs[1].0 as u64) << 32)
@@ -128,6 +129,7 @@ impl From<U64> for u64 {
 }
 
 #[cfg(target_pointer_width = "64")]
+#[cfg_attr(docsrs, doc(cfg(target_pointer_width = "64")))]
 impl From<U64> for u64 {
     fn from(n: U64) -> u64 {
         n.limbs[0].into()

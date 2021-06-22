@@ -1,29 +1,30 @@
-//! Limb from conversions
+//! `From`-like conversions for [`Limb`].
 
 use super::{Inner, Limb, Wide};
 
 impl Limb {
-    /// Create a [`Limb`] from a `u8` (const-friendly)
+    /// Create a [`Limb`] from a `u8` integer (const-friendly)
     // TODO(tarcieri): replace with `const impl From<u8>` when stable
     pub const fn from_u8(n: u8) -> Self {
         Limb(n as Inner)
     }
 
-    /// Create a [`Limb`] from a `u16` (const-friendly)
+    /// Create a [`Limb`] from a `u16` integer (const-friendly)
     // TODO(tarcieri): replace with `const impl From<u16>` when stable
     pub const fn from_u16(n: u16) -> Self {
         Limb(n as Inner)
     }
 
-    /// Create a [`Limb`] from a `u32` (const-friendly)
+    /// Create a [`Limb`] from a `u32` integer (const-friendly)
     // TODO(tarcieri): replace with `const impl From<u32>` when stable
     pub const fn from_u32(n: u32) -> Self {
         Limb(n as Inner)
     }
 
-    /// Create a [`Limb`] from a `u64` (const-friendly)
+    /// Create a [`Limb`] from a `u64` integer (const-friendly)
     // TODO(tarcieri): replace with `const impl From<u64>` when stable
     #[cfg(target_pointer_width = "64")]
+    #[cfg_attr(docsrs, doc(cfg(target_pointer_width = "64")))]
     pub const fn from_u64(n: u64) -> Self {
         Limb(n)
     }
@@ -51,6 +52,7 @@ impl From<u32> for Limb {
 }
 
 #[cfg(target_pointer_width = "64")]
+#[cfg_attr(docsrs, doc(cfg(target_pointer_width = "64")))]
 impl From<u64> for Limb {
     #[inline]
     fn from(n: u64) -> Limb {
