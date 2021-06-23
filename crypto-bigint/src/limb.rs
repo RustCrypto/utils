@@ -42,7 +42,7 @@ pub(crate) type Wide = u128;
 /// called "limbs".
 #[derive(Copy, Clone, Debug, Default)]
 #[repr(transparent)]
-pub struct Limb(pub(crate) Inner);
+pub struct Limb(pub Inner);
 
 impl Limb {
     /// The value `0`.
