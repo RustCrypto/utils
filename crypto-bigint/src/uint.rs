@@ -6,11 +6,14 @@
 mod macros;
 
 mod add;
+mod add_mod;
 mod cmp;
 mod encoding;
 mod from;
 mod mul;
+mod neg_mod;
 mod sub;
+mod sub_mod;
 
 #[cfg(feature = "generic-array")]
 mod array;
