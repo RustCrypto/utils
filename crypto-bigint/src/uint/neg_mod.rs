@@ -2,52 +2,53 @@
 
 use super::UInt;
 
-impl UInt<1> {
-    /// Computes `-a mod p` in constant time.
-    pub const fn neg_mod(&self, p: &Self) -> Self {
-        base::neg1(self, p)
-    }
+macro_rules! impl_neg_mod {
+    ($size:expr, $base_name:ident) => {
+        impl UInt<$size> {
+            /// Computes `-a mod p` in constant time.
+            pub const fn neg_mod(&self, p: &Self) -> Self {
+                base::$base_name(self, p)
+            }
+        }
+    };
 }
 
-impl UInt<2> {
-    /// Computes `-a mod p` in constant time.
-    pub const fn neg_mod(&self, p: &Self) -> Self {
-        base::neg2(self, p)
-    }
-}
-
-impl UInt<3> {
-    /// Computes `-a mod p` in constant time.
-    pub const fn neg_mod(&self, p: &Self) -> Self {
-        base::neg3(self, p)
-    }
-}
-
-impl UInt<4> {
-    /// Computes `-a mod p` in constant time.
-    pub const fn neg_mod(&self, p: &Self) -> Self {
-        base::neg4(self, p)
-    }
-}
+impl_neg_mod!(1, neg1);
+impl_neg_mod!(2, neg2);
+impl_neg_mod!(3, neg3);
+impl_neg_mod!(4, neg4);
+impl_neg_mod!(5, neg5);
+impl_neg_mod!(6, neg6);
+impl_neg_mod!(7, neg7);
+impl_neg_mod!(8, neg8);
+impl_neg_mod!(9, neg9);
+impl_neg_mod!(10, neg10);
+impl_neg_mod!(11, neg11);
+impl_neg_mod!(12, neg12);
 
 pub(super) mod base {
     use crate::{Limb, UInt};
 
-    pub const fn neg1(a: &UInt<1>, p: &UInt<1>) -> UInt<1> {
-        neg(a, p)
+    macro_rules! impl_base {
+        ($size:expr, $name:ident) => {
+            pub const fn $name(a: &UInt<$size>, p: &UInt<$size>) -> UInt<$size> {
+                neg(a, p)
+            }
+        };
     }
 
-    pub const fn neg2(a: &UInt<2>, p: &UInt<2>) -> UInt<2> {
-        neg(a, p)
-    }
-
-    pub const fn neg3(a: &UInt<3>, p: &UInt<3>) -> UInt<3> {
-        neg(a, p)
-    }
-
-    pub const fn neg4(a: &UInt<4>, p: &UInt<4>) -> UInt<4> {
-        neg(a, p)
-    }
+    impl_base!(1, neg1);
+    impl_base!(2, neg2);
+    impl_base!(3, neg3);
+    impl_base!(4, neg4);
+    impl_base!(5, neg5);
+    impl_base!(6, neg6);
+    impl_base!(7, neg7);
+    impl_base!(8, neg8);
+    impl_base!(9, neg9);
+    impl_base!(10, neg10);
+    impl_base!(11, neg11);
+    impl_base!(12, neg12);
 
     pub const fn neg<const LIMBS: usize>(a: &UInt<LIMBS>, p: &UInt<LIMBS>) -> UInt<LIMBS> {
         let mut tmp = [Limb::ZERO; LIMBS];

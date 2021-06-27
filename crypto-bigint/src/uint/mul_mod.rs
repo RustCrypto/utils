@@ -3,60 +3,60 @@
 use super::UInt;
 use crate::Limb;
 
-impl UInt<1> {
-    /// Computes `a * b mod p` in constant time.
-    ///
-    /// Requires `p_inv = -(p^{-1} mod 2^{BITS}) mod 2^{BITS}` to be provided for efficiency.
-    pub const fn mul_mod(&self, b: &Self, p: &Self, p_inv: Limb) -> Self {
-        base::mul1(&self, &b, p, p_inv)
-    }
+macro_rules! impl_mul_mod {
+    ($size:expr, $base_name:ident) => {
+        impl UInt<$size> {
+            /// Computes `a * b mod p` in constant time.
+            ///
+            /// Requires `p_inv = -(p^{-1} mod 2^{BITS}) mod 2^{BITS}` to be provided for efficiency.
+            pub const fn mul_mod(&self, b: &Self, p: &Self, p_inv: Limb) -> Self {
+                base::$base_name(&self, &b, p, p_inv)
+            }
+        }
+    };
 }
 
-impl UInt<2> {
-    /// Computes `a * b mod p` in constant time.
-    ///
-    /// Requires `p_inv = -(p^{-1} mod 2^{BITS}) mod 2^{BITS}` to be provided for efficiency.
-    pub const fn mul_mod(&self, b: &Self, p: &Self, p_inv: Limb) -> Self {
-        base::mul2(self, b, p, p_inv)
-    }
-}
-
-impl UInt<3> {
-    /// Computes `a * b mod p` in constant time.
-    ///
-    /// Requires `p_inv = -(p^{-1} mod 2^{BITS}) mod 2^{BITS}` to be provided for efficiency.
-    pub const fn mul_mod(&self, b: &Self, p: &Self, p_inv: Limb) -> Self {
-        base::mul3(self, b, p, p_inv)
-    }
-}
-
-impl UInt<4> {
-    /// Computes `a * b mod p` in constant time.
-    ///
-    /// Requires `p_inv = -(p^{-1} mod 2^{BITS}) mod 2^{BITS}` to be provided for efficiency.
-    pub const fn mul_mod(&self, b: &Self, p: &Self, p_inv: Limb) -> Self {
-        base::mul4(self, b, p, p_inv)
-    }
-}
+impl_mul_mod!(1, mul1);
+impl_mul_mod!(2, mul2);
+impl_mul_mod!(3, mul3);
+impl_mul_mod!(4, mul4);
+impl_mul_mod!(5, mul5);
+impl_mul_mod!(6, mul6);
+impl_mul_mod!(7, mul7);
+impl_mul_mod!(8, mul8);
+impl_mul_mod!(9, mul9);
+impl_mul_mod!(10, mul10);
+impl_mul_mod!(11, mul11);
+impl_mul_mod!(12, mul12);
 
 pub(super) mod base {
     use crate::{Limb, UInt};
 
-    pub const fn mul1(a: &UInt<1>, b: &UInt<1>, p: &UInt<1>, p_inv: Limb) -> UInt<1> {
-        mul(a, b, p, p_inv)
+    macro_rules! impl_base {
+        ($size:expr, $name:ident) => {
+            pub const fn $name(
+                a: &UInt<$size>,
+                b: &UInt<$size>,
+                p: &UInt<$size>,
+                p_inv: Limb,
+            ) -> UInt<$size> {
+                mul(a, b, p, p_inv)
+            }
+        };
     }
 
-    pub const fn mul2(a: &UInt<2>, b: &UInt<2>, p: &UInt<2>, p_inv: Limb) -> UInt<2> {
-        mul(a, b, p, p_inv)
-    }
-
-    pub const fn mul3(a: &UInt<3>, b: &UInt<3>, p: &UInt<3>, p_inv: Limb) -> UInt<3> {
-        mul(a, b, p, p_inv)
-    }
-
-    pub const fn mul4(a: &UInt<4>, b: &UInt<4>, p: &UInt<4>, p_inv: Limb) -> UInt<4> {
-        mul(a, b, p, p_inv)
-    }
+    impl_base!(1, mul1);
+    impl_base!(2, mul2);
+    impl_base!(3, mul3);
+    impl_base!(4, mul4);
+    impl_base!(5, mul5);
+    impl_base!(6, mul6);
+    impl_base!(7, mul7);
+    impl_base!(8, mul8);
+    impl_base!(9, mul9);
+    impl_base!(10, mul10);
+    impl_base!(11, mul11);
+    impl_base!(12, mul12);
 
     // macro, because can't use &mut in const yet
     macro_rules! set {
