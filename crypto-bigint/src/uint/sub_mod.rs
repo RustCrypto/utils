@@ -46,44 +46,44 @@ pub(super) mod base {
     }
 
     pub const fn sub2(a: &UInt<2>, b: &UInt<2>, p: &UInt<2>) -> UInt<2> {
-        let (l0, borrow) = a.limbs[0].sbb(b.limbs[0], Limb::ZERO);
-        let (l1, borrow) = a.limbs[1].sbb(b.limbs[1], borrow);
-
-        // If underflow occurred on the final limb, borrow = 0xfff...fff, otherwise
-        // borrow = 0x000...000. Thus, we use it as a mask to conditionally add the modulus.
-        let (l0, carry) = l0.adc(p.limbs[0].bitand(borrow), Limb::ZERO);
-        let (l1, _) = l1.adc(p.limbs[1].bitand(borrow), carry);
-
-        UInt::new([l0, l1])
+        sub(a, b, p)
     }
 
     pub const fn sub3(a: &UInt<3>, b: &UInt<3>, p: &UInt<3>) -> UInt<3> {
-        let (l0, borrow) = a.limbs[0].sbb(b.limbs[0], Limb::ZERO);
-        let (l1, borrow) = a.limbs[1].sbb(b.limbs[1], borrow);
-        let (l2, borrow) = a.limbs[2].sbb(b.limbs[2], borrow);
-
-        // If underflow occurred on the final limb, borrow = 0xfff...fff, otherwise
-        // borrow = 0x000...000. Thus, we use it as a mask to conditionally add the modulus.
-        let (l0, carry) = l0.adc(p.limbs[0].bitand(borrow), Limb::ZERO);
-        let (l1, carry) = l1.adc(p.limbs[1].bitand(borrow), carry);
-        let (l2, _) = l2.adc(p.limbs[2].bitand(borrow), carry);
-
-        UInt::new([l0, l1, l2])
+        sub(a, b, p)
     }
 
     pub const fn sub4(a: &UInt<4>, b: &UInt<4>, p: &UInt<4>) -> UInt<4> {
-        let (l0, borrow) = a.limbs[0].sbb(b.limbs[0], Limb::ZERO);
-        let (l1, borrow) = a.limbs[1].sbb(b.limbs[1], borrow);
-        let (l2, borrow) = a.limbs[2].sbb(b.limbs[2], borrow);
-        let (l3, borrow) = a.limbs[3].sbb(b.limbs[3], borrow);
+        sub(a, b, p)
+    }
+
+    pub const fn sub<const LIMBS: usize>(
+        a: &UInt<LIMBS>,
+        b: &UInt<LIMBS>,
+        p: &UInt<LIMBS>,
+    ) -> UInt<LIMBS> {
+        let mut out = [Limb::ZERO; LIMBS];
+        let mut borrow = Limb::ZERO;
+        let mut i = 0;
+        while i < LIMBS {
+            let (l, b) = a.limbs[i].sbb(b.limbs[i], borrow);
+            out[i] = l;
+            borrow = b;
+            i += 1;
+        }
 
         // If underflow occurred on the final limb, borrow = 0xfff...fff, otherwise
         // borrow = 0x000...000. Thus, we use it as a mask to conditionally add the modulus.
-        let (l0, carry) = l0.adc(p.limbs[0].bitand(borrow), Limb::ZERO);
-        let (l1, carry) = l1.adc(p.limbs[1].bitand(borrow), carry);
-        let (l2, carry) = l2.adc(p.limbs[2].bitand(borrow), carry);
-        let (l3, _) = l3.adc(p.limbs[3].bitand(borrow), carry);
 
-        UInt::new([l0, l1, l2, l3])
+        let mut carry = Limb::ZERO;
+        let mut i = 0;
+        while i < LIMBS {
+            let (l, c) = out[i].adc(p.limbs[i].bitand(borrow), carry);
+            out[i] = l;
+            carry = c;
+            i += 1;
+        }
+
+        UInt::new(out)
     }
 }
