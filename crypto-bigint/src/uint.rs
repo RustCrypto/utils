@@ -15,6 +15,9 @@ mod sub;
 #[cfg(feature = "generic-array")]
 mod array;
 
+#[cfg(feature = "rand")]
+mod rand;
+
 use crate::{Concat, Encoding, Limb, Split};
 use core::fmt;
 use subtle::{Choice, ConditionallySelectable};

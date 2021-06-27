@@ -7,6 +7,9 @@ mod from;
 mod mul;
 mod sub;
 
+#[cfg(feature = "rand")]
+mod rand;
+
 use core::fmt;
 use subtle::{Choice, ConditionallySelectable};
 
