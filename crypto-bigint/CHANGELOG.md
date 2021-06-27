@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.2 (2021-06-26)
+### Added
+- `Limb::is_odd` and `UInt::is_odd` ([#505])
+- `UInt::new` ([#506])
+- `rand` feature ([#508])
+
+### Changed
+- Deprecate `LIMB_BYTES` constant ([#504])
+- Make `Limb`'s `Inner` value public ([#507])
+
+[#504]: https://github.com/RustCrypto/utils/pull/504
+[#505]: https://github.com/RustCrypto/utils/pull/505
+[#506]: https://github.com/RustCrypto/utils/pull/506
+[#507]: https://github.com/RustCrypto/utils/pull/507
+[#508]: https://github.com/RustCrypto/utils/pull/508
+
 ## 0.2.1 (2021-06-21)
 ### Added
 - `Limb` newtype ([#499])
