@@ -2,56 +2,53 @@
 
 use super::UInt;
 
-impl UInt<1> {
-    /// Computes `a + b mod p` in constant time.
-    pub const fn add_mod(&self, rhs: &Self, p: &Self) -> Self {
-        let l0 = base::add1(self.limbs[0], rhs.limbs[0], p.limbs[0]);
-        UInt::new([l0])
-    }
+macro_rules! impl_add_mod {
+    ($size:expr, $base_name:ident) => {
+        impl UInt<$size> {
+            /// Computes `a + b mod p` in constant time.
+            pub const fn add_mod(&self, rhs: &Self, p: &Self) -> Self {
+                base::$base_name(&self, &rhs, &p)
+            }
+        }
+    };
 }
 
-impl UInt<2> {
-    /// Computes `a + b mod p` in constant time.
-    pub const fn add_mod(&self, rhs: &Self, p: &Self) -> Self {
-        base::add2(&self, &rhs, &p)
-    }
-}
-
-impl UInt<3> {
-    /// Computes `a + b mod p` in constant time.
-    pub const fn add_mod(&self, rhs: &Self, p: &Self) -> Self {
-        base::add3(&self, &rhs, &p)
-    }
-}
-
-impl UInt<4> {
-    /// Computes `a + b mod p` in constant time.
-    pub const fn add_mod(&self, rhs: &Self, p: &Self) -> Self {
-        base::add4(&self, &rhs, &p)
-    }
-}
+impl_add_mod!(1, add1);
+impl_add_mod!(2, add2);
+impl_add_mod!(3, add3);
+impl_add_mod!(4, add4);
+impl_add_mod!(5, add5);
+impl_add_mod!(6, add6);
+impl_add_mod!(7, add7);
+impl_add_mod!(8, add8);
+impl_add_mod!(9, add9);
+impl_add_mod!(10, add10);
+impl_add_mod!(11, add11);
+impl_add_mod!(12, add12);
 
 pub(super) mod base {
     use crate::{Limb, UInt};
 
-    pub const fn add1(a: Limb, b: Limb, p: Limb) -> Limb {
-        let (l0, _) = a.adc(b, Limb::ZERO);
-
-        // Subtract the modulus, to ensure the result is smaller.
-        super::super::sub_mod::base::sub1(l0, p, p)
+    macro_rules! impl_base {
+        ($size:expr, $name:ident) => {
+            pub const fn $name(a: &UInt<$size>, b: &UInt<$size>, p: &UInt<$size>) -> UInt<$size> {
+                add(a, b, p)
+            }
+        };
     }
 
-    pub const fn add2(a: &UInt<2>, b: &UInt<2>, p: &UInt<2>) -> UInt<2> {
-        add(a, b, p)
-    }
-
-    pub const fn add3(a: &UInt<3>, b: &UInt<3>, p: &UInt<3>) -> UInt<3> {
-        add(a, b, p)
-    }
-
-    pub const fn add4(a: &UInt<4>, b: &UInt<4>, p: &UInt<4>) -> UInt<4> {
-        add(a, b, p)
-    }
+    impl_base!(1, add1);
+    impl_base!(2, add2);
+    impl_base!(3, add3);
+    impl_base!(4, add4);
+    impl_base!(5, add5);
+    impl_base!(6, add6);
+    impl_base!(7, add7);
+    impl_base!(8, add8);
+    impl_base!(9, add9);
+    impl_base!(10, add10);
+    impl_base!(11, add11);
+    impl_base!(12, add12);
 
     pub const fn add<const LIMBS: usize>(
         a: &UInt<LIMBS>,
