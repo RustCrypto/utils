@@ -24,6 +24,7 @@ zeroize = { version = "1", optional = true,  default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.3"
+rand_chacha = "0.3"
 
 [features]
 default = ["rand"]

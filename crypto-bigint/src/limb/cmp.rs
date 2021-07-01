@@ -24,6 +24,11 @@ impl Limb {
     pub fn cmp_vartime(&self, other: &Self) -> Ordering {
         self.0.cmp(&other.0)
     }
+
+    /// Performs an equality check in variable-time.
+    pub const fn eq_vartime(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
 }
 
 impl ConstantTimeEq for Limb {
