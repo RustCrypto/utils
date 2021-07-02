@@ -23,6 +23,13 @@
 //!     08090a0b 0c0d0e0f
 //! ");
 //! assert_eq!(bytes, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+//! assert_eq!(hex!("0a0B // 0c0d line comments"), [10, 11]);
+//! assert_eq!(hex!("0a0B // line comments
+//!                  0c0d"), [10, 11, 12, 13]);
+//! assert_eq!(hex!("0a0B /* block comments */ 0c0d"), [10, 11, 12, 13]);
+//! assert_eq!(hex!("0a0B /* multi-line
+//!                          block comments
+//!                       */ 0c0d"), [10, 11, 12, 13]);
 //! # }
 //! ```
 #![doc(
@@ -31,10 +38,14 @@
     html_root_url = "https://docs.rs/hex-literal/0.3.1"
 )]
 
+mod comments;
 extern crate proc_macro;
 
+use std::{iter::FromIterator, vec::IntoIter};
+
 use proc_macro::{Delimiter, Group, Literal, Punct, Spacing, TokenStream, TokenTree};
-use std::iter::FromIterator;
+
+use crate::comments::{Exclude, ExcludingComments};
 
 /// Strips any outer `Delimiter::None` groups from the input,
 /// returning a `TokenStream` consisting of the innermost
@@ -56,8 +67,7 @@ fn ignore_groups(mut input: TokenStream) -> TokenStream {
 }
 
 struct TokenTreeIter {
-    buf: Vec<u8>,
-    pos: usize,
+    buf: ExcludingComments<IntoIter<u8>>,
     is_punct: bool,
 }
 
@@ -75,20 +85,17 @@ impl TokenTreeIter {
             _ => panic!("expected single string literal"),
         };
         buf.pop();
+        let mut iter = buf.into_iter().exclude_comments();
+        iter.next();
         Self {
-            buf,
-            pos: 1,
+            buf: iter,
             is_punct: false,
         }
     }
 
     fn next_hex_val(&mut self) -> Option<u8> {
         loop {
-            let v = match self.buf.get(self.pos) {
-                Some(&v) => v,
-                None => return None,
-            };
-            self.pos += 1;
+            let v = self.buf.next()?;
             let n = match v {
                 b'0'..=b'9' => v - 48,
                 b'A'..=b'F' => v - 55,
