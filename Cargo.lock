@@ -88,7 +88,7 @@ version = "0.0.2"
 name = "const-oid"
 version = "0.6.0"
 dependencies = [
- "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex-literal 0.3.1",
 ]
 
 [[package]]
@@ -112,7 +112,7 @@ name = "crypto-bigint"
 version = "0.2.2"
 dependencies = [
  "generic-array",
- "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex-literal 0.3.1",
  "rand_core",
  "subtle",
  "zeroize",
@@ -142,7 +142,7 @@ dependencies = [
  "const-oid",
  "crypto-bigint",
  "der_derive",
- "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex-literal 0.3.1",
 ]
 
 [[package]]
@@ -183,12 +183,12 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 [[package]]
 name = "hex-literal"
 version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5af1f635ef1bc545d78392b136bfe1c9809e029023c84a3638a864a10b8819c8"
 
 [[package]]
 name = "hex-literal"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5af1f635ef1bc545d78392b136bfe1c9809e029023c84a3638a864a10b8819c8"
+version = "0.3.2"
 
 [[package]]
 name = "hmac"
@@ -230,7 +230,7 @@ name = "pkcs1"
 version = "0.0.0"
 dependencies = [
  "der",
- "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex-literal 0.3.1",
 ]
 
 [[package]]
@@ -240,7 +240,7 @@ dependencies = [
  "aes",
  "block-modes",
  "der",
- "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex-literal 0.3.1",
  "hmac",
  "pbkdf2",
  "scrypt",
@@ -254,7 +254,7 @@ version = "0.7.0"
 dependencies = [
  "base64ct",
  "der",
- "hex-literal 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex-literal 0.3.1",
  "pkcs5",
  "rand_core",
  "spki",
