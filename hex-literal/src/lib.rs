@@ -8,6 +8,9 @@
 //! - `' '`, `'\r'`, `'\n'`, `'\t'` — formatting characters which will be
 //!     ignored
 //!
+//! Additionally it accepts line (`//`) and block (`/* .. */`) comments. Characters
+//! inside of those are ignored.
+//!
 //! # Examples
 //! ```
 //! # #[macro_use] extern crate hex_literal;
@@ -134,7 +137,7 @@ impl Iterator for TokenTreeIter {
     }
 }
 
-/// Macro for converting sequence of string literals containing hex-encoded string
+/// Macro for converting sequence of string literals containing hex-encoded data
 /// into an array of bytes.
 #[proc_macro]
 pub fn hex(input: TokenStream) -> TokenStream {
