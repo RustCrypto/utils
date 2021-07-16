@@ -1,5 +1,5 @@
-//! This crate provides `hex!` macro for converting hexadecimal string literal
-//! to byte array at compile time.
+//! This crate provides the `hex!` macro for converting hexadecimal string literals
+//! to a byte array at compile time.
 //!
 //! It accepts the following characters in the input string:
 //!
@@ -8,13 +8,18 @@
 //! - `' '`, `'\r'`, `'\n'`, `'\t'` — formatting characters which will be
 //!     ignored
 //!
+//! Additionally it accepts line (`//`) and block (`/* .. */`) comments. Characters
+//! inside of those are ignored.
+//!
 //! # Examples
 //! ```
 //! # #[macro_use] extern crate hex_literal;
+//! // the macro can be used in const context
 //! const DATA: [u8; 4] = hex!("01020304");
-//!
 //! # fn main() {
 //! assert_eq!(DATA, [1, 2, 3, 4]);
+//!
+//! // it understands both upper and lower hex values
 //! assert_eq!(hex!("a1 b2 c3 d4"), [0xA1, 0xB2, 0xC3, 0xD4]);
 //! assert_eq!(hex!("E5 E6 90 92"), [0xE5, 0xE6, 0x90, 0x92]);
 //! assert_eq!(hex!("0a0B 0C0d"), [10, 11, 12, 13]);
@@ -23,6 +28,15 @@
 //!     08090a0b 0c0d0e0f
 //! ");
 //! assert_eq!(bytes, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+//!
+//! // it's possible to use several literals (results will be concatenated)
+//! let bytes2 = hex!(
+//!     "00010203 04050607" // first half
+//!     "08090a0b 0c0d0e0f" // second hald
+//! );
+//! assert_eq!(bytes2, bytes);
+//!
+//! // comments can be also included inside literals
 //! assert_eq!(hex!("0a0B // 0c0d line comments"), [10, 11]);
 //! assert_eq!(hex!("0a0B // line comments
 //!                  0c0d"), [10, 11, 12, 13]);
@@ -35,13 +49,13 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/hex-literal/0.3.2"
+    html_root_url = "https://docs.rs/hex-literal/0.3.3"
 )]
 
 mod comments;
 extern crate proc_macro;
 
-use std::{iter::FromIterator, vec::IntoIter};
+use std::vec::IntoIter;
 
 use proc_macro::{Delimiter, Group, Literal, Punct, Spacing, TokenStream, TokenTree};
 
@@ -72,17 +86,12 @@ struct TokenTreeIter {
 }
 
 impl TokenTreeIter {
-    fn new(input: TokenStream) -> Self {
-        let mut ts = ignore_groups(input).into_iter();
-        let input_str = match (ts.next(), ts.next()) {
-            (Some(TokenTree::Literal(literal)), None) => literal.to_string(),
-            _ => panic!("expected single string literal"),
-        };
-        let mut buf: Vec<u8> = input_str.into();
+    fn new(input: Literal) -> Self {
+        let mut buf: Vec<u8> = input.to_string().into();
 
         match buf.as_slice() {
             [b'"', .., b'"'] => (),
-            _ => panic!("expected single string literal"),
+            _ => panic!("expected string literals"),
         };
         buf.pop();
         let mut iter = buf.into_iter().exclude_comments();
@@ -128,10 +137,17 @@ impl Iterator for TokenTreeIter {
     }
 }
 
-/// Macro for converting string literal containing hex-encoded string
-/// to an array containing decoded bytes
+/// Macro for converting sequence of string literals containing hex-encoded data
+/// into an array of bytes.
 #[proc_macro]
 pub fn hex(input: TokenStream) -> TokenStream {
-    let ts = TokenStream::from_iter(TokenTreeIter::new(input));
-    TokenStream::from(TokenTree::Group(Group::new(Delimiter::Bracket, ts)))
+    let mut out_ts = TokenStream::new();
+    for tt in ignore_groups(input) {
+        let iter = match tt {
+            TokenTree::Literal(literal) => TokenTreeIter::new(literal),
+            _ => panic!("expected string literals"),
+        };
+        out_ts.extend(iter);
+    }
+    TokenStream::from(TokenTree::Group(Group::new(Delimiter::Bracket, out_ts)))
 }
