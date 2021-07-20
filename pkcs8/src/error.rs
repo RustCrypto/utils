@@ -39,6 +39,10 @@ pub enum Error {
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     Io,
 
+    /// [`AlgorithmIdentifier::parameters`][`crate::AlgorithmIdentifier::parameters`]
+    /// is malformed or otherwise encoded in an unexpected manner.
+    ParametersMalformed,
+
     /// Permission denied reading file.
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
@@ -56,11 +60,12 @@ impl fmt::Display for Error {
             Error::Asn1(err) => write!(f, "PKCS#8 ASN.1 error: {}", err),
             #[cfg(feature = "std")]
             Error::FileNotFound => f.write_str("file not found"),
-            Error::KeyMalformed => f.write_str("cryptographic key data malformed"),
+            Error::KeyMalformed => f.write_str("PKCS#8 cryptographic key data malformed"),
             #[cfg(feature = "std")]
             Error::Io => f.write_str("I/O error"),
             #[cfg(feature = "pem")]
             Error::Pem => f.write_str("PKCS#8 PEM error"),
+            Error::ParametersMalformed => f.write_str("PKCS#8 algorithm parameters malformed"),
             #[cfg(feature = "std")]
             Error::PermissionDenied => f.write_str("permission denied"),
         }
