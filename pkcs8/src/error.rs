@@ -13,30 +13,40 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Error {
-    /// ASN.1 DER-related errors
+    /// ASN.1 DER-related errors.
     Asn1(der::Error),
 
-    /// Cryptographic errors
+    /// Cryptographic errors.
+    ///
+    /// This is primarily used for relaying PKCS#5-related errors for
+    /// PKCS#8 documents which have been encrypted under a password.
     Crypto,
 
-    /// PEM encoding errors
-    #[cfg(feature = "pem")]
-    Pem,
-
-    /// I/O errors
-    #[cfg(feature = "std")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    Io,
-
-    /// File not found error
+    /// File not found error.
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     FileNotFound,
 
-    /// Permission denied reading file
+    /// Malformed cryptographic key contained in a PKCS#8 document.
+    ///
+    /// This is intended for relaying errors related to the raw data contained
+    /// within [`PrivateKeyInfo::private_key`][`crate::PrivateKeyInfo::private_key`]
+    /// or [`SubjectPublicKeyInfo::subject_public_key`][`crate::SubjectPublicKeyInfo::subject_public_key`].
+    KeyMalformed,
+
+    /// I/O errors.
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    Io,
+
+    /// Permission denied reading file.
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     PermissionDenied,
+
+    /// PEM encoding errors.
+    #[cfg(feature = "pem")]
+    Pem,
 }
 
 impl fmt::Display for Error {
@@ -44,12 +54,13 @@ impl fmt::Display for Error {
         match self {
             Error::Crypto => f.write_str("PKCS#8 cryptographic error"),
             Error::Asn1(err) => write!(f, "PKCS#8 ASN.1 error: {}", err),
-            #[cfg(feature = "pem")]
-            Error::Pem => f.write_str("PKCS#8 PEM error"),
-            #[cfg(feature = "std")]
-            Error::Io => f.write_str("I/O error"),
             #[cfg(feature = "std")]
             Error::FileNotFound => f.write_str("file not found"),
+            Error::KeyMalformed => f.write_str("cryptographic key data malformed"),
+            #[cfg(feature = "std")]
+            Error::Io => f.write_str("I/O error"),
+            #[cfg(feature = "pem")]
+            Error::Pem => f.write_str("PKCS#8 PEM error"),
             #[cfg(feature = "std")]
             Error::PermissionDenied => f.write_str("permission denied"),
         }
