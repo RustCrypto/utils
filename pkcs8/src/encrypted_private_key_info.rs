@@ -17,6 +17,10 @@ use core::convert::TryInto;
 #[cfg(feature = "pem")]
 use {crate::pem, zeroize::Zeroizing};
 
+/// Type label for PEM-encoded private keys.
+#[cfg(feature = "pem")]
+pub(crate) const PEM_TYPE_LABEL: &str = "ENCRYPTED PRIVATE KEY";
+
 /// PKCS#8 `EncryptedPrivateKeyInfo`.
 ///
 /// ASN.1 structure containing a PKCS#5 [`EncryptionScheme`] identifier for a
@@ -70,10 +74,9 @@ impl<'a> EncryptedPrivateKeyInfo<'a> {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<alloc::string::String> {
-        Zeroizing::new(pem::encode(
-            self.to_der().as_ref(),
-            pem::ENCRYPTED_PRIVATE_KEY_BOUNDARY,
-        ))
+        Zeroizing::new(
+            pem::encode_string(PEM_TYPE_LABEL, self.to_der().as_ref()).expect("PEM encoding error"),
+        )
     }
 }
 

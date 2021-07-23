@@ -13,7 +13,11 @@ use zeroize::{Zeroize, Zeroizing};
 use crate::PrivateKeyDocument;
 
 #[cfg(feature = "pem")]
-use {crate::pem, alloc::string::String, core::str::FromStr};
+use {
+    crate::{encrypted_private_key_info::PEM_TYPE_LABEL, pem},
+    alloc::string::String,
+    core::str::FromStr,
+};
 
 #[cfg(feature = "std")]
 use {
@@ -63,7 +67,12 @@ impl EncryptedPrivateKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn from_pem(s: &str) -> Result<Self> {
-        let der_bytes = pem::decode(s, pem::ENCRYPTED_PRIVATE_KEY_BOUNDARY)?;
+        let (label, der_bytes) = pem::decode_vec(s.as_bytes())?;
+
+        if label != PEM_TYPE_LABEL {
+            return Err(pem::Error::Label.into());
+        }
+
         Self::from_der(&*der_bytes)
     }
 
@@ -72,7 +81,7 @@ impl EncryptedPrivateKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<String> {
-        Zeroizing::new(pem::encode(&self.0, pem::ENCRYPTED_PRIVATE_KEY_BOUNDARY))
+        Zeroizing::new(pem::encode_string(PEM_TYPE_LABEL, &self.0).expect("PEM encoding error"))
     }
 
     /// Load [`EncryptedPrivateKeyDocument`] from an ASN.1 DER-encoded file on

@@ -14,6 +14,10 @@ use std::{fs, path::Path, str};
 #[cfg(feature = "pem")]
 use {crate::pem, alloc::string::String, core::str::FromStr};
 
+/// Type label for PEM-encoded private keys.
+#[cfg(feature = "pem")]
+pub(crate) const PEM_TYPE_LABEL: &str = "PUBLIC KEY";
+
 /// SPKI public key document.
 ///
 /// This type provides storage for [`SubjectPublicKeyInfo`] encoded as ASN.1
@@ -44,7 +48,12 @@ impl PublicKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn from_pem(s: &str) -> Result<Self> {
-        let der_bytes = pem::decode(s, pem::PUBLIC_KEY_BOUNDARY)?;
+        let (label, der_bytes) = pem::decode_vec(s.as_bytes())?;
+
+        if label != PEM_TYPE_LABEL {
+            return Err(pem::Error::Label.into());
+        }
+
         Self::from_der(&*der_bytes)
     }
 
@@ -52,7 +61,7 @@ impl PublicKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> String {
-        pem::encode(&self.0, pem::PUBLIC_KEY_BOUNDARY)
+        pem::encode_string(PEM_TYPE_LABEL, &self.0).expect("PEM encoding error")
     }
 
     /// Load [`PublicKeyDocument`] from an ASN.1 DER-encoded file on the local

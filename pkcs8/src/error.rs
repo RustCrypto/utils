@@ -49,6 +49,7 @@ pub enum Error {
     PermissionDenied,
 
     /// PEM encoding errors.
+    // TODO(tarcieri): propagate `pem_rfc7468::Error`
     #[cfg(feature = "pem")]
     Pem,
 }
@@ -84,6 +85,14 @@ impl From<der::Error> for Error {
 impl From<der::ErrorKind> for Error {
     fn from(err: der::ErrorKind) -> Error {
         Error::Asn1(err.into())
+    }
+}
+
+#[cfg(feature = "pem")]
+impl From<pem_rfc7468::Error> for Error {
+    fn from(_: pem_rfc7468::Error) -> Error {
+        // TODO(tarcieri): propagate `pem_rfc7468::Error`
+        Error::Pem
     }
 }
 
