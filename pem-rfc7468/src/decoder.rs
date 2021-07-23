@@ -44,19 +44,21 @@ pub fn decode<'i, 'o>(pem: &'i [u8], buf: &'o mut [u8]) -> Result<(&'i str, &'o 
 pub fn decode_vec(pem: &[u8]) -> Result<(&str, Vec<u8>)> {
     let encapsulation = Encapsulation::try_from(pem)?;
     let label = encapsulation.label();
-    let mut expected_len = 0;
+    let mut max_len = 0;
 
     for line in encapsulation.encapsulated_text() {
-        expected_len += line?.len() * 3 / 4;
+        max_len += line?.len() * 3 / 4;
     }
 
-    let mut result = vec![0u8; expected_len];
+    let mut result = vec![0u8; max_len];
     let mut actual_len = 0;
     for line in encapsulation.encapsulated_text() {
         actual_len += Base64::decode(line?, &mut result[actual_len..])?.len();
     }
 
-    debug_assert_eq!(expected_len, actual_len);
+    // Actual encoded length can be slightly shorter than estimated
+    // TODO(tarcieri): more reliable length estimation
+    result.truncate(actual_len);
     Ok((label, result))
 }
 

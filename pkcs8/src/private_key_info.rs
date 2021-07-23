@@ -20,13 +20,17 @@ use {
 };
 
 #[cfg(feature = "pem")]
-use {crate::pem, zeroize::Zeroizing};
+use {crate::pem, alloc::string::String, zeroize::Zeroizing};
 
 /// Context-specific tag number for [`Attributes`].
 const ATTRIBUTES_TAG: TagNumber = TagNumber::new(0);
 
 /// Context-specific tag number for the public key.
 const PUBLIC_KEY_TAG: TagNumber = TagNumber::new(1);
+
+/// Type label for PEM-encoded private keys.
+#[cfg(feature = "pem")]
+pub(crate) const PEM_TYPE_LABEL: &str = "PRIVATE KEY";
 
 /// PKCS#8 `PrivateKeyInfo`.
 ///
@@ -152,11 +156,10 @@ impl<'a> PrivateKeyInfo<'a> {
     /// Encode this [`PrivateKeyInfo`] as PEM-encoded ASN.1 DER.
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
-    pub fn to_pem(&self) -> Zeroizing<alloc::string::String> {
-        Zeroizing::new(pem::encode(
-            self.to_der().as_ref(),
-            pem::PRIVATE_KEY_BOUNDARY,
-        ))
+    pub fn to_pem(&self) -> Zeroizing<String> {
+        Zeroizing::new(
+            pem::encode_string(PEM_TYPE_LABEL, self.to_der().as_ref()).expect("PEM encoding error"),
+        )
     }
 }
 

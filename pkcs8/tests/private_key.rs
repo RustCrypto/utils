@@ -156,21 +156,21 @@ fn encode_rsa_2048_der() {
 #[cfg(feature = "pem")]
 fn encode_ec_p256_pem() {
     let pk = PrivateKeyInfo::try_from(EC_P256_DER_EXAMPLE).unwrap();
-    assert_eq!(EC_P256_PEM_EXAMPLE.trim_end(), &*pk.to_pem());
+    assert_eq!(EC_P256_PEM_EXAMPLE, &*pk.to_pem());
 }
 
 #[test]
 #[cfg(feature = "pem")]
 fn encode_ed25519_pem() {
     let pk = PrivateKeyInfo::try_from(ED25519_DER_V1_EXAMPLE).unwrap();
-    assert_eq!(ED25519_PEM_V1_EXAMPLE.trim_end(), &*pk.to_pem());
+    assert_eq!(ED25519_PEM_V1_EXAMPLE, &*pk.to_pem());
 }
 
 #[test]
 #[cfg(feature = "pem")]
 fn encode_rsa_2048_pem() {
     let pk = PrivateKeyInfo::try_from(RSA_2048_DER_EXAMPLE).unwrap();
-    assert_eq!(RSA_2048_PEM_EXAMPLE.trim_end(), &*pk.to_pem());
+    assert_eq!(RSA_2048_PEM_EXAMPLE, &*pk.to_pem());
 }
 
 #[test]

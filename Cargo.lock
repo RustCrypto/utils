@@ -262,6 +262,7 @@ dependencies = [
  "base64ct",
  "der",
  "hex-literal 0.3.1",
+ "pem-rfc7468",
  "pkcs5",
  "rand_core",
  "spki",

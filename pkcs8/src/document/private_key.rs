@@ -17,7 +17,11 @@ use {
 };
 
 #[cfg(feature = "pem")]
-use {crate::pem, alloc::string::String, core::str::FromStr};
+use {
+    crate::{pem, private_key_info::PEM_TYPE_LABEL},
+    alloc::string::String,
+    core::str::FromStr,
+};
 
 #[cfg(feature = "std")]
 use std::{fs, path::Path, str};
@@ -52,7 +56,12 @@ impl PrivateKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn from_pem(s: &str) -> Result<Self> {
-        let der_bytes = pem::decode(s, pem::PRIVATE_KEY_BOUNDARY)?;
+        let (label, der_bytes) = pem::decode_vec(s.as_bytes())?;
+
+        if label != PEM_TYPE_LABEL {
+            return Err(pem::Error::Label.into());
+        }
+
         Self::from_der(&*der_bytes)
     }
 
@@ -60,7 +69,7 @@ impl PrivateKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<String> {
-        Zeroizing::new(pem::encode(&self.0, pem::PRIVATE_KEY_BOUNDARY))
+        Zeroizing::new(pem::encode_string(PEM_TYPE_LABEL, &self.0).expect("PEM encoding error"))
     }
 
     /// Load [`PrivateKeyDocument`] from an ASN.1 DER-encoded file on the local

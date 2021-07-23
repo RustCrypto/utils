@@ -125,6 +125,7 @@ fn decode_ed25519_encpriv_aes256_pbkdf2_sha256_der() {
 fn decode_ed25519_encpriv_aes256_pbkdf2_sha256_pem() {
     let pkcs8_doc: EncryptedPrivateKeyDocument =
         ED25519_PEM_AES256_PBKDF2_SHA256_EXAMPLE.parse().unwrap();
+
     assert_eq!(pkcs8_doc.as_ref(), ED25519_DER_AES256_PBKDF2_SHA256_EXAMPLE);
 
     // Ensure `EncryptedPrivateKeyDocument` parses successfully
@@ -204,10 +205,7 @@ fn encode_ed25519_encpriv_aes256_pbkdf2_sha256_der() {
 #[cfg(feature = "pem")]
 fn encode_ed25519_encpriv_aes256_pbkdf2_sha256_pem() {
     let pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_AES256_PBKDF2_SHA256_EXAMPLE).unwrap();
-    assert_eq!(
-        ED25519_PEM_AES256_PBKDF2_SHA256_EXAMPLE.trim_end(),
-        &*pk.to_pem()
-    );
+    assert_eq!(ED25519_PEM_AES256_PBKDF2_SHA256_EXAMPLE, &*pk.to_pem());
 }
 
 #[test]

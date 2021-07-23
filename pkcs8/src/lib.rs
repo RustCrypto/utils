@@ -92,9 +92,6 @@ mod document;
 #[cfg(feature = "pkcs5")]
 pub(crate) mod encrypted_private_key_info;
 
-#[cfg(feature = "pem")]
-mod pem;
-
 pub use crate::{
     attributes::Attributes,
     error::{Error, Result},
@@ -104,6 +101,9 @@ pub use crate::{
 };
 pub use der::{self, asn1::ObjectIdentifier};
 pub use spki::{AlgorithmIdentifier, SubjectPublicKeyInfo};
+
+#[cfg(feature = "pem")]
+use pem_rfc7468 as pem;
 
 #[cfg(feature = "pkcs5")]
 pub use encrypted_private_key_info::EncryptedPrivateKeyInfo;
