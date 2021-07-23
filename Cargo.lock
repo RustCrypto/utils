@@ -226,6 +226,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "pem-rfc7468"
+version = "0.0.0"
+dependencies = [
+ "base64ct",
+]
+
+[[package]]
 name = "pkcs1"
 version = "0.0.0"
 dependencies = [
