@@ -44,6 +44,19 @@ rules, implementing all of the MUSTs and SHOULDs while avoiding the MAYs,
 and targeting the "ABNF (Strict)" subset of the grammar as described in
 Section 3 Figure 3.
 
+## Implementation notes
+
+- Core PEM implementation is `no_std`-friendly and requires no heap allocations.
+- Avoids use of copies and temporary buffers.
+- Uses the [`base64ct`] crate to decode/encode Base64 in constant-time.
+- PEM parser avoids branching on potentially secret data as much as possible.
+  In the happy path, only 1-byte of secret data is potentially
+  branched upon.
+
+Note: a forthcoming paper [Util::Lookup: Exploiting key decoding in cryptographic libraries][Util::Lookup]
+demonstrates how the leakage from non-constant-time PEM parsers can be used
+to practically extract RSA private keys from SGX enclaves.
+
 ## License
 
 Licensed under either of:
@@ -72,7 +85,9 @@ dual licensed as above, without any additional terms or conditions.
 [build-image]: https://github.com/RustCrypto/utils/workflows/pem-rfc7468/badge.svg?branch=master&event=push
 [build-link]: https://github.com/RustCrypto/utils/actions
 
-[//]: # (general links)
+[//]: # (links)
 
 [RFC 1421]: https://datatracker.ietf.org/doc/html/rfc1421
 [RFC 7468]: https://datatracker.ietf.org/doc/html/rfc7468
+[`base64ct`]: https://github.com/RustCrypto/utils/tree/master/base64ct
+[Util::Lookup]: https://twitter.com/JanWichelmann/status/1418532480081145857
