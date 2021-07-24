@@ -2,6 +2,17 @@
 
 use core::fmt;
 
+#[cfg(feature = "pem")]
+use crate::pem;
+
+/// Message to display when an `expect`-ed DER encoding error occurs
+#[cfg(feature = "alloc")]
+pub(crate) const DER_ENCODING_MSG: &str = "DER encoding error";
+
+/// Message to display when an `expect`-ed PEM encoding error occurs
+#[cfg(feature = "pem")]
+pub(crate) const PEM_ENCODING_MSG: &str = "PEM encoding error";
+
 /// Result type
 pub type Result<T> = core::result::Result<T, Error>;
 
@@ -15,17 +26,51 @@ pub enum Error {
     /// Encoding errors
     Encode,
 
+    /// File not found error.
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    FileNotFound,
+
+    /// I/O errors.
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    Io,
+
+    /// PEM encoding errors.
+    #[cfg(feature = "pem")]
+    Pem(pem::Error),
+
+    /// Permission denied reading file.
+    #[cfg(feature = "std")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+    PermissionDenied,
+
     /// Version errors
     Version,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            Error::Decode => "PKCS#1 decoding error",
-            Error::Encode => "PKCS#1 encoding error",
-            Error::Version => "PKCS#1 version error",
-        })
+        match self {
+            Error::Decode => f.write_str("PKCS#1 decoding error"),
+            Error::Encode => f.write_str("PKCS#1 encoding error"),
+            #[cfg(feature = "std")]
+            Error::FileNotFound => f.write_str("file not found"),
+            #[cfg(feature = "std")]
+            Error::Io => f.write_str("I/O error"),
+            #[cfg(feature = "pem")]
+            Error::Pem(err) => write!(f, "PKCS#1 {}", err),
+            Error::Version => f.write_str("PKCS#1 version error"),
+            #[cfg(feature = "std")]
+            Error::PermissionDenied => f.write_str("permission denied"),
+        }
+    }
+}
+
+#[cfg(feature = "pem")]
+impl From<pem_rfc7468::Error> for Error {
+    fn from(err: pem_rfc7468::Error) -> Error {
+        Error::Pem(err)
     }
 }
 
@@ -35,5 +80,16 @@ impl std::error::Error for Error {}
 impl From<der::Error> for Error {
     fn from(_: der::Error) -> Error {
         Error::Decode
+    }
+}
+
+#[cfg(feature = "std")]
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Error {
+        match err.kind() {
+            std::io::ErrorKind::NotFound => Error::FileNotFound,
+            std::io::ErrorKind::PermissionDenied => Error::PermissionDenied,
+            _ => Error::Io,
+        }
     }
 }

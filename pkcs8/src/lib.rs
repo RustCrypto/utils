@@ -76,7 +76,6 @@
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
-
 #[cfg(feature = "std")]
 extern crate std;
 
@@ -102,6 +101,12 @@ pub use crate::{
 pub use der::{self, asn1::ObjectIdentifier};
 pub use spki::{AlgorithmIdentifier, SubjectPublicKeyInfo};
 
+#[cfg(feature = "alloc")]
+pub use crate::{
+    document::{private_key::PrivateKeyDocument, public_key::PublicKeyDocument},
+    traits::{ToPrivateKey, ToPublicKey},
+};
+
 #[cfg(feature = "pem")]
 use pem_rfc7468 as pem;
 
@@ -113,9 +118,3 @@ pub use pkcs5;
 
 #[cfg(all(feature = "alloc", feature = "pkcs5"))]
 pub use crate::document::encrypted_private_key::EncryptedPrivateKeyDocument;
-
-#[cfg(feature = "alloc")]
-pub use crate::{
-    document::{private_key::PrivateKeyDocument, public_key::PublicKeyDocument},
-    traits::{ToPrivateKey, ToPublicKey},
-};

@@ -12,6 +12,23 @@ RSA Cryptography Specifications Version 2.2 ([RFC 8017]).
 
 [Documentation][docs-link]
 
+## About
+
+This crate supports encoding and decoding RSA private and public keys
+in either PKCS#1 DER (binary) or PEM (text) formats.
+
+PEM encoded RSA private keys begin with:
+
+```
+-----BEGIN RSA PRIVATE KEY-----
+```
+
+PEM encoded RSA public keys begin with:
+
+```
+-----BEGIN RSA PUBLIC KEY-----
+```
+
 ## License
 
 Licensed under either of:

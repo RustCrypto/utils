@@ -1,4 +1,4 @@
-//! RSA Private Keys.
+//! PKCS#1 RSA Private Keys.
 
 use crate::{RsaPublicKey, Version};
 use core::{convert::TryFrom, fmt};
@@ -7,7 +7,21 @@ use der::{
     Decodable, Encodable, Error, Message, Result,
 };
 
-/// RSA Private Keys as defined in [RFC 8017 Appendix 1.2].
+#[cfg(feature = "alloc")]
+use crate::RsaPrivateKeyDocument;
+
+#[cfg(feature = "pem")]
+use {
+    crate::{error, pem},
+    alloc::string::String,
+    zeroize::Zeroizing,
+};
+
+/// Type label for PEM-encoded private keys.
+#[cfg(feature = "pem")]
+pub(crate) const PEM_TYPE_LABEL: &str = "RSA PRIVATE KEY";
+
+/// PKCS#1 RSA Private Keys as defined in [RFC 8017 Appendix 1.2].
 ///
 /// ASN.1 structure containing a serialized RSA private key:
 ///
@@ -64,6 +78,23 @@ impl<'a> RsaPrivateKey<'a> {
             modulus: self.modulus,
             public_exponent: self.public_exponent,
         }
+    }
+
+    /// Encode this [`RsaPrivateKey`] as ASN.1 DER.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+    pub fn to_der(&self) -> RsaPrivateKeyDocument {
+        self.into()
+    }
+
+    /// Encode this [`RsaPrivateKey`] as PEM-encoded ASN.1 DER.
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    pub fn to_pem(&self) -> Zeroizing<String> {
+        Zeroizing::new(
+            pem::encode_string(PEM_TYPE_LABEL, self.to_der().as_ref())
+                .expect(error::PEM_ENCODING_MSG),
+        )
     }
 }
 
