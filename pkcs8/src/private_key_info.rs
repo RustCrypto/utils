@@ -20,7 +20,11 @@ use {
 };
 
 #[cfg(feature = "pem")]
-use {crate::pem, alloc::string::String, zeroize::Zeroizing};
+use {
+    crate::{error, pem},
+    alloc::string::String,
+    zeroize::Zeroizing,
+};
 
 /// Context-specific tag number for [`Attributes`].
 const ATTRIBUTES_TAG: TagNumber = TagNumber::new(0);
@@ -158,7 +162,8 @@ impl<'a> PrivateKeyInfo<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<String> {
         Zeroizing::new(
-            pem::encode_string(PEM_TYPE_LABEL, self.to_der().as_ref()).expect("PEM encoding error"),
+            pem::encode_string(PEM_TYPE_LABEL, self.to_der().as_ref())
+                .expect(error::PEM_ENCODING_MSG),
         )
     }
 }
