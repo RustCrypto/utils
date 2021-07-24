@@ -97,9 +97,9 @@ pub(crate) fn split_label(bytes: &[u8]) -> Option<(&str, &[u8])> {
 /// > lines are divided with CRLF, CR, or LF.
 pub(crate) fn strip_leading_eol(bytes: &[u8]) -> Option<&[u8]> {
     match bytes {
+        [CHAR_LF, rest @ ..] => Some(rest),
         [CHAR_CR, CHAR_LF, rest @ ..] => Some(rest),
         [CHAR_CR, rest @ ..] => Some(rest),
-        [CHAR_LF, rest @ ..] => Some(rest),
         _ => None,
     }
 }
@@ -114,8 +114,8 @@ pub(crate) fn strip_leading_eol(bytes: &[u8]) -> Option<&[u8]> {
 pub(crate) fn strip_trailing_eol(bytes: &[u8]) -> Option<&[u8]> {
     match bytes {
         [head @ .., CHAR_CR, CHAR_LF] => Some(head),
-        [head @ .., CHAR_CR] => Some(head),
         [head @ .., CHAR_LF] => Some(head),
+        [head @ .., CHAR_CR] => Some(head),
         _ => None,
     }
 }

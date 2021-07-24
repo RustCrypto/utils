@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "base64ct/**"
+      - "pem-rfc7468/**"
       - "Cargo.*"
   push:
     branches: master
