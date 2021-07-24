@@ -61,8 +61,8 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::Crypto => f.write_str("PKCS#8 cryptographic error"),
             Error::Asn1(err) => write!(f, "PKCS#8 ASN.1 error: {}", err),
+            Error::Crypto => f.write_str("PKCS#8 cryptographic error"),
             #[cfg(feature = "std")]
             Error::FileNotFound => f.write_str("file not found"),
             Error::KeyMalformed => f.write_str("PKCS#8 cryptographic key data malformed"),
