@@ -1,6 +1,6 @@
 [package]
 name = "pkcs1"
-version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.1.0" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #1:
 RSA Cryptography Specifications Version 2.2 (RFC 8017)

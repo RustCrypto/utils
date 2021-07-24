@@ -1,4 +1,5 @@
 //! Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #1:
+//!
 //! RSA Cryptography Specifications Version 2.2 ([RFC 8017])
 //!
 //! ## About
@@ -28,7 +29,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/pkcs1/0.0.0"
+    html_root_url = "https://docs.rs/pkcs1/0.1.0"
 )]
 #![forbid(unsafe_code, clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
