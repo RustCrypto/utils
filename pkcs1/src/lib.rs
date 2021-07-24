@@ -1,6 +1,23 @@
 //! Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #1:
 //! RSA Cryptography Specifications Version 2.2 ([RFC 8017])
 //!
+//! ## About
+//!
+//! This crate supports encoding and decoding RSA private and public keys
+//! in either PKCS#1 DER (binary) or PEM (text) formats.
+//!
+//! PEM encoded RSA private keys begin with:
+//!
+//! ```text
+//! -----BEGIN RSA PRIVATE KEY-----
+//! ```
+//!
+//! PEM encoded RSA public keys begin with:
+//!
+//! ```text
+//! -----BEGIN RSA PUBLIC KEY-----
+//! ```
+//!
 //! # Minimum Supported Rust Version
 //!
 //! This crate requires **Rust 1.51** at a minimum.
@@ -16,6 +33,8 @@
 #![forbid(unsafe_code, clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
@@ -23,6 +42,15 @@ mod error;
 mod private_key;
 mod public_key;
 mod version;
+
+#[cfg(feature = "alloc")]
+mod document;
+
+#[cfg(feature = "alloc")]
+pub use crate::document::{private_key::RsaPrivateKeyDocument, public_key::RsaPublicKeyDocument};
+
+#[cfg(feature = "pem")]
+use pem_rfc7468 as pem;
 
 pub use self::{
     error::{Error, Result},

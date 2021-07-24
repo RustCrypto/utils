@@ -19,7 +19,6 @@ der = { version = "0.4", features = ["oid"], path = "../der" }
 spki = { version = "0.4", path = "../spki" }
 
 # optional dependencies
-base64ct = { version = "1", optional = true, path = "../base64ct" }
 rand_core = { version = "0.6", optional = true, default-features = false }
 pkcs5 = { version = "0.3", optional = true, path = "../pkcs5" }
 pem-rfc7468 = { version = "0.1", optional = true, path = "../pem-rfc7468" }
@@ -32,7 +31,7 @@ hex-literal = "0.3"
 encryption = ["alloc", "pkcs5/alloc", "pkcs5/pbes2", "rand_core"]
 std = ["alloc", "der/std"]
 alloc = ["der/alloc", "zeroize"]
-pem = ["alloc", "base64ct/alloc", "pem-rfc7468/alloc"]
+pem = ["alloc", "pem-rfc7468/alloc"]
 
 [package.metadata.docs.rs]
 all-features = true

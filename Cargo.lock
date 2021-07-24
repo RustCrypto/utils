@@ -238,6 +238,8 @@ version = "0.0.0"
 dependencies = [
  "der",
  "hex-literal 0.3.1",
+ "pem-rfc7468",
+ "zeroize",
 ]
 
 [[package]]
@@ -259,7 +261,6 @@ dependencies = [
 name = "pkcs8"
 version = "0.7.2"
 dependencies = [
- "base64ct",
  "der",
  "hex-literal 0.3.1",
  "pem-rfc7468",
