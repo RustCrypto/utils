@@ -20,11 +20,8 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Error {
-    /// Decoding errors
-    Decode,
-
-    /// Encoding errors
-    Encode,
+    /// ASN.1 DER-related errors.
+    Asn1(der::Error),
 
     /// File not found error.
     #[cfg(feature = "std")]
@@ -52,8 +49,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::Decode => f.write_str("PKCS#1 decoding error"),
-            Error::Encode => f.write_str("PKCS#1 encoding error"),
+            Error::Asn1(err) => write!(f, "PKCS#1 ASN.1 error: {}", err),
             #[cfg(feature = "std")]
             Error::FileNotFound => f.write_str("file not found"),
             #[cfg(feature = "std")]
@@ -78,8 +74,8 @@ impl From<pem_rfc7468::Error> for Error {
 impl std::error::Error for Error {}
 
 impl From<der::Error> for Error {
-    fn from(_: der::Error) -> Error {
-        Error::Decode
+    fn from(err: der::Error) -> Error {
+        Error::Asn1(err)
     }
 }
 
