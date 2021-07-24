@@ -11,7 +11,7 @@ cryptographic private keys.
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 edition = "2018"
-repository = "https://github.com/RustCrypto/utils/tree/master/pem"
+repository = "https://github.com/RustCrypto/utils/tree/master/pem-rfc7468"
 categories = ["cryptography", "data-structures", "encoding", "no-std"]
 keywords = ["crypto", "key", "pkcs", "rsa"]
 readme = "README.md"

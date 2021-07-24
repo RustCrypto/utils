@@ -81,7 +81,7 @@ impl EncryptedPrivateKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<String> {
-        Zeroizing::new(pem::encode_string(PEM_TYPE_LABEL, &self.0).expect("PEM encoding error"))
+        Zeroizing::new(pem::encode_string(PEM_TYPE_LABEL, &self.0).expect(error::PEM_ENCODING_MSG))
     }
 
     /// Load [`EncryptedPrivateKeyDocument`] from an ASN.1 DER-encoded file on

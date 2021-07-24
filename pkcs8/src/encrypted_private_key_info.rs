@@ -15,7 +15,10 @@ use crate::{EncryptedPrivateKeyDocument, PrivateKeyDocument};
 use core::convert::TryInto;
 
 #[cfg(feature = "pem")]
-use {crate::pem, zeroize::Zeroizing};
+use {
+    crate::{error, pem},
+    zeroize::Zeroizing,
+};
 
 /// Type label for PEM-encoded private keys.
 #[cfg(feature = "pem")]
@@ -75,7 +78,8 @@ impl<'a> EncryptedPrivateKeyInfo<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<alloc::string::String> {
         Zeroizing::new(
-            pem::encode_string(PEM_TYPE_LABEL, self.to_der().as_ref()).expect("PEM encoding error"),
+            pem::encode_string(PEM_TYPE_LABEL, self.to_der().as_ref())
+                .expect(error::PEM_ENCODING_MSG),
         )
     }
 }
