@@ -33,17 +33,18 @@
 //! and targeting the "ABNF (Strict)" subset of the grammar as described in
 //! [RFC 7468 Section 3 Figure 3 (p6)][RFC 7468 p6].
 //!
-//! # Implementation
+//! # Implementation notes
 //!
-//! The implementation of this crate takes great care to operate in
-//! constant-time whenever possible by avoiding branching on any values which
-//! may contain secret data.
+//! - Core PEM implementation is `no_std`-friendly and requires no heap allocations.
+//! - Avoids use of copies and temporary buffers.
+//! - Uses the [`base64ct`] crate to decode/encode Base64 in constant-time.
+//! - PEM parser avoids branching on potentially secret data as much as
+//!   possible. In the happy path, only 1-byte of secret data is potentially
+//!   branched upon.
 //!
-//! It uses the [`base64ct`] crate for Base64 decoding/encoding, which provides
-//! a portable constant-time implementation of the Base64 format.
-//!
-//! The implementation also avoids heap allocations by default, allowing it to
-//! work in "heapless" `no_std` environments.
+//! Note: a forthcoming paper [Util::Lookup: Exploiting key decoding in cryptographic libraries][Util::Lookup]
+//! demonstrates how the leakage from non-constant-time PEM parsers can be used
+//! to practically extract RSA private keys from SGX enclaves.
 //!
 //! # Minimum Supported Rust Version
 //!
@@ -86,13 +87,14 @@
 //! [RFC 1421]: https://datatracker.ietf.org/doc/html/rfc1421
 //! [RFC 7468]: https://datatracker.ietf.org/doc/html/rfc7468
 //! [RFC 7468 p6]: https://datatracker.ietf.org/doc/html/rfc7468#page-6
+//! [Util::Lookup]: https://twitter.com/JanWichelmann/status/1418532480081145857
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/pem-rfc7468/0.1.0"
+    html_root_url = "https://docs.rs/pem-rfc7468/0.1.1"
 )]
 #![forbid(unsafe_code, clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
