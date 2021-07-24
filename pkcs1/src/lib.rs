@@ -47,6 +47,8 @@ mod version;
 #[cfg(feature = "alloc")]
 mod document;
 
+pub use der::{self, asn1::UIntBytes};
+
 #[cfg(feature = "alloc")]
 pub use crate::document::{private_key::RsaPrivateKeyDocument, public_key::RsaPublicKeyDocument};
 

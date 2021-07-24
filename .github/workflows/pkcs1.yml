@@ -6,6 +6,7 @@ on:
       - "base64ct/**"
       - "const-oid/**"
       - "der/**"
+      - "pkcs1/**"
       - "Cargo.*"
   push:
     branches: master
