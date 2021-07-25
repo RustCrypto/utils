@@ -1,6 +1,6 @@
 //! PKCS#1 RSA private key document.
 
-use crate::{error, Error, Result, RsaPrivateKey};
+use crate::{error, Error, FromRsaPrivateKey, Result, RsaPrivateKey, ToRsaPrivateKey};
 use alloc::{borrow::ToOwned, vec::Vec};
 use core::{
     convert::{TryFrom, TryInto},
@@ -34,72 +34,81 @@ impl RsaPrivateKeyDocument {
         RsaPrivateKey::try_from(self.0.as_ref()).expect("malformed PrivateKeyDocument")
     }
 
-    /// Parse [`RsaPrivateKeyDocument`] from ASN.1 DER.
-    pub fn from_der(bytes: &[u8]) -> Result<Self> {
-        bytes.try_into()
+    /// Borrow the inner DER encoded bytes.
+    pub fn as_der(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+
+impl FromRsaPrivateKey for RsaPrivateKeyDocument {
+    fn from_pkcs1_private_key(private_key: RsaPrivateKey<'_>) -> Result<Self> {
+        Ok(Self(Zeroizing::new(private_key.to_vec()?)))
     }
 
-    /// Parse [`RsaPrivateKeyDocument`] from PEM.
-    ///
-    /// PEM-encoded private keys can be identified by the leading delimiter:
-    ///
-    /// ```text
-    /// -----BEGIN RSA PRIVATE KEY-----
-    /// ```
+    fn from_pkcs1_der(bytes: &[u8]) -> Result<Self> {
+        // Ensure document is well-formed
+        RsaPrivateKey::try_from(bytes)?;
+        Ok(Self(Zeroizing::new(bytes.to_owned())))
+    }
+
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
-    pub fn from_pem(s: &str) -> Result<Self> {
+    fn from_pkcs1_pem(s: &str) -> Result<Self> {
         let (label, der_bytes) = pem::decode_vec(s.as_bytes())?;
 
         if label != PEM_TYPE_LABEL {
             return Err(pem::Error::Label.into());
         }
 
-        Self::from_der(&*der_bytes)
+        // Ensure document is well-formed
+        RsaPrivateKey::try_from(der_bytes.as_slice())?;
+        Ok(Self(Zeroizing::new(der_bytes)))
     }
 
-    /// Serialize [`RsaPrivateKeyDocument`] as self-zeroizing PEM-encoded PKCS#1 RSA string.
-    #[cfg(feature = "pem")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
-    pub fn to_pem(&self) -> Zeroizing<String> {
-        Zeroizing::new(pem::encode_string(PEM_TYPE_LABEL, &self.0).expect(error::PEM_ENCODING_MSG))
-    }
-
-    /// Load [`RsaPrivateKeyDocument`] from an ASN.1 DER-encoded file on the local
-    /// filesystem (binary format).
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn read_der_file(path: impl AsRef<Path>) -> Result<Self> {
+    fn read_pkcs1_der_file(path: &Path) -> Result<Self> {
         fs::read(path)?.try_into()
     }
 
-    /// Load [`RsaPrivateKeyDocument`] from a PEM-encoded file on the local filesystem.
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn read_pem_file(path: impl AsRef<Path>) -> Result<Self> {
-        Self::from_pem(&Zeroizing::new(fs::read_to_string(path)?))
+    fn read_pkcs1_pem_file(path: &Path) -> Result<Self> {
+        Self::from_pkcs1_pem(&Zeroizing::new(fs::read_to_string(path)?))
+    }
+}
+
+impl ToRsaPrivateKey for RsaPrivateKeyDocument {
+    fn to_pkcs1_der(&self) -> Result<RsaPrivateKeyDocument> {
+        Ok(self.clone())
     }
 
-    /// Write ASN.1 DER-encoded PKCS#1 RSA private key to the given path
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    fn to_pkcs1_pem(&self) -> Result<Zeroizing<String>> {
+        let pem_doc = pem::encode_string(PEM_TYPE_LABEL, self.as_der())?;
+        Ok(Zeroizing::new(pem_doc))
+    }
+
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn write_der_file(&self, path: impl AsRef<Path>) -> Result<()> {
-        write_secret_file(path, self.as_ref())
+    fn write_pkcs1_der_file(&self, path: &Path) -> Result<()> {
+        write_secret_file(path, self.as_der())
     }
 
-    /// Write PEM-encoded PKCS#1 RSA private key to the given path
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn write_pem_file(&self, path: impl AsRef<Path>) -> Result<()> {
-        write_secret_file(path, self.to_pem().as_bytes())
+    fn write_pkcs1_pem_file(&self, path: &Path) -> Result<()> {
+        let pem_doc = self.to_pkcs1_pem()?;
+        write_secret_file(path, pem_doc.as_bytes())
     }
 }
 
 impl AsRef<[u8]> for RsaPrivateKeyDocument {
     fn as_ref(&self) -> &[u8] {
-        self.0.as_ref()
+        self.as_der()
     }
 }
 
@@ -123,9 +132,7 @@ impl TryFrom<&[u8]> for RsaPrivateKeyDocument {
     type Error = Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self> {
-        // Ensure document is well-formed
-        RsaPrivateKey::try_from(bytes)?;
-        Ok(Self(Zeroizing::new(bytes.to_owned())))
+        RsaPrivateKeyDocument::from_pkcs1_der(bytes)
     }
 }
 
@@ -136,7 +143,7 @@ impl TryFrom<Vec<u8>> for RsaPrivateKeyDocument {
         // Ensure document is well-formed
         if let Err(err) = RsaPrivateKey::try_from(bytes.as_slice()) {
             bytes.zeroize();
-            return Err(err.into());
+            return Err(err);
         }
 
         Ok(Self(Zeroizing::new(bytes)))
@@ -157,7 +164,7 @@ impl FromStr for RsaPrivateKeyDocument {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        Self::from_pem(s)
+        Self::from_pkcs1_pem(s)
     }
 }
 
