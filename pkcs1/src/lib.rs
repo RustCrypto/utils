@@ -42,15 +42,13 @@ extern crate std;
 mod error;
 mod private_key;
 mod public_key;
+mod traits;
 mod version;
 
 #[cfg(feature = "alloc")]
 mod document;
 
 pub use der::{self, asn1::UIntBytes};
-
-#[cfg(feature = "alloc")]
-pub use crate::document::{private_key::RsaPrivateKeyDocument, public_key::RsaPublicKeyDocument};
 
 #[cfg(feature = "pem")]
 use pem_rfc7468 as pem;
@@ -59,5 +57,12 @@ pub use self::{
     error::{Error, Result},
     private_key::RsaPrivateKey,
     public_key::RsaPublicKey,
+    traits::{FromRsaPrivateKey, FromRsaPublicKey},
     version::Version,
+};
+
+#[cfg(feature = "alloc")]
+pub use crate::{
+    document::{private_key::RsaPrivateKeyDocument, public_key::RsaPublicKeyDocument},
+    traits::{ToRsaPrivateKey, ToRsaPublicKey},
 };
