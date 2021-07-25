@@ -59,8 +59,7 @@ impl Encodable for Version {
     }
 
     fn encode(&self, encoder: &mut Encoder<'_>) -> der::Result<()> {
-        der::Header::new(Self::TAG, 1u8)?.encode(encoder)?;
-        encoder.encode(self)
+        u8::from(*self).encode(encoder)
     }
 }
 
