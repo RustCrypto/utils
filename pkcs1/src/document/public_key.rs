@@ -1,6 +1,6 @@
 //! PKCS#1 RSA public key document.
 
-use crate::{error, Error, Result, RsaPublicKey};
+use crate::{error, Error, FromRsaPublicKey, Result, RsaPublicKey, ToRsaPublicKey};
 use alloc::{borrow::ToOwned, vec::Vec};
 use core::{
     convert::{TryFrom, TryInto},
@@ -33,86 +33,94 @@ impl RsaPublicKeyDocument {
         RsaPublicKey::try_from(self.0.as_slice()).expect("malformed PublicKeyDocument")
     }
 
-    /// Parse [`RsaPublicKeyDocument`] from ASN.1 DER
-    pub fn from_der(bytes: &[u8]) -> Result<Self> {
-        bytes.try_into()
+    /// Borrow the inner DER encoded bytes.
+    pub fn as_der(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+
+impl FromRsaPublicKey for RsaPublicKeyDocument {
+    fn from_pkcs1_public_key(public_key: RsaPublicKey<'_>) -> Result<Self> {
+        Ok(Self(public_key.to_vec()?))
     }
 
-    /// Parse [`RsaPublicKeyDocument`] from PEM
-    ///
-    /// PEM-encoded public keys can be identified by the leading delimiter:
-    ///
-    /// ```text
-    /// -----BEGIN RSA PUBLIC KEY-----
-    /// ```
+    fn from_pkcs1_der(bytes: &[u8]) -> Result<Self> {
+        // Ensure document is well-formed
+        RsaPublicKey::try_from(bytes)?;
+        Ok(Self(bytes.to_owned()))
+    }
+
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
-    pub fn from_pem(s: &str) -> Result<Self> {
+    fn from_pkcs1_pem(s: &str) -> Result<Self> {
         let (label, der_bytes) = pem::decode_vec(s.as_bytes())?;
 
         if label != PEM_TYPE_LABEL {
             return Err(pem::Error::Label.into());
         }
 
-        Self::from_der(&*der_bytes)
+        // Ensure document is well-formed
+        RsaPublicKey::try_from(der_bytes.as_slice())?;
+        Ok(Self(der_bytes))
     }
 
-    /// Serialize [`RsaPublicKeyDocument`] as PEM-encoded PKCS#8 string.
-    #[cfg(feature = "pem")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
-    pub fn to_pem(&self) -> String {
-        pem::encode_string(PEM_TYPE_LABEL, &self.0).expect(error::PEM_ENCODING_MSG)
-    }
-
-    /// Load [`RsaPublicKeyDocument`] from an ASN.1 DER-encoded file on the local
-    /// filesystem (binary format).
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn read_der_file(path: impl AsRef<Path>) -> Result<Self> {
+    fn read_pkcs1_der_file(path: &Path) -> Result<Self> {
         fs::read(path)?.try_into()
     }
 
-    /// Load [`RsaPublicKeyDocument`] from a PEM-encoded file on the local filesystem.
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn read_pem_file(path: impl AsRef<Path>) -> Result<Self> {
-        Self::from_pem(&fs::read_to_string(path)?)
+    fn read_pkcs1_pem_file(path: &Path) -> Result<Self> {
+        Self::from_pkcs1_pem(&fs::read_to_string(path)?)
+    }
+}
+
+impl ToRsaPublicKey for RsaPublicKeyDocument {
+    fn to_pkcs1_der(&self) -> Result<RsaPublicKeyDocument> {
+        Ok(self.clone())
     }
 
-    /// Write ASN.1 DER-encoded public key to the given path
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    fn to_pkcs1_pem(&self) -> Result<String> {
+        Ok(pem::encode_string(PEM_TYPE_LABEL, &self.0)?)
+    }
+
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn write_der_file(&self, path: impl AsRef<Path>) -> Result<()> {
+    fn write_pkcs1_der_file(&self, path: &Path) -> Result<()> {
         fs::write(path, self.as_ref())?;
         Ok(())
     }
 
-    /// Write PEM-encoded public key to the given path
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-    pub fn write_pem_file(&self, path: impl AsRef<Path>) -> Result<()> {
-        fs::write(path, self.to_pem().as_bytes())?;
+    fn write_pkcs1_pem_file(&self, path: &Path) -> Result<()> {
+        fs::write(path, self.to_pkcs1_pem()?.as_bytes())?;
         Ok(())
     }
 }
 
 impl AsRef<[u8]> for RsaPublicKeyDocument {
     fn as_ref(&self) -> &[u8] {
-        self.0.as_ref()
+        self.as_der()
     }
 }
 
 impl From<RsaPublicKey<'_>> for RsaPublicKeyDocument {
-    fn from(spki: RsaPublicKey<'_>) -> RsaPublicKeyDocument {
-        RsaPublicKeyDocument::from(&spki)
+    fn from(public_key: RsaPublicKey<'_>) -> RsaPublicKeyDocument {
+        RsaPublicKeyDocument::from(&public_key)
     }
 }
 
 impl From<&RsaPublicKey<'_>> for RsaPublicKeyDocument {
-    fn from(spki: &RsaPublicKey<'_>) -> RsaPublicKeyDocument {
-        spki.to_vec()
+    fn from(public_key: &RsaPublicKey<'_>) -> RsaPublicKeyDocument {
+        public_key
+            .to_vec()
             .ok()
             .and_then(|buf| buf.try_into().ok())
             .expect(error::DER_ENCODING_MSG)
@@ -123,9 +131,7 @@ impl TryFrom<&[u8]> for RsaPublicKeyDocument {
     type Error = Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self> {
-        // Ensure document is well-formed
-        RsaPublicKey::try_from(bytes)?;
-        Ok(Self(bytes.to_owned()))
+        RsaPublicKeyDocument::from_pkcs1_der(bytes)
     }
 }
 
@@ -153,6 +159,6 @@ impl FromStr for RsaPublicKeyDocument {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        Self::from_pem(s)
+        Self::from_pkcs1_pem(s)
     }
 }

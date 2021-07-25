@@ -36,7 +36,7 @@ pub trait FromRsaPrivateKey: Sized {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn from_pkcs1_pem(s: &str) -> Result<Self> {
-        RsaPrivateKeyDocument::from_pem(s)
+        RsaPrivateKeyDocument::from_pkcs1_pem(s)
             .and_then(|doc| Self::from_pkcs1_private_key(doc.private_key()))
     }
 
@@ -45,7 +45,7 @@ pub trait FromRsaPrivateKey: Sized {
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn read_pkcs1_der_file(path: &Path) -> Result<Self> {
-        RsaPrivateKeyDocument::read_der_file(path)
+        RsaPrivateKeyDocument::read_pkcs1_der_file(path)
             .and_then(|doc| Self::from_pkcs1_private_key(doc.private_key()))
     }
 
@@ -54,7 +54,7 @@ pub trait FromRsaPrivateKey: Sized {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn read_pkcs1_pem_file(path: &Path) -> Result<Self> {
-        RsaPrivateKeyDocument::read_pem_file(path)
+        RsaPrivateKeyDocument::read_pkcs1_pem_file(path)
             .and_then(|doc| Self::from_pkcs1_private_key(doc.private_key()))
     }
 }
@@ -80,7 +80,7 @@ pub trait FromRsaPublicKey: Sized {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn from_pkcs1_pem(s: &str) -> Result<Self> {
-        RsaPublicKeyDocument::from_pem(s)
+        RsaPublicKeyDocument::from_pkcs1_pem(s)
             .and_then(|doc| Self::from_pkcs1_public_key(doc.public_key()))
     }
 
@@ -89,7 +89,7 @@ pub trait FromRsaPublicKey: Sized {
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn read_pkcs1_der_file(path: &Path) -> Result<Self> {
-        RsaPublicKeyDocument::read_der_file(path)
+        RsaPublicKeyDocument::read_pkcs1_der_file(path)
             .and_then(|doc| Self::from_pkcs1_public_key(doc.public_key()))
     }
 
@@ -98,7 +98,7 @@ pub trait FromRsaPublicKey: Sized {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn read_pkcs1_pem_file(path: &Path) -> Result<Self> {
-        RsaPublicKeyDocument::read_pem_file(path)
+        RsaPublicKeyDocument::read_pkcs1_pem_file(path)
             .and_then(|doc| Self::from_pkcs1_public_key(doc.public_key()))
     }
 }
@@ -114,14 +114,14 @@ pub trait ToRsaPrivateKey {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn to_pkcs1_pem(&self) -> Result<Zeroizing<String>> {
-        Ok(self.to_pkcs1_der()?.to_pem())
+        self.to_pkcs1_der()?.to_pkcs1_pem()
     }
 
     /// Write ASN.1 DER-encoded PKCS#1 private key to the given path
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn write_pkcs1_der_file(&self, path: &Path) -> Result<()> {
-        self.to_pkcs1_der()?.write_der_file(path)
+        self.to_pkcs1_der()?.write_pkcs1_der_file(path)
     }
 
     /// Write ASN.1 DER-encoded PKCS#1 private key to the given path
@@ -129,7 +129,7 @@ pub trait ToRsaPrivateKey {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn write_pkcs1_pem_file(&self, path: &Path) -> Result<()> {
-        self.to_pkcs1_der()?.write_pem_file(path)
+        self.to_pkcs1_der()?.write_pkcs1_pem_file(path)
     }
 }
 
@@ -144,14 +144,14 @@ pub trait ToRsaPublicKey {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn to_pkcs1_pem(&self) -> Result<String> {
-        Ok(self.to_pkcs1_der()?.to_pem())
+        self.to_pkcs1_der()?.to_pkcs1_pem()
     }
 
     /// Write ASN.1 DER-encoded public key to the given path
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn write_pkcs1_der_file(&self, path: &Path) -> Result<()> {
-        self.to_pkcs1_der()?.write_der_file(path)
+        self.to_pkcs1_der()?.write_pkcs1_der_file(path)
     }
 
     /// Write ASN.1 DER-encoded public key to the given path
@@ -159,6 +159,6 @@ pub trait ToRsaPublicKey {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn write_pkcs1_pem_file(&self, path: &Path) -> Result<()> {
-        self.to_pkcs1_der()?.write_pem_file(path)
+        self.to_pkcs1_der()?.write_pkcs1_pem_file(path)
     }
 }
