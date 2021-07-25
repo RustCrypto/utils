@@ -18,5 +18,6 @@ members = [
     "pkcs5",
     "pkcs8",
     "spki",
+    "wycheproof2blb",
     "x509"
 ]
