@@ -19,6 +19,14 @@ pub enum Error {
     /// ASN.1 DER-related errors.
     Asn1(der::Error),
 
+    /// Cryptographic errors.
+    ///
+    /// These can be used by RSA implementations to signal that a key is
+    /// invalid for cryptographic reasons. This means the document parsed
+    /// correctly, but one of the values contained within was invalid, e.g.
+    /// a number expected to be a prime was not a prime.
+    Crypto,
+
     /// File not found error.
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
@@ -46,6 +54,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Asn1(err) => write!(f, "PKCS#1 ASN.1 error: {}", err),
+            Error::Crypto => f.write_str("PKCS#1 cryptographic error"),
             #[cfg(feature = "std")]
             Error::FileNotFound => f.write_str("file not found"),
             #[cfg(feature = "std")]
