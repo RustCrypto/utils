@@ -15,11 +15,23 @@ use {
 #[cfg(feature = "pem")]
 use alloc::string::String;
 
+#[cfg(feature = "pkcs1")]
+use crate::{Error, ObjectIdentifier};
+
 #[cfg(feature = "std")]
 use std::path::Path;
 
 #[cfg(any(feature = "pem", feature = "std"))]
 use zeroize::Zeroizing;
+
+#[cfg(all(feature = "alloc", feature = "pkcs1"))]
+use crate::AlgorithmIdentifier;
+
+/// PKCS#1 RSA Algorithm [`ObjectIdentifier`].
+///
+/// <http://oid-info.com/get/1.2.840.113549.1.1.1>
+#[cfg(feature = "pkcs1")]
+const PKCS1_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.1.1.1");
 
 /// Parse a private key object from a PKCS#8 encoded document.
 pub trait FromPrivateKey: Sized {
@@ -227,5 +239,71 @@ pub trait ToPublicKey {
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn write_public_key_pem_file(&self, path: impl AsRef<Path>) -> Result<()> {
         self.to_public_key_der()?.write_pem_file(path)
+    }
+}
+
+#[cfg(feature = "pkcs1")]
+#[cfg_attr(docsrs, doc(cfg(feature = "pkcs1")))]
+impl<K: pkcs1::FromRsaPrivateKey> FromPrivateKey for K {
+    fn from_pkcs8_private_key_info(pkcs8_key: PrivateKeyInfo<'_>) -> Result<Self> {
+        pkcs8_key.algorithm.assert_algorithm_oid(PKCS1_OID)?;
+
+        if pkcs8_key.algorithm.parameters != Some(der::asn1::Null.into()) {
+            return Err(Error::ParametersMalformed);
+        }
+
+        let pkcs1_key = pkcs1::RsaPrivateKey::try_from(pkcs8_key.private_key)?;
+        Ok(K::from_pkcs1_private_key(pkcs1_key)?)
+    }
+}
+
+#[cfg(feature = "pkcs1")]
+#[cfg_attr(docsrs, doc(cfg(feature = "pkcs1")))]
+impl<K: pkcs1::FromRsaPublicKey> FromPublicKey for K {
+    fn from_spki(pkcs8_key: SubjectPublicKeyInfo<'_>) -> Result<Self> {
+        pkcs8_key.algorithm.assert_algorithm_oid(PKCS1_OID)?;
+
+        if pkcs8_key.algorithm.parameters != Some(der::asn1::Null.into()) {
+            return Err(Error::ParametersMalformed);
+        }
+
+        let pkcs1_key = pkcs1::RsaPublicKey::try_from(pkcs8_key.subject_public_key)?;
+        Ok(K::from_pkcs1_public_key(pkcs1_key)?)
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "pkcs1"))]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "pkcs1")))]
+impl<K: pkcs1::ToRsaPrivateKey> ToPrivateKey for K {
+    fn to_pkcs8_der(&self) -> Result<PrivateKeyDocument> {
+        let pkcs1_der = self.to_pkcs1_der()?;
+
+        let algorithm = AlgorithmIdentifier {
+            oid: PKCS1_OID,
+            parameters: Some(der::asn1::Null.into()),
+        };
+
+        Ok(PrivateKeyInfo::new(algorithm, pkcs1_der.as_ref()).to_der())
+    }
+}
+
+#[cfg(all(feature = "alloc", feature = "pkcs1"))]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "pkcs1")))]
+impl<K: pkcs1::ToRsaPublicKey> ToPublicKey for K {
+    fn to_public_key_der(&self) -> Result<PublicKeyDocument> {
+        let pkcs1_der = self.to_pkcs1_der()?;
+
+        let algorithm = AlgorithmIdentifier {
+            oid: PKCS1_OID,
+            parameters: Some(der::asn1::Null.into()),
+        };
+
+        Ok(SubjectPublicKeyInfo {
+            algorithm,
+            subject_public_key: pkcs1_der.as_ref(),
+        }
+        .into())
     }
 }

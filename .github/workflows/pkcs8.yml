@@ -43,6 +43,7 @@ jobs:
       - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features alloc
       - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features encryption
       - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features pem
+      - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features pkcs1
       - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features pkcs5
 
   test:
@@ -64,5 +65,7 @@ jobs:
       - run: cargo test --release --features alloc
       - run: cargo test --release --features encryption
       - run: cargo test --release --features pem
+      - run: cargo test --release --features pkcs1
+      - run: cargo test --release --features pkcs1,alloc
       - run: cargo test --release --features pkcs5
       - run: cargo test --release --all-features

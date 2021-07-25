@@ -47,15 +47,20 @@ pub enum Error {
     /// is malformed or otherwise encoded in an unexpected manner.
     ParametersMalformed,
 
+    /// PEM encoding errors.
+    // TODO(tarcieri): propagate `pem_rfc7468::Error`
+    #[cfg(feature = "pem")]
+    Pem,
+
     /// Permission denied reading file.
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     PermissionDenied,
 
-    /// PEM encoding errors.
-    // TODO(tarcieri): propagate `pem_rfc7468::Error`
-    #[cfg(feature = "pem")]
-    Pem,
+    /// PKCS#1 errors.
+    #[cfg(feature = "pkcs1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pkcs1")))]
+    Pkcs1(pkcs1::Error),
 }
 
 impl fmt::Display for Error {
@@ -68,11 +73,13 @@ impl fmt::Display for Error {
             Error::KeyMalformed => f.write_str("PKCS#8 cryptographic key data malformed"),
             #[cfg(feature = "std")]
             Error::Io => f.write_str("I/O error"),
+            Error::ParametersMalformed => f.write_str("PKCS#8 algorithm parameters malformed"),
             #[cfg(feature = "pem")]
             Error::Pem => f.write_str("PKCS#8 PEM error"),
-            Error::ParametersMalformed => f.write_str("PKCS#8 algorithm parameters malformed"),
             #[cfg(feature = "std")]
             Error::PermissionDenied => f.write_str("permission denied"),
+            #[cfg(feature = "pkcs1")]
+            Error::Pkcs1(err) => write!(f, "{}", err),
         }
     }
 }
@@ -97,6 +104,13 @@ impl From<pem_rfc7468::Error> for Error {
     fn from(_: pem_rfc7468::Error) -> Error {
         // TODO(tarcieri): propagate `pem_rfc7468::Error`
         Error::Pem
+    }
+}
+
+#[cfg(feature = "pkcs1")]
+impl From<pkcs1::Error> for Error {
+    fn from(err: pkcs1::Error) -> Error {
+        Error::Pkcs1(err)
     }
 }
 

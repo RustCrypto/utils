@@ -20,6 +20,7 @@ spki = { version = "0.4", path = "../spki" }
 
 # optional dependencies
 rand_core = { version = "0.6", optional = true, default-features = false }
+pkcs1 = { version = "0.2", optional = true, features = ["alloc"], path = "../pkcs1" }
 pkcs5 = { version = "0.3", optional = true, path = "../pkcs5" }
 pem-rfc7468 = { version = "0.1", optional = true, path = "../pem-rfc7468" }
 zeroize = { version = "1", optional = true, default-features = false, features = ["alloc"] }
