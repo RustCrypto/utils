@@ -77,7 +77,8 @@
 //! );
 //!
 //! // Encode PEM
-//! let encoded_pem = pem_rfc7468::encode_string(type_label, &data)?;
+//! use pem_rfc7468::LineEnding;
+//! let encoded_pem = pem_rfc7468::encode_string(type_label, LineEnding::default(), &data)?;
 //! assert_eq!(&encoded_pem, example_pem);
 //! # }
 //! # Ok(())
@@ -112,7 +113,7 @@ mod grammar;
 
 pub use crate::{
     decoder::decode,
-    encoder::{encode, encoded_len},
+    encoder::{encode, encoded_len, LineEnding},
     error::{Error, Result},
 };
 

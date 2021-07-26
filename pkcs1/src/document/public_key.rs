@@ -86,7 +86,11 @@ impl ToRsaPublicKey for RsaPublicKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn to_pkcs1_pem(&self) -> Result<String> {
-        Ok(pem::encode_string(PEM_TYPE_LABEL, &self.0)?)
+        Ok(pem::encode_string(
+            PEM_TYPE_LABEL,
+            Default::default(),
+            &self.0,
+        )?)
     }
 
     #[cfg(feature = "std")]

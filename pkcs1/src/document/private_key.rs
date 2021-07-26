@@ -87,7 +87,7 @@ impl ToRsaPrivateKey for RsaPrivateKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn to_pkcs1_pem(&self) -> Result<Zeroizing<String>> {
-        let pem_doc = pem::encode_string(PEM_TYPE_LABEL, self.as_der())?;
+        let pem_doc = pem::encode_string(PEM_TYPE_LABEL, Default::default(), self.as_der())?;
         Ok(Zeroizing::new(pem_doc))
     }
 

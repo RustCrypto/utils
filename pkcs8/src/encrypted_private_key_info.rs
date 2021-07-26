@@ -78,7 +78,7 @@ impl<'a> EncryptedPrivateKeyInfo<'a> {
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<alloc::string::String> {
         Zeroizing::new(
-            pem::encode_string(PEM_TYPE_LABEL, self.to_der().as_ref())
+            pem::encode_string(PEM_TYPE_LABEL, Default::default(), self.to_der().as_ref())
                 .expect(error::PEM_ENCODING_MSG),
         )
     }
