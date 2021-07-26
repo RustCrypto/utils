@@ -112,6 +112,10 @@ pub use crate::{
     traits::{ToPrivateKey, ToPublicKey},
 };
 
+#[cfg(feature = "pem")]
+#[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+pub use pem_rfc7468::LineEnding;
+
 #[cfg(feature = "pkcs5")]
 pub use encrypted_private_key_info::EncryptedPrivateKeyInfo;
 

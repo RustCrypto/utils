@@ -14,7 +14,7 @@ use crate::PrivateKeyDocument;
 
 #[cfg(feature = "pem")]
 use {
-    crate::{encrypted_private_key_info::PEM_TYPE_LABEL, pem},
+    crate::{encrypted_private_key_info::PEM_TYPE_LABEL, pem, LineEnding},
     alloc::string::String,
     core::str::FromStr,
 };
@@ -81,8 +81,16 @@ impl EncryptedPrivateKeyDocument {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<String> {
+        self.to_pem_with_le(LineEnding::default())
+    }
+
+    /// Serialize [`EncryptedPrivateKeyDocument`] as self-zeroizing PEM-encoded
+    /// PKCS#8 string with the given [`LineEnding`].
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    pub fn to_pem_with_le(&self, line_ending: LineEnding) -> Zeroizing<String> {
         Zeroizing::new(
-            pem::encode_string(PEM_TYPE_LABEL, Default::default(), &self.0)
+            pem::encode_string(PEM_TYPE_LABEL, line_ending, &self.0)
                 .expect(error::PEM_ENCODING_MSG),
         )
     }

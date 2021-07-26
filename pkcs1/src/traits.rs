@@ -7,7 +7,7 @@ use core::convert::TryFrom;
 use crate::{RsaPrivateKeyDocument, RsaPublicKeyDocument};
 
 #[cfg(feature = "pem")]
-use {crate::pem::LineEnding, alloc::string::String};
+use {crate::LineEnding, alloc::string::String};
 
 #[cfg(feature = "std")]
 use std::path::Path;
