@@ -87,7 +87,8 @@ impl<'a> RsaPrivateKey<'a> {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Result<Zeroizing<String>> {
-        let pem_doc = pem::encode_string(PEM_TYPE_LABEL, self.to_der().as_ref())?;
+        let pem_doc =
+            pem::encode_string(PEM_TYPE_LABEL, Default::default(), self.to_der().as_ref())?;
         Ok(Zeroizing::new(pem_doc))
     }
 }
