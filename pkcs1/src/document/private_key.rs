@@ -11,7 +11,10 @@ use zeroize::{Zeroize, Zeroizing};
 
 #[cfg(feature = "pem")]
 use {
-    crate::{pem, private_key::PEM_TYPE_LABEL},
+    crate::{
+        pem::{self, LineEnding},
+        private_key::PEM_TYPE_LABEL,
+    },
     alloc::string::String,
     core::str::FromStr,
 };
@@ -86,8 +89,8 @@ impl ToRsaPrivateKey for RsaPrivateKeyDocument {
 
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
-    fn to_pkcs1_pem(&self) -> Result<Zeroizing<String>> {
-        let pem_doc = pem::encode_string(PEM_TYPE_LABEL, Default::default(), self.as_der())?;
+    fn to_pkcs1_pem_with_le(&self, line_ending: LineEnding) -> Result<Zeroizing<String>> {
+        let pem_doc = pem::encode_string(PEM_TYPE_LABEL, line_ending, self.as_der())?;
         Ok(Zeroizing::new(pem_doc))
     }
 

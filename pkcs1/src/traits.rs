@@ -7,7 +7,7 @@ use core::convert::TryFrom;
 use crate::{RsaPrivateKeyDocument, RsaPublicKeyDocument};
 
 #[cfg(feature = "pem")]
-use alloc::string::String;
+use {crate::pem::LineEnding, alloc::string::String};
 
 #[cfg(feature = "std")]
 use std::path::Path;
@@ -114,17 +114,24 @@ pub trait ToRsaPrivateKey {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn to_pkcs1_pem(&self) -> Result<Zeroizing<String>> {
-        self.to_pkcs1_der()?.to_pkcs1_pem()
+        self.to_pkcs1_pem_with_le(LineEnding::default())
     }
 
-    /// Write ASN.1 DER-encoded PKCS#1 private key to the given path
+    /// Serialize this private key as PEM-encoded PKCS#1 with the given [`LineEnding`].
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    fn to_pkcs1_pem_with_le(&self, line_ending: LineEnding) -> Result<Zeroizing<String>> {
+        self.to_pkcs1_der()?.to_pkcs1_pem_with_le(line_ending)
+    }
+
+    /// Write ASN.1 DER-encoded PKCS#1 private key to the given path.
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn write_pkcs1_der_file(&self, path: &Path) -> Result<()> {
         self.to_pkcs1_der()?.write_pkcs1_der_file(path)
     }
 
-    /// Write ASN.1 DER-encoded PKCS#1 private key to the given path
+    /// Write ASN.1 DER-encoded PKCS#1 private key to the given path.
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
@@ -144,17 +151,24 @@ pub trait ToRsaPublicKey {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     fn to_pkcs1_pem(&self) -> Result<String> {
-        self.to_pkcs1_der()?.to_pkcs1_pem()
+        self.to_pkcs1_pem_with_le(LineEnding::default())
     }
 
-    /// Write ASN.1 DER-encoded public key to the given path
+    /// Serialize this public key as PEM-encoded PKCS#1 with the given line ending.
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    fn to_pkcs1_pem_with_le(&self, line_ending: LineEnding) -> Result<String> {
+        self.to_pkcs1_der()?.to_pkcs1_pem_with_le(line_ending)
+    }
+
+    /// Write ASN.1 DER-encoded public key to the given path.
     #[cfg(feature = "std")]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
     fn write_pkcs1_der_file(&self, path: &Path) -> Result<()> {
         self.to_pkcs1_der()?.write_pkcs1_der_file(path)
     }
 
-    /// Write ASN.1 DER-encoded public key to the given path
+    /// Write ASN.1 DER-encoded public key to the given path.
     #[cfg(all(feature = "pem", feature = "std"))]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     #[cfg_attr(docsrs, doc(cfg(feature = "std")))]

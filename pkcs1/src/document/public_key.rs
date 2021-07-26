@@ -13,7 +13,10 @@ use std::{fs, path::Path, str};
 
 #[cfg(feature = "pem")]
 use {
-    crate::{pem, public_key::PEM_TYPE_LABEL},
+    crate::{
+        pem::{self, LineEnding},
+        public_key::PEM_TYPE_LABEL,
+    },
     alloc::string::String,
     core::str::FromStr,
 };
@@ -85,12 +88,8 @@ impl ToRsaPublicKey for RsaPublicKeyDocument {
 
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
-    fn to_pkcs1_pem(&self) -> Result<String> {
-        Ok(pem::encode_string(
-            PEM_TYPE_LABEL,
-            Default::default(),
-            &self.0,
-        )?)
+    fn to_pkcs1_pem_with_le(&self, line_ending: LineEnding) -> Result<String> {
+        Ok(pem::encode_string(PEM_TYPE_LABEL, line_ending, &self.0)?)
     }
 
     #[cfg(feature = "std")]

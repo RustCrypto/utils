@@ -11,7 +11,10 @@ use der::{
 use crate::RsaPublicKeyDocument;
 
 #[cfg(feature = "pem")]
-use {crate::pem, alloc::string::String};
+use {
+    crate::pem::{self, LineEnding},
+    alloc::string::String,
+};
 
 /// Type label for PEM-encoded private keys.
 #[cfg(feature = "pem")]
@@ -50,9 +53,17 @@ impl<'a> RsaPublicKey<'a> {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(self) -> Result<String> {
+        self.to_pem_with_le(LineEnding::default())
+    }
+
+    /// Encode this [`RsaPublicKey`] as PEM-encoded ASN.1 DER with the given
+    /// [`LineEnding`].
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    pub fn to_pem_with_le(self, line_ending: LineEnding) -> Result<String> {
         Ok(pem::encode_string(
             PEM_TYPE_LABEL,
-            Default::default(),
+            line_ending,
             self.to_der().as_ref(),
         )?)
     }
