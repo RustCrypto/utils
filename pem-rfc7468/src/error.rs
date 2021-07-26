@@ -2,10 +2,10 @@
 
 use core::fmt;
 
-/// Result type
+/// Result type.
 pub type Result<T> = core::result::Result<T, Error>;
 
-/// Error type
+/// Error type.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Error {

@@ -50,9 +50,6 @@ mod document;
 
 pub use der::{self, asn1::UIntBytes};
 
-#[cfg(feature = "pem")]
-use pem_rfc7468 as pem;
-
 pub use self::{
     error::{Error, Result},
     private_key::RsaPrivateKey,
@@ -61,8 +58,15 @@ pub use self::{
     version::Version,
 };
 
+#[cfg(feature = "pem")]
+#[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+pub use pem_rfc7468::LineEnding;
+
 #[cfg(feature = "alloc")]
 pub use crate::{
     document::{private_key::RsaPrivateKeyDocument, public_key::RsaPublicKeyDocument},
     traits::{ToRsaPrivateKey, ToRsaPublicKey},
 };
+
+#[cfg(feature = "pem")]
+use pem_rfc7468 as pem;

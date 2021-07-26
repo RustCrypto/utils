@@ -13,10 +13,7 @@ use std::{fs, path::Path, str};
 
 #[cfg(feature = "pem")]
 use {
-    crate::{
-        pem::{self, LineEnding},
-        public_key::PEM_TYPE_LABEL,
-    },
+    crate::{pem, public_key::PEM_TYPE_LABEL, LineEnding},
     alloc::string::String,
     core::str::FromStr,
 };

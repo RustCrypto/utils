@@ -12,7 +12,7 @@ use crate::RsaPublicKeyDocument;
 
 #[cfg(feature = "pem")]
 use {
-    crate::pem::{self, LineEnding},
+    crate::{pem, LineEnding},
     alloc::string::String,
 };
 

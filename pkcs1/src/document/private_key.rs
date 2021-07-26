@@ -11,10 +11,7 @@ use zeroize::{Zeroize, Zeroizing};
 
 #[cfg(feature = "pem")]
 use {
-    crate::{
-        pem::{self, LineEnding},
-        private_key::PEM_TYPE_LABEL,
-    },
+    crate::{pem, private_key::PEM_TYPE_LABEL, LineEnding},
     alloc::string::String,
     core::str::FromStr,
 };

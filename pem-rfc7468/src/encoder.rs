@@ -69,13 +69,13 @@ pub fn encode_string(label: &str, line_ending: LineEnding, input: &[u8]) -> Resu
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 pub enum LineEnding {
-    /// Carriage return (Pre-OS X Macintosh)
+    /// Carriage return: `\r` (Pre-OS X Macintosh)
     CR,
 
-    /// Line feed (Unix OSes)
+    /// Line feed: `\n` (Unix OSes)
     LF,
 
-    /// Carriage return + line feed (Windows)
+    /// Carriage return + line feed: `\r\n` (Windows)
     CRLF,
 }
 

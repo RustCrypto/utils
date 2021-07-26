@@ -16,7 +16,7 @@ use core::convert::TryInto;
 
 #[cfg(feature = "pem")]
 use {
-    crate::{error, pem},
+    crate::{error, pem, LineEnding},
     zeroize::Zeroizing,
 };
 
@@ -77,8 +77,16 @@ impl<'a> EncryptedPrivateKeyInfo<'a> {
     #[cfg(feature = "pem")]
     #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
     pub fn to_pem(&self) -> Zeroizing<alloc::string::String> {
+        self.to_pem_with_le(LineEnding::default())
+    }
+
+    /// Encode this [`EncryptedPrivateKeyInfo`] as PEM-encoded ASN.1 DER with
+    /// the given [`LineEnding`].
+    #[cfg(feature = "pem")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pem")))]
+    pub fn to_pem_with_le(&self, line_ending: LineEnding) -> Zeroizing<alloc::string::String> {
         Zeroizing::new(
-            pem::encode_string(PEM_TYPE_LABEL, Default::default(), self.to_der().as_ref())
+            pem::encode_string(PEM_TYPE_LABEL, line_ending, self.to_der().as_ref())
                 .expect(error::PEM_ENCODING_MSG),
         )
     }
