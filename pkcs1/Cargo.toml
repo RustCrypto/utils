@@ -17,7 +17,7 @@ readme = "README.md"
 der = { version = "0.4", features = ["bigint", "oid"], path = "../der" }
 
 # optional dependencies
-pem-rfc7468 = { version = "0.1", optional = true, path = "../pem-rfc7468" }
+pem-rfc7468 = { version = "0.2", optional = true, path = "../pem-rfc7468" }
 zeroize = { version = "1", optional = true, default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
