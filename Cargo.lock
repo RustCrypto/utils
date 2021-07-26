@@ -265,7 +265,7 @@ dependencies = [
 
 [[package]]
 name = "pkcs8"
-version = "0.7.4"
+version = "0.7.5"
 dependencies = [
  "der",
  "hex-literal 0.3.1",
