@@ -11,7 +11,7 @@ heapless no_std (i.e. embedded) support
 """
 documentation = "https://docs.rs/const-oid"
 repository = "https://github.com/RustCrypto/utils"
-categories = ["cryptography", "data-structures", "encoding", "no-std"]
+categories = ["cryptography", "data-structures", "encoding", "no-std", "parser-implementations"]
 keywords = ["iso", "iec", "itu", "oid"]
 readme = "README.md"
 
