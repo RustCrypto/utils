@@ -10,7 +10,7 @@ authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 edition = "2018"
 repository = "https://github.com/RustCrypto/utils/tree/master/pkcs8"
-categories = ["cryptography", "data-structures", "encoding", "no-std"]
+categories = ["cryptography", "data-structures", "encoding", "no-std", "parser-implementations"]
 keywords = ["crypto", "key", "pkcs", "private"]
 readme = "README.md"
 

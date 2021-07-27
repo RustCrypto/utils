@@ -11,7 +11,7 @@ license = "Apache-2.0 OR MIT"
 edition = "2018"
 documentation = "https://docs.rs/pkcs8"
 repository = "https://github.com/RustCrypto/utils/tree/master/base64ct"
-categories = ["cryptography", "encoding", "no-std"]
+categories = ["cryptography", "encoding", "no-std", "parser-implementations"]
 keywords = ["base64", "phc"]
 readme = "README.md"
 
