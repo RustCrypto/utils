@@ -1,6 +1,6 @@
 //! [`UInt`] multiplication modulus operations.
 
-use crate::{Limb, UInt};
+use crate::{Limb, MulMod, UInt};
 
 // macro, because can't use &mut in const yet
 macro_rules! set {
@@ -14,10 +14,10 @@ macro_rules! set {
 }
 
 impl<const LIMBS: usize> UInt<LIMBS> {
-    /// Computes `a * b mod p` in constant time.
+    /// Computes `self * rhs mod p` in constant time.
     ///
     /// Requires `p_inv = -(p^{-1} mod 2^{BITS}) mod 2^{BITS}` to be provided for efficiency.
-    pub const fn mul_mod(&self, other: &UInt<LIMBS>, p: &UInt<LIMBS>, p_inv: Limb) -> UInt<LIMBS> {
+    pub const fn mul_mod(&self, rhs: &UInt<LIMBS>, p: &UInt<LIMBS>, p_inv: Limb) -> UInt<LIMBS> {
         // Schoolbook multiplication
         let mut r_lo = [Limb::ZERO; LIMBS];
         let mut r_hi = [Limb::ZERO; LIMBS];
@@ -28,14 +28,14 @@ impl<const LIMBS: usize> UInt<LIMBS> {
             let mut j = 0;
 
             while j < LIMBS - 1 {
-                let (r_ij, c) = get(&r_lo, &r_hi, i + j).mac(self.limbs[i], other.limbs[j], carry);
+                let (r_ij, c) = get(&r_lo, &r_hi, i + j).mac(self.limbs[i], rhs.limbs[j], carry);
                 set!(r_lo, r_hi, i + j, r_ij);
                 carry = c;
 
                 j += 1;
             }
 
-            let (r_ij, c) = get(&r_lo, &r_hi, i + j).mac(self.limbs[i], other.limbs[j], carry);
+            let (r_ij, c) = get(&r_lo, &r_hi, i + j).mac(self.limbs[i], rhs.limbs[j], carry);
             set!(r_lo, r_hi, i + j, r_ij);
             set!(r_lo, r_hi, i + j + 1, c);
 
@@ -91,3 +91,21 @@ const fn mont_reduce<const LIMBS: usize>(
     // Result may be within p of the correct value
     UInt::new(r_hi).sub_mod(p, p)
 }
+
+macro_rules! impl_mul_mod {
+    ($($size:expr),+) => {
+        $(
+            impl MulMod for UInt<$size> {
+                type Output = Self;
+
+                fn mul_mod(&self, rhs: &Self, p: &Self, p_inv: Limb) -> Self {
+                    debug_assert!(self < p);
+                    debug_assert!(rhs < p);
+                    self.mul_mod(rhs, p, p_inv)
+                }
+            }
+        )+
+    };
+}
+
+impl_mul_mod!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);

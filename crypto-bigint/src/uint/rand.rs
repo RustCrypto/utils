@@ -33,7 +33,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         loop {
             let n = Self::random(&mut rng);
 
-            if n.ct_lt(&modulus).into() {
+            if n.ct_lt(modulus).into() {
                 return n;
             }
         }

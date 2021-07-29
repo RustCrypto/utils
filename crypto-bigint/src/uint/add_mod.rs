@@ -1,17 +1,17 @@
 //! [`UInt`] addition modulus operations.
 
-use crate::{Limb, UInt};
+use crate::{AddMod, Limb, UInt};
 
 impl<const LIMBS: usize> UInt<LIMBS> {
-    /// Computes `a + b mod p` in constant time.
+    /// Computes `self + rhs mod p` in constant time.
     ///
-    /// Assumes `a` and `b` are `< p`.
-    pub const fn add_mod(&self, other: &UInt<LIMBS>, p: &UInt<LIMBS>) -> UInt<LIMBS> {
+    /// Assumes `self` and `rhs` are `< p`.
+    pub const fn add_mod(&self, rhs: &UInt<LIMBS>, p: &UInt<LIMBS>) -> UInt<LIMBS> {
         let mut out = [Limb::ZERO; LIMBS];
         let mut carry = Limb::ZERO;
         let mut i = 0;
         while i < LIMBS {
-            let (l, c) = self.limbs[i].adc(other.limbs[i], carry);
+            let (l, c) = self.limbs[i].adc(rhs.limbs[i], carry);
             out[i] = l;
             carry = c;
             i += 1;
@@ -21,6 +21,24 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         UInt::new(out).sub_mod(p, p)
     }
 }
+
+macro_rules! impl_add_mod {
+    ($($size:expr),+) => {
+        $(
+            impl AddMod for UInt<$size> {
+                type Output = Self;
+
+                fn add_mod(&self, rhs: &Self, p: &Self) -> Self {
+                    debug_assert!(self < p);
+                    debug_assert!(rhs < p);
+                    self.add_mod(rhs, p)
+                }
+            }
+        )+
+    };
+}
+
+impl_add_mod!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
 
 #[cfg(all(test, feature = "rand"))]
 mod tests {

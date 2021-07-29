@@ -1,18 +1,18 @@
 //! [`UInt`] subtraction modulus operations.
 
-use crate::{Limb, UInt};
+use crate::{Limb, SubMod, UInt};
 
 impl<const LIMBS: usize> UInt<LIMBS> {
-    /// Computes `a - b mod p` in constant time.
+    /// Computes `self - rhs mod p` in constant time.
     ///
-    /// Assumes `a` and `b` are `< p`.
-    pub const fn sub_mod(&self, other: &UInt<LIMBS>, p: &UInt<LIMBS>) -> UInt<LIMBS> {
+    /// Assumes `self` and `rhs` are `< p`.
+    pub const fn sub_mod(&self, rhs: &UInt<LIMBS>, p: &UInt<LIMBS>) -> UInt<LIMBS> {
         let mut out = [Limb::ZERO; LIMBS];
         let mut borrow = Limb::ZERO;
         let mut i = 0;
 
         while i < LIMBS {
-            let (l, b) = self.limbs[i].sbb(other.limbs[i], borrow);
+            let (l, b) = self.limbs[i].sbb(rhs.limbs[i], borrow);
             out[i] = l;
             borrow = b;
             i += 1;
@@ -20,9 +20,9 @@ impl<const LIMBS: usize> UInt<LIMBS> {
 
         // If underflow occurred on the final limb, borrow = 0xfff...fff, otherwise
         // borrow = 0x000...000. Thus, we use it as a mask to conditionally add the modulus.
-
         let mut carry = Limb::ZERO;
         let mut i = 0;
+
         while i < LIMBS {
             let (l, c) = out[i].adc(p.limbs[i].bitand(borrow), carry);
             out[i] = l;
@@ -33,6 +33,24 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         UInt::new(out)
     }
 }
+
+macro_rules! impl_sub_mod {
+    ($($size:expr),+) => {
+        $(
+            impl SubMod for UInt<$size> {
+                type Output = Self;
+
+                fn sub_mod(&self, rhs: &Self, p: &Self) -> Self {
+                    debug_assert!(self < p);
+                    debug_assert!(rhs < p);
+                    self.add_mod(rhs, p)
+                }
+            }
+        )+
+    };
+}
+
+impl_sub_mod!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
 
 #[cfg(all(test, feature = "rand"))]
 mod tests {

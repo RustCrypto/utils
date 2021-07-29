@@ -1,6 +1,6 @@
 //! [`UInt`] subtraction modulus operations.
 
-use crate::{Limb, UInt};
+use crate::{Limb, NegMod, UInt};
 
 impl<const LIMBS: usize> UInt<LIMBS> {
     /// Computes `-a mod p` in constant time.
@@ -50,3 +50,20 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         UInt::new(tmp)
     }
 }
+
+macro_rules! impl_neg_mod {
+    ($($size:expr),+) => {
+        $(
+            impl NegMod for UInt<$size> {
+                type Output = Self;
+
+                fn neg_mod(&self, p: &Self) -> Self {
+                    debug_assert!(self < p);
+                    self.neg_mod(p)
+                }
+            }
+        )+
+    };
+}
+
+impl_neg_mod!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
