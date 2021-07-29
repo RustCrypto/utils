@@ -1,0 +1,16 @@
+[package]
+name = "proptests"
+version = "0.0.0"
+edition = "2018"
+publish = false
+
+[lib]
+path = "./lib.rs"
+
+[workspace]
+members = ["."]
+
+[dependencies]
+crypto-bigint = { path = ".." }
+num-bigint = "0.4"
+proptest = "1"

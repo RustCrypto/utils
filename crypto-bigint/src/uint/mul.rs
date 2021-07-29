@@ -44,7 +44,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
 
     /// Perform wrapping multiplication, discarding overflow.
     pub const fn wrapping_mul(&self, rhs: &Self) -> Self {
-        self.mul_wide(rhs).0
+        self.mul_wide(rhs).1
     }
 
     /// Perform checked multiplication, returning a [`CtOption`] which `is_some`

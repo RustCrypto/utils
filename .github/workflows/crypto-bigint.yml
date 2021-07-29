@@ -71,6 +71,20 @@ jobs:
       - run: cargo test --target ${{ matrix.target }} --release --features zeroize
       - run: cargo test --target ${{ matrix.target }} --release --all-features
 
+  proptests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: crypto-bigint/proptests
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+      - run: cargo test
+
   # Cross-compiled tests
   cross:
     strategy:
