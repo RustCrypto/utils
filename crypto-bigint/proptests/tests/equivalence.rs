@@ -5,6 +5,10 @@ use num_bigint::BigUint;
 use proptest::prelude::*;
 use std::mem;
 
+/// Example prime number (NIST P-256 curve order)
+const P: U256 =
+    U256::from_be_hex("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551");
+
 fn to_biguint(uint: &U256) -> BigUint {
     BigUint::from_bytes_be(uint.to_be_bytes().as_ref())
 }
@@ -38,6 +42,18 @@ proptest! {
 
         let expected = to_uint(a_bi + b_bi);
         let actual = a.wrapping_add(&b);
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn add_mod(a in uint(), b in uint()) {
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+        let p_bi = to_biguint(&P);
+
+        let expected = to_uint((a_bi + b_bi) % p_bi);
+        let actual = a.add_mod(&b, &P);
 
         assert_eq!(expected, actual);
     }
