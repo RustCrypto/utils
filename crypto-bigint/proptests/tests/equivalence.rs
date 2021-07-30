@@ -1,6 +1,6 @@
 //! Equivalence tests between `num-bigint` and `crypto-bigint`
 
-use crypto_bigint::{Encoding, U256};
+use crypto_bigint::{Encoding, U256, Limb};
 use num_bigint::BigUint;
 use proptest::prelude::*;
 use std::mem;
@@ -10,31 +10,36 @@ const P: U256 =
     U256::from_be_hex("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551");
 
 fn to_biguint(uint: &U256) -> BigUint {
-    BigUint::from_bytes_be(uint.to_be_bytes().as_ref())
+    BigUint::from_bytes_le(uint.to_le_bytes().as_ref())
 }
 
 fn to_uint(big_uint: BigUint) -> U256 {
     let mut input = [0u8; U256::BYTE_SIZE];
-    let encoded = big_uint.to_bytes_be();
+    let encoded = big_uint.to_bytes_le();
+    let l = encoded.len().min(U256::BYTE_SIZE);
+    input[..l].copy_from_slice(&encoded[..l]);
 
-    match U256::BYTE_SIZE.checked_sub(encoded.len()) {
-        Some(off) => input[off..].copy_from_slice(&encoded),
-        None => {
-            let off = encoded.len() - U256::BYTE_SIZE;
-            input.copy_from_slice(&encoded[off..]);
-        }
-    }
-
-    U256::from_be_slice(&input)
+    U256::from_le_slice(&input)
 }
 
 prop_compose! {
     fn uint()(bytes in any::<[u8; 32]>()) -> U256 {
-        U256::from_be_slice(&bytes)
+        U256::from_le_slice(&bytes)
+    }
+}
+prop_compose! {
+    fn uint_mod_p(p: U256)(a in uint()) -> U256 {
+        // TODO: replace with mod operation on U256
+        to_uint(to_biguint(&a) % to_biguint(&p))
     }
 }
 
 proptest! {
+    #[test]
+    fn roundtrip(a in uint()) {
+        assert_eq!(a, to_uint(to_biguint(&a)));
+    }
+    
     #[test]
     fn wrapping_add(a in uint(), b in uint()) {
         let a_bi = to_biguint(&a);
@@ -47,14 +52,47 @@ proptest! {
     }
 
     #[test]
-    fn add_mod(a in uint(), b in uint()) {
+    fn add_mod_nist_p256(a in uint_mod_p(P), b in uint_mod_p(P)) {
+        assert!(a < P);
+        assert!(b < P);
+        
         let a_bi = to_biguint(&a);
         let b_bi = to_biguint(&b);
         let p_bi = to_biguint(&P);
 
-        let expected = to_uint((a_bi + b_bi) % p_bi);
+        let x_bi = a_bi + b_bi;
+        let x = a.adc(&b, Limb::ZERO).0;
+        assert_eq!(to_uint(x_bi.clone()), x);
+
+        let expected = to_uint(to_biguint(&x) % p_bi);
         let actual = a.add_mod(&b, &P);
 
+        assert!(expected < P);
+        assert!(actual < P);
+        
+        assert_eq!(expected, actual, "{} != {} ({} + {} mod {})", expected, actual, a, b, P);
+    }
+
+
+    #[test]
+    fn sub_mod_nist_p256(mut a in uint_mod_p(P), mut b in uint_mod_p(P)) {
+        if b > a {
+            mem::swap(&mut a, &mut b);
+        }
+
+        assert!(a < P);
+        assert!(b < P);
+        
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+        let p_bi = to_biguint(&P);
+
+        let expected = to_uint((a_bi - b_bi) % p_bi);
+        let actual = a.sub_mod(&b, &P);
+
+        assert!(expected < P);
+        assert!(actual < P);
+        
         assert_eq!(expected, actual);
     }
 
