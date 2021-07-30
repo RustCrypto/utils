@@ -11,7 +11,6 @@ mod cmp;
 mod encoding;
 mod from;
 mod mul;
-mod mul_mod;
 mod neg_mod;
 mod sub;
 mod sub_mod;
