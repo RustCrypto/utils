@@ -1,5 +1,5 @@
 #[cfg(feature = "block-padding")]
-use block_padding::Padding;
+use block_padding::{PadError, Padding};
 
 use crate::{
     utils::{to_blocks, to_blocks_mut},
@@ -206,11 +206,11 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// Pad message with a given padding `P`.
     #[cfg(feature = "block-padding")]
     #[inline]
-    pub fn pad_with<P: Padding<BlockSize>>(&mut self) -> &mut Block<BlockSize> {
+    pub fn pad_with<P: Padding<BlockSize>>(&mut self) -> Result<&mut Block<BlockSize>, PadError> {
         let pos = self.get_pos();
-        P::pad(&mut self.buffer, pos);
+        P::pad(&mut self.buffer, pos)?;
         self.set_pos_unchecked(0);
-        &mut self.buffer
+        Ok(&mut self.buffer)
     }
 
     /// Return size of the internall buffer in bytes.
