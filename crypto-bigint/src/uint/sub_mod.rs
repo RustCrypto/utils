@@ -7,16 +7,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     ///
     /// Assumes `self` and `rhs` are `< p`.
     pub const fn sub_mod(&self, rhs: &UInt<LIMBS>, p: &UInt<LIMBS>) -> UInt<LIMBS> {
-        let mut out = [Limb::ZERO; LIMBS];
-        let mut borrow = Limb::ZERO;
-        let mut i = 0;
-
-        while i < LIMBS {
-            let (l, b) = self.limbs[i].sbb(rhs.limbs[i], borrow);
-            out[i] = l;
-            borrow = b;
-            i += 1;
-        }
+        let (mut out, borrow) = self.sbb(rhs, Limb::ZERO);
 
         // If underflow occurred on the final limb, borrow = 0xfff...fff, otherwise
         // borrow = 0x000...000. Thus, we use it as a mask to conditionally add the modulus.
@@ -24,13 +15,13 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         let mut i = 0;
 
         while i < LIMBS {
-            let (l, c) = out[i].adc(p.limbs[i].bitand(borrow), carry);
-            out[i] = l;
+            let (l, c) = out.limbs[i].adc(p.limbs[i].bitand(borrow), carry);
+            out.limbs[i] = l;
             carry = c;
             i += 1;
         }
 
-        UInt::new(out)
+        out
     }
 }
 
