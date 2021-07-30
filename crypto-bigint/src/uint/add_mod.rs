@@ -7,18 +7,10 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     ///
     /// Assumes `self` and `rhs` are `< p`.
     pub const fn add_mod(&self, rhs: &UInt<LIMBS>, p: &UInt<LIMBS>) -> UInt<LIMBS> {
-        let mut out = [Limb::ZERO; LIMBS];
-        let mut carry = Limb::ZERO;
-        let mut i = 0;
-        while i < LIMBS {
-            let (l, c) = self.limbs[i].adc(rhs.limbs[i], carry);
-            out[i] = l;
-            carry = c;
-            i += 1;
-        }
+        let (out, _carry) = self.adc(rhs, Limb::ZERO);
 
         // Subtract the modulus, to ensure the result is smaller.
-        UInt::new(out).sub_mod(p, p)
+        out.sub_mod(p, p)
     }
 }
 
