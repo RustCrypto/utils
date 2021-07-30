@@ -1,6 +1,8 @@
 //! Limb newtype.
 
 mod add;
+mod bit_and;
+mod bit_or;
 mod cmp;
 mod encoding;
 mod from;

@@ -157,6 +157,12 @@ impl<const LIMBS: usize> From<UInt<LIMBS>> for [Limb; LIMBS] {
     }
 }
 
+impl<const LIMBS: usize> From<Limb> for UInt<LIMBS> {
+    fn from(limb: Limb) -> Self {
+        limb.0.into()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{Limb, U128};
