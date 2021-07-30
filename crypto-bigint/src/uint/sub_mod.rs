@@ -43,7 +43,7 @@ macro_rules! impl_sub_mod {
                 fn sub_mod(&self, rhs: &Self, p: &Self) -> Self {
                     debug_assert!(self < p);
                     debug_assert!(rhs < p);
-                    self.add_mod(rhs, p)
+                    self.sub_mod(rhs, p)
                 }
             }
         )+
