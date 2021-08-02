@@ -3,10 +3,10 @@ use block_padding::{PadError, Padding};
 
 use crate::{
     utils::{to_blocks, to_blocks_mut},
-    Block, DigestBuffer, InvalidLength, ParBlock,
+    Block, DigestBuffer,
 };
 use core::slice;
-use generic_array::{typenum::U1, ArrayLength};
+use generic_array::ArrayLength;
 
 /// Buffer for block processing of data.
 #[derive(Clone, Default)]
@@ -19,13 +19,11 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// Core method for `xor_data` and `set_data` methods.
     ///
     /// If `N` is equal to 1, the `gen_blocks` function is not used.
-    fn process_data<S, N: ArrayLength<Block<BlockSize>>>(
+    fn process_data(
         &mut self,
         mut data: &mut [u8],
-        state: &mut S,
         mut process: impl FnMut(&mut [u8], &[u8]),
-        mut gen_block: impl FnMut(&mut S) -> Block<BlockSize>,
-        mut gen_blocks: impl FnMut(&mut S) -> ParBlock<BlockSize, N>,
+        mut process_blocks: impl FnMut(&mut [Block<BlockSize>]),
     ) {
         let pos = self.get_pos();
         let r = self.remaining();
@@ -42,115 +40,29 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
             process(left, &self.buffer[pos..]);
         }
 
-        let (par_blocks, blocks, leftover) = to_blocks_mut::<BlockSize, N>(data);
-        for pb in par_blocks {
-            let blocks = gen_blocks(state);
-            for i in 0..N::USIZE {
-                process(&mut pb[i], &blocks[i]);
-            }
-        }
-
-        for block in blocks {
-            process(block, &gen_block(state));
-        }
+        let (blocks, leftover) = to_blocks_mut::<BlockSize>(data);
+        process_blocks(blocks);
 
         let n = leftover.len();
         if n != 0 {
-            let block = gen_block(state);
+            let mut block = Default::default();
+            process_blocks(slice::from_mut(&mut block));
             process(leftover, &block[..n]);
             self.buffer = block;
         }
         self.set_pos_unchecked(n);
     }
 
-    /// XORs `data` using the provided state and block generation functions.
-    ///
-    /// This method is intended for stream cipher implementations. If `N` is
-    /// equal to 1, the `gen_blocks` function is not used.
+    /// XORs `data`. This method is intended for stream cipher implementations.
     #[inline]
-    pub fn par_xor_data<S, N: ArrayLength<Block<BlockSize>>>(
-        &mut self,
-        data: &mut [u8],
-        state: &mut S,
-        gen_block: impl FnMut(&mut S) -> Block<BlockSize>,
-        gen_blocks: impl FnMut(&mut S) -> ParBlock<BlockSize, N>,
-    ) {
-        self.process_data(data, state, xor, gen_block, gen_blocks);
-    }
-
-    /// Simplified version of the [`par_xor_data`][BlockBuffer::par_xor_data] method, with `N = 1`.
-    #[inline]
-    pub fn xor_data(&mut self, data: &mut [u8], mut gen_block: impl FnMut() -> Block<BlockSize>) {
-        // note: the unrachable panic should be removed by compiler since
-        // with `N = 1` the second closure is not used
-        self.process_data(data, &mut gen_block, xor, |f| f(), unreachable);
+    pub fn xor_data(&mut self, data: &mut [u8], process_blocks: impl FnMut(&mut [Block<BlockSize>])) {
+        self.process_data(data, xor, process_blocks);
     }
 
     /// Set `data` to generated blocks.
     #[inline]
-    pub fn set_data(&mut self, data: &mut [u8], mut gen_block: impl FnMut() -> Block<BlockSize>) {
-        // note: the unrachable panic should be removed by compiler since
-        // with `N = 1` the second closure is not used
-        self.process_data(data, &mut gen_block, set, |f| f(), unreachable);
-    }
-
-    /// Process `data` in blocks and write result to `out_buf`, storing
-    /// leftovers for future use.
-    #[inline]
-    pub fn block_mode_processing<'a>(
-        &mut self,
-        mut data: &[u8],
-        buf: &'a mut [u8],
-        mut process: impl FnMut(&mut [Block<BlockSize>]),
-    ) -> Result<&'a [u8], InvalidLength> {
-        let pos = self.get_pos();
-        let rem = self.remaining();
-        let mut blocks_processed = 0;
-        let (_, mut buf_blocks, _) = to_blocks_mut::<BlockSize, U1>(buf);
-        if pos != 0 {
-            let n = data.len();
-            if n < rem {
-                // double slicing allows to remove panic branches
-                self.buffer[pos..][..n].copy_from_slice(data);
-                self.set_pos_unchecked(pos + n);
-                return Ok(&buf[..0]);
-            }
-            if buf_blocks.is_empty() {
-                return Err(InvalidLength);
-            }
-
-            let (l, r) = buf_blocks.split_at_mut(1);
-            let buf_block = &mut l[0];
-            buf_blocks = r;
-            let (l, r) = data.split_at(rem);
-            data = r;
-
-            buf_block[..pos].copy_from_slice(&self.buffer[..pos]);
-            buf_block[pos..].copy_from_slice(l);
-
-            process(slice::from_mut(buf_block));
-            blocks_processed += 1;
-        }
-
-        let (data_blocks, leftover) = to_blocks(data);
-        let buf_blocks = buf_blocks
-            .get_mut(..data_blocks.len())
-            .ok_or(InvalidLength)?;
-        buf_blocks.clone_from_slice(data_blocks);
-        process(buf_blocks);
-        blocks_processed += buf_blocks.len();
-
-        let n = leftover.len();
-        self.buffer[..n].copy_from_slice(leftover);
-        self.set_pos_unchecked(n);
-
-        let res = unsafe {
-            let res_len = BlockSize::USIZE * blocks_processed;
-            // SAFETY: number of processed blocks never exceeds capacity of `buf`
-            debug_assert!(buf.len() >= res_len);
-            buf.get_unchecked(..res_len)
-        };
-        Ok(res)
+    pub fn set_data(&mut self, data: &mut [u8], process_blocks: impl FnMut(&mut [Block<BlockSize>])) {
+        self.process_data(data, set, process_blocks);
     }
 
     /// Compress remaining data after padding it with `delim`, zeros and
@@ -301,8 +213,4 @@ fn xor(a: &mut [u8], b: &[u8]) {
 #[inline(always)]
 fn set(a: &mut [u8], b: &[u8]) {
     a.copy_from_slice(b);
-}
-
-fn unreachable<S, B: ArrayLength<u8>>(_: &mut S) -> ParBlock<B, U1> {
-    unreachable!();
 }
