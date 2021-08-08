@@ -121,7 +121,7 @@ impl Tag {
             Tag::ObjectIdentifier => 0x06,
             Tag::Utf8String => 0x0C,
             Tag::Sequence => 0x10 | CONSTRUCTED_FLAG,
-            Tag::Set => 0x11,
+            Tag::Set => 0x11 | CONSTRUCTED_FLAG,
             Tag::PrintableString => 0x13,
             Tag::Ia5String => 0x16,
             Tag::UtcTime => 0x17,
@@ -157,12 +157,12 @@ impl TryFrom<u8> for Tag {
             0x05 => Ok(Tag::Null),
             0x06 => Ok(Tag::ObjectIdentifier),
             0x0C => Ok(Tag::Utf8String),
-            0x11 => Ok(Tag::Set),
             0x13 => Ok(Tag::PrintableString),
             0x16 => Ok(Tag::Ia5String),
             0x17 => Ok(Tag::UtcTime),
             0x18 => Ok(Tag::GeneralizedTime),
             0x30 => Ok(Tag::Sequence), // constructed
+            0x31 => Ok(Tag::Set),      // constructed
             0x60..=0x7E => Ok(Tag::Application(TagNumber(byte & 0b11111))), // constructed
             0xA0..=0xBE => Ok(Tag::ContextSpecific(TagNumber(byte & 0b11111))), // constructed
             0xE0..=0xFE => Ok(Tag::Private(TagNumber(byte & 0b11111))), // constructed
