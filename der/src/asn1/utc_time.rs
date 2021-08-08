@@ -125,7 +125,14 @@ impl Encodable for UtcTime {
             DateTime::from_unix_duration(self.0).ok_or_else(|| Self::TAG.value_error())?;
 
         debug_assert!((1950..2050).contains(&datetime.year()));
-        datetime::encode_decimal(encoder, Self::TAG, datetime.year() - 1900)?;
+
+        let year = match datetime.year() {
+            y @ 1950..=1999 => y - 1900,
+            y @ 2000..=2049 => y - 2000,
+            _ => return Err(Self::TAG.value_error()),
+        };
+
+        datetime::encode_decimal(encoder, Self::TAG, year)?;
         datetime::encode_decimal(encoder, Self::TAG, datetime.month())?;
         datetime::encode_decimal(encoder, Self::TAG, datetime.day())?;
         datetime::encode_decimal(encoder, Self::TAG, datetime.hour())?;
@@ -141,12 +148,12 @@ impl Tagged for UtcTime {
 
 #[cfg(test)]
 mod tests {
-    use super::UtcTime;
+    use super::{DateTime, UtcTime};
     use crate::{Decodable, Encodable, Encoder};
     use hex_literal::hex;
 
     #[test]
-    fn round_trip() {
+    fn round_trip_vector() {
         let example_bytes = hex!("17 0d 39 31 30 35 30 36 32 33 34 35 34 30 5a");
         let utc_time = UtcTime::from_der(&example_bytes).unwrap();
         assert_eq!(utc_time.unix_duration().as_secs(), 673573540);
@@ -155,5 +162,29 @@ mod tests {
         let mut encoder = Encoder::new(&mut buf);
         utc_time.encode(&mut encoder).unwrap();
         assert_eq!(example_bytes, encoder.finish().unwrap());
+    }
+
+    #[test]
+    fn round_trip_examples() {
+        for year in 1970..=2049 {
+            for month in 1..=12 {
+                let max_day = if month == 2 { 28 } else { 30 };
+
+                for day in 1..=max_day {
+                    for hour in 0..=23 {
+                        let datetime1 = DateTime::new(year, month, day, hour, 0, 0).unwrap();
+                        let utc_time1 = UtcTime::new(datetime1.unix_duration().unwrap()).unwrap();
+
+                        let mut buf = [0u8; 128];
+                        let mut encoder = Encoder::new(&mut buf);
+                        utc_time1.encode(&mut encoder).unwrap();
+                        let der_bytes = encoder.finish().unwrap();
+
+                        let utc_time2 = UtcTime::from_der(der_bytes).unwrap();
+                        assert_eq!(utc_time1, utc_time2);
+                    }
+                }
+            }
+        }
     }
 }
