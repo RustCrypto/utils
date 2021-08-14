@@ -55,6 +55,13 @@ mod padded {
         let mut buf = [0u8; 1024];
         assert_eq!(Base64::decode(input, &mut buf), Err(Error::InvalidEncoding));
     }
+
+    #[test]
+    fn reject_invalid_padding() {
+        let input = "AA/=";
+        let mut buf = [0u8; 1024];
+        assert_eq!(Base64::decode(input, &mut buf), Err(Error::InvalidEncoding));
+    }
 }
 
 /// Standard Base64 *without* padding
