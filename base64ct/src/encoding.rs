@@ -21,6 +21,9 @@ pub trait Encoding {
     fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error>;
 
     /// Decode a Base64 string in-place.
+    ///
+    /// NOTE: this method does not (yet) validate that padding is well-formed,
+    /// if the given Base64 encoding is padded.
     fn decode_in_place(buf: &mut [u8]) -> Result<&[u8], InvalidEncodingError>;
 
     /// Decode a Base64 string into a byte vector.
@@ -50,17 +53,14 @@ pub trait Encoding {
 
 impl<T: Variant> Encoding for T {
     fn decode(src: impl AsRef<[u8]>, dst: &mut [u8]) -> Result<&[u8], Error> {
-        let mut src = src.as_ref();
-
-        let mut err = if T::PADDED {
-            let (unpadded_len, e) = decode_padding(src)?;
-            src = &src[..unpadded_len];
-            e
+        let (src_unpadded, mut err) = if T::PADDED {
+            let (unpadded_len, e) = decode_padding(src.as_ref())?;
+            (&src.as_ref()[..unpadded_len], e)
         } else {
-            0
+            (src.as_ref(), 0)
         };
 
-        let dlen = decoded_len(src.len());
+        let dlen = decoded_len(src_unpadded.len());
 
         if dlen > dst.len() {
             return Err(Error::InvalidLength);
@@ -68,7 +68,7 @@ impl<T: Variant> Encoding for T {
 
         let dst = &mut dst[..dlen];
 
-        let mut src_chunks = src.chunks_exact(4);
+        let mut src_chunks = src_unpadded.chunks_exact(4);
         let mut dst_chunks = dst.chunks_exact_mut(3);
         for (s, d) in (&mut src_chunks).zip(&mut dst_chunks) {
             err |= Self::decode_3bytes(s, d);
@@ -84,6 +84,7 @@ impl<T: Variant> Encoding for T {
         dst_rem.copy_from_slice(&tmp_out[..dst_rem.len()]);
 
         if err == 0 {
+            validate_padding::<T>(src.as_ref(), dst)?;
             Ok(dst)
         } else {
             Err(Error::InvalidEncoding)
@@ -191,7 +192,7 @@ impl<T: Variant> Encoding for T {
         if T::PADDED {
             if let Some(dst_rem) = dst_chunks.next() {
                 let mut tmp = [0u8; 3];
-                tmp[..src_rem.len()].copy_from_slice(&src_rem);
+                tmp[..src_rem.len()].copy_from_slice(src_rem);
                 Self::encode_3bytes(&tmp, dst_rem);
 
                 let flag = src_rem.len() == 1;
@@ -247,7 +248,11 @@ fn decoded_len(input_len: usize) -> usize {
     3 * k + (3 * l) / 4
 }
 
-/// Validate padding is well-formed and compute unpadded length.
+/// Validate padding is of the expected length compute unpadded length.
+///
+/// Note that this method does not explicitly check that the padded data
+/// is valid in and of itself: that is performed by `validate_padding` as a
+/// final step.
 ///
 /// Returns length-related errors eagerly as a [`Result`], and data-dependent
 /// errors (i.e. malformed padding bytes) as `i16` to be combined with other
@@ -281,6 +286,45 @@ fn decode_padding(input: &[u8]) -> Result<(usize, i16), InvalidEncodingError> {
     };
 
     Ok((unpadded_len, err))
+}
+
+/// Check that the padding of a Base64 encoding string is valid given
+/// the decoded buffer.
+fn validate_padding<T: Variant>(encoded: &[u8], decoded: &[u8]) -> Result<(), Error> {
+    if !T::PADDED || (encoded.is_empty() && decoded.is_empty()) {
+        return Ok(());
+    }
+
+    let padding_start = encoded.len().checked_sub(4).ok_or(Error::InvalidEncoding)?;
+    let padding = encoded.get(padding_start..).ok_or(Error::InvalidEncoding)?;
+
+    let decoded_start = if decoded.len() % 3 != 0 {
+        decoded
+            .len()
+            .checked_sub(decoded.len() % 3)
+            .ok_or(Error::InvalidEncoding)?
+    } else if decoded.len() == 3 {
+        0
+    } else {
+        decoded.len().checked_sub(3).ok_or(Error::InvalidEncoding)?
+    };
+
+    let decoded = decoded.get(decoded_start..).ok_or(Error::InvalidEncoding)?;
+
+    let mut buf = [0u8; 4];
+    T::encode(decoded, &mut buf)?;
+
+    // Non-short-circuiting comparison of padding
+    if padding
+        .iter()
+        .zip(buf.iter())
+        .fold(0, |acc, (a, b)| acc | (a ^ b))
+        == 0
+    {
+        Ok(())
+    } else {
+        Err(Error::InvalidEncoding)
+    }
 }
 
 /// Branchless match that a given byte is the `PAD` character
