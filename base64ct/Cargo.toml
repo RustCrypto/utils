@@ -1,6 +1,6 @@
 [package]
 name = "base64ct"
-version = "1.0.0" # Also update html_root_url in lib.rs when bumping this
+version = "1.0.1" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of Base64 (RFC 4648) which avoids any usages of
 data-dependent branches/LUTs and thereby provides portable "best effort"
