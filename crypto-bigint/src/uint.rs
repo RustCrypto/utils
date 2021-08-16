@@ -1,6 +1,10 @@
 //! Big unsigned integers.
 
-#![allow(clippy::needless_range_loop, clippy::many_single_char_names)]
+#![allow(
+    clippy::needless_range_loop,
+    clippy::many_single_char_names,
+    clippy::derive_hash_xor_eq
+)]
 
 #[macro_use]
 mod macros;

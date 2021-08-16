@@ -1,5 +1,7 @@
 //! Limb newtype.
 
+#![allow(clippy::derive_hash_xor_eq)]
+
 mod add;
 mod bit_and;
 mod bit_or;
