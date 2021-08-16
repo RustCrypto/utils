@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#563]: https://github.com/RustCrypto/utils/pull/563
 [#579]: https://github.com/RustCrypto/utils/pull/579
 
-## 0.2.2 (2021-06-26)
+## 0.2.2 (2021-06-26) [YANKED]
 ### Added
 - `Limb::is_odd` and `UInt::is_odd` ([#505])
 - `UInt::new` ([#506])
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#507]: https://github.com/RustCrypto/utils/pull/507
 [#508]: https://github.com/RustCrypto/utils/pull/508
 
-## 0.2.1 (2021-06-21)
+## 0.2.1 (2021-06-21) [YANKED]
 ### Added
 - `Limb` newtype ([#499])
 - Target-specific rustdocs ([#500])
