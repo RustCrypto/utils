@@ -1,5 +1,7 @@
 //! Limb newtype.
 
+#![allow(clippy::derive_hash_xor_eq)]
+
 mod add;
 mod bit_and;
 mod bit_or;
@@ -45,7 +47,7 @@ pub(crate) type Wide = u128;
 
 /// Big integers are represented as an array of smaller CPU word-size integers
 /// called "limbs".
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default, Hash)]
 #[repr(transparent)]
 pub struct Limb(pub Inner);
 

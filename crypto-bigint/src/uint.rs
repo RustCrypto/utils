@@ -1,6 +1,10 @@
 //! Big unsigned integers.
 
-#![allow(clippy::needless_range_loop, clippy::many_single_char_names)]
+#![allow(
+    clippy::needless_range_loop,
+    clippy::many_single_char_names,
+    clippy::derive_hash_xor_eq
+)]
 
 #[macro_use]
 mod macros;
@@ -32,7 +36,7 @@ use zeroize::Zeroize;
 ///
 /// Generic over the given number of `LIMBS`
 // TODO(tarcieri): make generic around a specified number of bits.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Hash)]
 pub struct UInt<const LIMBS: usize> {
     /// Inner limb array. Stored from least significant to most significant.
     limbs: [Limb; LIMBS],
