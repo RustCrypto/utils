@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.3 (2021-08-16)
+### Fixed
+- `UInt::wrapping_mul` ([#563])
+
+### Added
+- Implement the `Hash` trait for `UInt` and `Limb` ([#579])
+
+[#563]: https://github.com/RustCrypto/utils/pull/563
+[#579]: https://github.com/RustCrypto/utils/pull/579
+
 ## 0.2.2 (2021-06-26)
 ### Added
 - `Limb::is_odd` and `UInt::is_odd` ([#505])
