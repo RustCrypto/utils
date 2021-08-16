@@ -45,7 +45,7 @@ pub(crate) type Wide = u128;
 
 /// Big integers are represented as an array of smaller CPU word-size integers
 /// called "limbs".
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default, Hash)]
 #[repr(transparent)]
 pub struct Limb(pub Inner);
 

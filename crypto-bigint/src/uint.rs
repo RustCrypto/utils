@@ -32,7 +32,7 @@ use zeroize::Zeroize;
 ///
 /// Generic over the given number of `LIMBS`
 // TODO(tarcieri): make generic around a specified number of bits.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Hash)]
 pub struct UInt<const LIMBS: usize> {
     /// Inner limb array. Stored from least significant to most significant.
     limbs: [Limb; LIMBS],
