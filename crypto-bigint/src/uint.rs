@@ -16,6 +16,7 @@ mod encoding;
 mod from;
 mod mul;
 mod neg_mod;
+mod shr;
 mod sub;
 mod sub_mod;
 
