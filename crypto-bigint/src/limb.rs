@@ -1,4 +1,5 @@
-//! Limb newtype.
+//! Big integers are represented as an array of smaller CPU word-size integers
+//! called "limbs".
 
 #![allow(clippy::derive_hash_xor_eq)]
 
@@ -20,30 +21,45 @@ use subtle::{Choice, ConditionallySelectable};
 #[cfg(not(any(target_pointer_width = "32", target_pointer_width = "64")))]
 compile_error!("this crate builds on 32-bit and 64-bit platforms only");
 
-/// Size of the inner integer in bits
-#[cfg(target_pointer_width = "32")]
-pub(crate) const BIT_SIZE: usize = 32;
-#[cfg(target_pointer_width = "64")]
-pub(crate) const BIT_SIZE: usize = 64;
+//
+// 32-bit definitions
+//
 
-/// Size of the inner integer in bytes
+/// Size of the inner integer in bits.
 #[cfg(target_pointer_width = "32")]
-pub(crate) const BYTE_SIZE: usize = 4;
-#[cfg(target_pointer_width = "64")]
-pub(crate) const BYTE_SIZE: usize = 8;
+pub const BIT_SIZE: usize = 32;
 
-/// Inner integer type.
-// TODO(tarcieri): expose this?
+/// Size of the inner integer in bytes.
 #[cfg(target_pointer_width = "32")]
-pub(crate) type Inner = u32;
-#[cfg(target_pointer_width = "64")]
-pub(crate) type Inner = u64;
+pub const BYTE_SIZE: usize = 4;
+
+/// Inner integer type that the [`Limb`] newtype wraps.
+#[cfg(target_pointer_width = "32")]
+pub type Inner = u32;
 
 /// Wide integer type: double the width of [`Inner`].
 #[cfg(target_pointer_width = "32")]
-pub(crate) type Wide = u64;
+pub type Wide = u64;
+
+//
+// 64-bit definitions
+//
+
+/// Size of the inner integer in bits.
 #[cfg(target_pointer_width = "64")]
-pub(crate) type Wide = u128;
+pub const BIT_SIZE: usize = 64;
+
+/// Size of the inner integer in bytes.
+#[cfg(target_pointer_width = "64")]
+pub const BYTE_SIZE: usize = 8;
+
+/// Inner integer type that the [`Limb`] newtype wraps.
+#[cfg(target_pointer_width = "64")]
+pub type Inner = u64;
+
+/// Wide integer type: double the width of [`Inner`].
+#[cfg(target_pointer_width = "64")]
+pub type Wide = u128;
 
 /// Big integers are represented as an array of smaller CPU word-size integers
 /// called "limbs".

@@ -109,7 +109,7 @@ dependencies = [
 
 [[package]]
 name = "crypto-bigint"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "generic-array",
  "hex-literal 0.3.1",
