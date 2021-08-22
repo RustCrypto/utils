@@ -78,6 +78,37 @@ impl<const LIMBS: usize> UInt<LIMBS> {
 
         Self { limbs }
     }
+
+    /// Create a [`UInt`] from an array of the [`limb::Inner`]
+    /// unsigned integer type.
+    // TODO(tarcieri): replace with `const impl From<[limb::Inner; LIMBS]>` when stable
+    #[inline]
+    pub const fn from_uint_array(arr: [limb::Inner; LIMBS]) -> Self {
+        let mut limbs = [Limb::ZERO; LIMBS];
+        let mut i = 0;
+
+        while i < LIMBS {
+            limbs[i] = Limb(arr[i]);
+            i += 1;
+        }
+
+        Self { limbs }
+    }
+
+    /// Create an array of [`limb::Inner`] unsigned integer type from a [`UInt`].
+    #[inline]
+    // TODO(tarcieri): replace with `const impl From<Self> for [limb::Inner; LIMBS]` when stable
+    pub const fn to_uint_array(self) -> [limb::Inner; LIMBS] {
+        let mut arr = [0; LIMBS];
+        let mut i = 0;
+
+        while i < LIMBS {
+            arr[i] = self.limbs[i].0;
+            i += 1;
+        }
+
+        arr
+    }
 }
 
 impl<const LIMBS: usize> From<u8> for UInt<LIMBS> {
@@ -143,14 +174,24 @@ impl From<U128> for u128 {
     }
 }
 
-// TODO(tarcieri): eventually phase this out?
+impl<const LIMBS: usize> From<[limb::Inner; LIMBS]> for UInt<LIMBS> {
+    fn from(arr: [limb::Inner; LIMBS]) -> Self {
+        Self::from_uint_array(arr)
+    }
+}
+
+impl<const LIMBS: usize> From<UInt<LIMBS>> for [limb::Inner; LIMBS] {
+    fn from(n: UInt<LIMBS>) -> [limb::Inner; LIMBS] {
+        n.to_uint_array()
+    }
+}
+
 impl<const LIMBS: usize> From<[Limb; LIMBS]> for UInt<LIMBS> {
     fn from(limbs: [Limb; LIMBS]) -> Self {
         Self { limbs }
     }
 }
 
-// TODO(tarcieri): eventually phase this out?
 impl<const LIMBS: usize> From<UInt<LIMBS>> for [Limb; LIMBS] {
     fn from(n: UInt<LIMBS>) -> [Limb; LIMBS] {
         n.limbs
@@ -165,7 +206,7 @@ impl<const LIMBS: usize> From<Limb> for UInt<LIMBS> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Limb, U128};
+    use crate::{limb, Limb, U128};
 
     #[cfg(target_pointer_width = "32")]
     use crate::U64 as UIntEx;
@@ -196,5 +237,13 @@ mod tests {
         let n = U128::from(42u128);
         assert_eq!(&n.limbs()[..2], &[Limb(42), Limb(0)]);
         assert_eq!(u128::from(n), 42u128);
+    }
+
+    #[test]
+    fn array_round_trip() {
+        let arr1 = [1, 2];
+        let n = UIntEx::from(arr1);
+        let arr2: [limb::Inner; 2] = n.into();
+        assert_eq!(arr1, arr2);
     }
 }
