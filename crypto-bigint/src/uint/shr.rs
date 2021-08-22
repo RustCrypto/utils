@@ -1,0 +1,75 @@
+//! [`UInt`] bitwise right shift operations.
+
+use super::UInt;
+use crate::{limb, Limb};
+use core::ops::Shr;
+
+impl<const LIMBS: usize> UInt<LIMBS> {
+    /// Computes `self >> n`.
+    // TODO(tarcieri): replace with `const impl Shr<usize>` when stable
+    #[inline(always)]
+    pub const fn shr(&self, shift: usize) -> Self {
+        let full_shifts = shift / limb::BIT_SIZE;
+        let small_shift = shift & (limb::BIT_SIZE - 1);
+        let mut limbs = [Limb::ZERO; LIMBS];
+
+        if shift > limb::BIT_SIZE * LIMBS {
+            return Self { limbs };
+        }
+
+        let n = LIMBS - full_shifts;
+        let mut i = 0;
+
+        if small_shift == 0 {
+            while i < n {
+                limbs[i] = Limb(self.limbs[i + full_shifts].0);
+                i += 1;
+            }
+        } else {
+            while i < n {
+                let mut lo = self.limbs[i + full_shifts].0 >> small_shift;
+
+                if i < (LIMBS - 1) - full_shifts {
+                    lo |= self.limbs[i + full_shifts + 1].0 << (limb::BIT_SIZE - small_shift);
+                }
+
+                limbs[i] = Limb(lo);
+                i += 1;
+            }
+        }
+
+        Self { limbs }
+    }
+}
+
+impl<const LIMBS: usize> Shr<usize> for UInt<LIMBS> {
+    type Output = UInt<LIMBS>;
+
+    fn shr(self, rhs: usize) -> UInt<LIMBS> {
+        UInt::shr(&self, rhs)
+    }
+}
+
+impl<const LIMBS: usize> Shr<usize> for &UInt<LIMBS> {
+    type Output = UInt<LIMBS>;
+
+    fn shr(self, rhs: usize) -> UInt<LIMBS> {
+        UInt::shr(self, rhs)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::U256;
+
+    const N: U256 =
+        U256::from_be_hex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141");
+
+    const N_2: U256 =
+        U256::from_be_hex("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0");
+
+    #[test]
+    fn shr1() {
+        assert_eq!(N >> 1, N_2);
+    }
+}
