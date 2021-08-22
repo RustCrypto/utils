@@ -46,13 +46,12 @@ extern crate alloc;
 #[macro_use]
 mod macros;
 
-mod limb;
-mod traits;
-mod uint;
-
 #[cfg(feature = "generic-array")]
 mod array;
 mod checked;
+pub mod limb;
+mod traits;
+mod uint;
 mod wrapping;
 
 pub use crate::{checked::Checked, limb::Limb, traits::*, uint::*, wrapping::Wrapping};
