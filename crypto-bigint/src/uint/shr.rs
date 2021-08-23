@@ -6,9 +6,13 @@ use core::ops::Shr;
 
 impl<const LIMBS: usize> UInt<LIMBS> {
     /// Computes `self >> n`.
-    // TODO(tarcieri): replace with `const impl Shr<usize>` when stable
+    ///
+    /// NOTE: this operation is variable time with respect to `n` *ONLY*.
+    ///
+    /// When used with a fixed `n`, this function is constant-time with respect
+    /// to `self`.
     #[inline(always)]
-    pub const fn shr(&self, shift: usize) -> Self {
+    pub const fn shr_vartime(&self, shift: usize) -> Self {
         let full_shifts = shift / limb::BIT_SIZE;
         let small_shift = shift & (limb::BIT_SIZE - 1);
         let mut limbs = [Limb::ZERO; LIMBS];
@@ -45,16 +49,24 @@ impl<const LIMBS: usize> UInt<LIMBS> {
 impl<const LIMBS: usize> Shr<usize> for UInt<LIMBS> {
     type Output = UInt<LIMBS>;
 
+    /// NOTE: this operation is variable time with respect to `rhs` *ONLY*.
+    ///
+    /// When used with a fixed `rhs`, this function is constant-time with respect
+    /// to `self`.
     fn shr(self, rhs: usize) -> UInt<LIMBS> {
-        UInt::shr(&self, rhs)
+        self.shr_vartime(rhs)
     }
 }
 
 impl<const LIMBS: usize> Shr<usize> for &UInt<LIMBS> {
     type Output = UInt<LIMBS>;
 
+    /// NOTE: this operation is variable time with respect to `rhs` *ONLY*.
+    ///
+    /// When used with a fixed `rhs`, this function is constant-time with respect
+    /// to `self`.
     fn shr(self, rhs: usize) -> UInt<LIMBS> {
-        UInt::shr(self, rhs)
+        self.shr_vartime(rhs)
     }
 }
 
