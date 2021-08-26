@@ -121,13 +121,18 @@ macro_rules! check {
 /// macOS helper function for calling `sysctlbyname`.
 #[cfg(target_os = "macos")]
 pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
-    let name = core::ffi::CStr::from_bytes_with_nul(name).unwrap();
+    assert_eq!(
+        name.last().cloned(),
+        Some(0),
+        "name is not NUL terminated: {:?}",
+        name
+    );
 
     let mut value: u32 = 0;
     let mut size = core::mem::size_of::<u32>();
 
     let rc = libc::sysctlbyname(
-        name.as_ptr(),
+        name.as_ptr() as *const i8,
         &mut value as *mut _ as *mut libc::c_void,
         &mut size,
         core::ptr::null_mut(),
