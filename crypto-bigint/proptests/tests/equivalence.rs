@@ -9,6 +9,9 @@ use std::mem;
 const P: U256 =
     U256::from_be_hex("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551");
 
+const P_BLS: U256 = U256::from_be_hex("73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001");
+const P_BLS_INV: Limb = Limb(0xffff_fffe_ffff_ffff);
+
 fn to_biguint(uint: &U256) -> BigUint {
     BigUint::from_bytes_le(uint.to_le_bytes().as_ref())
 }
@@ -95,6 +98,76 @@ proptest! {
         
         assert_eq!(expected, actual);
     }
+
+
+    #[test]
+    fn add_mod_bls12_381_scalar(a in uint_mod_p(P_BLS), b in uint_mod_p(P_BLS)) {
+        assert!(a < P_BLS);
+        assert!(b < P_BLS);
+        
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+        let p_bi = to_biguint(&P_BLS);
+
+        let x_bi = a_bi + b_bi;
+        let x = a.adc(&b, Limb::ZERO).0;
+        assert_eq!(to_uint(x_bi.clone()), x);
+
+        let expected = to_uint(to_biguint(&x) % p_bi);
+        let actual = a.add_mod(&b, &P_BLS);
+
+        assert!(expected < P_BLS);
+        assert!(actual < P_BLS);
+        
+        assert_eq!(expected, actual, "{} != {} ({} + {} mod {})", expected, actual, a, b, P_BLS);
+    }
+
+
+    #[test]
+    fn sub_mod_bls12_381_scalar(mut a in uint_mod_p(P_BLS), mut b in uint_mod_p(P_BLS)) {
+        if b > a {
+            mem::swap(&mut a, &mut b);
+        }
+
+        assert!(a < P_BLS);
+        assert!(b < P_BLS);
+        
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+        let p_bi = to_biguint(&P_BLS);
+
+        let expected = to_uint((a_bi - b_bi) % p_bi);
+        let actual = a.sub_mod(&b, &P_BLS);
+
+        assert!(expected < P_BLS);
+        assert!(actual < P_BLS);
+        
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn mul_mod_bls12_381_scalar(a in uint_mod_p(P_BLS), b in uint_mod_p(P_BLS)) {
+        assert!(a < P_BLS);
+        assert!(b < P_BLS);
+        
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+        let p_bi = to_biguint(&P_BLS);
+
+        let x_bi = a_bi * b_bi;
+        let x = a.mul_wide(&b).1;
+        let x_expected = to_uint(x_bi.clone());
+        assert_eq!(x_expected, x, "{} != {} ({} * {}", x_expected, x, a, b);
+            
+        let expected = to_uint(to_biguint(&x) % p_bi);
+        let actual = a.mul_mod(&b, &P_BLS, P_BLS_INV);
+
+        assert!(expected < P_BLS);
+        assert!(actual < P_BLS);
+        
+        assert_eq!(expected, actual, "{} != {} ({} * {} mod {})", expected, actual, a, b, P_BLS);
+    }
+
 
     #[test]
     fn wrapping_sub(mut a in uint(), mut b in uint()) {

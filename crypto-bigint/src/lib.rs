@@ -37,7 +37,7 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_root_url = "https://docs.rs/crypto-bigint/0.2.4"
 )]
-#![forbid(unsafe_code, clippy::unwrap_used)]
+#![forbid(clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
 #[cfg(all(feature = "alloc", test))]
@@ -54,8 +54,16 @@ mod traits;
 mod uint;
 mod wrapping;
 
-pub use crate::{checked::Checked, limb::Limb, traits::*, uint::*, wrapping::Wrapping};
+pub use crate::{
+    checked::Checked,
+    limb::{Limb, BIT_SIZE},
+    traits::*,
+    uint::*,
+    wrapping::Wrapping,
+};
 pub use subtle;
+
+extern crate std;
 
 #[cfg(feature = "generic-array")]
 pub use {
