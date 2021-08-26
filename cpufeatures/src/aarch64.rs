@@ -67,7 +67,6 @@ macro_rules! __expand_check_macro {
 #[cfg(target_os = "linux")]
 __expand_check_macro! {
     ("aes",    AES),    // Enable AES support.
-    ("crypto", CRYPTO), // Enable cryptographic instructions.
     ("sha2",   SHA2),   // Enable SHA1 and SHA256 support.
     ("sha3",   SHA3),   // Enable SHA512 and SHA3 support.
 }
@@ -105,9 +104,6 @@ pub mod hwcaps {
 #[doc(hidden)]
 macro_rules! check {
     ("aes") => {
-        true
-    };
-    ("crypto") => {
         true
     };
     ("sha2") => {
@@ -156,9 +152,6 @@ pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
 #[doc(hidden)]
 macro_rules! check {
     ("aes") => {
-        true
-    };
-    ("crypto") => {
         true
     };
     ("sha2") => {
