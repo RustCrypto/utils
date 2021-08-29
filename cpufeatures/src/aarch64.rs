@@ -83,7 +83,6 @@ pub mod hwcaps {
     use libc::c_ulong;
 
     pub const AES: c_ulong = libc::HWCAP_AES | libc::HWCAP_PMULL;
-    pub const CRYPTO: c_ulong = AES | SHA2;
     pub const SHA2: c_ulong = libc::HWCAP_SHA2;
     pub const SHA3: c_ulong = libc::HWCAP_SHA3 | libc::HWCAP_SHA512;
 }
