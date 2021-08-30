@@ -138,7 +138,7 @@ impl<'a, T, N: ArrayLength<T>> InOut<'a, GenericArray<T, N>> {
 /// Custom pointer type which contains one immutable (input) and two mutable
 /// (temporary and output) pointers.
 ///
-/// Input and output pointers are either equal or non-overlapping. The 
+/// Input and output pointers are either equal or non-overlapping. The
 /// temporary pointer never overlaps with both input and output.
 pub struct InTmpOut<'a, T> {
     in_ptr: *const T,
