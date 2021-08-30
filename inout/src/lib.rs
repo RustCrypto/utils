@@ -20,6 +20,15 @@ pub struct InOut<'a, T> {
 
 impl<'a, T> InOut<'a, T> {
     #[inline]
+    pub fn reborrow<'b>(&'b mut self) -> InOut<'b, T> {
+        Self {
+            in_ptr: self.in_ptr,
+            out_ptr: self.out_ptr,
+            _pd: PhantomData,
+        }
+    }
+
+    #[inline]
     pub fn get_in(&self) -> &'a T {
         unsafe { &*self.in_ptr }
     }
