@@ -6,7 +6,10 @@ use crate::{
     Block, DigestBuffer,
 };
 use core::slice;
-use generic_array::{ArrayLength, typenum::{U256, type_operators::IsLess}};
+use generic_array::{
+    typenum::{type_operators::IsLess, U256},
+    ArrayLength,
+};
 #[cfg(feature = "inout")]
 use inout::InOutBuf;
 
@@ -88,7 +91,6 @@ impl<BlockSize: ArrayLength<u8> + IsLess<U256>> BlockBuffer<BlockSize> {
         }
         self.set_pos_unchecked(n);
     }
-
 
     /// Compress remaining data after padding it with `delim`, zeros and
     /// the `suffix` bytes. If there is not enough unused space, `compress`

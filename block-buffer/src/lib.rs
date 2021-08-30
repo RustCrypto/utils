@@ -9,9 +9,9 @@
 
 #[cfg(feature = "block-padding")]
 pub use block_padding;
+pub use generic_array;
 #[cfg(feature = "inout")]
 pub use inout;
-pub use generic_array;
 
 use generic_array::{ArrayLength, GenericArray};
 

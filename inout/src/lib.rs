@@ -1,6 +1,6 @@
 #![no_std]
-use core::{slice, marker::PhantomData, convert::TryInto};
-use generic_array::{GenericArray, ArrayLength};
+use core::{convert::TryInto, marker::PhantomData, slice};
+use generic_array::{ArrayLength, GenericArray};
 
 /// Fat pointer type which contains one immutable (input) and one mutable
 /// (output) pointer, which are either equal or non-overlapping.
@@ -167,10 +167,7 @@ impl<'a, T> IntoIterator for InOutBuf<'a, T> {
     type IntoIter = InOutBufIter<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        InOutBufIter {
-            buf: self,
-            pos: 0,
-        }
+        InOutBufIter { buf: self, pos: 0 }
     }
 }
 
@@ -267,11 +264,7 @@ impl<'a, T> InOutBuf<'a, T> {
     }
 
     #[inline]
-    pub unsafe fn from_raw(
-        in_ptr: *const T,
-        out_ptr: *mut T,
-        len: usize,
-    ) -> Self {
+    pub unsafe fn from_raw(in_ptr: *const T, out_ptr: *mut T, len: usize) -> Self {
         Self {
             in_ptr,
             out_ptr,
@@ -313,10 +306,7 @@ impl<'a, T> InOutBuf<'a, T> {
     #[inline]
     pub fn into_blocks<N: ArrayLength<T>>(
         self,
-    ) -> (
-        InOutBuf<'a, GenericArray<T, N>>,
-        InOutBuf<'a, T>,
-    ) {
+    ) -> (InOutBuf<'a, GenericArray<T, N>>, InOutBuf<'a, T>) {
         let nb = self.len() / N::USIZE;
         let body_len = nb * N::USIZE;
         let (tail_in_ptr, tail_out_ptr) =
@@ -337,10 +327,9 @@ impl<'a, T> InOutBuf<'a, T> {
         )
     }
 
-    pub fn into_chunks<N: ArrayLength<T>>(self) -> (
-        InOutBuf<'a, GenericArray<T, N>>,
-        InOutBuf<'a, T>,
-    ) {
+    pub fn into_chunks<N: ArrayLength<T>>(
+        self,
+    ) -> (InOutBuf<'a, GenericArray<T, N>>, InOutBuf<'a, T>) {
         let chunks = self.len() / N::USIZE;
         let tail_pos = N::USIZE * chunks;
         let tail_len = self.len() - tail_pos;
@@ -431,7 +420,8 @@ impl<'a> InOutBuf<'a, u8> {
 }
 
 impl<'a, T, N> TryInto<InOut<'a, GenericArray<T, N>>> for InOutBuf<'a, T>
-where N: ArrayLength<T>,
+where
+    N: ArrayLength<T>,
 {
     type Error = IntoArrayError;
 
@@ -460,12 +450,7 @@ pub struct InTmpOutBuf<'a, T> {
 
 impl<'a, T> InTmpOutBuf<'a, T> {
     #[inline]
-    pub unsafe fn from_raw(
-        in_ptr: *const T,
-        tmp_ptr: *mut T,
-        out_ptr: *mut T,
-        len: usize,
-    ) -> Self {
+    pub unsafe fn from_raw(in_ptr: *const T, tmp_ptr: *mut T, out_ptr: *mut T, len: usize) -> Self {
         Self {
             in_ptr,
             tmp_ptr,
@@ -507,21 +492,17 @@ impl<'a, T> InTmpOutBuf<'a, T> {
     }
 
     pub fn get_in_tmp(self) -> (&'a [T], &'a mut [T]) {
-        unsafe { (
-            slice::from_raw_parts(self.in_ptr, self.len),
-            slice::from_raw_parts_mut(self.tmp_ptr, self.len),
-        ) }
+        unsafe {
+            (
+                slice::from_raw_parts(self.in_ptr, self.len),
+                slice::from_raw_parts_mut(self.tmp_ptr, self.len),
+            )
+        }
     }
 
     #[inline]
     pub fn copy_tmp2out(&mut self) {
-        unsafe {
-            core::ptr::copy_nonoverlapping(
-                self.tmp_ptr as *const T,
-                self.out_ptr,
-                self.len,
-            )
-        }
+        unsafe { core::ptr::copy_nonoverlapping(self.tmp_ptr as *const T, self.out_ptr, self.len) }
     }
 
     #[inline]

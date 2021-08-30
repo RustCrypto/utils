@@ -1,7 +1,4 @@
-use crate::{
-    utils::to_blocks,
-    Block, DigestBuffer,
-};
+use crate::{utils::to_blocks, Block, DigestBuffer};
 use generic_array::ArrayLength;
 
 /// Buffer for lazy block processing of data.
