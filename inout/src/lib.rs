@@ -6,6 +6,8 @@
 )]
 #![allow(clippy::needless_lifetimes)]
 #![warn(missing_docs, rust_2018_idioms)]
+//! Collection of custom reference types for code generic over in-place and
+//! buffer-to-buffer modes of operation.
 
 use core::{convert::TryInto, marker::PhantomData, slice};
 use generic_array::{ArrayLength, GenericArray};
@@ -19,6 +21,7 @@ pub struct InOut<'a, T> {
 }
 
 impl<'a, T> InOut<'a, T> {
+    /// Reborrow `self`.
     #[inline]
     pub fn reborrow<'b>(&'b mut self) -> InOut<'b, T> {
         Self {
@@ -28,21 +31,25 @@ impl<'a, T> InOut<'a, T> {
         }
     }
 
+    /// Get immutable reference to the input value.
     #[inline]
     pub fn get_in(&self) -> &'a T {
         unsafe { &*self.in_ptr }
     }
 
+    /// Get mutable reference to the output value.
     #[inline]
     pub fn get_out(self) -> &'a mut T {
         unsafe { &mut *self.out_ptr }
     }
 
+    /// Convert `self` to a pair of raw input and output pointers.
     #[inline]
     pub fn into_raw(self) -> (*const T, *mut T) {
         (self.in_ptr, self.out_ptr)
     }
 
+    /// Extend `self` with a temporary pointer.
     #[inline]
     pub fn extend_with_tmp(self, tmp: &'a mut T) -> InTmpOut<'a, T> {
         InTmpOut {
@@ -53,8 +60,26 @@ impl<'a, T> InOut<'a, T> {
         }
     }
 
+    /// Create `InOut` from raw input and output pointers.
+    ///
+    /// # Safety
+    /// Behavior is undefined if any of the following conditions are violated:
+    /// - `in_ptr` must point to a properly initialized value of type `T` and
+    /// must be valid for reads.
+    /// - `out_ptr` must point to a properly initialized value of type `T` and
+    /// must be valid for both reads and writes.
+    /// - `in_ptr` and `out_ptr` must be either equal or non-overlapping.
+    /// - If `in_ptr` and `out_ptr` are equal, then the memory referenced by
+    /// them must not be accessed through any other pointer (not derived from
+    /// the return value) for the duration of lifetime 'a. Both read and write
+    /// accesses are forbidden.
+    /// - If `in_ptr` and `out_ptr` are not equal, then the memory referenced by
+    /// `out_ptr` must not be accessed through any other pointer (not derived from
+    /// the return value) for the duration of lifetime 'a. Both read and write
+    /// accesses are forbidden. The memory referenced by `in_ptr` must not be
+    /// mutated for the duration of lifetime `'a`, except inside an `UnsafeCell`.
     #[inline]
-    pub unsafe fn from_raw(in_ptr: *const T, out_ptr: *mut T) -> Self {
+    pub unsafe fn from_raw(in_ptr: *const T, out_ptr: *mut T) -> InOut<'a, T> {
         Self {
             in_ptr,
             out_ptr,
@@ -84,7 +109,7 @@ impl<'a, T> From<(&'a T, &'a mut T)> for InOut<'a, T> {
 }
 
 impl<'a, T, N: ArrayLength<T>> InOut<'a, GenericArray<T, N>> {
-    /// Returns `InOut` for given position.
+    /// Returns `InOut` for the given position.
     ///
     /// # Panics
     /// If `pos` greater or equal to array length.
@@ -99,6 +124,7 @@ impl<'a, T, N: ArrayLength<T>> InOut<'a, GenericArray<T, N>> {
         }
     }
 
+    /// Convert `InOut` array to `InOutBuf`.
     pub fn as_buf(self) -> InOutBuf<'a, T> {
         InOutBuf {
             in_ptr: self.in_ptr as *const T,
@@ -122,6 +148,8 @@ pub struct InTmpOut<'a, T> {
 }
 
 impl<'a, T> InTmpOut<'a, T> {
+    /// Create `InOut` from input and temporary parts.
+    #[inline]
     pub fn inout_from_intmp(self) -> InOut<'a, T> {
         InOut {
             in_ptr: self.in_ptr,
@@ -130,6 +158,7 @@ impl<'a, T> InTmpOut<'a, T> {
         }
     }
 
+    /// Create `InOut` from temporary part.
     #[inline]
     pub fn inout_from_tmptmp(self) -> InOut<'a, T> {
         InOut {
@@ -139,6 +168,7 @@ impl<'a, T> InTmpOut<'a, T> {
         }
     }
 
+    /// Reborrow `self`.
     #[inline]
     pub fn reborrow<'b>(&'b mut self) -> InTmpOut<'b, T> {
         Self {
@@ -151,6 +181,7 @@ impl<'a, T> InTmpOut<'a, T> {
 }
 
 impl<'a, T, N: ArrayLength<T>> InTmpOut<'a, GenericArray<T, N>> {
+    /// Convert `InTmpOut` array to `InTmpOutBuf`.
     #[inline]
     pub fn into_buf(self) -> InTmpOutBuf<'a, T> {
         InTmpOutBuf {
@@ -194,7 +225,7 @@ impl<'a, T> IntoIterator for InOutBuf<'a, T> {
 }
 
 impl<'a, T> InOutBuf<'a, T> {
-    /// Create buffer from single value
+    /// Create `InOutBuf` from a single mutable reference.
     pub fn from_mut(val: &mut T) -> Self {
         Self {
             in_ptr: val as *mut T as *const T,
@@ -204,7 +235,7 @@ impl<'a, T> InOutBuf<'a, T> {
         }
     }
 
-    /// Create a new value from simple references.
+    /// Create `InOutBuf` from a pair of immutable and mutable references.
     #[inline]
     pub fn from_refs(in_val: &'a T, out_val: &'a mut T) -> Self {
         Self {
@@ -215,7 +246,7 @@ impl<'a, T> InOutBuf<'a, T> {
         }
     }
 
-    /// Create a new value from slices.
+    /// Create `InOutBuf` from immutable and mutable slices.
     ///
     /// Returns an error if length of slices is not equal to each other.
     #[inline]
@@ -260,21 +291,25 @@ impl<'a, T> InOutBuf<'a, T> {
         }
     }
 
+    /// Get input slice.
     #[inline]
     pub fn get_in(&self) -> &'a [T] {
         unsafe { slice::from_raw_parts(self.in_ptr, self.len) }
     }
 
+    /// Get output slice.
     #[inline]
     pub fn get_out(self) -> &'a mut [T] {
         unsafe { slice::from_raw_parts_mut(self.out_ptr, self.len) }
     }
 
+    /// Get raw input and output pointers.
     #[inline]
     pub fn into_raw(self) -> (*const T, *mut T) {
         (self.in_ptr, self.out_ptr)
     }
 
+    /// Reborrow `self`.
     #[inline]
     pub fn reborrow<'b>(&'b mut self) -> InOutBuf<'b, T> {
         Self {
@@ -285,8 +320,28 @@ impl<'a, T> InOutBuf<'a, T> {
         }
     }
 
+    /// Create `InOutBuf` from raw input and output pointers.
+    ///
+    /// # Safety
+    /// Behavior is undefined if any of the following conditions are violated:
+    /// - `in_ptr` must point to a properly initialized value of type `T` and
+    /// must be valid for reads for `len * mem::size_of::<T>()` many bytes.
+    /// - `out_ptr` must point to a properly initialized value of type `T` and
+    /// must be valid for both reads and writes for `len * mem::size_of::<T>()`
+    /// many bytes.
+    /// - `in_ptr` and `out_ptr` must be either equal or non-overlapping.
+    /// - If `in_ptr` and `out_ptr` are equal, then the memory referenced by
+    /// them must not be accessed through any other pointer (not derived from
+    /// the return value) for the duration of lifetime 'a. Both read and write
+    /// accesses are forbidden.
+    /// - If `in_ptr` and `out_ptr` are not equal, then the memory referenced by
+    /// `out_ptr` must not be accessed through any other pointer (not derived from
+    /// the return value) for the duration of lifetime 'a. Both read and write
+    /// accesses are forbidden. The memory referenced by `in_ptr` must not be
+    /// mutated for the duration of lifetime `'a`, except inside an `UnsafeCell`.
+    /// - The total size `len * mem::size_of::<T>()`  must be no larger than `isize::MAX`.
     #[inline]
-    pub unsafe fn from_raw(in_ptr: *const T, out_ptr: *mut T, len: usize) -> Self {
+    pub unsafe fn from_raw(in_ptr: *const T, out_ptr: *mut T, len: usize) -> InOutBuf<'a, T> {
         Self {
             in_ptr,
             out_ptr,
@@ -295,7 +350,7 @@ impl<'a, T> InOutBuf<'a, T> {
         }
     }
 
-    /// Divides one buffer into two at an index.
+    /// Divides one buffer into two at `mid` index.
     ///
     /// The first will contain all indices from `[0, mid)` (excluding
     /// the index `mid` itself) and the second will contain all
@@ -324,31 +379,8 @@ impl<'a, T> InOutBuf<'a, T> {
         )
     }
 
-    /// Partitions buffer into 2 parts: body of arrays and tail.
+    /// Partition buffer into 2 parts: buffer of arrays and tail.
     #[inline]
-    pub fn into_blocks<N: ArrayLength<T>>(
-        self,
-    ) -> (InOutBuf<'a, GenericArray<T, N>>, InOutBuf<'a, T>) {
-        let nb = self.len() / N::USIZE;
-        let body_len = nb * N::USIZE;
-        let (tail_in_ptr, tail_out_ptr) =
-            unsafe { (self.in_ptr.add(body_len), self.out_ptr.add(body_len)) };
-        (
-            InOutBuf {
-                in_ptr: self.in_ptr as *const GenericArray<T, N>,
-                out_ptr: self.out_ptr as *mut GenericArray<T, N>,
-                len: nb,
-                _pd: PhantomData,
-            },
-            InOutBuf {
-                in_ptr: tail_in_ptr,
-                out_ptr: tail_out_ptr,
-                len: self.len() - body_len,
-                _pd: PhantomData,
-            },
-        )
-    }
-
     pub fn into_chunks<N: ArrayLength<T>>(
         self,
     ) -> (InOutBuf<'a, GenericArray<T, N>>, InOutBuf<'a, T>) {
@@ -372,6 +404,10 @@ impl<'a, T> InOutBuf<'a, T> {
         }
     }
 
+    /// Extend buffer with a temporary array.
+    ///
+    /// # Panics
+    /// Of buffer length is greater than length of the temporary array.
     pub fn extend_with_tmp<N: ArrayLength<T>>(
         self,
         tmp: &'a mut GenericArray<T, N>,
@@ -386,6 +422,8 @@ impl<'a, T> InOutBuf<'a, T> {
         }
     }
 
+    /// Process data in buffer in chunks of size `N`.
+    // TODO: decribe behavior and arguments in detail
     pub fn process_chunks<N, S, PRE, POST, PC, PT>(
         self,
         mut state: S,
@@ -428,6 +466,11 @@ impl<'a, T> InOutBuf<'a, T> {
 }
 
 impl<'a> InOutBuf<'a, u8> {
+    /// XORs `data` with values behind the input slice and write
+    /// result to the output slice.
+    ///
+    /// # Panics
+    /// If `data` length is not equal to the buffer length.
     #[inline]
     #[allow(clippy::needless_range_loop)]
     pub fn xor(&mut self, data: &[u8]) {
@@ -474,6 +517,29 @@ pub struct InTmpOutBuf<'a, T> {
 }
 
 impl<'a, T> InTmpOutBuf<'a, T> {
+    /// Create `InTmpOutBuf` from raw input and output pointers.
+    ///
+    /// # Safety
+    /// Behavior is undefined if any of the following conditions are violated:
+    /// - `in_ptr` must point to a properly initialized value of type `T` and
+    /// must be valid for reads for `len * mem::size_of::<T>()` many bytes.
+    /// - `tmp_ptr` and `out_ptr` must point to a properly initialized value of type `T` and
+    /// must be valid for both reads and writes for `len * mem::size_of::<T>()`
+    /// many bytes.
+    /// - `in_ptr` and `out_ptr` must be either equal or non-overlapping.
+    /// - The memory referenced by `tmp_ptr` must not be accessed through any
+    /// other pointer (not derived from the return value) for the duration of
+    /// lifetime 'a. Both read and write accesses are forbidden.
+    /// - If `in_ptr` and `out_ptr` are equal, then the memory referenced by
+    /// them must not be accessed through any other pointer (not derived from
+    /// the return value) for the duration of lifetime 'a. Both read and write
+    /// accesses are forbidden.
+    /// - If `in_ptr` and `out_ptr` are not equal, then the memory referenced by
+    /// `out_ptr` must not be accessed through any other pointer (not derived from
+    /// the return value) for the duration of lifetime 'a. Both read and write
+    /// accesses are forbidden. The memory referenced by `in_ptr` must not be
+    /// mutated for the duration of lifetime `'a`, except inside an `UnsafeCell`.
+    /// - The total size `len * mem::size_of::<T>()`  must be no larger than `isize::MAX`.
     #[inline]
     pub unsafe fn from_raw(in_ptr: *const T, tmp_ptr: *mut T, out_ptr: *mut T, len: usize) -> Self {
         Self {
@@ -485,6 +551,7 @@ impl<'a, T> InTmpOutBuf<'a, T> {
         }
     }
 
+    /// Get length of the inner buffers.
     #[inline]
     pub fn len(&self) -> usize {
         self.len
@@ -496,6 +563,7 @@ impl<'a, T> InTmpOutBuf<'a, T> {
         self.len == 0
     }
 
+    /// Reborrow `self`.
     #[inline]
     pub fn reborrow<'b>(&'b mut self) -> InTmpOutBuf<'b, T> {
         Self {
@@ -507,21 +575,25 @@ impl<'a, T> InTmpOutBuf<'a, T> {
         }
     }
 
+    /// Get input slice.
     #[inline]
-    pub fn get_in(self) -> &'a [T] {
+    pub fn get_in(&self) -> &'a [T] {
         unsafe { slice::from_raw_parts(self.in_ptr, self.len) }
     }
 
+    /// Get temporary slice.
     #[inline]
     pub fn get_tmp(self) -> &'a mut [T] {
         unsafe { slice::from_raw_parts_mut(self.tmp_ptr, self.len) }
     }
 
+    /// Get output slice.
     #[inline]
     pub fn get_out(self) -> &'a mut [T] {
         unsafe { slice::from_raw_parts_mut(self.out_ptr, self.len) }
     }
 
+    /// Get input and temporary slices.
     pub fn get_in_tmp(self) -> (&'a [T], &'a mut [T]) {
         unsafe {
             (
@@ -531,33 +603,29 @@ impl<'a, T> InTmpOutBuf<'a, T> {
         }
     }
 
+    /// Copy data from temporary slice to output.
     #[inline]
     pub fn copy_tmp2out(&mut self) {
         unsafe { core::ptr::copy_nonoverlapping(self.tmp_ptr as *const T, self.out_ptr, self.len) }
     }
 
+    /// Construct `InOutBuf` from input and temporary slices.
     #[inline]
     pub fn inout_from_intmp(self) -> InOutBuf<'a, T> {
-        InOutBuf {
-            in_ptr: self.in_ptr,
-            out_ptr: self.tmp_ptr,
-            len: self.len,
-            _pd: PhantomData,
-        }
+        let (input, temp) = self.get_in_tmp();
+        InOutBuf::new(input, temp).expect("Length of slices is equal")
     }
 
+    /// Construct `InOutBuf` from temporary slice.
     #[inline]
     pub fn inout_from_tmptmp(self) -> InOutBuf<'a, T> {
-        InOutBuf {
-            in_ptr: self.tmp_ptr as *const T,
-            out_ptr: self.tmp_ptr,
-            len: self.len,
-            _pd: PhantomData,
-        }
+        self.get_tmp().into()
     }
 }
 
 impl<'a, N: ArrayLength<u8>> InTmpOutBuf<'a, GenericArray<u8, N>> {
+    /// XORs data fron input and temporary slices and writes result to output
+    /// slice.
     #[inline]
     pub fn xor_intmp2out(&mut self) {
         unsafe {
@@ -574,6 +642,7 @@ impl<'a, N: ArrayLength<u8>> InTmpOutBuf<'a, GenericArray<u8, N>> {
     }
 }
 
+/// Iterator over [`InOutBuf`].
 pub struct InOutBufIter<'a, T> {
     buf: InOutBuf<'a, T>,
     pos: usize,
@@ -611,6 +680,6 @@ pub enum InSrc {
 #[derive(Copy, Clone, Debug)]
 pub struct NotEqualError;
 
-/// The error returned when slice can not be converted to an array.
+/// The error returned when slice can not be converted into array.
 #[derive(Copy, Clone, Debug)]
 pub struct IntoArrayError;
