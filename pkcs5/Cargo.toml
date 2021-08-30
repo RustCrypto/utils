@@ -1,6 +1,6 @@
 [package]
 name = "pkcs5"
-version = "0.3.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.3.1" # Also update html_root_url in lib.rs when bumping this
 description = """
 Pure Rust implementation of Public-Key Cryptography Standards (PKCS) #5:
 Password-Based Cryptography Specification Version 2.1 (RFC 8018)
@@ -18,7 +18,7 @@ der = { version = "0.4", features = ["oid"], path = "../der" }
 spki = { version = "0.4", path = "../spki" }
 
 # optional dependencies
-aes = { version = "0.7.5", optional = true }
+aes = { version = "0.7", optional = true }
 block-modes = { version = "0.8", optional = true, default-features = false }
 hmac = { version = "0.11", optional = true, default-features = false }
 pbkdf2 = { version = "0.9", optional = true, default-features = false }
