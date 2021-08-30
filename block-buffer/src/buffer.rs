@@ -44,7 +44,7 @@ impl<BlockSize: ArrayLength<u8> + IsLess<U256>> BlockBuffer<BlockSize> {
             left.xor(&self.buffer[pos..]);
         }
 
-        let (blocks, mut leftover) = data.into_blocks();
+        let (blocks, mut leftover) = data.into_chunks();
         process_blocks(blocks);
 
         let n = leftover.len();
