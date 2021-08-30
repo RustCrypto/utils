@@ -12,6 +12,7 @@ members = [
     "der",
     "der/derive",
     "hex-literal",
+    "inout",
     "opaque-debug",
     "pem-rfc7468",
     "pkcs1",

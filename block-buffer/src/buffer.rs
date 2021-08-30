@@ -6,23 +6,59 @@ use crate::{
     Block, DigestBuffer,
 };
 use core::slice;
-use generic_array::ArrayLength;
+use generic_array::{ArrayLength, typenum::{U256, type_operators::IsLess}};
+#[cfg(feature = "inout")]
+use inout::InOutBuf;
 
 /// Buffer for block processing of data.
 #[derive(Clone, Default)]
-pub struct BlockBuffer<BlockSize: ArrayLength<u8>> {
+pub struct BlockBuffer<BlockSize: ArrayLength<u8> + IsLess<U256>> {
     buffer: Block<BlockSize>,
-    pos: usize,
+    pos: u8,
 }
 
-impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
-    /// Core method for `xor_data` and `set_data` methods.
-    ///
-    /// If `N` is equal to 1, the `gen_blocks` function is not used.
-    fn process_data(
+impl<BlockSize: ArrayLength<u8> + IsLess<U256>> BlockBuffer<BlockSize> {
+    /// XORs `data`. This method is intended for stream cipher implementations.
+    #[cfg(feature = "inout")]
+    #[inline]
+    pub fn xor_data(
+        &mut self,
+        mut data: InOutBuf<'_, u8>,
+        mut process_blocks: impl FnMut(InOutBuf<'_, Block<BlockSize>>),
+    ) {
+        let pos = self.get_pos();
+        let r = self.remaining();
+        let n = data.len();
+        if pos != 0 {
+            if n < r {
+                // double slicing allows to remove panic branches
+                data.xor(&self.buffer[pos..][..n]);
+                self.set_pos_unchecked(pos + n);
+                return;
+            }
+            let (mut left, right) = data.split_at(r);
+            data = right;
+            left.xor(&self.buffer[pos..]);
+        }
+
+        let (blocks, mut leftover) = data.into_blocks();
+        process_blocks(blocks);
+
+        let n = leftover.len();
+        if n != 0 {
+            let mut block = Default::default();
+            process_blocks(InOutBuf::from_mut(&mut block));
+            leftover.xor(&block[..n]);
+            self.buffer = block;
+        }
+        self.set_pos_unchecked(n);
+    }
+
+    /// Set `data` to generated blocks.
+    #[inline]
+    pub fn set_data(
         &mut self,
         mut data: &mut [u8],
-        mut process: impl FnMut(&mut [u8], &[u8]),
         mut process_blocks: impl FnMut(&mut [Block<BlockSize>]),
     ) {
         let pos = self.get_pos();
@@ -31,39 +67,28 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         if pos != 0 {
             if n < r {
                 // double slicing allows to remove panic branches
-                process(data, &self.buffer[pos..][..n]);
+                data.copy_from_slice(&self.buffer[pos..][..n]);
                 self.set_pos_unchecked(pos + n);
                 return;
             }
             let (left, right) = data.split_at_mut(r);
             data = right;
-            process(left, &self.buffer[pos..]);
+            left.copy_from_slice(&self.buffer[pos..]);
         }
 
-        let (blocks, leftover) = to_blocks_mut::<BlockSize>(data);
+        let (blocks, leftover) = to_blocks_mut(data);
         process_blocks(blocks);
 
         let n = leftover.len();
         if n != 0 {
             let mut block = Default::default();
             process_blocks(slice::from_mut(&mut block));
-            process(leftover, &block[..n]);
+            leftover.copy_from_slice(&block[..n]);
             self.buffer = block;
         }
         self.set_pos_unchecked(n);
     }
 
-    /// XORs `data`. This method is intended for stream cipher implementations.
-    #[inline]
-    pub fn xor_data(&mut self, data: &mut [u8], process_blocks: impl FnMut(&mut [Block<BlockSize>])) {
-        self.process_data(data, xor, process_blocks);
-    }
-
-    /// Set `data` to generated blocks.
-    #[inline]
-    pub fn set_data(&mut self, data: &mut [u8], process_blocks: impl FnMut(&mut [Block<BlockSize>])) {
-        self.process_data(data, set, process_blocks);
-    }
 
     /// Compress remaining data after padding it with `delim`, zeros and
     /// the `suffix` bytes. If there is not enough unused space, `compress`
@@ -84,7 +109,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         let n = self.size() - suffix.len();
         if self.size() - pos - 1 < suffix.len() {
             compress(&self.buffer);
-            let mut block: Block<BlockSize> = Default::default();
+            let mut block = Block::<BlockSize>::default();
             block[n..].copy_from_slice(suffix);
             compress(&block);
         } else {
@@ -146,12 +171,12 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// Return current cursor position.
     #[inline]
     pub fn get_pos(&self) -> usize {
-        debug_assert!(self.pos < BlockSize::USIZE);
-        if self.pos >= BlockSize::USIZE {
+        debug_assert!(self.pos < BlockSize::U8);
+        if self.pos >= BlockSize::U8 {
             // SAFETY: `pos` is set only to values smaller than block size
             unsafe { core::hint::unreachable_unchecked() }
         }
-        self.pos
+        self.pos as usize
     }
 
     /// Set buffer content and cursor position.
@@ -161,17 +186,17 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     pub fn set(&mut self, buf: Block<BlockSize>, pos: usize) {
         assert!(pos < BlockSize::USIZE);
         self.buffer = buf;
-        self.pos = pos;
+        self.pos = pos as u8;
     }
 
     #[inline]
     fn set_pos_unchecked(&mut self, pos: usize) {
         debug_assert!(pos < BlockSize::USIZE);
-        self.pos = pos;
+        self.pos = pos as u8;
     }
 }
 
-impl<B: ArrayLength<u8>> DigestBuffer<B> for BlockBuffer<B> {
+impl<B: ArrayLength<u8> + IsLess<U256>> DigestBuffer<B> for BlockBuffer<B> {
     #[inline]
     fn digest_blocks(&mut self, mut input: &[u8], mut compress: impl FnMut(&[Block<B>])) {
         let pos = self.get_pos();
@@ -202,15 +227,4 @@ impl<B: ArrayLength<u8>> DigestBuffer<B> for BlockBuffer<B> {
     fn reset(&mut self) {
         self.pos = 0;
     }
-}
-
-#[inline(always)]
-fn xor(a: &mut [u8], b: &[u8]) {
-    debug_assert_eq!(a.len(), b.len());
-    a.iter_mut().zip(b.iter()).for_each(|(a, &b)| *a ^= b);
-}
-
-#[inline(always)]
-fn set(a: &mut [u8], b: &[u8]) {
-    a.copy_from_slice(b);
 }

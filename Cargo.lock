@@ -40,6 +40,7 @@ version = "0.10.0"
 dependencies = [
  "block-padding 0.3.0",
  "generic-array",
+ "inout",
 ]
 
 [[package]]
@@ -198,6 +199,13 @@ checksum = "2a2a2320eb7ec0ebe8da8f744d7812d9fc4cb4d09344ac01898dbcb6a20ae69b"
 dependencies = [
  "crypto-mac",
  "digest",
+]
+
+[[package]]
+name = "inout"
+version = "0.1.0"
+dependencies = [
+ "generic-array",
 ]
 
 [[package]]

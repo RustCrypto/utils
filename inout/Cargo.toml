@@ -1,0 +1,16 @@
+[package]
+name = "inout"
+version = "0.1.0"
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+description = """
+    Fat pointer type for writing generic code over in-place and
+    buffer-to-buffer modes of operation.
+"""
+documentation = "https://docs.rs/inout"
+repository = "https://github.com/RustCrypto/utils"
+keywords = ["fat-pointer"]
+edition = "2018"
+
+[dependencies]
+generic-array = "0.14"
