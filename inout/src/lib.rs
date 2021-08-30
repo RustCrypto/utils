@@ -1,7 +1,8 @@
 #![no_std]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
+    html_root_url = "https://docs.rs/inout/0.1.0"
 )]
 #![allow(clippy::needless_lifetimes)]
 #![warn(missing_docs, rust_2018_idioms)]
@@ -9,7 +10,7 @@
 use core::{convert::TryInto, marker::PhantomData, slice};
 use generic_array::{ArrayLength, GenericArray};
 
-/// Fat pointer type which contains one immutable (input) and one mutable
+/// Custom pointer type which contains one immutable (input) and one mutable
 /// (output) pointer, which are either equal or non-overlapping.
 pub struct InOut<'a, T> {
     in_ptr: *const T,
@@ -99,6 +100,11 @@ impl<'a, T, N: ArrayLength<T>> InOut<'a, GenericArray<T, N>> {
     }
 }
 
+/// Custom pointer type which contains one immutable (input) and two mutable
+/// (temporary and output) pointers.
+///
+/// Input and output pointers are either equal or non-overlapping. The 
+/// temporary pointer never overlaps with both input and output.
 pub struct InTmpOut<'a, T> {
     in_ptr: *const T,
     tmp_ptr: *mut T,
@@ -148,9 +154,9 @@ impl<'a, T, N: ArrayLength<T>> InTmpOut<'a, GenericArray<T, N>> {
     }
 }
 
-/// Fat pointer type which references one immutable (input) slice and one
-/// mutable (output) slice of equal length, which are either the same or do
-/// not overlap.
+/// Custom slice type which references one immutable (input) slice and one
+/// mutable (output) slice of equal length. Input and output slices are
+/// either the same or do not overlap.
 pub struct InOutBuf<'a, T> {
     in_ptr: *const T,
     out_ptr: *mut T,
@@ -446,8 +452,10 @@ where
     }
 }
 
-/// Input and output may be the same, but the temporary pointer
-/// never overlaps with either of them.
+/// Custom slice type which references one immutable (input) slice and two
+/// mutable (temporary and output) slices of equal length. Input and output
+/// slices are either the same or do not overlap. The temporary slice never
+/// overlaps with both input and output slices.
 pub struct InTmpOutBuf<'a, T> {
     in_ptr: *const T,
     tmp_ptr: *mut T,
@@ -581,12 +589,19 @@ impl<'a, T> Iterator for InOutBufIter<'a, T> {
     }
 }
 
+/// The enum which controls which slice to use from `InTmpOutBuf` as input.
 pub enum InSrc {
+    /// Use input slice as input.
     In,
+    /// Use temporary slice as input.
     Tmp,
 }
 
+/// The error returned when input and output slices have different length
+/// and thus can not be converted to `InOutBuf`.
 #[derive(Copy, Clone, Debug)]
 pub struct NotEqualError;
+
+/// The error returned when slice can not be converted to an array.
 #[derive(Copy, Clone, Debug)]
 pub struct IntoArrayError;
