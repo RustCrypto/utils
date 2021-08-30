@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(clippy::needless_lifetimes)]
 use core::{convert::TryInto, marker::PhantomData, slice};
 use generic_array::{ArrayLength, GenericArray};
 
@@ -39,8 +40,8 @@ impl<'a, T> InOut<'a, T> {
     #[inline]
     pub unsafe fn from_raw(in_ptr: *const T, out_ptr: *mut T) -> Self {
         Self {
-            in_ptr: in_ptr,
-            out_ptr: out_ptr,
+            in_ptr,
+            out_ptr,
             _pd: PhantomData,
         }
     }
@@ -216,7 +217,7 @@ impl<'a, T> InOutBuf<'a, T> {
         self.len
     }
 
-    /// Returns `true` if `self` has a length of zero elements.
+    /// Returns `true` if the buffer has a length of 0.
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.len == 0
@@ -407,6 +408,7 @@ impl<'a, T> InOutBuf<'a, T> {
 
 impl<'a> InOutBuf<'a, u8> {
     #[inline]
+    #[allow(clippy::needless_range_loop)]
     pub fn xor(&mut self, data: &[u8]) {
         assert_eq!(self.len(), data.len());
         unsafe {
@@ -463,6 +465,12 @@ impl<'a, T> InTmpOutBuf<'a, T> {
     #[inline]
     pub fn len(&self) -> usize {
         self.len
+    }
+
+    /// Returns `true` if the buffer has a length of 0.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
     }
 
     #[inline]
