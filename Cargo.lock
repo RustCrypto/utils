@@ -242,6 +242,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "pbkdf2"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f05894bce6a1ba4be299d0c5f29563e08af2bc18bb7d48313113bed71e904739"
+dependencies = [
+ "crypto-mac",
+]
+
+[[package]]
 name = "pem-rfc7468"
 version = "0.2.0"
 dependencies = [
@@ -267,7 +276,7 @@ dependencies = [
  "der",
  "hex-literal 0.3.1",
  "hmac",
- "pbkdf2",
+ "pbkdf2 0.8.0",
  "scrypt",
  "sha2",
  "spki",
@@ -344,12 +353,12 @@ dependencies = [
 
 [[package]]
 name = "scrypt"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "879588d8f90906e73302547e20fffefdd240eb3e0e744e142321f5d49dea0518"
+checksum = "9f2cc535b6997b0c755bf9344e71ca0e1be070d07ff792f1fcd31e7b90e07d5f"
 dependencies = [
  "hmac",
- "pbkdf2",
+ "pbkdf2 0.9.0",
  "salsa20",
  "sha2",
 ]
