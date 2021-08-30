@@ -125,7 +125,7 @@ impl<'a, T, N: ArrayLength<T>> InOut<'a, GenericArray<T, N>> {
     }
 
     /// Convert `InOut` array to `InOutBuf`.
-    pub fn as_buf(self) -> InOutBuf<'a, T> {
+    pub fn into_buf(self) -> InOutBuf<'a, T> {
         InOutBuf {
             in_ptr: self.in_ptr as *const T,
             out_ptr: self.out_ptr as *mut T,
