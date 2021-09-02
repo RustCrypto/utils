@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.4 (2021-08-23)
+## 0.2.5 (2021-09-02)
+### Fixed
+- `ConditionallySelectable` impl for `UInt` ([#609])
+
+[#609]: https://github.com/RustCrypto/utils/pull/609
+
+## 0.2.4 (2021-08-23) [YANKED]
 ### Added
 - Expose `limb` module ([#584])
 - `[limb::Inner; LIMBS]` conversions for `UInt` ([#585])
@@ -15,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#586]: https://github.com/RustCrypto/utils/pull/586
 [#590]: https://github.com/RustCrypto/utils/pull/590
 
-## 0.2.3 (2021-08-16)
+## 0.2.3 (2021-08-16) [YANKED]
 ### Fixed
 - `UInt::wrapping_mul` ([#563])
 
