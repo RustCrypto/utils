@@ -92,7 +92,7 @@ impl<const LIMBS: usize> ConditionallySelectable for UInt<LIMBS> {
         let mut limbs = [Limb::ZERO; LIMBS];
 
         for i in 0..LIMBS {
-            limbs[i] = Limb::conditional_select(&a.limbs[0], &b.limbs[0], choice);
+            limbs[i] = Limb::conditional_select(&a.limbs[i], &b.limbs[i], choice);
         }
 
         Self { limbs }
@@ -202,6 +202,7 @@ impl_split! {
 #[cfg(test)]
 mod tests {
     use crate::{Concat, Split, U128, U64};
+    use subtle::ConditionallySelectable;
 
     #[test]
     #[cfg(feature = "alloc")]
@@ -211,6 +212,18 @@ mod tests {
 
         use alloc::string::ToString;
         assert_eq!(hex, n.to_string());
+    }
+
+    #[test]
+    fn conditional_select() {
+        let a = U128::from_be_hex("00002222444466668888AAAACCCCEEEE");
+        let b = U128::from_be_hex("11113333555577779999BBBBDDDDFFFF");
+
+        let select_0 = U128::conditional_select(&a, &b, 0.into());
+        assert_eq!(a, select_0);
+
+        let select_1 = U128::conditional_select(&a, &b, 1.into());
+        assert_eq!(b, select_1);
     }
 
     #[test]
