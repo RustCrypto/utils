@@ -85,9 +85,7 @@ impl<const LIMBS: usize> PartialEq for UInt<LIMBS> {
 #[cfg(test)]
 mod tests {
     use crate::U128;
-    use subtle::{
-        Choice, ConditionallySelectable, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess,
-    };
+    use subtle::{ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess};
 
     #[test]
     fn is_zero() {
@@ -101,15 +99,6 @@ mod tests {
         assert!(!bool::from(U128::ZERO.is_odd()));
         assert!(bool::from(U128::ONE.is_odd()));
         assert!(bool::from(U128::MAX.is_odd()));
-    }
-
-    #[test]
-    fn conditional_select() {
-        let a = U128::ZERO;
-        let b = U128::MAX;
-
-        assert_eq!(U128::conditional_select(&a, &b, Choice::from(0)), a);
-        assert_eq!(U128::conditional_select(&a, &b, Choice::from(1)), b);
     }
 
     #[test]
