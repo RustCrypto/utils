@@ -26,12 +26,12 @@ mod array;
 #[cfg(feature = "rand")]
 mod rand;
 
-use crate::{Concat, Encoding, Limb, Split};
+use crate::{Concat, Encoding, Integer, Limb, Split};
 use core::fmt;
 use subtle::{Choice, ConditionallySelectable};
 
 #[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+use zeroize::DefaultIsZeroes;
 
 /// Big unsigned integer.
 ///
@@ -105,6 +105,19 @@ impl<const LIMBS: usize> Default for UInt<LIMBS> {
     }
 }
 
+impl<const LIMBS: usize> Integer for UInt<LIMBS>
+where
+    Self: Encoding,
+{
+    const ZERO: Self = Self::ZERO;
+    const ONE: Self = Self::ONE;
+    const MAX: Self = Self::MAX;
+
+    fn is_odd(&self) -> Choice {
+        self.is_odd()
+    }
+}
+
 impl<const LIMBS: usize> fmt::Display for UInt<LIMBS> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::UpperHex::fmt(self, f)
@@ -131,11 +144,7 @@ impl<const LIMBS: usize> fmt::UpperHex for UInt<LIMBS> {
 
 #[cfg(feature = "zeroize")]
 #[cfg_attr(docsrs, doc(cfg(feature = "zeroize")))]
-impl<const LIMBS: usize> Zeroize for UInt<LIMBS> {
-    fn zeroize(&mut self) {
-        self.limbs.zeroize();
-    }
-}
+impl<const LIMBS: usize> DefaultIsZeroes for UInt<LIMBS> {}
 
 // TODO(tarcieri): use `const_evaluatable_checked` when stable to make generic around bits.
 impl_uint_aliases! {
