@@ -1,10 +1,12 @@
 //! Random number generator support
+// TODO(tarcieri): use `Random` and `RandomMod` impls exclusively in next breaking release
 
 use super::UInt;
-use crate::Limb;
+use crate::{Limb, Random, RandomMod};
 use rand_core::{CryptoRng, RngCore};
 use subtle::ConstantTimeLess;
 
+// TODO(tarcieri): replace this `impl` block with `impl Random`/`impl RandomMod`
 #[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
 impl<const LIMBS: usize> UInt<LIMBS> {
     /// Generate a cryptographically secure random [`UInt`].
@@ -37,5 +39,19 @@ impl<const LIMBS: usize> UInt<LIMBS> {
                 return n;
             }
         }
+    }
+}
+
+#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+impl<const LIMBS: usize> Random for UInt<LIMBS> {
+    fn random(rng: impl CryptoRng + RngCore) -> Self {
+        Self::random(rng)
+    }
+}
+
+#[cfg_attr(docsrs, doc(cfg(feature = "rand")))]
+impl<const LIMBS: usize> RandomMod for UInt<LIMBS> {
+    fn random_mod(rng: impl CryptoRng + RngCore, modulus: &Self) -> Self {
+        Self::random_mod(rng, modulus)
     }
 }
