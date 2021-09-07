@@ -2,7 +2,7 @@
 
 use super::UInt;
 use crate::{limb, Limb};
-use core::ops::Shr;
+use core::ops::{Shr, ShrAssign};
 
 impl<const LIMBS: usize> UInt<LIMBS> {
     /// Computes `self >> n`.
@@ -67,6 +67,12 @@ impl<const LIMBS: usize> Shr<usize> for &UInt<LIMBS> {
     /// to `self`.
     fn shr(self, rhs: usize) -> UInt<LIMBS> {
         self.shr_vartime(rhs)
+    }
+}
+
+impl<const LIMBS: usize> ShrAssign<usize> for UInt<LIMBS> {
+    fn shr_assign(&mut self, rhs: usize) {
+        *self = self.shr_vartime(rhs);
     }
 }
 
