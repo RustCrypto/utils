@@ -36,6 +36,14 @@ use zeroize::DefaultIsZeroes;
 /// Big unsigned integer.
 ///
 /// Generic over the given number of `LIMBS`
+///
+/// # Encoding support
+/// This type supports many different types of encodings, either via the
+/// [`Encoding`][`crate::Encoding`] trait or various `const fn` decoding and
+/// encoding functions that can be used with [`UInt`] constants.
+///
+/// Support for Recursive Length Prefix (RLP) encoding is available under the
+/// optional `rlp` crate feature.
 // TODO(tarcieri): make generic around a specified number of bits.
 #[derive(Copy, Clone, Debug, Hash)]
 pub struct UInt<const LIMBS: usize> {

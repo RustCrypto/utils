@@ -63,6 +63,9 @@ pub use {
     generic_array::{self, typenum::consts},
 };
 
+#[cfg(feature = "rlp")]
+pub use rlp;
+
 #[cfg(feature = "zeroize")]
 pub use zeroize;
 
