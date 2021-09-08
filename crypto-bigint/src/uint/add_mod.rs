@@ -7,10 +7,28 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     ///
     /// Assumes `self` and `rhs` are `< p`.
     pub const fn add_mod(&self, rhs: &UInt<LIMBS>, p: &UInt<LIMBS>) -> UInt<LIMBS> {
-        let (out, _carry) = self.adc(rhs, Limb::ZERO);
+        let (w, carry) = self.adc(rhs, Limb::ZERO);
 
-        // Subtract the modulus, to ensure the result is smaller.
-        out.sub_mod(p, p)
+        // Attempt to subtract the modulus, to ensure the result is in the field.
+        let (w, borrow) = w.sbb(p, Limb::ZERO);
+        let (_, borrow) = carry.sbb(Limb::ZERO, borrow);
+
+        // If underflow occurred on the final limb, borrow = 0xfff...fff, otherwise
+        // borrow = 0x000...000. Thus, we use it as a mask to conditionally add the
+        // modulus.
+        let mut i = 0;
+        let mut res = Self::ZERO;
+        let mut carry = Limb::ZERO;
+
+        while i < LIMBS {
+            let rhs = p.limbs[i].bitand(borrow);
+            let (limb, c) = w.limbs[i].adc(rhs, carry);
+            res.limbs[i] = limb;
+            carry = c;
+            i += 1;
+        }
+
+        res
     }
 }
 
