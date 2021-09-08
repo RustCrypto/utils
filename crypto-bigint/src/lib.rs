@@ -23,11 +23,6 @@
 //!
 //! Please see the [feature wishlist tracking ticket] for more information.
 //!
-//! # `generic-array` interop
-//! When the optional `generic-array` feature is enabled, this library provides
-//! an [`ArrayEncoding`] trait which can be used to serialize/deserialize big
-//! integer values as `GenericArray<u8, N>`.
-//!
 //! [feature wishlist tracking ticket]: https://github.com/RustCrypto/utils/issues/453
 
 #![no_std]
@@ -35,7 +30,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/crypto-bigint/0.2.5"
+    html_root_url = "https://docs.rs/crypto-bigint/0.2.6"
 )]
 #![forbid(unsafe_code, clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
