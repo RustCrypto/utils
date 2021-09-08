@@ -42,8 +42,12 @@ use zeroize::DefaultIsZeroes;
 /// [`Encoding`][`crate::Encoding`] trait or various `const fn` decoding and
 /// encoding functions that can be used with [`UInt`] constants.
 ///
-/// Support for Recursive Length Prefix (RLP) encoding is available under the
-/// optional `rlp` crate feature.
+/// Optional crate features for encoding (off-by-default):
+/// - `generic-array`: enables [`ArrayEncoding`][`crate::ArrayEncoding`] trait which can be used to
+///   [`UInt`] as `GenericArray<u8, N>`.
+/// - `rlp`: support for [Recursive Length Prefix (RLP)][RLP] encoding.
+///
+/// [RLP]: https://eth.wiki/fundamentals/rlp
 // TODO(tarcieri): make generic around a specified number of bits.
 #[derive(Copy, Clone, Debug, Hash)]
 pub struct UInt<const LIMBS: usize> {
