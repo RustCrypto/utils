@@ -153,7 +153,7 @@ pub trait Encoding: Sized {
     const BYTE_SIZE: usize;
 
     /// Byte array representation.
-    type Repr: Copy + Clone + AsRef<[u8]> + AsMut<[u8]> + Sized;
+    type Repr: AsRef<[u8]> + AsMut<[u8]> + Copy + Clone + Sized;
 
     /// Decode from big endian bytes.
     fn from_be_bytes(bytes: Self::Repr) -> Self;
