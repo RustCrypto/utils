@@ -34,7 +34,7 @@ impl_add_mod!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
 
 #[cfg(all(test, feature = "rand"))]
 mod tests {
-    use crate::UInt;
+    use crate::{UInt, U256};
 
     macro_rules! test_add_mod {
         ($size:expr, $test_name:ident) => {
@@ -104,4 +104,20 @@ mod tests {
     test_add_mod!(10, test_add10);
     test_add_mod!(11, test_add11);
     test_add_mod!(12, test_add12);
+
+    #[test]
+    fn add_mod_nist_p256() {
+        let a =
+            U256::from_be_hex("44acf6b7e36c1342c2c5897204fe09504e1e2efb1a900377dbc4e7a6a133ec56");
+        let b =
+            U256::from_be_hex("d5777c45019673125ad240f83094d4252d829516fac8601ed01979ec1ec1a251");
+        let n =
+            U256::from_be_hex("ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551");
+
+        let actual = a.add_mod(&b, &n);
+        let expected =
+            U256::from_be_hex("1a2472fde50286541d97ca6a3592dd75beb9c9646e40c511b82496cfc3926956");
+
+        assert_eq!(expected, actual);
+    }
 }
