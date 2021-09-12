@@ -1,6 +1,6 @@
 //! Limb comparisons
 
-use super::Limb;
+use super::{Inner, Limb, SignedInner, HI_BIT};
 use core::cmp::Ordering;
 use subtle::{Choice, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess};
 
@@ -28,6 +28,15 @@ impl Limb {
     /// Performs an equality check in variable-time.
     pub const fn eq_vartime(&self, other: &Self) -> bool {
         self.0 == other.0
+    }
+
+    /// Returns all 1's if `a`!=0 or 0 if a==0.
+    ///
+    /// Const-friendly: we can't yet use `subtle` in `const fn` contexts.
+    #[inline]
+    pub(crate) const fn is_nonzero(self) -> Inner {
+        let inner = self.0 as SignedInner;
+        ((inner | -inner) >> HI_BIT) as Inner
     }
 }
 
