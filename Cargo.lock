@@ -115,7 +115,7 @@ dependencies = [
 
 [[package]]
 name = "crypto-bigint"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "generic-array",
  "hex-literal 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
