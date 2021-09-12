@@ -1,6 +1,6 @@
 //! Equivalence tests between `num-bigint` and `crypto-bigint`
 
-use crypto_bigint::{Encoding, U256, Limb};
+use crypto_bigint::{Encoding, U256};
 use num_bigint::BigUint;
 use proptest::prelude::*;
 use std::mem;
@@ -39,7 +39,7 @@ proptest! {
     fn roundtrip(a in uint()) {
         assert_eq!(a, to_uint(to_biguint(&a)));
     }
-    
+
     #[test]
     fn wrapping_add(a in uint(), b in uint()) {
         let a_bi = to_biguint(&a);
@@ -51,28 +51,7 @@ proptest! {
         assert_eq!(expected, actual);
     }
 
-    #[test]
-    fn add_mod_nist_p256(a in uint_mod_p(P), b in uint_mod_p(P)) {
-        assert!(a < P);
-        assert!(b < P);
-        
-        let a_bi = to_biguint(&a);
-        let b_bi = to_biguint(&b);
-        let p_bi = to_biguint(&P);
-
-        let x_bi = a_bi + b_bi;
-        let x = a.adc(&b, Limb::ZERO).0;
-        assert_eq!(to_uint(x_bi.clone()), x);
-
-        let expected = to_uint(to_biguint(&x) % p_bi);
-        let actual = a.add_mod(&b, &P);
-
-        assert!(expected < P);
-        assert!(actual < P);
-        
-        assert_eq!(expected, actual, "{} != {} ({} + {} mod {})", expected, actual, a, b, P);
-    }
-
+     // TODO(tarcieri): add_mod proptests
 
     #[test]
     fn sub_mod_nist_p256(mut a in uint_mod_p(P), mut b in uint_mod_p(P)) {
@@ -82,7 +61,7 @@ proptest! {
 
         assert!(a < P);
         assert!(b < P);
-        
+
         let a_bi = to_biguint(&a);
         let b_bi = to_biguint(&b);
         let p_bi = to_biguint(&P);
@@ -92,7 +71,7 @@ proptest! {
 
         assert!(expected < P);
         assert!(actual < P);
-        
+
         assert_eq!(expected, actual);
     }
 
