@@ -43,6 +43,7 @@ jobs:
       - run: cargo build --target ${{ matrix.target }} --release --features pbes2
       - run: cargo build --target ${{ matrix.target }} --release --features scrypt
       - run: cargo build --target ${{ matrix.target }} --release --features alloc,pbes2
+      - run: cargo build --target ${{ matrix.target }} --release --features pbes2-des
 
   test:
     runs-on: ubuntu-latest
@@ -62,4 +63,5 @@ jobs:
       - run: cargo test --release --features alloc
       - run: cargo test --release --features pbes2
       - run: cargo test --release --features scrypt
+      - run: cargo test --release --features pbes2-des
       - run: cargo test --release --all-features

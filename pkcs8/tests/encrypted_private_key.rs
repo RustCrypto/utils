@@ -52,6 +52,28 @@ const ED25519_DER_AES256_SCRYPT_EXAMPLE: &[u8] =
 const ED25519_PEM_AES256_PBKDF2_SHA256_EXAMPLE: &str =
     include_str!("examples/ed25519-encpriv-aes256-pbkdf2-sha256.pem");
 
+/// Ed25519 PKCS#8 encrypted private key (PBES2 + 3DES + PBKDF2-SHA256) encoded as ASN.1 DER
+///
+/// Generated using:
+///
+/// ```
+/// $ openssl pkcs8 -v2 des3 -topk8 -inform der -in ed25519-priv-pkcs8v1.der -outform der -out ed25519-encpriv-des3-pbkdf2-sha256.der
+/// ```
+#[cfg(feature = "des")]
+const ED25519_DER_DES3_PBKDF2_SHA256_EXAMPLE: &[u8] =
+    include_bytes!("examples/ed25519-encpriv-des3-pbkdf2-sha256.der");
+
+/// Ed25519 PKCS#8 encrypted private key (PBES2 + DES + PBKDF2-SHA256) encoded as ASN.1 DER
+///
+/// Generated using:
+///
+/// ```
+/// $ openssl pkcs8 -v2 des -topk8 -inform der -in ed25519-priv-pkcs8v1.der -outform der -out ed25519-encpriv-des3-pbkdf2-sha256.der
+/// ```
+#[cfg(feature = "des")]
+const ED25519_DER_DES_PBKDF2_SHA256_EXAMPLE: &[u8] =
+    include_bytes!("examples/ed25519-encpriv-des-pbkdf2-sha256.der");
+
 /// Password used to encrypt the keys.
 #[cfg(feature = "encryption")]
 const PASSWORD: &[u8] = b"hunter42"; // Bad password; don't actually use outside tests!
@@ -226,4 +248,20 @@ fn read_pem_file() {
     )
     .unwrap();
     assert_eq!(pkcs8_doc.as_ref(), ED25519_DER_AES256_PBKDF2_SHA256_EXAMPLE);
+}
+
+#[test]
+#[cfg(feature = "des")]
+fn decrypt_ed25519_der_encpriv_des3_pbkdf2_sha256() {
+    let enc_pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_DES3_PBKDF2_SHA256_EXAMPLE).unwrap();
+    let pk = enc_pk.decrypt(PASSWORD).unwrap();
+    assert_eq!(pk.as_ref(), ED25519_DER_PLAINTEXT_EXAMPLE);
+}
+
+#[test]
+#[cfg(feature = "des")]
+fn decrypt_ed25519_der_encpriv_des_pbkdf2_sha256() {
+    let enc_pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_DES_PBKDF2_SHA256_EXAMPLE).unwrap();
+    let pk = enc_pk.decrypt(PASSWORD).unwrap();
+    assert_eq!(pk.as_ref(), ED25519_DER_PLAINTEXT_EXAMPLE);
 }
