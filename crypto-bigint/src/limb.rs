@@ -37,6 +37,10 @@ pub const BYTE_SIZE: usize = 4;
 #[cfg(target_pointer_width = "32")]
 pub type Inner = u32;
 
+/// SignedInner integer type that the [`Limb`] newtype wraps.
+#[cfg(target_pointer_width = "32")]
+pub type SignedInner = i32;
+
 /// Wide integer type: double the width of [`Inner`].
 #[cfg(target_pointer_width = "32")]
 pub type Wide = u64;
@@ -56,6 +60,10 @@ pub const BYTE_SIZE: usize = 8;
 /// Inner integer type that the [`Limb`] newtype wraps.
 #[cfg(target_pointer_width = "64")]
 pub type Inner = u64;
+
+/// SignedInner integer type that the [`Limb`] newtype wraps.
+#[cfg(target_pointer_width = "64")]
+pub type SignedInner = i64;
 
 /// Wide integer type: double the width of [`Inner`].
 #[cfg(target_pointer_width = "64")]
