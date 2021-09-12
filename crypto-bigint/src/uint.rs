@@ -24,7 +24,6 @@ mod sub_mod;
 #[cfg(feature = "generic-array")]
 mod array;
 
-mod bits;
 #[cfg(feature = "rand")]
 mod rand;
 

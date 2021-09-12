@@ -2,7 +2,6 @@
 
 use super::UInt;
 use crate::limb::{Inner, BIT_SIZE};
-use crate::uint::bits::{ct_select, is_nonzero};
 use crate::Limb;
 use core::ops::{Shl, ShlAssign};
 
@@ -23,9 +22,9 @@ impl<const LIMBS: usize> UInt<LIMBS> {
 
         let shift_num = n / BIT_SIZE;
         let rem = n % BIT_SIZE;
-        let nz = is_nonzero(rem as Inner);
+        let nz = Limb(rem as Inner).is_nonzero();
         let lshift_rem = rem as Inner;
-        let rshift_rem = ct_select(0, (BIT_SIZE - rem) as Inner, nz);
+        let rshift_rem = Limb::ct_select(Limb::ZERO, Limb((BIT_SIZE - rem) as Inner), nz).0;
 
         let mut i = LIMBS - 1;
         while i > shift_num {
