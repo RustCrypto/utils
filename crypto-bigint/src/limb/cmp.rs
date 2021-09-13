@@ -30,13 +30,13 @@ impl Limb {
         self.0 == other.0
     }
 
-    /// Returns all 1's if `a`!=0 or 0 if a==0.
+    /// Returns all 1's if `a`!=0 or 0 if `a`==0.
     ///
     /// Const-friendly: we can't yet use `subtle` in `const fn` contexts.
     #[inline]
     pub(crate) const fn is_nonzero(self) -> Inner {
         let inner = self.0 as SignedInner;
-        ((inner | -inner) >> HI_BIT) as Inner
+        ((inner | inner.saturating_neg()) >> HI_BIT) as Inner
     }
 }
 

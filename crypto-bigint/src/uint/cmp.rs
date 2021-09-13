@@ -3,6 +3,7 @@
 //! By default these are all constant-time and use the `subtle` crate.
 
 use super::UInt;
+use crate::limb::{Inner, SignedInner, SignedWide, BIT_SIZE};
 use crate::Limb;
 use core::cmp::Ordering;
 use subtle::{Choice, ConstantTimeEq, ConstantTimeGreater, ConstantTimeLess};
@@ -24,6 +25,57 @@ impl<const LIMBS: usize> UInt<LIMBS> {
             .first()
             .map(|limb| limb.is_odd())
             .unwrap_or_else(|| Choice::from(0))
+    }
+
+    /// Return `a` if `c`!=0 or `b` if `c`==0.
+    ///
+    /// Const-friendly: we can't yet use `subtle` in `const fn` contexts.
+    #[inline]
+    pub(crate) const fn ct_select(a: UInt<LIMBS>, b: UInt<LIMBS>, c: Inner) -> UInt<LIMBS> {
+        let mut limbs = [Limb::ZERO; LIMBS];
+
+        let mut i = 0;
+        while i < LIMBS {
+            limbs[i] = Limb::ct_select(a.limbs[i], b.limbs[i], c);
+            i += 1;
+        }
+
+        UInt { limbs }
+    }
+
+    /// Returns all 1's if `self`!=0 or 0 if `self`==0.
+    ///
+    /// Const-friendly: we can't yet use `subtle` in `const fn` contexts.
+    #[inline]
+    pub(crate) const fn ct_is_nonzero(&self) -> Inner {
+        let mut b = 0;
+        let mut i = 0;
+        while i < LIMBS {
+            b |= self.limbs[i].0;
+            i += 1;
+        }
+        Limb::is_nonzero(Limb(b))
+    }
+
+    /// Returns -1 if self < rhs
+    ///          0 if self == rhs
+    ///          1 if self > rhs
+    ///
+    /// Const-friendly: we can't yet use `subtle` in `const fn` contexts.
+    #[inline]
+    pub(crate) const fn ct_cmp(&self, rhs: Self) -> SignedInner {
+        let mut gt = 0;
+        let mut lt = 0;
+        let mut i = LIMBS;
+
+        while i > 0 {
+            let a = self.limbs[i - 1].0 as SignedWide;
+            let b = rhs.limbs[i - 1].0 as SignedWide;
+            gt |= ((b - a) >> BIT_SIZE) & 1 & !lt;
+            lt |= ((a - b) >> BIT_SIZE) & 1 & !gt;
+            i -= 1;
+        }
+        (gt as SignedInner) - (lt as SignedInner)
     }
 }
 

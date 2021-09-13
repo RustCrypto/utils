@@ -2,8 +2,7 @@
 
 use super::UInt;
 use crate::limb::{Inner, SignedInner, BIT_SIZE};
-use crate::uint::bits::*;
-use crate::Wrapping;
+use crate::{Limb, Wrapping};
 use core::ops::{Div, DivAssign, Rem, RemAssign};
 use subtle::{Choice, CtOption};
 
@@ -19,8 +18,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     ///
     /// When used with a fixed `rhs`, this function is constant-time with respect
     /// to `self`.
-    /// TODO(mikelodder7): should this be public?
-    pub const fn ct_div_rem(&self, rhs: Self) -> (Self, Self, u8) {
+    pub(crate) const fn ct_div_rem(&self, rhs: Self) -> (Self, Self, u8) {
         let mut bd = self.bits().saturating_sub(rhs.bits()) as usize;
         let mut e = Self::ONE;
         let mut rem = *self;
@@ -34,10 +32,10 @@ impl<const LIMBS: usize> UInt<LIMBS> {
             let mut r: Self = rem.wrapping_sub(&c);
             let d = -(((1 - (r.limbs[LIMBS - 1].0 >> BIT_SIZE_M_1)) & 1) as SignedInner);
             let d = d as Inner;
-            rem = ct_select_uint(rem, r, d);
+            rem = Self::ct_select(rem, r, d);
             r = quo;
             r = r.wrapping_add(&e);
-            quo = ct_select_uint(quo, r, d);
+            quo = Self::ct_select(quo, r, d);
             if bd == 0 {
                 break;
             }
@@ -45,7 +43,13 @@ impl<const LIMBS: usize> UInt<LIMBS> {
             c = c.shr_vartime(1);
             e = e.shr_vartime(1);
         }
-        let is_some = ct_is_nonzero_uint(rhs) & 1;
+        // If `self`<rhs
+        // set quo and rem to Self::ZERO
+        let res = self.ct_cmp(rhs) + 1;
+        let gt = Limb::is_nonzero(Limb(res as Inner));
+        quo = Self::ct_select(Self::ZERO, quo, gt);
+        rem = Self::ct_select(Self::ZERO, rem, gt);
+        let is_some = rhs.ct_is_nonzero() & 1;
         (quo, rem, is_some as u8)
     }
 
@@ -56,8 +60,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     ///
     /// When used with a fixed `rhs`, this function is constant-time with respect
     /// to `self`.
-    /// TODO(mikelodder7): should this be public?
-    pub const fn ct_reduce(&self, rhs: Self) -> (Self, u8) {
+    pub(crate) const fn ct_reduce(&self, rhs: Self) -> (Self, u8) {
         let mut bd = self.bits().saturating_sub(rhs.bits()) as usize;
         let mut c = rhs;
         let mut rem = *self;
@@ -68,14 +71,19 @@ impl<const LIMBS: usize> UInt<LIMBS> {
             let r: Self = rem.wrapping_sub(&c);
             let d = -(((1 - (r.limbs[LIMBS - 1].0 >> BIT_SIZE_M_1)) & 1) as SignedInner);
             let d = d as Inner;
-            rem = ct_select_uint(rem, r, d);
+            rem = Self::ct_select(rem, r, d);
             if bd == 0 {
                 break;
             }
             bd -= 1;
             c = c.shr_vartime(1);
         }
-        let is_some = (ct_is_zero_uint(rhs) as SignedInner) + 1;
+        // If `self`<rhs
+        // set rem to Self::ZERO
+        let res = self.ct_cmp(rhs) + 1;
+        let gt = Limb::is_nonzero(Limb(res as Inner));
+        rem = Self::ct_select(Self::ZERO, rem, gt);
+        let is_some = rhs.ct_is_nonzero() & 1;
         (rem, is_some as u8)
     }
 
@@ -98,7 +106,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     /// This function exists, so that all operations are accounted for in the wrapping operations.
     pub const fn wrapping_div(self, rhs: Self) -> Self {
         let (q, _, c) = self.ct_div_rem(rhs);
-        const_assert!(c, 1);
+        const_assert!(c == 1, "divide by zero");
         q
     }
 
@@ -114,7 +122,7 @@ impl<const LIMBS: usize> UInt<LIMBS> {
     /// This function exists, so that all operations are accounted for in the wrapping operations.
     pub const fn wrapping_rem(self, rhs: Self) -> Self {
         let (r, c) = self.ct_reduce(rhs);
-        const_assert!(c, 1);
+        const_assert!(c == 1, "modulo zero");
         r
     }
 
@@ -216,6 +224,9 @@ impl<const LIMBS: usize> RemAssign for Wrapping<UInt<LIMBS>> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use crate::limb::HI_BIT;
+    use crate::Limb;
     use crate::U256;
     use rand_chacha::ChaChaRng;
     use rand_core::SeedableRng;
@@ -254,6 +265,19 @@ mod tests {
     }
 
     #[test]
+    fn div_max() {
+        let mut a = U256::ZERO;
+        let mut b = U256::ZERO;
+        b.limbs[b.limbs.len() - 1] = Limb(Inner::MAX);
+        let q = a.wrapping_div(b);
+        assert_eq!(q, UInt::ZERO);
+        a.limbs[a.limbs.len() - 1] = Limb(1 << HI_BIT - 7);
+        b.limbs[b.limbs.len() - 1] = Limb(0x82 << HI_BIT - 7);
+        let q = a.wrapping_div(b);
+        assert_eq!(q, UInt::ZERO);
+    }
+
+    #[test]
     fn div_zero() {
         let (_, _, is_some) = U256::ONE.ct_div_rem(U256::ZERO);
         assert_eq!(is_some, 0);
@@ -261,22 +285,22 @@ mod tests {
 
     #[test]
     fn div_one() {
-        let (q, r, is_some) = U256::from_uint_array([10, 0, 0, 0]).ct_div_rem(U256::ONE);
+        let (q, r, is_some) = U256::from(10u8).ct_div_rem(U256::ONE);
         assert_eq!(is_some, 1);
-        assert_eq!(q, U256::from_uint_array([10, 0, 0, 0]));
+        assert_eq!(q, U256::from(10u8));
         assert_eq!(r, U256::ZERO);
     }
 
     #[test]
     fn reduce_one() {
-        let (r, is_some) = U256::from_uint_array([10, 0, 0, 0]).ct_reduce(U256::ONE);
+        let (r, is_some) = U256::from(10u8).ct_reduce(U256::ONE);
         assert_eq!(is_some, 1);
         assert_eq!(r, U256::ZERO);
     }
 
     #[test]
     fn reduce_zero() {
-        let (_, is_some) = U256::from_uint_array([10, 0, 0, 0]).ct_reduce(U256::ZERO);
+        let (_, is_some) = U256::from(10u8).ct_reduce(U256::ZERO);
         assert_eq!(is_some, 0);
     }
 
@@ -291,5 +315,18 @@ mod tests {
         let (r, is_some) = U256::from(10u8).ct_reduce(U256::from(7u8));
         assert_eq!(is_some, 1);
         assert_eq!(r, U256::from(3u8));
+    }
+
+    #[test]
+    fn reduce_max() {
+        let mut a = U256::ZERO;
+        let mut b = U256::ZERO;
+        b.limbs[b.limbs.len() - 1] = Limb(Inner::MAX);
+        let r = a.wrapping_rem(b);
+        assert_eq!(r, UInt::ZERO);
+        a.limbs[a.limbs.len() - 1] = Limb(1 << HI_BIT - 7);
+        b.limbs[b.limbs.len() - 1] = Limb(0x82 << HI_BIT - 7);
+        let r = a.wrapping_rem(b);
+        assert_eq!(r, UInt::ZERO);
     }
 }
