@@ -12,6 +12,7 @@ mod macros;
 mod add;
 mod add_mod;
 mod cmp;
+mod div;
 mod encoding;
 mod from;
 mod mul;

@@ -100,4 +100,26 @@ proptest! {
 
         assert_eq!(expected, actual);
     }
+
+    #[test]
+    fn wrapping_div(a in uint(), b in uint()) {
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+
+        let expected = to_uint(a_bi / b_bi);
+        let actual = a.wrapping_div(&b);
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn wrapping_rem(a in uint(), b in uint()) {
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+
+        let expected = to_uint(a_bi % b_bi);
+        let actual = a.wrapping_rem(&b);
+
+        assert_eq!(expected, actual);
+    }
 }
