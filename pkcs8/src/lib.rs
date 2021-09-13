@@ -2,7 +2,30 @@
 //! Private-Key Information Syntax Specification ([RFC 5208]), with additional
 //! support for PKCS#8v2 asymmetric key packages ([RFC 5958])
 //!
-//! # About
+//! # About PKCS#8
+//! PKCS#8 is a format for cryptographic private keys, often containing pairs
+//! of private and public keys.
+//!
+//! You can identify a PKCS#8 private key encoded as PEM (i.e. text) by the
+//! following:
+//!
+//! ```text
+//! -----BEGIN PRIVATE KEY-----
+//! ```
+//!
+//! PKCS#8 private keys can optionally be encrypted under a password using
+//! key derivation algorithms like PBKDF2 and [scrypt], and encrypted with
+//! ciphers like AES-CBC. When a PKCS#8 private key has been encrypted,
+//! it starts with the following:
+//!
+//! ```text
+//! -----BEGIN ENCRYPTED PRIVATE KEY-----
+//! ```
+//!
+//! PKCS#8 private keys can also be serialized in an ASN.1-based binary format.
+//! The PEM text encoding is a Base64 representation of this format.
+//!
+//! # About this crate
 //! This library provides generalized PKCS#8 support designed to work with a
 //! number of different algorithms. It supports `no_std` platforms including
 //! ones without a heap (albeit with reduced functionality).
@@ -60,7 +83,6 @@
 //! [`pkcs1`] crate (e.g. `FromRsaPrivateKey`, `ToRsaPrivateKey`).
 //!
 //! # Minimum Supported Rust Version
-//!
 //! This crate requires **Rust 1.51** at a minimum.
 //!
 //! [RFC 5208]: https://tools.ietf.org/html/rfc5208
