@@ -18,6 +18,9 @@ pub enum Error {
     /// Errors in the encapsulated text (which aren't specifically Base64-related).
     EncapsulatedText,
 
+    /// Header detected in the encapsulated text
+    HeaderDetected,
+
     /// Invalid label.
     Label,
 
@@ -37,6 +40,7 @@ impl fmt::Display for Error {
             Error::Base64 => "PEM Base64 error",
             Error::CharacterEncoding => "PEM character encoding error",
             Error::EncapsulatedText => "PEM error in encapsulated text",
+            Error::HeaderDetected => "PEM header (disallowed) detected in encapsulated text",
             Error::Label => "PEM type label invalid",
             Error::Length => "PEM length invalid",
             Error::PreEncapsulationBoundary => "PEM error in pre-encapsulation boundary",

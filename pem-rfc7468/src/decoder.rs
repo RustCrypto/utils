@@ -154,6 +154,7 @@ impl<'a> Encapsulation<'a> {
     /// encapsulated text.
     pub fn encapsulated_text(self) -> Lines<'a> {
         Lines {
+            is_start: true,
             bytes: self.encapsulated_text,
         }
     }
@@ -169,6 +170,8 @@ impl<'a> TryFrom<&'a [u8]> for Encapsulation<'a> {
 
 /// Iterator over the lines in the encapsulated text.
 struct Lines<'a> {
+    /// true if no lines have been read
+    is_start: bool,
     /// Remaining data being iterated over.
     bytes: &'a [u8],
 }
@@ -177,21 +180,35 @@ impl<'a> Iterator for Lines<'a> {
     type Item = Result<&'a [u8]>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.bytes.len() > BASE64_WRAP_WIDTH {
-            let (line, rest) = self.bytes.split_at(BASE64_WRAP_WIDTH);
-            let result = grammar::strip_leading_eol(rest)
-                .ok_or(Error::EncapsulatedText)
-                .map(|rest| {
-                    self.bytes = rest;
-                    line
-                });
-            Some(result)
-        } else if !self.bytes.is_empty() {
-            let line = self.bytes;
-            self.bytes = &[];
-            Some(Ok(line))
+        if self.is_start
+            && self
+                .bytes
+                .iter()
+                .take_while(|&&b| !grammar::is_vwsp(b))
+                .any(|&b| b == grammar::CHAR_COLON)
+        {
+            Some(Err(Error::HeaderDetected))
         } else {
-            None
+            if self.is_start {
+                self.is_start = false;
+            }
+
+            if self.bytes.len() > BASE64_WRAP_WIDTH {
+                let (line, rest) = self.bytes.split_at(BASE64_WRAP_WIDTH);
+                let result = grammar::strip_leading_eol(rest)
+                    .ok_or(Error::EncapsulatedText)
+                    .map(|rest| {
+                        self.bytes = rest;
+                        line
+                    });
+                Some(result)
+            } else if !self.bytes.is_empty() {
+                let line = self.bytes;
+                self.bytes = &[];
+                Some(Ok(line))
+            } else {
+                None
+            }
         }
     }
 }
