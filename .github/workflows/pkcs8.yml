@@ -45,7 +45,8 @@ jobs:
       - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features pem
       - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features pkcs1
       - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features pkcs5
-      - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features des
+      - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features 3des
+      - run: cargo build --release --target ${{ matrix.target }} --no-default-features --features des-insecure
 
   test:
     runs-on: ubuntu-latest
@@ -69,5 +70,6 @@ jobs:
       - run: cargo test --release --features pkcs1
       - run: cargo test --release --features pkcs1,alloc
       - run: cargo test --release --features pkcs5
-      - run: cargo test --release --features des
+      - run: cargo test --release --features 3des
+      - run: cargo test --release --features des-insecure
       - run: cargo test --release --all-features

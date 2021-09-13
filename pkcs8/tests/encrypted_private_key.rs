@@ -59,7 +59,7 @@ const ED25519_PEM_AES256_PBKDF2_SHA256_EXAMPLE: &str =
 /// ```
 /// $ openssl pkcs8 -v2 des3 -topk8 -inform der -in ed25519-priv-pkcs8v1.der -outform der -out ed25519-encpriv-des3-pbkdf2-sha256.der
 /// ```
-#[cfg(feature = "des")]
+#[cfg(feature = "3des")]
 const ED25519_DER_DES3_PBKDF2_SHA256_EXAMPLE: &[u8] =
     include_bytes!("examples/ed25519-encpriv-des3-pbkdf2-sha256.der");
 
@@ -70,7 +70,7 @@ const ED25519_DER_DES3_PBKDF2_SHA256_EXAMPLE: &[u8] =
 /// ```
 /// $ openssl pkcs8 -v2 des -topk8 -inform der -in ed25519-priv-pkcs8v1.der -outform der -out ed25519-encpriv-des3-pbkdf2-sha256.der
 /// ```
-#[cfg(feature = "des")]
+#[cfg(feature = "des-insecure")]
 const ED25519_DER_DES_PBKDF2_SHA256_EXAMPLE: &[u8] =
     include_bytes!("examples/ed25519-encpriv-des-pbkdf2-sha256.der");
 
@@ -251,7 +251,7 @@ fn read_pem_file() {
 }
 
 #[test]
-#[cfg(feature = "des")]
+#[cfg(feature = "3des")]
 fn decrypt_ed25519_der_encpriv_des3_pbkdf2_sha256() {
     let enc_pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_DES3_PBKDF2_SHA256_EXAMPLE).unwrap();
     let pk = enc_pk.decrypt(PASSWORD).unwrap();
@@ -259,7 +259,7 @@ fn decrypt_ed25519_der_encpriv_des3_pbkdf2_sha256() {
 }
 
 #[test]
-#[cfg(feature = "des")]
+#[cfg(feature = "des-insecure")]
 fn decrypt_ed25519_der_encpriv_des_pbkdf2_sha256() {
     let enc_pk = EncryptedPrivateKeyInfo::try_from(ED25519_DER_DES_PBKDF2_SHA256_EXAMPLE).unwrap();
     let pk = enc_pk.decrypt(PASSWORD).unwrap();

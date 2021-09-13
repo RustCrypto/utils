@@ -15,9 +15,9 @@ use sha2::Sha256;
 
 type Aes128Cbc = Cbc<aes::Aes128, Pkcs7>;
 type Aes256Cbc = Cbc<aes::Aes256, Pkcs7>;
-#[cfg(feature = "pbes2-des")]
+#[cfg(feature = "des-insecure")]
 type DesCbc = Cbc<des::Des, Pkcs7>;
-#[cfg(feature = "pbes2-des")]
+#[cfg(feature = "3des")]
 type DesEde3Cbc = Cbc<des::TdesEde3, Pkcs7>;
 
 /// Maximum size of a derived encryption key
@@ -46,13 +46,13 @@ pub fn encrypt_in_place<'b>(
                 .map_err(|_| CryptoError)?;
             cipher.encrypt(buffer, pos).map_err(|_| CryptoError)
         }
-        #[cfg(feature = "pbes2-des")]
+        #[cfg(feature = "des-insecure")]
         EncryptionScheme::DesCbc { iv } => {
             let cipher =
                 DesCbc::new_from_slices(encryption_key.as_slice(), iv).map_err(|_| CryptoError)?;
             cipher.encrypt(buffer, pos).map_err(|_| CryptoError)
         }
-        #[cfg(feature = "pbes2-des")]
+        #[cfg(feature = "3des")]
         EncryptionScheme::DesEde3Cbc { iv } => {
             let cipher = DesEde3Cbc::new_from_slices(encryption_key.as_slice(), iv)
                 .map_err(|_| CryptoError)?;
@@ -84,13 +84,13 @@ pub fn decrypt_in_place<'a>(
                 .map_err(|_| CryptoError)?;
             cipher.decrypt(buffer).map_err(|_| CryptoError)
         }
-        #[cfg(feature = "pbes2-des")]
+        #[cfg(feature = "3des")]
         EncryptionScheme::DesEde3Cbc { iv } => {
             let cipher = DesEde3Cbc::new_from_slices(encryption_key.as_slice(), iv)
                 .map_err(|_| CryptoError)?;
             cipher.decrypt(buffer).map_err(|_| CryptoError)
         }
-        #[cfg(feature = "pbes2-des")]
+        #[cfg(feature = "des-insecure")]
         EncryptionScheme::DesCbc { iv } => {
             let cipher =
                 DesCbc::new_from_slices(encryption_key.as_slice(), iv).map_err(|_| CryptoError)?;

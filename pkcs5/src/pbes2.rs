@@ -2,6 +2,8 @@
 //!
 //! [RFC 8018 Section 6.2]: https://tools.ietf.org/html/rfc8018#section-6.2
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 mod kdf;
 
 #[cfg(feature = "pbes2")]
@@ -31,9 +33,13 @@ pub const AES_128_CBC_OID: ObjectIdentifier = ObjectIdentifier::new("2.16.840.1.
 pub const AES_256_CBC_OID: ObjectIdentifier = ObjectIdentifier::new("2.16.840.1.101.3.4.1.42");
 
 /// DES operating in CBC mode
+#[cfg(feature = "des-insecure")]
+#[cfg_attr(docsrs, doc(cfg(feature = "des-insecure")))]
 pub const DES_CBC_OID: ObjectIdentifier = ObjectIdentifier::new("1.3.14.3.2.7");
 
 /// Triple DES operating in CBC mode
+#[cfg(feature = "3des")]
+#[cfg_attr(docsrs, doc(cfg(feature = "3des")))]
 pub const DES_EDE3_CBC_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.3.7");
 
 /// Password-Based Encryption Scheme 2 (PBES2) OID.
@@ -45,7 +51,7 @@ pub const PBES2_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.1.
 const AES_BLOCK_SIZE: usize = 16;
 
 /// DES / Triple DES block size
-#[cfg(feature = "pbes2-des")]
+#[cfg(any(feature = "3des", feature = "des-insecure"))]
 const DES_BLOCK_SIZE: usize = 8;
 
 /// Password-Based Encryption Scheme 2 parameters as defined in [RFC 8018 Appendix A.4].
@@ -240,14 +246,14 @@ pub enum EncryptionScheme<'a> {
     },
 
     /// 3-Key Triple DES in CBC mode
-    #[cfg(feature = "pbes2-des")]
+    #[cfg(feature = "3des")]
     DesEde3Cbc {
         /// Intialisation vector
         iv: &'a [u8; DES_BLOCK_SIZE],
     },
 
     /// DES in CBC mode
-    #[cfg(feature = "pbes2-des")]
+    #[cfg(feature = "des-insecure")]
     DesCbc {
         /// Initialisation vector
         iv: &'a [u8; DES_BLOCK_SIZE],
@@ -260,9 +266,9 @@ impl<'a> EncryptionScheme<'a> {
         match self {
             Self::Aes128Cbc { .. } => 16,
             Self::Aes256Cbc { .. } => 32,
-            #[cfg(feature = "pbes2-des")]
+            #[cfg(feature = "des-insecure")]
             Self::DesCbc { .. } => 8,
-            #[cfg(feature = "pbes2-des")]
+            #[cfg(feature = "3des")]
             Self::DesEde3Cbc { .. } => 24,
         }
     }
@@ -272,9 +278,9 @@ impl<'a> EncryptionScheme<'a> {
         match self {
             Self::Aes128Cbc { .. } => AES_128_CBC_OID,
             Self::Aes256Cbc { .. } => AES_256_CBC_OID,
-            #[cfg(feature = "pbes2-des")]
+            #[cfg(feature = "des-insecure")]
             Self::DesCbc { .. } => DES_CBC_OID,
-            #[cfg(feature = "pbes2-des")]
+            #[cfg(feature = "3des")]
             Self::DesEde3Cbc { .. } => DES_EDE3_CBC_OID,
         }
     }
@@ -306,13 +312,13 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for EncryptionScheme<'a> {
                     .try_into()
                     .map_err(|_| der::Tag::OctetString.value_error())?,
             }),
-            #[cfg(feature = "pbes2-des")]
+            #[cfg(feature = "des-insecure")]
             DES_CBC_OID => Ok(Self::DesCbc {
                 iv: iv[0..DES_BLOCK_SIZE]
                     .try_into()
                     .map_err(|_| der::Tag::OctetString.value_error())?,
             }),
-            #[cfg(feature = "pbes2-des")]
+            #[cfg(feature = "3des")]
             DES_EDE3_CBC_OID => Ok(Self::DesEde3Cbc {
                 iv: iv[0..DES_BLOCK_SIZE]
                     .try_into()
@@ -330,9 +336,9 @@ impl<'a> TryFrom<EncryptionScheme<'a>> for AlgorithmIdentifier<'a> {
         let parameters = OctetString::new(match scheme {
             EncryptionScheme::Aes128Cbc { iv } => iv,
             EncryptionScheme::Aes256Cbc { iv } => iv,
-            #[cfg(feature = "pbes2-des")]
+            #[cfg(feature = "des-insecure")]
             EncryptionScheme::DesCbc { iv } => iv,
-            #[cfg(feature = "pbes2-des")]
+            #[cfg(feature = "3des")]
             EncryptionScheme::DesEde3Cbc { iv } => iv,
         })?;
 

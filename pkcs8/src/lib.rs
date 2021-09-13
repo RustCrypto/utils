@@ -53,6 +53,19 @@
 //! - [PKCS#5v2 Password Based Encryption Scheme 2 (RFC 8018)]
 //!   - Key derivation function: [scrypt] ([RFC 7914], also supports PBKDF2-HMAC-SHA256)
 //!   - Symmetric encryption: AES-128-CBC or AES-256-CBC (best available options for PKCS#5v2)
+//!  
+//! # DES-CBC and DES-EDE3-CBC (3DES) Support
+//! When the `des-insecure` and `3des` features are enabled this crate provides support for Private Keys encrypted
+//! with DES-CBC and DES-EDE3-CBC (3DES or Triple DES) symmetric encryption, respectively.
+//!
+//! **WARNING**
+//!
+//! DES support is implemented to allow for decryption of legacy files. DES is considered insecure due to
+//! its short key size and SHOULD NOT be used for new keys. The algorithms implemented under the `encryption`
+//! feature should be used where possible.
+//!
+//! **WARNING**
+//!
 //!
 //! # PKCS#1 support (optional)
 //! When the `pkcs1` feature of this crate is enabled, this crate provides
