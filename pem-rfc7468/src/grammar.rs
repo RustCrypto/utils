@@ -36,11 +36,6 @@ pub(crate) fn is_wsp(char: u8) -> bool {
     matches!(char, CHAR_HT | CHAR_SP)
 }
 
-/// Does the provided byte match either of vertical whitespace chars CR / LF
-pub(crate) fn is_vwsp(char: u8) -> bool {
-    matches!(char, CHAR_CR | CHAR_LF)
-}
-
 /// Split a slice beginning with a type label as located in an encapsulation
 /// boundary. Returns the label as a `&str`, and slice beginning with the
 /// encapsulated text with leading `-----` and newline removed.
