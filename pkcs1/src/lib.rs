@@ -3,7 +3,6 @@
 //! RSA Cryptography Specifications Version 2.2 ([RFC 8017])
 //!
 //! ## About
-//!
 //! This crate supports encoding and decoding RSA private and public keys
 //! in either PKCS#1 DER (binary) or PEM (text) formats.
 //!
@@ -20,7 +19,6 @@
 //! ```
 //!
 //! # Minimum Supported Rust Version
-//!
 //! This crate requires **Rust 1.51** at a minimum.
 //!
 //! [RFC 8017]: https://tools.ietf.org/html/rfc8017
