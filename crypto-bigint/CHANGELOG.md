@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.7 (2021-09-12)
+### Added
+- `UInt::shl_vartime` ([#622]) 
+
+### Fixed
+- `add_mod` overflow handling ([#619])
+
+[#619]: https://github.com/RustCrypto/utils/pull/619
+[#622]: https://github.com/RustCrypto/utils/pull/622
+
 ## 0.2.6 (2021-09-08)
 ### Added
 - `Integer` trait ([#612])

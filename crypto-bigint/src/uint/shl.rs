@@ -1,9 +1,9 @@
 //! [`UInt`] bitwise left shift operations.
 
 use super::UInt;
-use crate::limb::BIT_SIZE;
+use crate::limb::{Inner, BIT_SIZE};
 use crate::Limb;
-use core::ops::Shl;
+use core::ops::{Shl, ShlAssign};
 
 impl<const LIMBS: usize> UInt<LIMBS> {
     /// Computes `self << shift`.
@@ -21,17 +21,20 @@ impl<const LIMBS: usize> UInt<LIMBS> {
         }
 
         let shift_num = n / BIT_SIZE;
-        let shift_rem = n % BIT_SIZE;
+        let rem = n % BIT_SIZE;
+        let nz = Limb(rem as Inner).is_nonzero();
+        let lshift_rem = rem as Inner;
+        let rshift_rem = Limb::ct_select(Limb::ZERO, Limb((BIT_SIZE - rem) as Inner), nz).0;
 
         let mut i = LIMBS - 1;
         while i > shift_num {
-            let mut limb = self.limbs[i - shift_num].0 << shift_rem;
-            let hi = self.limbs[i - shift_num - 1].0 >> (BIT_SIZE - shift_rem);
-            limb |= hi;
+            let mut limb = self.limbs[i - shift_num].0 << lshift_rem;
+            let hi = self.limbs[i - shift_num - 1].0 >> rshift_rem;
+            limb |= hi & nz;
             limbs[i] = Limb(limb);
             i -= 1
         }
-        limbs[shift_num] = Limb(self.limbs[0].0 << shift_rem);
+        limbs[shift_num] = Limb(self.limbs[0].0 << lshift_rem);
 
         Self { limbs }
     }
@@ -61,6 +64,16 @@ impl<const LIMBS: usize> Shl<usize> for &UInt<LIMBS> {
     }
 }
 
+impl<const LIMBS: usize> ShlAssign<usize> for UInt<LIMBS> {
+    /// NOTE: this operation is variable time with respect to `rhs` *ONLY*.
+    ///
+    /// When used with a fixed `rhs`, this function is constant-time with respect
+    /// to `self`.
+    fn shl_assign(&mut self, rhs: usize) {
+        *self = self.shl_vartime(rhs)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::U256;
@@ -79,6 +92,9 @@ mod tests {
 
     const EIGHTY_EIGHT: U256 =
         U256::from_be_hex("FFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD03641410000000000000000000000");
+
+    const SIXTY_FOUR: U256 =
+        U256::from_be_hex("FFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD03641410000000000000000");
 
     #[test]
     fn shl_simple() {
@@ -111,5 +127,10 @@ mod tests {
     #[test]
     fn shl256() {
         assert_eq!(N << 256, U256::default());
+    }
+
+    #[test]
+    fn shl64() {
+        assert_eq!(N << 64, SIXTY_FOUR);
     }
 }

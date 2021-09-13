@@ -37,6 +37,10 @@ pub const BYTE_SIZE: usize = 4;
 #[cfg(target_pointer_width = "32")]
 pub type Inner = u32;
 
+/// SignedInner integer type that the [`Limb`] newtype wraps.
+#[cfg(target_pointer_width = "32")]
+pub(crate) type SignedInner = i32;
+
 /// Wide integer type: double the width of [`Inner`].
 #[cfg(target_pointer_width = "32")]
 pub type Wide = u64;
@@ -57,9 +61,16 @@ pub const BYTE_SIZE: usize = 8;
 #[cfg(target_pointer_width = "64")]
 pub type Inner = u64;
 
+/// SignedInner integer type that the [`Limb`] newtype wraps.
+#[cfg(target_pointer_width = "64")]
+pub(crate) type SignedInner = i64;
+
 /// Wide integer type: double the width of [`Inner`].
 #[cfg(target_pointer_width = "64")]
 pub type Wide = u128;
+
+/// Highest bit in a [`Limb`].
+pub(crate) const HI_BIT: usize = BIT_SIZE - 1;
 
 /// Big integers are represented as an array of smaller CPU word-size integers
 /// called "limbs".
@@ -76,12 +87,20 @@ impl Limb {
 
     /// Maximum value this [`Limb`] can express.
     pub const MAX: Self = Limb(Inner::MAX);
+
+    /// Return `a` if `c`!=0 or `b` if `c`==0.
+    ///
+    /// Const-friendly: we can't yet use `subtle` in `const fn` contexts.
+    #[inline]
+    pub(crate) const fn ct_select(a: Self, b: Self, c: Inner) -> Self {
+        Self(a.0 ^ (c & (a.0 ^ b.0)))
+    }
 }
 
 impl ConditionallySelectable for Limb {
     #[inline]
     fn conditional_select(a: &Self, b: &Self, choice: Choice) -> Self {
-        Limb(Inner::conditional_select(&a.0, &b.0, choice))
+        Self(Inner::conditional_select(&a.0, &b.0, choice))
     }
 }
 
