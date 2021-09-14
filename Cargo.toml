@@ -5,7 +5,6 @@ members = [
     "block-padding",
     "collectable",
     "cpufeatures",
-    "crypto-bigint",
     "dbl",
     "hex-literal",
     "opaque-debug",
