@@ -33,6 +33,7 @@ encryption = ["alloc", "pkcs5/alloc", "pkcs5/pbes2", "rand_core"]
 std = ["alloc", "der/std"]
 alloc = ["der/alloc", "zeroize"]
 pem = ["alloc", "pem-rfc7468/alloc"]
+sha1 = ["encryption", "pkcs5/sha1"]
 des-insecure = ["encryption", "pkcs5/des-insecure"]
 3des = ["encryption", "pkcs5/3des"]
 
