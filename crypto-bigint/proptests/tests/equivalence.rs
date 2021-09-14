@@ -2,6 +2,7 @@
 
 use crypto_bigint::{Encoding, U256};
 use num_bigint::BigUint;
+use num_traits::identities::Zero;
 use proptest::prelude::*;
 use std::mem;
 
@@ -99,5 +100,31 @@ proptest! {
         let actual = a.wrapping_mul(&b);
 
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn wrapping_div(a in uint(), b in uint()) {
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+
+        if !b_bi.is_zero() {
+            let expected = to_uint(a_bi / b_bi);
+            let actual = a.wrapping_div(b);
+
+            assert_eq!(expected, actual);
+        }
+    }
+
+    #[test]
+    fn wrapping_rem(a in uint(), b in uint()) {
+        let a_bi = to_biguint(&a);
+        let b_bi = to_biguint(&b);
+
+        if b_bi.is_zero() {
+            let expected = to_uint(a_bi % b_bi);
+            let actual = a.wrapping_rem(b);
+
+            assert_eq!(expected, actual);
+        }
     }
 }

@@ -13,4 +13,5 @@ members = ["."]
 [dependencies]
 crypto-bigint = { path = ".." }
 num-bigint = "0.4"
+num-traits = "0.2"
 proptest = "1"

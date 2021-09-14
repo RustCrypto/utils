@@ -12,6 +12,7 @@ mod macros;
 mod add;
 mod add_mod;
 mod cmp;
+mod div;
 mod encoding;
 mod from;
 mod mul;
@@ -24,6 +25,7 @@ mod sub_mod;
 #[cfg(feature = "generic-array")]
 mod array;
 
+mod bits;
 #[cfg(feature = "rand")]
 mod rand;
 

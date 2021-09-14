@@ -45,6 +45,10 @@ pub(crate) type SignedInner = i32;
 #[cfg(target_pointer_width = "32")]
 pub type Wide = u64;
 
+/// SignedInner integer type: double the width of [`Limb`].
+#[cfg(target_pointer_width = "32")]
+pub type SignedWide = i64;
+
 //
 // 64-bit definitions
 //
@@ -68,6 +72,10 @@ pub(crate) type SignedInner = i64;
 /// Wide integer type: double the width of [`Inner`].
 #[cfg(target_pointer_width = "64")]
 pub type Wide = u128;
+
+/// SignedInner integer type: double the width of [`Limb`].
+#[cfg(target_pointer_width = "64")]
+pub type SignedWide = i128;
 
 /// Highest bit in a [`Limb`].
 pub(crate) const HI_BIT: usize = BIT_SIZE - 1;
