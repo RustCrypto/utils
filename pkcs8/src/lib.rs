@@ -74,8 +74,12 @@
 //! algorithms:
 //!
 //! - [PKCS#5v2 Password Based Encryption Scheme 2 (RFC 8018)]
-//!   - Key derivation function: [scrypt] ([RFC 7914], also supports PBKDF2-HMAC-SHA256)
-//!   - Symmetric encryption: AES-128-CBC or AES-256-CBC (best available options for PKCS#5v2)
+//!   - Key derivation functions:
+//!     - [scrypt] ([RFC 7914])
+//!     - PBKDF2 ([RFC 8018](https://datatracker.ietf.org/doc/html/rfc8018#section-5.2))
+//!       - SHA-2 based PRF with HMAC-SHA224, HMAC-SHA256, HMAC-SHA384, or HMAC-SHA512
+//!       - SHA-1 based PRF with HMAC-SHA1, when the `sha1` feature of this crate is enabled.
+//!   - Symmetric encryption: AES-128-CBC, AES-192-CBC, or AES-256-CBC (best available options for PKCS#5v2)
 //!  
 //! # DES-CBC and DES-EDE3-CBC (3DES) Support
 //! When the `des-insecure` and `3des` features are enabled this crate provides support for Private Keys encrypted

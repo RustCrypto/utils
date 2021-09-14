@@ -11,9 +11,9 @@ use hmac::{
 };
 use pbkdf2::pbkdf2;
 use scrypt::scrypt;
-use sha2::Sha256;
 
 type Aes128Cbc = Cbc<aes::Aes128, Pkcs7>;
+type Aes192Cbc = Cbc<aes::Aes192, Pkcs7>;
 type Aes256Cbc = Cbc<aes::Aes256, Pkcs7>;
 #[cfg(feature = "des-insecure")]
 type DesCbc = Cbc<des::Des, Pkcs7>;
@@ -38,6 +38,11 @@ pub fn encrypt_in_place<'b>(
     match params.encryption {
         EncryptionScheme::Aes128Cbc { iv } => {
             let cipher = Aes128Cbc::new_from_slices(encryption_key.as_slice(), iv)
+                .map_err(|_| CryptoError)?;
+            cipher.encrypt(buffer, pos).map_err(|_| CryptoError)
+        }
+        EncryptionScheme::Aes192Cbc { iv } => {
+            let cipher = Aes192Cbc::new_from_slices(encryption_key.as_slice(), iv)
                 .map_err(|_| CryptoError)?;
             cipher.encrypt(buffer, pos).map_err(|_| CryptoError)
         }
@@ -79,6 +84,11 @@ pub fn decrypt_in_place<'a>(
                 .map_err(|_| CryptoError)?;
             cipher.decrypt(buffer).map_err(|_| CryptoError)
         }
+        EncryptionScheme::Aes192Cbc { iv } => {
+            let cipher = Aes192Cbc::new_from_slices(encryption_key.as_slice(), iv)
+                .map_err(|_| CryptoError)?;
+            cipher.decrypt(buffer).map_err(|_| CryptoError)
+        }
         EncryptionScheme::Aes256Cbc { iv } => {
             let cipher = Aes256Cbc::new_from_slices(encryption_key.as_slice(), iv)
                 .map_err(|_| CryptoError)?;
@@ -115,7 +125,40 @@ impl EncryptionKey {
     ) -> Result<Self, CryptoError> {
         match kdf {
             Kdf::Pbkdf2(pbkdf2_params) => {
-                EncryptionKey::derive_with_pbkdf2::<Sha256>(password, pbkdf2_params, key_size)
+                validate_key_length(key_size, pbkdf2_params.key_length.map(Into::into))?;
+
+                let key = match pbkdf2_params.prf {
+                    #[cfg(feature = "sha1")]
+                    Pbkdf2Prf::HmacWithSha1 => EncryptionKey::derive_with_pbkdf2::<sha1::Sha1>(
+                        password,
+                        pbkdf2_params,
+                        key_size,
+                    ),
+                    #[cfg(not(feature = "sha1"))]
+                    Pbkdf2Prf::HmacWithSha1 => return Err(CryptoError),
+                    Pbkdf2Prf::HmacWithSha224 => EncryptionKey::derive_with_pbkdf2::<sha2::Sha224>(
+                        password,
+                        pbkdf2_params,
+                        key_size,
+                    ),
+                    Pbkdf2Prf::HmacWithSha256 => EncryptionKey::derive_with_pbkdf2::<sha2::Sha256>(
+                        password,
+                        pbkdf2_params,
+                        key_size,
+                    ),
+                    Pbkdf2Prf::HmacWithSha384 => EncryptionKey::derive_with_pbkdf2::<sha2::Sha384>(
+                        password,
+                        pbkdf2_params,
+                        key_size,
+                    ),
+                    Pbkdf2Prf::HmacWithSha512 => EncryptionKey::derive_with_pbkdf2::<sha2::Sha512>(
+                        password,
+                        pbkdf2_params,
+                        key_size,
+                    ),
+                };
+
+                Ok(key)
             }
             Kdf::Scrypt(scrypt_params) => {
                 EncryptionKey::derive_with_scrypt(password, &scrypt_params, key_size)
@@ -124,23 +167,11 @@ impl EncryptionKey {
     }
 
     /// Derive key using PBKDF2.
-    fn derive_with_pbkdf2<D>(
-        password: &[u8],
-        params: &Pbkdf2Params<'_>,
-        length: usize,
-    ) -> Result<Self, CryptoError>
+    fn derive_with_pbkdf2<D>(password: &[u8], params: &Pbkdf2Params<'_>, length: usize) -> Self
     where
         D: Update + BlockInput + FixedOutput + Reset + Default + Clone + Sync,
         D::BlockSize: ArrayLength<u8>,
     {
-        // TODO(tarcieri): move to `derive_from_password`?
-        validate_key_length(length, params.key_length.map(Into::into))?;
-
-        // We only support PBKDF2-SHA256 for now
-        if params.prf != Pbkdf2Prf::HmacWithSha256 {
-            return Err(CryptoError);
-        }
-
         let mut buffer = [0u8; MAX_KEY_LEN];
         pbkdf2::<Hmac<D>>(
             password,
@@ -149,7 +180,7 @@ impl EncryptionKey {
             &mut buffer[..length],
         );
 
-        Ok(Self { buffer, length })
+        Self { buffer, length }
     }
 
     /// Derive key using scrypt.

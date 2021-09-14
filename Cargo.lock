@@ -285,6 +285,7 @@ dependencies = [
  "hmac",
  "pbkdf2",
  "scrypt",
+ "sha-1",
  "sha2",
  "spki",
 ]
@@ -415,6 +416,19 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "sha-1"
+version = "0.9.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99cd6713db3cf16b6c84e06321e049a9b9f699826e16096d23bbcc44d15d51a6"
+dependencies = [
+ "block-buffer 0.9.0",
+ "cfg-if",
+ "cpufeatures 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "digest",
+ "opaque-debug 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

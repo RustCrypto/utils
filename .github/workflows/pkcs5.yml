@@ -43,6 +43,7 @@ jobs:
       - run: cargo build --target ${{ matrix.target }} --release --features pbes2
       - run: cargo build --target ${{ matrix.target }} --release --features scrypt
       - run: cargo build --target ${{ matrix.target }} --release --features alloc,pbes2
+      - run: cargo build --target ${{ matrix.target }} --release --features sha1
       - run: cargo build --target ${{ matrix.target }} --release --features 3des
       - run: cargo build --target ${{ matrix.target }} --release --features des-insecure
 
@@ -64,6 +65,7 @@ jobs:
       - run: cargo test --release --features alloc
       - run: cargo test --release --features pbes2
       - run: cargo test --release --features scrypt
+      - run: cargo test --release --features sha1
       - run: cargo test --release --features 3des
       - run: cargo test --release --features des-insecure
       - run: cargo test --release --all-features

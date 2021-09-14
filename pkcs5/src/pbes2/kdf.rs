@@ -13,8 +13,17 @@ pub const PBKDF2_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.1
 /// HMAC-SHA1 (for use with PBKDF2)
 pub const HMAC_WITH_SHA1_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.2.7");
 
+/// HMAC-SHA-224 (for use with PBKDF2)
+pub const HMAC_WITH_SHA224_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.2.8");
+
 /// HMAC-SHA-256 (for use with PBKDF2)
 pub const HMAC_WITH_SHA256_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.2.9");
+
+/// HMAC-SHA-384 (for use with PBKDF2)
+pub const HMAC_WITH_SHA384_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.2.10");
+
+/// HMAC-SHA-512 (for use with PBKDF2)
+pub const HMAC_WITH_SHA512_OID: ObjectIdentifier = ObjectIdentifier::new("1.2.840.113549.2.11");
 
 /// `id-scrypt` ([RFC 7914])
 ///
@@ -215,8 +224,17 @@ pub enum Pbkdf2Prf {
     /// HMAC with SHA1
     HmacWithSha1,
 
+    /// HMAC with SHA-224
+    HmacWithSha224,
+
     /// HMAC with SHA-256
     HmacWithSha256,
+
+    /// HMAC with SHA-384
+    HmacWithSha384,
+
+    /// HMAC with SHA-512
+    HmacWithSha512,
 }
 
 impl Pbkdf2Prf {
@@ -224,7 +242,10 @@ impl Pbkdf2Prf {
     pub fn oid(self) -> ObjectIdentifier {
         match self {
             Self::HmacWithSha1 => HMAC_WITH_SHA1_OID,
+            Self::HmacWithSha224 => HMAC_WITH_SHA224_OID,
             Self::HmacWithSha256 => HMAC_WITH_SHA256_OID,
+            Self::HmacWithSha384 => HMAC_WITH_SHA384_OID,
+            Self::HmacWithSha512 => HMAC_WITH_SHA512_OID,
         }
     }
 }
@@ -267,7 +288,10 @@ impl<'a> TryFrom<AlgorithmIdentifier<'a>> for Pbkdf2Prf {
 
         match alg.oid {
             HMAC_WITH_SHA1_OID => Ok(Self::HmacWithSha1),
+            HMAC_WITH_SHA224_OID => Ok(Self::HmacWithSha224),
             HMAC_WITH_SHA256_OID => Ok(Self::HmacWithSha256),
+            HMAC_WITH_SHA384_OID => Ok(Self::HmacWithSha384),
+            HMAC_WITH_SHA512_OID => Ok(Self::HmacWithSha512),
             oid => Err(ErrorKind::UnknownOid { oid }.into()),
         }
     }
