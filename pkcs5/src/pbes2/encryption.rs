@@ -128,11 +128,14 @@ impl EncryptionKey {
                 validate_key_length(key_size, pbkdf2_params.key_length.map(Into::into))?;
 
                 let key = match pbkdf2_params.prf {
+                    #[cfg(feature = "sha1")]
                     Pbkdf2Prf::HmacWithSha1 => EncryptionKey::derive_with_pbkdf2::<sha1::Sha1>(
                         password,
                         pbkdf2_params,
                         key_size,
                     ),
+                    #[cfg(not(feature = "sha1"))]
+                    Pbkdf2Prf::HmacWithSha1 => return Err(CryptoError),
                     Pbkdf2Prf::HmacWithSha224 => EncryptionKey::derive_with_pbkdf2::<sha2::Sha224>(
                         password,
                         pbkdf2_params,
