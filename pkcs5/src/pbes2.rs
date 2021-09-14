@@ -2,8 +2,6 @@
 //!
 //! [RFC 8018 Section 6.2]: https://tools.ietf.org/html/rfc8018#section-6.2
 
-#![cfg_attr(docsrs, feature(doc_cfg))]
-
 mod kdf;
 
 #[cfg(feature = "pbes2")]
