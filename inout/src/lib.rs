@@ -9,7 +9,7 @@
 //! Collection of custom reference types for code generic over in-place and
 //! buffer-to-buffer modes of operation.
 
-use core::{convert::TryInto, marker::PhantomData, slice};
+use core::{convert::TryInto, marker::PhantomData, slice, ptr};
 use generic_array::{ArrayLength, GenericArray};
 
 /// Custom pointer type which contains one immutable (input) and one mutable
@@ -50,7 +50,7 @@ impl<'a, T> InOut<'a, T> {
     }
 
     /// Extend `self` with a temporary pointer.
-    #[inline]
+    #[inline(always)]
     pub fn extend_with_tmp(self, tmp: &'a mut T) -> InTmpOut<'a, T> {
         InTmpOut {
             in_ptr: self.in_ptr,
@@ -125,6 +125,7 @@ impl<'a, T, N: ArrayLength<T>> InOut<'a, GenericArray<T, N>> {
     }
 
     /// Convert `InOut` array to `InOutBuf`.
+    #[inline(always)]
     pub fn into_buf(self) -> InOutBuf<'a, T> {
         InOutBuf {
             in_ptr: self.in_ptr as *const T,
@@ -182,7 +183,7 @@ impl<'a, T> InTmpOut<'a, T> {
 
 impl<'a, T, N: ArrayLength<T>> InTmpOut<'a, GenericArray<T, N>> {
     /// Convert `InTmpOut` array to `InTmpOutBuf`.
-    #[inline]
+    #[inline(always)]
     pub fn into_buf(self) -> InTmpOutBuf<'a, T> {
         InTmpOutBuf {
             in_ptr: self.in_ptr as *const T,
@@ -408,6 +409,7 @@ impl<'a, T> InOutBuf<'a, T> {
     ///
     /// # Panics
     /// Of buffer length is greater than length of the temporary array.
+    #[inline(always)]
     pub fn extend_with_tmp<N: ArrayLength<T>>(
         self,
         tmp: &'a mut GenericArray<T, N>,
@@ -424,6 +426,7 @@ impl<'a, T> InOutBuf<'a, T> {
 
     /// Process data in buffer in chunks of size `N`.
     // TODO: decribe behavior and arguments in detail
+    #[inline(always)]
     pub fn process_chunks<N, S, PRE, POST, PC, PT>(
         self,
         mut state: S,
@@ -626,17 +629,20 @@ impl<'a, T> InTmpOutBuf<'a, T> {
 impl<'a, N: ArrayLength<u8>> InTmpOutBuf<'a, GenericArray<u8, N>> {
     /// XORs data fron input and temporary slices and writes result to output
     /// slice.
-    #[inline]
+    #[inline(always)]
     pub fn xor_intmp2out(&mut self) {
         unsafe {
-            let in_ptr = self.in_ptr as *const u8;
-            let tmp_ptr = self.tmp_ptr as *const u8;
-            let out_ptr = self.out_ptr as *mut u8;
-            let n = self.len() * N::USIZE;
-            for i in 0..n {
-                let a = *in_ptr.add(i);
-                let b = *tmp_ptr.add(i);
-                core::ptr::write(out_ptr.add(i), a ^ b);
+            let in_ptr = self.in_ptr;
+            let tmp_ptr = self.tmp_ptr;
+            let out_ptr = self.out_ptr;
+            for i in 0..self.len() {
+                let a = ptr::read(in_ptr.add(i));
+                let b = ptr::read(tmp_ptr.add(i));
+                let mut res = GenericArray::<u8, N>::default();
+                for j in 0..N::USIZE {
+                    res[j] = a[j] ^ b[j];
+                }
+                ptr::write(out_ptr.add(i), res);
             }
         }
     }
