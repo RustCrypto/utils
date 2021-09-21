@@ -136,6 +136,27 @@ impl<'a, T, N: ArrayLength<T>> InOut<'a, GenericArray<T, N>> {
     }
 }
 
+impl<'a, N: ArrayLength<u8>> InOut<'a, GenericArray<u8, N>> {
+    /// XOR `data` with values behind the input slice and write
+    /// result to the output slice.
+    ///
+    /// # Panics
+    /// If `data` length is not equal to the buffer length.
+    #[inline]
+    #[allow(clippy::needless_range_loop)]
+    pub fn xor(&mut self, data: &[u8]) {
+        assert_eq!(N::USIZE, data.len());
+        unsafe {
+            let input = ptr::read(self.in_ptr);
+            let mut temp = GenericArray::<u8, N>::default();
+            for i in 0..N::USIZE {
+                temp[i] = input[i] ^ data[i]
+            }
+            ptr::write(self.out_ptr, temp);
+        }
+    }
+}
+
 /// Custom pointer type which contains one immutable (input) and two mutable
 /// (temporary and output) pointers.
 ///
