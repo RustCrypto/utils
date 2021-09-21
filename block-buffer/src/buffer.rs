@@ -6,21 +6,18 @@ use crate::{
     Block, DigestBuffer,
 };
 use core::slice;
-use generic_array::{
-    typenum::{type_operators::IsLess, U256},
-    ArrayLength,
-};
+use generic_array::ArrayLength;
 #[cfg(feature = "inout")]
 use inout::InOutBuf;
 
 /// Buffer for block processing of data.
 #[derive(Clone, Default)]
-pub struct BlockBuffer<BlockSize: ArrayLength<u8> + IsLess<U256>> {
+pub struct BlockBuffer<BlockSize: ArrayLength<u8>> {
     buffer: Block<BlockSize>,
-    pos: u8,
+    pos: usize,
 }
 
-impl<BlockSize: ArrayLength<u8> + IsLess<U256>> BlockBuffer<BlockSize> {
+impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
     /// XORs `data`. This method is intended for stream cipher implementations.
     #[cfg(feature = "inout")]
     #[inline]
@@ -173,8 +170,7 @@ impl<BlockSize: ArrayLength<u8> + IsLess<U256>> BlockBuffer<BlockSize> {
     /// Return current cursor position.
     #[inline]
     pub fn get_pos(&self) -> usize {
-        debug_assert!(self.pos < BlockSize::U8);
-        if self.pos >= BlockSize::U8 {
+        if self.pos >= BlockSize::USIZE {
             // SAFETY: `pos` is set only to values smaller than block size
             unsafe { core::hint::unreachable_unchecked() }
         }
@@ -188,17 +184,17 @@ impl<BlockSize: ArrayLength<u8> + IsLess<U256>> BlockBuffer<BlockSize> {
     pub fn set(&mut self, buf: Block<BlockSize>, pos: usize) {
         assert!(pos < BlockSize::USIZE);
         self.buffer = buf;
-        self.pos = pos as u8;
+        self.pos = pos;
     }
 
     #[inline]
     fn set_pos_unchecked(&mut self, pos: usize) {
         debug_assert!(pos < BlockSize::USIZE);
-        self.pos = pos as u8;
+        self.pos = pos;
     }
 }
 
-impl<B: ArrayLength<u8> + IsLess<U256>> DigestBuffer<B> for BlockBuffer<B> {
+impl<B: ArrayLength<u8>> DigestBuffer<B> for BlockBuffer<B> {
     #[inline]
     fn digest_blocks(&mut self, mut input: &[u8], mut compress: impl FnMut(&[Block<B>])) {
         let pos = self.get_pos();
