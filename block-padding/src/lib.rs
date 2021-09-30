@@ -101,9 +101,9 @@ impl<B: ArrayLength<u8>> Padding<B> for ZeroPadding {
 #[derive(Clone, Copy, Debug)]
 pub struct Pkcs7;
 
-impl<B: ArrayLength<u8>> Padding<B> for Pkcs7 {
+impl Pkcs7 {
     #[inline]
-    fn pad(block: &mut Block<B>, pos: usize) {
+    fn pad<B: ArrayLength<u8>>(block: &mut Block<B>, pos: usize) {
         // TODO: use bounds to check it at compile time
         if B::USIZE > 255 {
             panic!("block size is too big for PKCS#7");
@@ -116,9 +116,8 @@ impl<B: ArrayLength<u8>> Padding<B> for Pkcs7 {
             *b = n;
         }
     }
-
     #[inline]
-    fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
+    fn unpad<B: ArrayLength<u8>>(block: &Block<B>, strict: bool) -> Result<&[u8], UnpadError> {
         // TODO: use bounds to check it at compile time
         if B::USIZE > 255 {
             panic!("block size is too big for PKCS#7");
@@ -129,10 +128,55 @@ impl<B: ArrayLength<u8>> Padding<B> for Pkcs7 {
             return Err(UnpadError);
         }
         let s = bs - n as usize;
-        if block[s..bs - 1].iter().any(|&v| v != n) {
+        if strict && block[s..bs - 1].iter().any(|&v| v != n) {
             return Err(UnpadError);
         }
         Ok(&block[..s])
+    }
+}
+
+impl<B: ArrayLength<u8>> Padding<B> for Pkcs7 {
+    #[inline]
+    fn pad(block: &mut Block<B>, pos: usize) {
+        Pkcs7::pad(block, pos)
+    }
+
+    #[inline]
+    fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
+        Pkcs7::unpad(block, true)
+    }
+}
+
+/// Pad block with arbitrary bytes ending with value equal to the number of bytes added.
+///
+/// A variation of PKCS#7 that is less strict when decoding.
+///
+/// ```
+/// use block_padding::{Iso10126, Padding};
+/// use generic_array::{GenericArray, typenum::U8};
+///
+/// let msg = b"test";
+/// let pos = msg.len();
+/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// block[..pos].copy_from_slice(msg);
+/// Iso10126::pad(&mut block, pos);
+/// assert_eq!(&block[..], b"test\x04\x04\x04\x04");
+/// let res = Iso10126::unpad(&block).unwrap();
+/// assert_eq!(res, msg);
+/// ```
+#[derive(Clone, Copy, Debug)]
+pub struct Iso10126;
+
+impl<B: ArrayLength<u8>> Padding<B> for Iso10126 {
+    #[inline]
+    fn pad(block: &mut Block<B>, pos: usize) {
+        // Iso10126 padding is a specific case of Pkcs7 padding.
+        Pkcs7::pad(block, pos)
+    }
+
+    #[inline]
+    fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
+        Pkcs7::unpad(block, false)
     }
 }
 
