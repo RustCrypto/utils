@@ -18,6 +18,21 @@ pub struct BlockBuffer<BlockSize: ArrayLength<u8>> {
 }
 
 impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
+    /// Create new buffer from slice.
+    ///
+    /// # Panics
+    /// If slice length is equal ot bigger than `BlockSize`.
+    #[inline(always)]
+    pub fn new(buf: &[u8]) -> Self {
+        if buf.len() >= BlockSize::USIZE {
+            panic!("slice is too big");
+        }
+        let mut buffer = Block::<BlockSize>::default();
+        let pos = buf.len();
+        buffer[..pos].copy_from_slice(buf);
+        Self { buffer, pos }
+    }
+
     /*
     /// XORs `data`. This method is intended for stream cipher implementations.
     #[cfg(feature = "inout")]

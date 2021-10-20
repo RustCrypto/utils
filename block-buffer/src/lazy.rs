@@ -9,6 +9,21 @@ pub struct LazyBlockBuffer<BlockSize: ArrayLength<u8>> {
 }
 
 impl<BlockSize: ArrayLength<u8>> LazyBlockBuffer<BlockSize> {
+    /// Create new lazy buffer from slice.
+    ///
+    /// # Panics
+    /// If slice length is bigger than `BlockSize`.
+    #[inline(always)]
+    pub fn new(buf: &[u8]) -> Self {
+        if buf.len() > BlockSize::USIZE {
+            panic!("slice is too big");
+        }
+        let mut buffer = Block::<BlockSize>::default();
+        let pos = buf.len();
+        buffer[..pos].copy_from_slice(buf);
+        Self { buffer, pos }
+    }
+
     /// Pad remaining data with zeros and call `compress` with resulting block.
     pub fn pad_zeros(&mut self) -> &mut Block<BlockSize> {
         let pos = self.get_pos();
