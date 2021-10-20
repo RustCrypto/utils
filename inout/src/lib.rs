@@ -9,8 +9,8 @@
 //! Collection of custom reference types for code generic over in-place and
 //! buffer-to-buffer modes of operation.
 
-use core::{convert::TryInto, marker::PhantomData, slice, ptr};
-use generic_array::{ArrayLength, GenericArray};
+use core::{convert::TryInto, marker::PhantomData, ptr, slice};
+use generic_array::{typenum::Unsigned, ArrayLength, GenericArray};
 
 /// Custom pointer type which contains one immutable (input) and one mutable
 /// (output) pointer, which are either equal or non-overlapping.
