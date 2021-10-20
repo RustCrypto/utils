@@ -12,5 +12,5 @@ edition = "2018"
 
 [dependencies]
 block-padding = { version = "0.3.0-pre", path = "../block-padding", optional = true }
-inout = { version = "0.1", path = "../inout", optional = true }
+# inout = { version = "0.1", path = "../inout", optional = true }
 generic-array = "0.14"

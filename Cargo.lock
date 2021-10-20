@@ -40,7 +40,6 @@ version = "0.10.0"
 dependencies = [
  "block-padding 0.3.0",
  "generic-array",
- "inout",
 ]
 
 [[package]]

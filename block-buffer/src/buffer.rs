@@ -7,8 +7,8 @@ use crate::{
 };
 use core::slice;
 use generic_array::ArrayLength;
-#[cfg(feature = "inout")]
-use inout::InOutBuf;
+// #[cfg(feature = "inout")]
+// use inout::InOutBuf;
 
 /// Buffer for block processing of data.
 #[derive(Clone, Default)]
@@ -18,6 +18,7 @@ pub struct BlockBuffer<BlockSize: ArrayLength<u8>> {
 }
 
 impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
+    /*
     /// XORs `data`. This method is intended for stream cipher implementations.
     #[cfg(feature = "inout")]
     #[inline]
@@ -53,6 +54,7 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         }
         self.set_pos_unchecked(n);
     }
+    */
 
     /// Set `data` to generated blocks.
     #[inline]
