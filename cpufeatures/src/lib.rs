@@ -57,7 +57,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/cpufeatures/0.1.5"
+    html_root_url = "https://docs.rs/cpufeatures/0.2.1"
 )]
 
 #[cfg(all(target_arch = "aarch64"))]

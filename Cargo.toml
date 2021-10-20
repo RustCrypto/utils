@@ -1,24 +1,13 @@
 [workspace]
 members = [
-    "base64ct",
     "blobby",
     "block-buffer",
     "block-padding",
     "collectable",
-    "const-oid",
     "cpufeatures",
-    "crypto-bigint",
     "dbl",
-    "der",
-    "der/derive",
     "hex-literal",
     "inout",
     "opaque-debug",
-    "pem-rfc7468",
-    "pkcs1",
-    "pkcs5",
-    "pkcs8",
-    "spki",
     "wycheproof2blb",
-    "x509"
 ]
