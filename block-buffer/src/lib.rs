@@ -24,8 +24,6 @@ pub use lazy::LazyBlockBuffer;
 
 /// Block on which a `BlockBuffer` operates.
 pub type Block<BlockSize> = GenericArray<u8, BlockSize>;
-/// Blocks being acted over in parallel.
-pub type ParBlock<BlockSize, ParBlocks> = GenericArray<Block<BlockSize>, ParBlocks>;
 
 /// Trait which generalizes digest functionality of buffers.
 pub trait DigestBuffer<BlockSize: ArrayLength<u8>>: Default {
