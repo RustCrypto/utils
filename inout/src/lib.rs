@@ -1,3 +1,6 @@
+//! Collection of custom reference types for code generic over in-place and
+//! buffer-to-buffer modes of operation.
+
 #![no_std]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg",
@@ -6,8 +9,6 @@
 )]
 #![allow(clippy::needless_lifetimes)]
 #![warn(missing_docs, rust_2018_idioms)]
-//! Collection of custom reference types for code generic over in-place and
-//! buffer-to-buffer modes of operation.
 
 use core::{convert::TryInto, marker::PhantomData, ptr, slice};
 use generic_array::{ArrayLength, GenericArray};
