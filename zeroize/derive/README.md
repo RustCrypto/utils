@@ -40,8 +40,8 @@ dual licensed as above, without any additional terms or conditions.
 [crate-link]: https://crates.io/crates/zeroize_derive
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.51+-blue.svg
-[build-image]: https://github.com/RustCrypto/utils/workflows/Rust/badge.svg?branch=main&event=push
-[build-link]: https://github.com/RustCrypto/utils/actions
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml/badge.svg
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml
 
 [//]: # (general links)
 
