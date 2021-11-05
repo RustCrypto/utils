@@ -46,6 +46,4 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (general links)
 
 [RustCrypto]: https://github.com/RustCrypto
-[zeroize]: https://github.com/RustCrypto/utils/tree/main/zeroize
-[LICENSE]: https://github.com/RustCrypto/utils/blob/main/LICENSE
-[LICENSE-MIT]: https://github.com/RustCrypto/utils/blob/main/zeroize/LICENSE-MIT
+[zeroize]: https://github.com/RustCrypto/utils/tree/master/zeroize
