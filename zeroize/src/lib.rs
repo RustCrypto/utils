@@ -214,6 +214,7 @@ pub use zeroize_derive::Zeroize;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
 
+use core::marker::{PhantomData, PhantomPinned};
 use core::mem::{self, MaybeUninit};
 use core::num::{
     NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU128,
@@ -569,9 +570,53 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
     }
 }
 
+/// `PhantomData` is always zero sized so provide a Zeroize implementation.
+impl<Z> Zeroize for PhantomData<Z> {
+    fn zeroize(&mut self) {}
+}
+/// `PhantomPinned` is zero sized so provide a Zeroize implementation.
+impl Zeroize for PhantomPinned {
+    fn zeroize(&mut self) {}
+}
+/// `()` is zero sized so provide a Zeroize implementation.
+impl Zeroize for () {
+    fn zeroize(&mut self) {}
+}
+
+/// Generic implementation of Zeroize for tuples up to 10 parameters.
+impl<A: Zeroize> Zeroize for (A,) {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+macro_rules! impl_zeroize_tuple {
+    ( $( $type_name:ident )+ ) => {
+        impl<$($type_name: Zeroize),+> Zeroize for ($($type_name),+) {
+            fn zeroize(&mut self) {
+                #[allow(non_snake_case)]
+                let ($($type_name),+) = self;
+                $($type_name.zeroize());+
+            }
+        }
+    }
+}
+// Generic implementations for tuples up to 10 parameters.
+impl_zeroize_tuple! { A B }
+impl_zeroize_tuple! { A B C }
+impl_zeroize_tuple! { A B C D }
+impl_zeroize_tuple! { A B C D E }
+impl_zeroize_tuple! { A B C D E F }
+impl_zeroize_tuple! { A B C D E F G }
+impl_zeroize_tuple! { A B C D E F G H }
+impl_zeroize_tuple! { A B C D E F G H I }
+impl_zeroize_tuple! { A B C D E F G H I L }
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use core::mem::size_of;
+
     #[cfg(feature = "alloc")]
     use alloc::boxed::Box;
 
@@ -616,6 +661,26 @@ mod tests {
         arr.zeroize();
         let arr_init: [u64; 64] = unsafe { core::mem::transmute(arr) };
         assert_eq!(arr_init, [0u64; 64]);
+    }
+
+    #[test]
+    fn zeroize_check_zerosize_types() {
+        // Since we assume these types have zero size, we test this holds for
+        // the current version of Rust.
+        assert_eq!(size_of::<()>(), 0);
+        assert_eq!(size_of::<PhantomPinned>(), 0);
+        assert_eq!(size_of::<PhantomData<usize>>(), 0);
+    }
+
+    #[test]
+    fn zeroize_check_tuple() {
+        let mut tup1 = (42u8,);
+        tup1.zeroize();
+        assert_eq!(tup1, (0u8,));
+
+        let mut tup2 = (42u8, 42u8);
+        tup2.zeroize();
+        assert_eq!(tup2, (0u8, 0u8));
     }
 
     #[cfg(feature = "alloc")]
