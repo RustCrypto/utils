@@ -78,5 +78,3 @@ dual licensed as above, without any additional terms or conditions.
 [core::ptr::write_volatile]: https://doc.rust-lang.org/core/ptr/fn.write_volatile.html
 [core::sync::atomic]: https://doc.rust-lang.org/stable/core/sync/atomic/index.html
 [good cryptographic hygiene]: https://github.com/veorq/cryptocoding#clean-memory-of-secret-data
-[LICENSE]: https://github.com/RustCrypto/utils/blob/main/LICENSE
-[LICENSE-MIT]: https://github.com/RustCrypto/utils/blob/main/zeroize/LICENSE-MIT
