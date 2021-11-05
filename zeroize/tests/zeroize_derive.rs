@@ -104,4 +104,108 @@ mod custom_derive_tests {
     impl Drop for ZeroizeNoDropEnum {
         fn drop(&mut self) {}
     }
+
+    #[test]
+    fn derive_struct_skip() {
+        #[derive(Zeroize)]
+        #[zeroize(drop)]
+        struct Z {
+            string: String,
+            vec: Vec<u8>,
+            #[zeroize(skip)]
+            bytearray: [u8; 3],
+            number: usize,
+            boolean: bool,
+        }
+
+        let mut value = Z {
+            string: String::from("Hello, world!"),
+            vec: vec![1, 2, 3],
+            bytearray: [4, 5, 6],
+            number: 42,
+            boolean: true,
+        };
+
+        value.zeroize();
+
+        assert!(value.string.is_empty());
+        assert!(value.vec.is_empty());
+        assert_eq!(&value.bytearray, &[4, 5, 6]);
+        assert_eq!(value.number, 0);
+        assert!(!value.boolean);
+    }
+
+    #[test]
+    fn derive_enum_skip() {
+        #[derive(Zeroize)]
+        #[zeroize(drop)]
+        enum Z {
+            #[allow(dead_code)]
+            Variant1,
+            #[zeroize(skip)]
+            Variant2([u8; 3]),
+            #[zeroize(skip)]
+            Variant3 {
+                string: String,
+                vec: Vec<u8>,
+                bytearray: [u8; 3],
+                number: usize,
+                boolean: bool,
+            },
+            Variant4 {
+                string: String,
+                vec: Vec<u8>,
+                #[zeroize(skip)]
+                bytearray: [u8; 3],
+                number: usize,
+                boolean: bool,
+            },
+        }
+
+        let mut value = Z::Variant2([4, 5, 6]);
+
+        value.zeroize();
+
+        assert!(matches!(&value, Z::Variant2([4, 5, 6])));
+
+        let mut value = Z::Variant3 {
+            string: String::from("Hello, world!"),
+            vec: vec![1, 2, 3],
+            bytearray: [4, 5, 6],
+            number: 42,
+            boolean: true,
+        };
+
+        value.zeroize();
+
+        assert!(matches!(
+            &value,
+            Z::Variant3 { string, vec, bytearray, number, boolean }
+            if string == "Hello, world!" &&
+                vec == &[1, 2, 3] &&
+                bytearray == &[4, 5, 6] &&
+                *number == 42 &&
+                *boolean
+        ));
+
+        let mut value = Z::Variant4 {
+            string: String::from("Hello, world!"),
+            vec: vec![1, 2, 3],
+            bytearray: [4, 5, 6],
+            number: 42,
+            boolean: true,
+        };
+
+        value.zeroize();
+
+        assert!(matches!(
+            &value,
+            Z::Variant4 { string, vec, bytearray, number, boolean }
+            if string.is_empty() &&
+                vec.is_empty() &&
+                bytearray == &[4, 5, 6] &&
+                *number == 0 &&
+                !boolean
+        ));
+    }
 }

@@ -18,6 +18,8 @@ decl_derive!(
     ///
     /// - `#[zeroize(drop)]`: derives the `Drop` trait, calling `zeroize()`
     ///   when this item is dropped.
+    /// - `#[zeroize(skip)]`: skips this field or variant when calling
+    ///   `zeroize()`.
     derive_zeroize
 );
 
@@ -131,17 +133,57 @@ impl ZeroizeAttrs {
             };
 
             self.drop = true;
+        } else if meta.path().is_ident("skip") {
+            if variant.is_none() && binding.is_none() {
+                panic!(concat!(
+                    "The #[zeroize(skip)] attribute is not allowed on a `struct` or `enum`. ",
+                    "Use it on a field or variant instead.",
+                ))
+            }
         } else {
             panic!("unknown #[zeroize] attribute type: {:?}", meta.path());
         }
     }
 }
 
+fn filter_skip(attrs: &[Attribute], start: bool) -> bool {
+    let mut result = start;
+
+    for attr in attrs.iter().filter_map(|attr| attr.parse_meta().ok()) {
+        if let Meta::List(list) = attr {
+            if list.path.is_ident(ZEROIZE_ATTR) {
+                for nested in list.nested {
+                    if let NestedMeta::Meta(Meta::Path(path)) = nested {
+                        if path.is_ident("skip") {
+                            assert!(result, "duplicate #[zeroize] skip flags");
+                            result = false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    result
+}
+
 /// Custom derive for `Zeroize` (without `Drop`)
 fn derive_zeroize_without_drop(mut s: synstructure::Structure<'_>) -> TokenStream {
     s.bind_with(|_| BindStyle::RefMut);
 
-    let zeroizers = s.each(|bi| quote! { #bi.zeroize(); });
+    let zeroizers = s
+        .filter_variants(|vi| {
+            let result = filter_skip(vi.ast().attrs, true);
+
+            // check for duplicate `#[zeroize(skip)]` attributes in nested variants
+            for field in vi.ast().fields {
+                filter_skip(&field.attrs, result);
+            }
+
+            result
+        })
+        .filter(|bi| filter_skip(&bi.ast().attrs, true))
+        .each(|bi| quote! { #bi.zeroize(); });
 
     s.bound_impl(
         quote!(zeroize::Zeroize),
@@ -254,6 +296,42 @@ mod tests {
                     impl Drop for Z {
                         fn drop(&mut self) {
                             self.zeroize();
+                        }
+                    }
+                };
+            }
+            no_build // tests the code compiles are in the `zeroize` crate
+        }
+    }
+
+    #[test]
+    fn zeroize_with_skip() {
+        test_derive! {
+            derive_zeroize_without_drop {
+                struct Z {
+                    a: String,
+                    b: Vec<u8>,
+                    #[zeroize(skip)]
+                    c: [u8; 3],
+                }
+            }
+            expands to {
+                #[allow(non_upper_case_globals)]
+                #[doc(hidden)]
+                const _DERIVE_zeroize_Zeroize_FOR_Z: () = {
+                    extern crate zeroize;
+                    impl zeroize::Zeroize for Z {
+                        fn zeroize(&mut self) {
+                            match self {
+                                Z {
+                                    a: ref mut __binding_0,
+                                    b: ref mut __binding_1,
+                                    ..
+                                } => {
+                                    { __binding_0.zeroize(); }
+                                    { __binding_1.zeroize(); }
+                                }
+                            }
                         }
                     }
                 };
@@ -382,6 +460,78 @@ mod tests {
                 Variant1,
                 #[zeroize(drop)]
                 Variant2,
+            }
+        ));
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "The #[zeroize(skip)] attribute is not allowed on a `struct` or `enum`. Use it on a field or variant instead."
+    )]
+    fn zeroize_skip_on_struct() {
+        parse_zeroize_test(stringify!(
+            #[zeroize(skip)]
+            struct Z {
+                a: String,
+                b: Vec<u8>,
+                c: [u8; 3],
+            }
+        ));
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "The #[zeroize(skip)] attribute is not allowed on a `struct` or `enum`. Use it on a field or variant instead."
+    )]
+    fn zeroize_skip_on_enum() {
+        parse_zeroize_test(stringify!(
+            #[zeroize(skip)]
+            enum Z {
+                Variant1,
+                Variant2,
+            }
+        ));
+    }
+
+    #[test]
+    #[should_panic(expected = "duplicate #[zeroize] skip flags")]
+    fn zeroize_duplicate_skip() {
+        parse_zeroize_test(stringify!(
+            struct Z {
+                a: String,
+                #[zeroize(skip)]
+                #[zeroize(skip)]
+                b: Vec<u8>,
+                c: [u8; 3],
+            }
+        ));
+    }
+
+    #[test]
+    #[should_panic(expected = "duplicate #[zeroize] skip flags")]
+    fn zeroize_duplicate_skip_list() {
+        parse_zeroize_test(stringify!(
+            struct Z {
+                a: String,
+                #[zeroize(skip, skip)]
+                b: Vec<u8>,
+                c: [u8; 3],
+            }
+        ));
+    }
+
+    #[test]
+    #[should_panic(expected = "duplicate #[zeroize] skip flags")]
+    fn zeroize_duplicate_skip_enum() {
+        parse_zeroize_test(stringify!(
+            enum Z {
+                #[zeroize(skip)]
+                Variant {
+                    a: String,
+                    #[zeroize(skip)]
+                    b: Vec<u8>,
+                    c: [u8; 3],
+                },
             }
         ));
     }
