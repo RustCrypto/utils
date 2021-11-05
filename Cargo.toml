@@ -9,4 +9,6 @@ members = [
     "hex-literal",
     "opaque-debug",
     "wycheproof2blb",
+    "zeroize",
+    "zeroize/derive"
 ]
