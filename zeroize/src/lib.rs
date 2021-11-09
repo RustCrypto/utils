@@ -69,6 +69,7 @@
 //! Additionally it supports the following attribute:
 //!
 //! - `#[zeroize(drop)]`: call `zeroize()` when this item is dropped
+//! - `#[zeroize(skip)]`: skips this field or variant when calling `zeroize()`
 //!
 //! Example which derives `Drop`:
 //!
