@@ -14,13 +14,14 @@ decl_derive!(
 
     /// Derive the `Zeroize` trait.
     ///
-    /// Supports the following attribute:
+    /// Supports the following attributes:
     ///
-    /// - `#[zeroize(drop)]`: derives the `Drop` trait, calling `zeroize()`
-    ///   when this item is dropped.
-    /// - `#[zeroize(skip)]`: skips this field or variant when calling
-    ///   `zeroize()`.
-    derive_zeroize
+    /// On the item level:
+    /// - `#[zeroize(drop)]`: call `zeroize()` when this item is dropped
+    ///
+    /// On the field level:
+    /// - `#[zeroize(skip)]`: skips this field or variant when calling `zeroize()`
+derive_zeroize
 );
 
 /// Name of zeroize-related attributes
