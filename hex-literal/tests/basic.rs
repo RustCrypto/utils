@@ -6,6 +6,15 @@ fn single_literal() {
 }
 
 #[test]
+fn empty() {
+    let nothing: [u8; 0] = hex!();
+    let empty_literals: [u8; 0] = hex!("" "" "");
+    let expected: [u8; 0] = [];
+    assert_eq!(nothing, expected);
+    assert_eq!(empty_literals, expected);
+}
+
+#[test]
 fn upper_case() {
     assert_eq!(hex!("AE DF 04 B2"), [0xae, 0xdf, 0x04, 0xb2]);
     assert_eq!(hex!("FF BA 8C 00 01"), [0xff, 0xba, 0x8c, 0x00, 0x01]);
@@ -63,10 +72,7 @@ fn allows_various_spacing() {
         [0xff, 0xd0, 0xe8]
     );
     // tabs
-    assert_eq!(
-        hex!("9f d   1       f07 3   01"),
-        [0x9f, 0xd1, 0xf0, 0x73, 0x01]
-    );
+    assert_eq!(hex!("9f	d		1		f07	3		01	"), [0x9f, 0xd1, 0xf0, 0x73, 0x01]);
     // spaces
     assert_eq!(hex!(" e    e d0  9 1   f  f  "), [0xee, 0xd0, 0x91, 0xff]);
 }
