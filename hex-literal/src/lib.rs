@@ -86,12 +86,16 @@ struct TokenTreeIter {
 }
 
 impl TokenTreeIter {
+    /// Constructs a new `TokenTreeIter` from a given `proc_macro::Literal`.
+    ///
+    /// # Panics
+    /// This panics if the given `Literal` is not a string literal.
     fn new(input: Literal) -> Self {
         let mut buf: Vec<u8> = input.to_string().into();
 
         match buf.as_slice() {
             [b'"', .., b'"'] => (),
-            _ => panic!("expected string literals"),
+            _ => panic!("expected string literal, got `{}`", input),
         };
         buf.pop();
         let mut iter = buf.into_iter().exclude_comments();
@@ -102,6 +106,11 @@ impl TokenTreeIter {
         }
     }
 
+    /// Parses a single hex character (a-f/A-F/0-9) as a `u8` from the `TokenTreeIter`'s
+    /// internal buffer, ignoring whitespace.
+    ///
+    /// # Panics
+    /// This panics if a non-hex, non-whitespace character is encountered.
     fn next_hex_val(&mut self) -> Option<u8> {
         loop {
             let v = self.buf.next()?;
@@ -110,7 +119,7 @@ impl TokenTreeIter {
                 b'A'..=b'F' => v - 55,
                 b'a'..=b'f' => v - 87,
                 b' ' | b'\r' | b'\n' | b'\t' => continue,
-                _ => panic!("encountered invalid character"),
+                c => panic!("encountered invalid character: `{}`", c as char),
             };
             return Some(n);
         }
@@ -120,6 +129,13 @@ impl TokenTreeIter {
 impl Iterator for TokenTreeIter {
     type Item = TokenTree;
 
+    /// Produces hex values (as `u8` literals) parsed from the `TokenTreeIter`'s
+    /// internal buffer, alternating with commas to separate the elements of the
+    /// generated array of bytes.
+    ///
+    /// # Panics
+    /// This panics if the internal buffer contains an odd number of hex
+    /// characters.
     fn next(&mut self) -> Option<TokenTree> {
         let v = if self.is_punct {
             TokenTree::Punct(Punct::new(',', Spacing::Alone))
@@ -145,7 +161,7 @@ pub fn hex(input: TokenStream) -> TokenStream {
     for tt in ignore_groups(input) {
         let iter = match tt {
             TokenTree::Literal(literal) => TokenTreeIter::new(literal),
-            _ => panic!("expected string literals"),
+            unexpected => panic!("expected string literal, got `{}`", unexpected),
         };
         out_ts.extend(iter);
     }
