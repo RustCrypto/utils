@@ -21,7 +21,7 @@ decl_derive!(
     ///
     /// On the field level:
     /// - `#[zeroize(skip)]`: skips this field or variant when calling `zeroize()`
-derive_zeroize
+    derive_zeroize
 );
 
 /// Name of zeroize-related attributes
