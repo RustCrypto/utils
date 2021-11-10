@@ -66,9 +66,13 @@
 //! which automatically calls `zeroize()` on all members of a struct
 //! or tuple struct.
 //!
-//! Additionally it supports the following attribute:
+//! Additionally it supports the following attributes:
 //!
+//! On the item level:
 //! - `#[zeroize(drop)]`: call `zeroize()` when this item is dropped
+//!
+//! On the field level:
+//! - `#[zeroize(skip)]`: skips this field or variant when calling `zeroize()`
 //!
 //! Example which derives `Drop`:
 //!
