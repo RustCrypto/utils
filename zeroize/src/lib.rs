@@ -70,6 +70,8 @@
 //!
 //! On the item level:
 //! - `#[zeroize(drop)]`: call `zeroize()` when this item is dropped
+//! - `#[zeroize(bound = "T: MyTrait")]`: this replaces any trait bounds
+//!   inferred by zeroize
 //!
 //! On the field level:
 //! - `#[zeroize(skip)]`: skips this field or variant when calling `zeroize()`

@@ -208,4 +208,21 @@ mod custom_derive_tests {
                 !boolean
         ));
     }
+
+    #[test]
+    fn derive_bound() {
+        trait T: Zeroize {}
+
+        impl T for u8 {}
+
+        #[derive(Zeroize)]
+        #[zeroize(bound = "X: T")]
+        struct Z<X>(X);
+
+        let mut value = Z(5_u8);
+
+        value.zeroize();
+
+        assert_eq!(value.0, 0);
+    }
 }
