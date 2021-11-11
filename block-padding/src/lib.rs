@@ -33,7 +33,7 @@ pub trait Padding<BlockSize: ArrayLength<u8>> {
 }
 
 /// Trait for unpaddable padding algorithms.
-pub trait Unpad<BlockSize: ArrayLength<u8>>: Padding<BlockSize> {
+pub trait PadUnpad<BlockSize: ArrayLength<u8>>: Padding<BlockSize> {
     /// Unpad data in the `block`.
     ///
     /// Returns `Err(UnpadError)` if the block contains malformed padding.
@@ -45,7 +45,7 @@ pub trait Unpad<BlockSize: ArrayLength<u8>>: Padding<BlockSize> {
 /// Returns an error on padding if `pos > BlockSize`.
 ///
 /// ```
-/// use block_padding::{ZeroPadding, Padding, Unpad};
+/// use block_padding::{ZeroPadding, Padding, PadUnpad};
 /// use generic_array::{GenericArray, typenum::U8};
 ///
 /// let msg = b"test";
@@ -81,7 +81,7 @@ impl<B: ArrayLength<u8>> Padding<B> for ZeroPadding {
     }
 }
 
-impl<B: ArrayLength<u8>> Unpad<B> for ZeroPadding {
+impl<B: ArrayLength<u8>> PadUnpad<B> for ZeroPadding {
     #[inline(always)]
     fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
         for i in 0..B::USIZE {
@@ -100,7 +100,7 @@ impl<B: ArrayLength<u8>> Unpad<B> for ZeroPadding {
 /// PKCS#7 described in the [RFC 5652](https://tools.ietf.org/html/rfc5652#section-6.3).
 ///
 /// ```
-/// use block_padding::{Pkcs7, Padding, Unpad};
+/// use block_padding::{Pkcs7, Padding, PadUnpad};
 /// use generic_array::{GenericArray, typenum::U8};
 ///
 /// let msg = b"test";
@@ -129,7 +129,7 @@ impl<B: ArrayLength<u8>> Padding<B> for Pkcs7 {
     }
 }
 
-impl<B: ArrayLength<u8>> Unpad<B> for Pkcs7 {
+impl<B: ArrayLength<u8>> PadUnpad<B> for Pkcs7 {
     #[inline(always)]
     fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
         // TODO: use bounds to check it at compile time
@@ -155,7 +155,7 @@ impl<B: ArrayLength<u8>> Unpad<B> for Pkcs7 {
 /// Returns an error on padding if `pos >= BlockSize`.
 ///
 /// ```
-/// use block_padding::{AnsiX923, Padding, Unpad};
+/// use block_padding::{AnsiX923, Padding, PadUnpad};
 /// use generic_array::{GenericArray, typenum::U8};
 ///
 /// let msg = b"test";
@@ -185,7 +185,7 @@ impl<B: ArrayLength<u8>> Padding<B> for AnsiX923 {
     }
 }
 
-impl<B: ArrayLength<u8>> Unpad<B> for AnsiX923 {
+impl<B: ArrayLength<u8>> PadUnpad<B> for AnsiX923 {
     #[inline(always)]
     fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
         // TODO: use bounds to check it at compile time
@@ -210,7 +210,7 @@ impl<B: ArrayLength<u8>> Unpad<B> for AnsiX923 {
 /// Returns an error on padding if `pos >= BlockSize`.
 ///
 /// ```
-/// use block_padding::{Iso7816, Padding, Unpad};
+/// use block_padding::{Iso7816, Padding, PadUnpad};
 /// use generic_array::{GenericArray, typenum::U8};
 ///
 /// let msg = b"test";
@@ -239,7 +239,7 @@ impl<B: ArrayLength<u8>> Padding<B> for Iso7816 {
     }
 }
 
-impl<B: ArrayLength<u8>> Unpad<B> for Iso7816 {
+impl<B: ArrayLength<u8>> PadUnpad<B> for Iso7816 {
     #[inline(always)]
     fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
         for i in (0..B::USIZE).rev() {
@@ -258,7 +258,7 @@ impl<B: ArrayLength<u8>> Unpad<B> for Iso7816 {
 /// Returns an error on padding if `pos != BlockSize`.
 ///
 /// ```
-/// use block_padding::{NoPadding, Padding, Unpad};
+/// use block_padding::{NoPadding, Padding, PadUnpad};
 /// use generic_array::{GenericArray, typenum::U4};
 ///
 /// let msg = b"test";
@@ -288,7 +288,7 @@ impl<B: ArrayLength<u8>> Padding<B> for NoPadding {
     }
 }
 
-impl<B: ArrayLength<u8>> Unpad<B> for NoPadding {
+impl<B: ArrayLength<u8>> PadUnpad<B> for NoPadding {
     #[inline(always)]
     fn unpad(block: &Block<B>) -> Result<&[u8], UnpadError> {
         Ok(block)
