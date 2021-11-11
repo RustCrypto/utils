@@ -25,11 +25,10 @@ impl<I: Iterator<Item = u8>> Iterator for ExcludingComments<I> {
         let next_byte = self.next_byte();
         if next_byte.is_none() {
             match self.state {
-                State::BlockComment | State::PotentiallyLeavingBlockComment => {
+                State::BlockComment | State::PotentialBlockCommentEnd => {
                     panic!("block comment not terminated with */")
                 }
-                // No more bytes after a single '/'
-                State::PotentialComment { .. } => panic!("encountered invalid character: `/`"),
+                State::PotentialComment { .. } => panic!("encountered isolated `/`"),
                 _ => {}
             }
         }
@@ -45,16 +44,17 @@ impl<I: Iterator<Item = u8>> Iterator for ExcludingComments<I> {
 ///     '/'            '*'
 /// LineComment     BlockComment
 ///    '\n'            '*'
-///   Normal      PotentiallyLeavingBlockComment
+///   Normal      PotentialBlockCommentEnd
 ///                    '/'           '_'
 ///                   Normal     BlockComment
-/// </pre>                                                  
+/// </pre>  
+#[derive(Copy, Clone)]
 enum State {
     Normal,
-    PotentialComment { previous: u8 },
+    PotentialComment,
     LineComment,
     BlockComment,
-    PotentiallyLeavingBlockComment,
+    PotentialBlockCommentEnd,
 }
 
 impl<I: Iterator<Item = u8>> ExcludingComments<I> {
@@ -67,81 +67,22 @@ impl<I: Iterator<Item = u8>> ExcludingComments<I> {
 
     fn next_byte(&mut self) -> Option<u8> {
         loop {
-            return match self.state {
-                State::Normal => {
-                    let next = self.iter.next()?;
-                    match next {
-                        b'/' => {
-                            self.state = State::PotentialComment { previous: next };
-                            continue;
-                        }
-                        _ => Some(next),
-                    }
+            let next = self.iter.next()?;
+            self.state = match (self.state, next) {
+                (State::Normal, b'/') => State::PotentialComment,
+                (State::Normal, _) => return Some(next),
+                (State::PotentialComment, b'/') => State::LineComment,
+                (State::PotentialComment, b'*') => State::BlockComment,
+                (State::PotentialComment, _) => panic!("encountered isolated `/`"),
+                (State::LineComment, b'\n') => {
+                    self.state = State::Normal;
+                    return Some(b'\n');
                 }
-                State::PotentialComment { previous } => {
-                    let peeked_next = self.iter.peek()?;
-                    match peeked_next {
-                        b'/' => {
-                            // second /, enter line comment and consume
-                            self.iter.next();
-                            self.state = State::LineComment;
-                            continue;
-                        }
-                        b'*' => {
-                            /* entering a block comment consume '*' */
-                            self.iter.next();
-                            self.state = State::BlockComment;
-                            continue;
-                        }
-                        _ => {
-                            // here we need to emit the previous character (the first '/')
-                            // and do not consume the current character
-                            self.state = State::Normal;
-                            return Some(previous);
-                        }
-                    }
-                }
-                State::LineComment => {
-                    let next = self.iter.next()?;
-                    match next {
-                        b'\n' => {
-                            self.state = State::Normal;
-                            return Some(next);
-                        }
-                        _ => {
-                            // ignore all other characters while in the line comment
-                            continue;
-                        }
-                    }
-                }
-                State::BlockComment => {
-                    let next = self.iter.next()?;
-                    match next {
-                        b'*' => {
-                            self.state = State::PotentiallyLeavingBlockComment;
-                            continue;
-                        }
-                        _ => {
-                            /* ignore all other characters while in the block comment */
-                            continue;
-                        }
-                    }
-                }
-                State::PotentiallyLeavingBlockComment => {
-                    let next = self.iter.next()?;
-                    match next {
-                        b'/' => {
-                            /* Left the block comment */
-                            self.state = State::Normal;
-                            continue;
-                        }
-                        _ => {
-                            /* we're still in the block comment */
-                            self.state = State::BlockComment;
-                            continue;
-                        }
-                    }
-                }
+                (State::LineComment, _) => continue,
+                (State::BlockComment, b'*') => State::PotentialBlockCommentEnd,
+                (State::BlockComment, _) => continue,
+                (State::PotentialBlockCommentEnd, b'/') => State::Normal,
+                (State::PotentialBlockCommentEnd, _) => State::BlockComment,
             };
         }
     }
@@ -195,8 +136,9 @@ mod tests {
     }
 
     #[test]
-    fn single_slash_is_not_excluded() {
-        assert_eq!(exclude_comments("ab/cd"), "ab/cd");
+    #[should_panic]
+    fn panic_on_single_slash() {
+        exclude_comments("ab/cd");
     }
 
     #[test]

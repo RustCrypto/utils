@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [UNRELEASED]
 ### Changed
 - Provide more info in `panic!` messages
+- Minor changes in the comments filtration code
 
 ### Added
 - More tests for `hex!()` macro
