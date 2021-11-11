@@ -119,7 +119,8 @@ impl TokenTreeIter {
                 b'A'..=b'F' => v - 55,
                 b'a'..=b'f' => v - 87,
                 b' ' | b'\r' | b'\n' | b'\t' => continue,
-                c => panic!("encountered invalid character: `{}`", c as char),
+                0..=127 => panic!("encountered invalid character: `{}`", v as char),
+                _ => panic!("encountered invalid non-ASCII character"),
             };
             return Some(n);
         }
