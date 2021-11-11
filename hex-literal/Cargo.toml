@@ -1,6 +1,6 @@
 [package]
 name = "hex-literal"
-version = "0.3.3" # Also update html_root_url in lib.rs when bumping this
+version = "0.3.4" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Procedural macro for converting hexadecimal string to byte array at compile time."

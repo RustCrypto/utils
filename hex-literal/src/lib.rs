@@ -49,7 +49,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/hex-literal/0.3.3"
+    html_root_url = "https://docs.rs/hex-literal/0.3.4"
 )]
 
 mod comments;
