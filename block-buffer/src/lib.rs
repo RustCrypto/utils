@@ -10,8 +10,6 @@
 #[cfg(feature = "block-padding")]
 pub use block_padding;
 pub use generic_array;
-#[cfg(feature = "inout")]
-pub use inout;
 
 use generic_array::{ArrayLength, GenericArray};
 
@@ -22,7 +20,7 @@ mod utils;
 pub use buffer::BlockBuffer;
 pub use lazy::LazyBlockBuffer;
 
-/// Block on which a `BlockBuffer` operates.
+/// Block on which `BlockBuffer` operates.
 pub type Block<BlockSize> = GenericArray<u8, BlockSize>;
 
 /// Trait which generalizes digest functionality of buffers.

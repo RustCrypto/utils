@@ -7,8 +7,6 @@ use crate::{
 };
 use core::slice;
 use generic_array::ArrayLength;
-// #[cfg(feature = "inout")]
-// use inout::InOutBuf;
 
 /// Buffer for block processing of data.
 #[derive(Clone, Default)]
@@ -32,44 +30,6 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         buffer[..pos].copy_from_slice(buf);
         Self { buffer, pos }
     }
-
-    /*
-    /// XORs `data`. This method is intended for stream cipher implementations.
-    #[cfg(feature = "inout")]
-    #[inline]
-    pub fn xor_data(
-        &mut self,
-        mut data: InOutBuf<'_, u8>,
-        mut process_blocks: impl FnMut(InOutBuf<'_, Block<BlockSize>>),
-    ) {
-        let pos = self.get_pos();
-        let r = self.remaining();
-        let n = data.len();
-        if pos != 0 {
-            if n < r {
-                // double slicing allows to remove panic branches
-                data.xor(&self.buffer[pos..][..n]);
-                self.set_pos_unchecked(pos + n);
-                return;
-            }
-            let (mut left, right) = data.split_at(r);
-            data = right;
-            left.xor(&self.buffer[pos..]);
-        }
-
-        let (blocks, mut leftover) = data.into_chunks();
-        process_blocks(blocks);
-
-        let n = leftover.len();
-        if n != 0 {
-            let mut block = Default::default();
-            process_blocks(InOutBuf::from_mut(&mut block));
-            leftover.xor(&block[..n]);
-            self.buffer = block;
-        }
-        self.set_pos_unchecked(n);
-    }
-    */
 
     /// Set `data` to generated blocks.
     #[inline]
