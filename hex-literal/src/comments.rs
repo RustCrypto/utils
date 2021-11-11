@@ -69,8 +69,8 @@ impl<I: Iterator<Item = u8>> ExcludingComments<I> {
         loop {
             let next = self.iter.next()?;
             self.state = match (self.state, next) {
-                (State::Normal, b'/')  => State::PotentialComment,
-                (State::Normal, _)  => return Some(next),
+                (State::Normal, b'/') => State::PotentialComment,
+                (State::Normal, _) => return Some(next),
                 (State::PotentialComment, b'/') => State::LineComment,
                 (State::PotentialComment, b'*') => State::BlockComment,
                 (State::PotentialComment, _) => panic!("encountered isolated `/`"),
