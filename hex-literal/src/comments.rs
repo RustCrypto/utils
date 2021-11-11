@@ -28,8 +28,8 @@ impl<I: Iterator<Item = u8>> Iterator for ExcludingComments<I> {
                 State::BlockComment | State::PotentiallyLeavingBlockComment => {
                     panic!("block comment not terminated with */")
                 }
-                // No more bytes after a single '/': let next_hex_val() identify it as invalid
-                State::PotentialComment { previous } => return Some(previous),
+                // No more bytes after a single '/'
+                State::PotentialComment { .. } => panic!("encountered invalid character: `/`"),
                 _ => {}
             }
         }
