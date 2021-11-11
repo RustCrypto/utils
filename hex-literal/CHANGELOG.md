@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More tests for `hex!()` macro
 - More internal documentation
 
+### Fixed
+- Make `hex!()` error when forward slash encountered as last byte
+
 ## 0.3.3 (2021-07-17)
 ### Added
 - Accept sequence of string literals ([#519])
