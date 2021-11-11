@@ -24,12 +24,27 @@ pub type Block<B> = GenericArray<u8, B>;
 
 /// Trait for padding messages divided into blocks
 pub trait Padding<BlockSize: ArrayLength<u8>> {
-    /// Pads `block` filled with data up to `pos` (i.e length of a message
+    /// Pad `block` filled with data up to `pos` (i.e length of a message
     /// stored in the block is equal to `pos`).
     ///
-    /// Most padding algorithms return an error if `pos` is equal or bigger
-    /// than `BlockSize`.
+    /// Returns `PadError` if `pos` is bigger than `BlockSize`. Most padding
+    /// algorithms return `PadError` also if it is equal to `BlockSize`.
     fn pad(block: &mut Block<BlockSize>, pos: usize) -> Result<(), PadError>;
+
+    /// Pad slice and return resulting block.
+    ///
+    /// Returns `PadError` if `buf` length is bigger than `BlockSize`. Most
+    /// padding algorithms return `PadError` also if it is equal to `BlockSize`.
+    #[inline(always)]
+    fn pad_slice(buf: &[u8]) -> Result<Block<BlockSize>, PadError> {
+        if buf.len() > BlockSize::USIZE {
+            return Err(PadError);
+        }
+        let mut block = Block::<BlockSize>::default();
+        block[..buf.len()].copy_from_slice(buf);
+        Self::pad(&mut block, buf.len())?;
+        Ok(block)
+    }
 }
 
 /// Trait for unpaddable padding algorithms.
