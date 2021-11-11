@@ -10,4 +10,6 @@ members = [
     "inout",
     "opaque-debug",
     "wycheproof2blb",
+    "zeroize",
+    "zeroize/derive"
 ]
