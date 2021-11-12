@@ -95,6 +95,14 @@ impl<BlockSize: ArrayLength<u8>> BlockBuffer<BlockSize> {
         self.set_pos_unchecked(0)
     }
 
+    /// Pad remaining data with zeros and return resulting block.
+    pub fn pad_with_zeros(&mut self) -> &mut Block<BlockSize> {
+        let pos = self.get_pos();
+        self.buffer[pos..].iter_mut().for_each(|b| *b = 0);
+        self.set_pos_unchecked(0);
+        &mut self.buffer
+    }
+
     /// Pad message with 0x80, zeros and 64-bit message length using
     /// big-endian byte order.
     #[inline]
