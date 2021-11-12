@@ -41,11 +41,22 @@ pub type EagerBuffer<B> = BlockBuffer<B, Eager>;
 pub type LazyBuffer<B> = BlockBuffer<B, Lazy>;
 
 /// Buffer for block processing of data.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct BlockBuffer<BlockSize: ArrayLength<u8>, K: BufferKind> {
     buffer: Block<BlockSize>,
     pos: usize,
     _pd: PhantomData<K>,
+}
+
+impl<B: ArrayLength<u8>, K: BufferKind> Default for BlockBuffer<B, K> {
+    #[inline(always)]
+    fn default() -> Self {
+        Self {
+            buffer: Default::default(),
+            pos: 0,
+            _pd: PhantomData,
+        }
+    }
 }
 
 impl<BlockSize: ArrayLength<u8>, K: BufferKind> BlockBuffer<BlockSize, K> {
