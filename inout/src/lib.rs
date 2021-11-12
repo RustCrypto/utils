@@ -15,7 +15,7 @@ mod intmpout;
 mod inout_buf;
 mod intmpout_buf;
 
-pub use inout::InOut;
+pub use crate::inout::InOut;
 pub use intmpout::InTmpOut;
 pub use inout_buf::{InOutBuf, InOutBufIter, InSrc, IntoArrayError, NotEqualError};
 pub use intmpout_buf::InTmpOutBuf;
