@@ -26,10 +26,12 @@ pub trait BufferKind: sealed::Sealed {}
 
 /// Eager block buffer kind, which guarantees that buffer position
 /// always lies in the range of `0..BlockSize`.
+#[derive(Copy, Clone, Debug)]
 pub enum Eager {}
 
 /// Lazy block buffer kind, which guarantees that buffer position
 /// always lies in the range of `0..=BlockSize`.
+#[derive(Copy, Clone, Debug)]
 pub enum Lazy {}
 
 impl BufferKind for Eager {}
