@@ -1,15 +1,15 @@
 [package]
 name = "block-buffer"
-version = "0.10.0-pre.4" # Also update html_root_url in lib.rs when bumping this
+version = "0.10.0" # Also update html_root_url in lib.rs when bumping this
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
-description = "Fixed size buffer for block processing of data"
+description = "Buffer type for block processing of data"
 documentation = "https://docs.rs/block-buffer"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["block", "buffer"]
 categories = ["cryptography", "no-std"]
 edition = "2018"
+readme = "README.md"
 
 [dependencies]
-block-padding = { version = "0.3.0-pre", path = "../block-padding", optional = true }
 generic-array = "0.14"

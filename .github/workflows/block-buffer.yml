@@ -36,7 +36,6 @@ jobs:
           target: ${{ matrix.target }}
           override: true
       - run: cargo build --release --target ${{ matrix.target }}
-      - run: cargo build --features block-padding --release --target ${{ matrix.target }}
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -52,5 +51,4 @@ jobs:
         toolchain: ${{ matrix.rust }}
         override: true
     - run: cargo test --release
-    - run: cargo test --features block-padding --release
     - run: cargo test --all-features --release

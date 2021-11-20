@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.10.0 (2020-11-22)
+### Changed
+- Significant reduction of number of unreachable panics.
+- Added buffer kind type parameter to `BlockBuffer`, respective marker types, and type aliases.
+- Various `BlockBuffer` method changes.
+
+### Removed
+- `pad_with` method and dependency on `block-padding`.
+
 ## 0.10.0 (2020-12-08)
 ### Changed
 - Rename `input_block(s)` methods to `digest_block(s)`. ([#113])
