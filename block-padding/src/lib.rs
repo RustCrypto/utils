@@ -103,20 +103,6 @@ pub struct Pkcs7;
 
 impl Pkcs7 {
     #[inline]
-    fn pad<B: ArrayLength<u8>>(block: &mut Block<B>, pos: usize) {
-        // TODO: use bounds to check it at compile time
-        if B::USIZE > 255 {
-            panic!("block size is too big for PKCS#7");
-        }
-        if pos >= B::USIZE {
-            panic!("`pos` is bigger or equal to block size");
-        }
-        let n = (B::USIZE - pos) as u8;
-        for b in &mut block[pos..] {
-            *b = n;
-        }
-    }
-    #[inline]
     fn unpad<B: ArrayLength<u8>>(block: &Block<B>, strict: bool) -> Result<&[u8], UnpadError> {
         // TODO: use bounds to check it at compile time
         if B::USIZE > 255 {
@@ -138,7 +124,17 @@ impl Pkcs7 {
 impl<B: ArrayLength<u8>> Padding<B> for Pkcs7 {
     #[inline]
     fn pad(block: &mut Block<B>, pos: usize) {
-        Pkcs7::pad(block, pos)
+        // TODO: use bounds to check it at compile time
+        if B::USIZE > 255 {
+            panic!("block size is too big for PKCS#7");
+        }
+        if pos >= B::USIZE {
+            panic!("`pos` is bigger or equal to block size");
+        }
+        let n = (B::USIZE - pos) as u8;
+        for b in &mut block[pos..] {
+            *b = n;
+        }
     }
 
     #[inline]
@@ -170,7 +166,8 @@ pub struct Iso10126;
 impl<B: ArrayLength<u8>> Padding<B> for Iso10126 {
     #[inline]
     fn pad(block: &mut Block<B>, pos: usize) {
-        // Iso10126 padding is a specific case of Pkcs7 padding.
+        // Instead of generating random bytes as specified by Iso10126 we
+        // simply use Pkcs7 padding.
         Pkcs7::pad(block, pos)
     }
 
