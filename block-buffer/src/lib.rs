@@ -116,7 +116,9 @@ where
         mut compress: impl FnMut(&[Block<BlockSize>]),
     ) {
         let pos = self.get_pos();
-        let rem = self.remaining();
+        // using `self.remaining()` for some reason
+        // prevents panic elimination
+        let rem = self.size() - pos;
         let n = input.len();
         // Note that checking condition `pos + n < BlockSize` is
         // equivalent to checking `n < rem`, where `rem` is equal
