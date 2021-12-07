@@ -1,6 +1,6 @@
 # RustCrypto: Utilities
 
-[![Project Chat][chat-image]][chat-link] ![Apache2/MIT licensed][license-image] [![dependency status][deps-image]][deps-link]
+[![Project Chat][chat-image]][chat-link] [![dependency status][deps-image]][deps-link] ![Apache2/MIT licensed][license-image]
 
 This repository contains various utility crates used in the RustCrypto project.
 
