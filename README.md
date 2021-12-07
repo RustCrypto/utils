@@ -42,16 +42,16 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 [//]: # (crates)
 
-[`blobby`]: https://github.com/RustCrypto/utils/tree/master/blobby
-[`block-buffer`]: https://github.com/RustCrypto/utils/tree/master/block-buffer
-[`block‑padding`]: https://github.com/RustCrypto/utils/tree/master/block‑padding
-[`collectable`]: https://github.com/RustCrypto/utils/tree/master/collectable
-[`cpufeatures`]: https://github.com/RustCrypto/utils/tree/master/cpufeatures
-[`dbl`]: https://github.com/RustCrypto/utils/tree/master/dbl
-[`hex-literal`]: https://github.com/RustCrypto/utils/tree/master/hex-literal
-[`opaque-debug`]: https://github.com/RustCrypto/utils/tree/master/opaque-debug
-[`wycheproof2blb`]: https://github.com/RustCrypto/utils/tree/master/wycheproof2blb
-[`zeroize`]: https://github.com/RustCrypto/utils/tree/master/zeroize
+[`blobby`]: ./blobby
+[`block-buffer`]: ./block-buffer
+[`block‑padding`]: ./block‑padding
+[`collectable`]: ./collectable
+[`cpufeatures`]: ./cpufeatures
+[`dbl`]: ./dbl
+[`hex-literal`]: ./hex-literal
+[`opaque-debug`]: ./opaque-debug
+[`wycheproof2blb`]: ./wycheproof2blb
+[`zeroize`]: ./zeroize
 
 [//]: # (misc)
 
