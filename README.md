@@ -1,4 +1,6 @@
-# RustCrypto: Utilities [![Project Chat][chat-image]][chat-link] [![dependency status][deps-image]][deps-link]
+# RustCrypto: Utilities
+
+[![Project Chat][chat-image]][chat-link] [![dependency status][deps-image]][deps-link]
 
 This repository contains various utility crates used in the RustCrypto project.
 
