@@ -15,7 +15,7 @@ edition = "2018"
 readme = "README.md"
 
 [target.aarch64-apple-darwin.dependencies]
-libc = "0.2.103"
+libc = "0.2.110"
 
 [target.'cfg(all(target_arch = "aarch64", target_os = "linux"))'.dependencies]
-libc = "0.2.103"
+libc = "0.2.110"
