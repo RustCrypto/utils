@@ -1,5 +1,4 @@
-use super::{ArrayLength, Block};
-use core::slice;
+use super::ArrayLength;
 
 /// Sealed trait for buffer kinds.
 pub trait Sealed {
@@ -7,8 +6,8 @@ pub trait Sealed {
     /// buffer code this function always returns true.
     fn invariant(pos: usize, block_size: usize) -> bool;
 
-    /// Split input data into slice fo blocks and tail.
-    fn split_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[Block<N>], &[u8]);
+    /// Get the number of blocks for the input data
+    fn len<N: ArrayLength<u8>>(data: &[u8]) -> usize;
 }
 
 impl Sealed for super::Eager {
@@ -18,20 +17,8 @@ impl Sealed for super::Eager {
     }
 
     #[inline(always)]
-    fn split_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[Block<N>], &[u8]) {
-        let nb = data.len() / N::USIZE;
-        let blocks_len = nb * N::USIZE;
-        let tail_len = data.len() - blocks_len;
-        // SAFETY: we guarantee that created slices do not point
-        // outside of `data`
-        unsafe {
-            let blocks_ptr = data.as_ptr() as *const Block<N>;
-            let tail_ptr = data.as_ptr().add(blocks_len);
-            (
-                slice::from_raw_parts(blocks_ptr, nb),
-                slice::from_raw_parts(tail_ptr, tail_len),
-            )
-        }
+    fn len<N: ArrayLength<u8>>(data: &[u8]) -> usize {
+        data.len() / N::USIZE
     }
 }
 
@@ -42,23 +29,11 @@ impl Sealed for super::Lazy {
     }
 
     #[inline(always)]
-    fn split_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[Block<N>], &[u8]) {
-        let nb = if data.is_empty() || data.len() % N::USIZE != 0 {
+    fn len<N: ArrayLength<u8>>(data: &[u8]) -> usize {
+        if data.is_empty() || data.len() % N::USIZE != 0 {
             data.len() / N::USIZE
         } else {
             data.len() / N::USIZE - 1
-        };
-        let blocks_len = nb * N::USIZE;
-        let tail_len = data.len() - blocks_len;
-        // SAFETY: we guarantee that created slices do not point
-        // outside of `data`
-        unsafe {
-            let blocks_ptr = data.as_ptr() as *const Block<N>;
-            let tail_ptr = data.as_ptr().add(blocks_len);
-            (
-                slice::from_raw_parts(blocks_ptr, nb),
-                slice::from_raw_parts(tail_ptr, tail_len),
-            )
         }
     }
 }

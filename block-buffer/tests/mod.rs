@@ -30,7 +30,7 @@ fn test_eager_digest_pad() {
             n += 1;
             assert_eq!(i, j);
             assert_eq!(b.len(), exp.len());
-            assert!(b.iter().zip(exp.iter()).all(|v| v.0[..] == v.1[..]));
+            assert!(b.zip(exp.iter()).all(|v| v.0[..] == v.1[..]));
         });
         assert_eq!(exp_poses[i], buf.get_pos());
     }
@@ -64,7 +64,7 @@ fn test_lazy_digest_pad() {
             n += 1;
             assert_eq!(i, j);
             assert_eq!(b.len(), exp.len());
-            assert!(b.iter().zip(exp.iter()).all(|v| v.0[..] == v.1[..]));
+            assert!(b.zip(exp.iter()).all(|v| v.0[..] == v.1[..]));
         });
         assert_eq!(exp_poses[i], buf.get_pos());
     }

@@ -113,7 +113,7 @@ where
     pub fn digest_blocks(
         &mut self,
         mut input: &[u8],
-        mut compress: impl FnMut(&[Block<BlockSize>]),
+        mut compress: impl FnMut(&mut BlockIterator<'_, BlockSize, Kind>),
     ) {
         let pos = self.get_pos();
         // using `self.remaining()` for some reason
@@ -137,14 +137,17 @@ where
             let (left, right) = input.split_at(rem);
             input = right;
             self.buffer[pos..].copy_from_slice(left);
-            compress(slice::from_ref(&self.buffer));
+            let mut blocks = BlockIterator::new(self.buffer.as_slice());
+            blocks.force_flush = true;
+            compress(&mut blocks);
         }
 
-        let (blocks, leftover) = Kind::split_blocks(input);
-        if !blocks.is_empty() {
-            compress(blocks);
+        let mut blocks = BlockIterator::new(input);
+        if blocks.len() != 0 {
+            compress(&mut blocks);
         }
 
+        let leftover = blocks.data;
         let n = leftover.len();
         self.buffer[..n].copy_from_slice(leftover);
         self.set_pos_unchecked(n);
@@ -309,6 +312,68 @@ where
     #[inline]
     pub fn len128_padding_be(&mut self, data_len: u128, compress: impl FnMut(&Block<BlockSize>)) {
         self.digest_pad(0x80, &data_len.to_be_bytes(), compress);
+    }
+}
+
+/// Iterator to cast byte slices to block slices
+pub struct BlockIterator<'data, BlockSize, Kind>
+where
+    BlockSize: ArrayLength<u8> + IsLess<U256>,
+    Kind: BufferKind,
+{
+    data: &'data [u8],
+    pub(crate) force_flush: bool,
+    pd_block_size: PhantomData<BlockSize>,
+    pd_kind: PhantomData<Kind>,
+}
+
+impl<'data, BlockSize, Kind> Iterator for BlockIterator<'data, BlockSize, Kind>
+where
+    BlockSize: ArrayLength<u8> + IsLess<U256>,
+    Kind: BufferKind,
+{
+    type Item = &'data GenericArray<u8, BlockSize>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.force_flush {
+            self.force_flush = false;
+        } else if self.len() == 0 {
+            return None;
+        }
+
+        let (block, data) = self.data.split_at(BlockSize::USIZE);
+        self.data = data;
+
+        Some(GenericArray::from_slice(block))
+    }
+}
+
+impl<'data, BlockSize, Kind> ExactSizeIterator for BlockIterator<'data, BlockSize, Kind>
+where
+    BlockSize: ArrayLength<u8> + IsLess<U256>,
+    Kind: BufferKind,
+{
+    fn len(&self) -> usize {
+        if self.force_flush {
+            return 1;
+        }
+        Kind::len::<BlockSize>(self.data)
+    }
+}
+
+impl<'data, BlockSize, Kind> BlockIterator<'data, BlockSize, Kind>
+where
+    BlockSize: ArrayLength<u8> + IsLess<U256>,
+    Kind: BufferKind,
+{
+    /// Create new iterator from slice.
+    pub fn new(data: &'data [u8]) -> Self {
+        BlockIterator {
+            data,
+            force_flush: false,
+            pd_block_size: PhantomData::<BlockSize>,
+            pd_kind: PhantomData::<Kind>,
+        }
     }
 }
 
