@@ -66,12 +66,17 @@
 //! which automatically calls `zeroize()` on all members of a struct
 //! or tuple struct.
 //!
-//! Additionally it supports the following attributes:
+//! Attributes supported for `Zeroize`:
 //!
 //! On the item level:
-//! - `#[zeroize(drop)]`: call `zeroize()` when this item is dropped
+//! - `#[zeroize(drop)]`: *deprecated* use `ZeroizeOnDrop` instead
 //! - `#[zeroize(bound = "T: MyTrait")]`: this replaces any trait bounds
 //!   inferred by zeroize
+//!
+//! On the field level:
+//! - `#[zeroize(skip)]`: skips this field or variant when calling `zeroize()`
+//!
+//! Attributes supported for `ZeroizeOnDrop`:
 //!
 //! On the field level:
 //! - `#[zeroize(skip)]`: skips this field or variant when calling `zeroize()`
@@ -81,11 +86,10 @@
 //! ```
 //! # #[cfg(feature = "derive")]
 //! # {
-//! use zeroize::Zeroize;
+//! use zeroize::{Zeroize, ZeroizeDrop};
 //!
 //! // This struct will be zeroized on drop
-//! #[derive(Zeroize)]
-//! #[zeroize(drop)]
+//! #[derive(Zeroize, ZeroizeDrop)]
 //! struct MyStruct([u8; 32]);
 //! # }
 //! ```
@@ -99,6 +103,19 @@
 //!
 //! // This struct will *NOT* be zeroized on drop
 //! #[derive(Copy, Clone, Zeroize)]
+//! struct MyStruct([u8; 32]);
+//! # }
+//! ```
+//!
+//! Example which only derives `Drop`:
+//!
+//! ```
+//! # #[cfg(feature = "derive")]
+//! # {
+//! use zeroize::ZeroizeDrop;
+//!
+//! // This struct will be zeroized on drop
+//! #[derive(ZeroizeDrop)]
 //! struct MyStruct([u8; 32]);
 //! # }
 //! ```
@@ -219,7 +236,7 @@ extern crate alloc;
 
 #[cfg(feature = "zeroize_derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "zeroize_derive")))]
-pub use zeroize_derive::Zeroize;
+pub use zeroize_derive::{Zeroize, ZeroizeOnDrop};
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
@@ -241,6 +258,10 @@ pub trait Zeroize {
     /// zeroization operation is not "optimized away" by the compiler.
     fn zeroize(&mut self);
 }
+
+/// Marker trait signifying that this type will [`zeroize`](Zeroize::zeroize) itself on [`Drop`].
+#[allow(drop_bounds)]
+pub trait ZeroizeOnDrop: Drop {}
 
 /// Marker trait for types whose `Default` is the desired zeroization result
 pub trait DefaultIsZeroes: Copy + Default + Sized {}
@@ -530,6 +551,8 @@ where
         self.0.zeroize();
     }
 }
+
+impl<Z> ZeroizeOnDrop for Zeroizing<Z> where Z: Zeroize {}
 
 impl<Z> Drop for Zeroizing<Z>
 where
