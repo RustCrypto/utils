@@ -22,13 +22,25 @@ decl_derive!(
     /// Supports the following attributes:
     ///
     /// On the item level:
-    /// - `#[zeroize(drop)]`: call `zeroize()` when this item is dropped
+    /// - `#[zeroize(drop)]`: *deprecated* use `ZeroizeOnDrop` instead
     /// - `#[zeroize(bound = "T: MyTrait")]`: this replaces any trait bounds
     ///   inferred by zeroize-derive
     ///
     /// On the field level:
     /// - `#[zeroize(skip)]`: skips this field or variant when calling `zeroize()`
     derive_zeroize
+);
+
+decl_derive!(
+    [ZeroizeOnDrop, attributes(zeroize)] =>
+
+    /// Derive the `ZeroizeOnDrop` trait.
+    ///
+    /// Supports the following attributes:
+    ///
+    /// On the field level:
+    /// - `#[zeroize(skip)]`: skips this field or variant when calling `zeroize()`
+    derive_zeroize_on_drop
 );
 
 /// Name of zeroize-related attributes
@@ -52,6 +64,29 @@ fn derive_zeroize(mut s: synstructure::Structure<'_>) -> TokenStream {
         derive_zeroize_with_drop(s)
     } else {
         derive_zeroize_without_drop(s)
+    }
+}
+
+/// Custom derive for `ZeroizeOnDrop`
+fn derive_zeroize_on_drop(mut s: synstructure::Structure<'_>) -> TokenStream {
+    let zeroizers = generate_fields(&mut s);
+
+    let drop_impl = s.gen_impl(quote! {
+        gen impl Drop for @Self {
+            fn drop(&mut self) {
+                match self {
+                    #zeroizers
+                }
+            }
+        }
+    });
+
+    let zeroize_on_drop_impl = impl_zeroize_on_drop(&s);
+
+    quote! {
+        #drop_impl
+
+        #zeroize_on_drop_impl
     }
 }
 
@@ -216,6 +251,23 @@ impl ZeroizeAttrs {
     }
 }
 
+fn generate_fields(s: &mut synstructure::Structure<'_>) -> TokenStream {
+    s.bind_with(|_| BindStyle::RefMut);
+
+    s.filter_variants(|vi| {
+        let result = filter_skip(vi.ast().attrs, true);
+
+        // check for duplicate `#[zeroize(skip)]` attributes in nested variants
+        for field in vi.ast().fields {
+            filter_skip(&field.attrs, result);
+        }
+
+        result
+    })
+    .filter(|bi| filter_skip(&bi.ast().attrs, true))
+    .each(|bi| quote! { #bi.zeroize(); })
+}
+
 fn filter_skip(attrs: &[Attribute], start: bool) -> bool {
     let mut result = start;
 
@@ -239,21 +291,7 @@ fn filter_skip(attrs: &[Attribute], start: bool) -> bool {
 
 /// Custom derive for `Zeroize` (without `Drop`)
 fn derive_zeroize_without_drop(mut s: synstructure::Structure<'_>) -> TokenStream {
-    s.bind_with(|_| BindStyle::RefMut);
-
-    let zeroizers = s
-        .filter_variants(|vi| {
-            let result = filter_skip(vi.ast().attrs, true);
-
-            // check for duplicate `#[zeroize(skip)]` attributes in nested variants
-            for field in vi.ast().fields {
-                filter_skip(&field.attrs, result);
-            }
-
-            result
-        })
-        .filter(|bi| filter_skip(&bi.ast().attrs, true))
-        .each(|bi| quote! { #bi.zeroize(); });
+    let zeroizers = generate_fields(&mut s);
 
     s.bound_impl(
         quote!(zeroize::Zeroize),
@@ -277,6 +315,8 @@ fn derive_zeroize_with_drop(s: synstructure::Structure<'_>) -> TokenStream {
         }
     });
 
+    let zeroize_on_drop_impl = impl_zeroize_on_drop(&s);
+
     let zeroize_impl = derive_zeroize_without_drop(s);
 
     quote! {
@@ -284,7 +324,14 @@ fn derive_zeroize_with_drop(s: synstructure::Structure<'_>) -> TokenStream {
 
         #[doc(hidden)]
         #drop_impl
+
+        #zeroize_on_drop_impl
     }
+}
+
+fn impl_zeroize_on_drop(s: &synstructure::Structure<'_>) -> TokenStream {
+    #[allow(unused_qualifications)]
+    s.bound_impl(quote!(zeroize::ZeroizeOnDrop), Option::<TokenStream>::None)
 }
 
 #[cfg(test)]
@@ -369,6 +416,12 @@ mod tests {
                         }
                     }
                 };
+                #[allow(non_upper_case_globals)]
+                #[doc(hidden)]
+                const _DERIVE_zeroize_ZeroizeOnDrop_FOR_Z: () = {
+                    extern crate zeroize;
+                    impl zeroize::ZeroizeOnDrop for Z {}
+                };
             }
             no_build // tests the code compiles are in the `zeroize` crate
         }
@@ -433,6 +486,46 @@ mod tests {
                             }
                         }
                     }
+                };
+            }
+            no_build // tests the code compiles are in the `zeroize` crate
+        }
+    }
+
+    #[test]
+    fn zeroize_only_drop() {
+        test_derive! {
+            derive_zeroize_on_drop {
+                struct Z {
+                    a: String,
+                    b: Vec<u8>,
+                    c: [u8; 3],
+                }
+            }
+            expands to {
+                #[allow(non_upper_case_globals)]
+                const _DERIVE_Drop_FOR_Z: () = {
+                    impl Drop for Z {
+                        fn drop(&mut self) {
+                            match self {
+                                Z {
+                                    a: ref mut __binding_0,
+                                    b: ref mut __binding_1,
+                                    c: ref mut __binding_2,
+                                } => {
+                                    { __binding_0.zeroize(); }
+                                    { __binding_1.zeroize(); }
+                                    { __binding_2.zeroize(); }
+                                }
+                            }
+                        }
+                    }
+                };
+                #[allow(non_upper_case_globals)]
+                #[doc(hidden)]
+                const _DERIVE_zeroize_ZeroizeOnDrop_FOR_Z: () = {
+                    extern crate zeroize;
+                    impl zeroize::ZeroizeOnDrop for Z {}
                 };
             }
             no_build // tests the code compiles are in the `zeroize` crate

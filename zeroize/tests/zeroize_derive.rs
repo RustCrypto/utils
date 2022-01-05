@@ -2,12 +2,11 @@
 
 #[cfg(feature = "zeroize_derive")]
 mod custom_derive_tests {
-    use zeroize::Zeroize;
+    use zeroize::{Zeroize, ZeroizeOnDrop};
 
     #[test]
     fn derive_tuple_struct_test() {
-        #[derive(Zeroize)]
-        #[zeroize(drop)]
+        #[derive(Zeroize, ZeroizeOnDrop)]
         struct Z([u8; 3]);
 
         let mut value = Z([1, 2, 3]);
@@ -17,8 +16,7 @@ mod custom_derive_tests {
 
     #[test]
     fn derive_struct_test() {
-        #[derive(Zeroize)]
-        #[zeroize(drop)]
+        #[derive(Zeroize, ZeroizeOnDrop)]
         struct Z {
             string: String,
             vec: Vec<u8>,
@@ -46,8 +44,7 @@ mod custom_derive_tests {
 
     #[test]
     fn derive_enum_test() {
-        #[derive(Zeroize)]
-        #[zeroize(drop)]
+        #[derive(Zeroize, ZeroizeOnDrop)]
         enum Z {
             #[allow(dead_code)]
             Variant1,
@@ -64,8 +61,7 @@ mod custom_derive_tests {
     /// Test that the custom macro actually derived `Drop` for `Z`
     #[test]
     fn derive_struct_drop() {
-        #[derive(Zeroize)]
-        #[zeroize(drop)]
+        #[derive(Zeroize, ZeroizeOnDrop)]
         struct Z([u8; 3]);
 
         assert!(std::mem::needs_drop::<Z>());
@@ -75,8 +71,29 @@ mod custom_derive_tests {
     #[test]
     fn derive_enum_drop() {
         #[allow(dead_code)]
-        #[derive(Zeroize)]
-        #[zeroize(drop)]
+        #[derive(Zeroize, ZeroizeOnDrop)]
+        enum Z {
+            Variant1,
+            Variant2(usize),
+        }
+
+        assert!(std::mem::needs_drop::<Z>());
+    }
+
+    /// Test that the custom macro actually derived `Drop` for `Z`
+    #[test]
+    fn derive_struct_only_drop() {
+        #[derive(ZeroizeOnDrop)]
+        struct Z([u8; 3]);
+
+        assert!(std::mem::needs_drop::<Z>());
+    }
+
+    /// Test that the custom macro actually derived `Drop` for `Z`
+    #[test]
+    fn derive_enum_only_drop() {
+        #[allow(dead_code)]
+        #[derive(ZeroizeOnDrop)]
         enum Z {
             Variant1,
             Variant2(usize),
@@ -107,8 +124,7 @@ mod custom_derive_tests {
 
     #[test]
     fn derive_struct_skip() {
-        #[derive(Zeroize)]
-        #[zeroize(drop)]
+        #[derive(Zeroize, ZeroizeOnDrop)]
         struct Z {
             string: String,
             vec: Vec<u8>,
@@ -137,8 +153,7 @@ mod custom_derive_tests {
 
     #[test]
     fn derive_enum_skip() {
-        #[derive(Zeroize)]
-        #[zeroize(drop)]
+        #[derive(Zeroize, ZeroizeOnDrop)]
         enum Z {
             #[allow(dead_code)]
             Variant1,
