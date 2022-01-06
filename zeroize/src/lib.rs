@@ -260,8 +260,7 @@ pub trait Zeroize {
 }
 
 /// Marker trait signifying that this type will [`zeroize`](Zeroize::zeroize) itself on [`Drop`].
-#[allow(drop_bounds)]
-pub trait ZeroizeOnDrop: Drop {}
+pub trait ZeroizeOnDrop {}
 
 /// Marker trait for types whose `Default` is the desired zeroization result
 pub trait DefaultIsZeroes: Copy + Default + Sized {}
@@ -324,6 +323,8 @@ where
         self.iter_mut().zeroize();
     }
 }
+/// Implement `ZeroizeOnDrop` on arrays of types that impl `ZeroizeOnDrop`
+impl<Z, const N: usize> ZeroizeOnDrop for [Z; N] where Z: ZeroizeOnDrop {}
 
 impl<'a, Z> Zeroize for IterMut<'a, Z>
 where
@@ -375,6 +376,8 @@ where
         atomic_fence();
     }
 }
+
+impl<Z> ZeroizeOnDrop for Option<Z> where Z: ZeroizeOnDrop {}
 
 /// Impl `Zeroize` on slices of MaybeUninit types
 /// This impl can eventually be optimized using an memset intrinsic,
@@ -455,6 +458,10 @@ where
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl<Z> ZeroizeOnDrop for Vec<Z> where Z: ZeroizeOnDrop {}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<Z> Zeroize for Box<[Z]>
 where
     Z: Zeroize,
@@ -465,6 +472,10 @@ where
         self.iter_mut().zeroize();
     }
 }
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl<Z> ZeroizeOnDrop for Box<[Z]> where Z: ZeroizeOnDrop {}
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
@@ -607,14 +618,20 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
 impl<Z> Zeroize for PhantomData<Z> {
     fn zeroize(&mut self) {}
 }
+/// `PhantomData` is always zero sized so provide a ZeroizeOnDrop implementation.
+impl<Z> ZeroizeOnDrop for PhantomData<Z> {}
 /// `PhantomPinned` is zero sized so provide a Zeroize implementation.
 impl Zeroize for PhantomPinned {
     fn zeroize(&mut self) {}
 }
+/// `PhantomPinned` is zero sized so provide a ZeroizeOnDrop implementation.
+impl ZeroizeOnDrop for PhantomPinned {}
 /// `()` is zero sized so provide a Zeroize implementation.
 impl Zeroize for () {
     fn zeroize(&mut self) {}
 }
+/// `()` is zero sized so provide a ZeroizeOnDrop implementation.
+impl ZeroizeOnDrop for () {}
 
 /// Generic implementation of Zeroize for tuples up to 10 parameters.
 impl<A: Zeroize> Zeroize for (A,) {
@@ -622,6 +639,8 @@ impl<A: Zeroize> Zeroize for (A,) {
         self.0.zeroize();
     }
 }
+/// Generic implementation of ZeroizeOnDrop for tuples up to 10 parameters.
+impl<A: ZeroizeOnDrop> ZeroizeOnDrop for (A,) {}
 macro_rules! impl_zeroize_tuple {
     ( $( $type_name:ident )+ ) => {
         impl<$($type_name: Zeroize),+> Zeroize for ($($type_name),+) {
@@ -631,6 +650,8 @@ macro_rules! impl_zeroize_tuple {
                 $($type_name.zeroize());+
             }
         }
+
+        impl<$($type_name: ZeroizeOnDrop),+> ZeroizeOnDrop for ($($type_name),+) { }
     }
 }
 // Generic implementations for tuples up to 10 parameters.
@@ -652,6 +673,15 @@ mod tests {
 
     #[cfg(feature = "alloc")]
     use alloc::boxed::Box;
+
+    #[derive(Clone, Debug, PartialEq)]
+    struct ZeroizedOnDrop(u64);
+
+    impl Drop for ZeroizedOnDrop {
+        fn drop(&mut self) {
+            self.0.zeroize();
+        }
+    }
 
     #[test]
     fn non_zero() {
@@ -689,6 +719,13 @@ mod tests {
     }
 
     #[test]
+    fn zeroize_on_drop_byte_arrays() {
+        let mut arr = [ZeroizedOnDrop(42); 1];
+        unsafe { core::ptr::drop_in_place(&mut arr) };
+        assert_eq!(arr.as_ref(), [ZeroizedOnDrop(0); 1].as_ref());
+    }
+
+    #[test]
     fn zeroize_maybeuninit_byte_arrays() {
         let mut arr = [MaybeUninit::new(42u64); 64];
         arr.zeroize();
@@ -714,6 +751,17 @@ mod tests {
         let mut tup2 = (42u8, 42u8);
         tup2.zeroize();
         assert_eq!(tup2, (0u8, 0u8));
+    }
+
+    #[test]
+    fn zeroize_on_drop_check_tuple() {
+        let mut tup1 = (ZeroizedOnDrop(42),);
+        unsafe { core::ptr::drop_in_place(&mut tup1) };
+        assert_eq!(tup1, (ZeroizedOnDrop(0),));
+
+        let mut tup2 = (ZeroizedOnDrop(42), ZeroizedOnDrop(42));
+        unsafe { core::ptr::drop_in_place(&mut tup2) };
+        assert_eq!(tup2, (ZeroizedOnDrop(0), ZeroizedOnDrop(0)));
     }
 
     #[cfg(feature = "alloc")]
