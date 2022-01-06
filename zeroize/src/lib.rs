@@ -262,6 +262,31 @@ pub trait Zeroize {
 /// Marker trait signifying that this type will [`zeroize`](Zeroize::zeroize) itself on [`Drop`].
 pub trait ZeroizeOnDrop {}
 
+#[doc(hidden)]
+pub mod __internal {
+    use super::*;
+
+    /// Auto-deref workaround for deriving `ZeroizeOnDrop`.
+    pub trait AssertZeroizeOnDrop {
+        fn zeroize_or_on_drop(&mut self);
+    }
+
+    impl<T: ZeroizeOnDrop> AssertZeroizeOnDrop for &mut T {
+        fn zeroize_or_on_drop(&mut self) {}
+    }
+
+    /// Auto-deref workaround for deriving `ZeroizeOnDrop`.
+    pub trait AssertZeroize {
+        fn zeroize_or_on_drop(&mut self);
+    }
+
+    impl<T: Zeroize> AssertZeroize for T {
+        fn zeroize_or_on_drop(&mut self) {
+            self.zeroize()
+        }
+    }
+}
+
 /// Marker trait for types whose `Default` is the desired zeroization result
 pub trait DefaultIsZeroes: Copy + Default + Sized {}
 

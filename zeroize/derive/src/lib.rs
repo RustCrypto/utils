@@ -69,11 +69,13 @@ fn derive_zeroize(mut s: synstructure::Structure<'_>) -> TokenStream {
 
 /// Custom derive for `ZeroizeOnDrop`
 fn derive_zeroize_on_drop(mut s: synstructure::Structure<'_>) -> TokenStream {
-    let zeroizers = generate_fields(&mut s);
+    let zeroizers = generate_fields(&mut s, quote! { zeroize_or_on_drop });
 
     let drop_impl = s.gen_impl(quote! {
         gen impl Drop for @Self {
             fn drop(&mut self) {
+                use zeroize::__internal::AssertZeroize;
+                use zeroize::__internal::AssertZeroizeOnDrop;
                 match self {
                     #zeroizers
                 }
@@ -251,7 +253,7 @@ impl ZeroizeAttrs {
     }
 }
 
-fn generate_fields(s: &mut synstructure::Structure<'_>) -> TokenStream {
+fn generate_fields(s: &mut synstructure::Structure<'_>, method: TokenStream) -> TokenStream {
     s.bind_with(|_| BindStyle::RefMut);
 
     s.filter_variants(|vi| {
@@ -265,7 +267,7 @@ fn generate_fields(s: &mut synstructure::Structure<'_>) -> TokenStream {
         result
     })
     .filter(|bi| filter_skip(&bi.ast().attrs, true))
-    .each(|bi| quote! { #bi.zeroize(); })
+    .each(|bi| quote! { #bi.#method(); })
 }
 
 fn filter_skip(attrs: &[Attribute], start: bool) -> bool {
@@ -291,7 +293,7 @@ fn filter_skip(attrs: &[Attribute], start: bool) -> bool {
 
 /// Custom derive for `Zeroize` (without `Drop`)
 fn derive_zeroize_without_drop(mut s: synstructure::Structure<'_>) -> TokenStream {
-    let zeroizers = generate_fields(&mut s);
+    let zeroizers = generate_fields(&mut s, quote! { zeroize });
 
     s.bound_impl(
         quote!(zeroize::Zeroize),
@@ -507,15 +509,17 @@ mod tests {
                 const _DERIVE_Drop_FOR_Z: () = {
                     impl Drop for Z {
                         fn drop(&mut self) {
+                            use zeroize::__internal::AssertZeroize;
+                            use zeroize::__internal::AssertZeroizeOnDrop;
                             match self {
                                 Z {
                                     a: ref mut __binding_0,
                                     b: ref mut __binding_1,
                                     c: ref mut __binding_2,
                                 } => {
-                                    { __binding_0.zeroize(); }
-                                    { __binding_1.zeroize(); }
-                                    { __binding_2.zeroize(); }
+                                    { __binding_0.zeroize_or_on_drop(); }
+                                    { __binding_1.zeroize_or_on_drop(); }
+                                    { __binding_2.zeroize_or_on_drop(); }
                                 }
                             }
                         }
