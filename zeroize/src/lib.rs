@@ -226,7 +226,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
-    html_root_url = "https://docs.rs/zeroize/1.4.3"
+    html_root_url = "https://docs.rs/zeroize/1.5.0-pre"
 )]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
