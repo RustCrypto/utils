@@ -1,0 +1,22 @@
+[package]
+name = "flex-array"
+version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
+description = """
+Flexible typenum-based generic array types designed to maximize
+interoperability with const generics
+"""
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/flex-array"
+repository = "https://github.com/RustCrypto/utils"
+categories = ["no-std"]
+readme = "README.md"
+edition = "2021"
+rust-version = "1.56"
+
+[dependencies]
+typenum = "1"
+
+# Hack to allow this crate to coexist with pre-2021 edition crates
+[workspace]
+members = ["."]
