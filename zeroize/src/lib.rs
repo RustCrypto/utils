@@ -84,7 +84,7 @@
 //! Example which derives `Drop`:
 //!
 //! ```
-//! # #[cfg(feature = "derive")]
+//! # #[cfg(feature = "zeroize_derive")]
 //! # {
 //! use zeroize::{Zeroize, ZeroizeOnDrop};
 //!
@@ -97,7 +97,7 @@
 //! Example which does not derive `Drop` (useful for e.g. `Copy` types)
 //!
 //! ```
-//! #[cfg(feature = "derive")]
+//! #[cfg(feature = "zeroize_derive")]
 //! # {
 //! use zeroize::Zeroize;
 //!
@@ -110,7 +110,7 @@
 //! Example which only derives `Drop`:
 //!
 //! ```
-//! # #[cfg(feature = "derive")]
+//! # #[cfg(feature = "zeroize_derive")]
 //! # {
 //! use zeroize::ZeroizeOnDrop;
 //!
