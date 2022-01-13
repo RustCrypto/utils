@@ -86,10 +86,10 @@
 //! ```
 //! # #[cfg(feature = "derive")]
 //! # {
-//! use zeroize::{Zeroize, ZeroizeDrop};
+//! use zeroize::{Zeroize, ZeroizeOnDrop};
 //!
 //! // This struct will be zeroized on drop
-//! #[derive(Zeroize, ZeroizeDrop)]
+//! #[derive(Zeroize, ZeroizeOnDrop)]
 //! struct MyStruct([u8; 32]);
 //! # }
 //! ```
@@ -112,10 +112,10 @@
 //! ```
 //! # #[cfg(feature = "derive")]
 //! # {
-//! use zeroize::ZeroizeDrop;
+//! use zeroize::ZeroizeOnDrop;
 //!
 //! // This struct will be zeroized on drop
-//! #[derive(ZeroizeDrop)]
+//! #[derive(ZeroizeOnDrop)]
 //! struct MyStruct([u8; 32]);
 //! # }
 //! ```
