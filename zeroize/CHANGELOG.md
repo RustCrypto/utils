@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.5.0 (2022-01-14)
+### Added
+- `Zeroize` impls for `PhantomData`, `PhantomPinned`, and tuples with 0-10 elements ([#660])
+- `#[zeroize(bound = "T: MyTrait")]` ([#663])
+- `ZeroizeOnDrop` trait and custom derive ([#699], [#700], [#703])
+
+[#660]: https://github.com/RustCrypto/utils/pull/660
+[#663]: https://github.com/RustCrypto/utils/pull/663
+[#699]: https://github.com/RustCrypto/utils/pull/699
+[#700]: https://github.com/RustCrypto/utils/pull/700
+[#703]: https://github.com/RustCrypto/utils/pull/703
+
 ## 1.4.3 (2021-11-04)
 ### Added
 - Implement `Zeroize` for `NonZeroX`

@@ -1,3 +1,12 @@
+#![no_std]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
+    html_root_url = "https://docs.rs/zeroize/1.5.0"
+)]
+#![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
+
 //! Securely zero memory with a simple trait ([`Zeroize`]) built on stable Rust
 //! primitives which guarantee the operation will not be "optimized away".
 //!
@@ -220,15 +229,6 @@
 //! [these remarks have been removed]: https://github.com/rust-lang/rust/pull/60972
 //! [good cryptographic hygiene]: https://github.com/veorq/cryptocoding#clean-memory-of-secret-data
 //! [`Ordering::SeqCst`]: core::sync::atomic::Ordering::SeqCst
-
-#![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![doc(
-    html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
-    html_root_url = "https://docs.rs/zeroize/1.5.0-pre"
-)]
-#![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(test, macro_use)]
