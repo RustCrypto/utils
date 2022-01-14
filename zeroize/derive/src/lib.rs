@@ -317,8 +317,6 @@ fn derive_zeroize_with_drop(s: synstructure::Structure<'_>) -> TokenStream {
         }
     });
 
-    let zeroize_on_drop_impl = impl_zeroize_on_drop(&s);
-
     let zeroize_impl = derive_zeroize_without_drop(s);
 
     quote! {
@@ -326,8 +324,6 @@ fn derive_zeroize_with_drop(s: synstructure::Structure<'_>) -> TokenStream {
 
         #[doc(hidden)]
         #drop_impl
-
-        #zeroize_on_drop_impl
     }
 }
 
@@ -417,12 +413,6 @@ mod tests {
                             self.zeroize();
                         }
                     }
-                };
-                #[allow(non_upper_case_globals)]
-                #[doc(hidden)]
-                const _DERIVE_zeroize_ZeroizeOnDrop_FOR_Z: () = {
-                    extern crate zeroize;
-                    impl zeroize::ZeroizeOnDrop for Z {}
                 };
             }
             no_build // tests the code compiles are in the `zeroize` crate
