@@ -19,8 +19,8 @@ use core::{
 };
 use typenum::Unsigned;
 
-/// Array length expressed as a const generic parameter.
-pub trait Array<T, const N: usize>:
+/// Array operations which are const generic over a given array size.
+pub trait ArrayOps<T, const N: usize>:
     AsRef<[T; N]>
     + AsMut<[T; N]>
     + Borrow<[T; N]>
@@ -55,7 +55,7 @@ pub trait Array<T, const N: usize>:
     }
 
     /// Create array from Rust's core array type.
-    fn from_array(arr: [T; N]) -> Self;
+    fn from_core_array(arr: [T; N]) -> Self;
 
     /// Create array where each array element `T` is returned by the `cb` call.
     fn from_fn<F>(mut cb: F) -> Self
@@ -63,7 +63,7 @@ pub trait Array<T, const N: usize>:
         F: FnMut(usize) -> T,
     {
         let mut idx = 0;
-        Self::from_array([(); N].map(|_| {
+        Self::from_core_array([(); N].map(|_| {
             let res = cb(idx);
             idx += 1;
             res
@@ -98,22 +98,22 @@ pub trait Array<T, const N: usize>:
 /// `typenum`-provided [`Unsigned`] integer.
 pub trait ArrayLength<T>: Unsigned {
     /// Array type which corresponds to this length.
-    type ArrayType: AsRef<[T]> + AsMut<[T]> + IntoFlexArray<T> + Sized;
+    type ArrayType: AsRef<[T]> + AsMut<[T]> + IntoArray<T> + Sized;
 }
 
-/// Convert the given type into a [`FlexArray`].
-pub trait IntoFlexArray<T> {
-    /// Length of the [`FlexArray`].
+/// Convert the given type into an [`Array`].
+pub trait IntoArray<T> {
+    /// Length of the [`Array`].
     type Length: ArrayLength<T>;
 
-    /// Convert into a [`FlexArray`].
-    fn into_flex_array(self) -> FlexArray<T, Self::Length>;
+    /// Convert into the `flex-array` crate's [`Array`] type.
+    fn into_flex_array(self) -> Array<T, Self::Length>;
 }
 
 macro_rules! impl_array_length {
     ($($len:expr => $ty:ident),+) => {
         $(
-            impl<T> Array<T, $len> for FlexArray<T, typenum::$ty> {
+            impl<T> ArrayOps<T, $len> for Array<T, typenum::$ty> {
                 type Length = typenum::$ty;
 
                 fn as_array_ref(&self) -> &[T; $len] {
@@ -125,7 +125,7 @@ macro_rules! impl_array_length {
                 }
 
                 #[inline]
-                fn from_array(arr: [T; $len]) -> Self {
+                fn from_core_array(arr: [T; $len]) -> Self {
                     Self(arr)
                 }
 
@@ -150,7 +150,7 @@ macro_rules! impl_array_length {
                 type ArrayType = [T; $len];
             }
 
-            impl<T, I> Index<I> for FlexArray<T, typenum::$ty>
+            impl<T, I> Index<I> for Array<T, typenum::$ty>
             where
                 [T]: Index<I>,
             {
@@ -162,7 +162,7 @@ macro_rules! impl_array_length {
                 }
             }
 
-            impl<T, I> IndexMut<I> for FlexArray<T, typenum::$ty>
+            impl<T, I> IndexMut<I> for Array<T, typenum::$ty>
             where
                 [T]: IndexMut<I>,
             {
@@ -172,15 +172,15 @@ macro_rules! impl_array_length {
                 }
             }
 
-            impl<T> IntoFlexArray<T> for [T; $len] {
+            impl<T> IntoArray<T> for [T; $len] {
                 type Length = typenum::$ty;
 
-                fn into_flex_array(self) -> FlexArray<T, Self::Length> {
-                    FlexArray::from_array(self)
+                fn into_flex_array(self) -> Array<T, Self::Length> {
+                    Array::from_core_array(self)
                 }
             }
 
-            impl<T> IntoIterator for FlexArray<T, typenum::$ty> {
+            impl<T> IntoIterator for Array<T, typenum::$ty> {
                 type Item = T;
                 type IntoIter = IntoIter<T, $len>;
 
@@ -192,7 +192,7 @@ macro_rules! impl_array_length {
                 }
             }
 
-            impl<'a, T> IntoIterator for &'a FlexArray<T, typenum::$ty> {
+            impl<'a, T> IntoIterator for &'a Array<T, typenum::$ty> {
                 type Item = &'a T;
                 type IntoIter = Iter<'a, T>;
 
@@ -201,7 +201,7 @@ macro_rules! impl_array_length {
                 }
             }
 
-            impl<'a, T> IntoIterator for &'a mut FlexArray<T, typenum::$ty> {
+            impl<'a, T> IntoIterator for &'a mut Array<T, typenum::$ty> {
                 type Item = &'a mut T;
                 type IntoIter = IterMut<'a, T>;
 
@@ -211,14 +211,14 @@ macro_rules! impl_array_length {
                 }
             }
 
-            impl<T> TryFrom<&[T]> for FlexArray<T, typenum::$ty>
+            impl<T> TryFrom<&[T]> for Array<T, typenum::$ty>
             where
                 T: Copy,
             {
                 type Error = TryFromSliceError;
 
                 #[inline]
-                fn try_from(slice: &[T]) -> Result<FlexArray<T, typenum::$ty>, TryFromSliceError> {
+                fn try_from(slice: &[T]) -> Result<Array<T, typenum::$ty>, TryFromSliceError> {
                     Self::from_slice(slice)
                 }
             }
@@ -310,11 +310,11 @@ impl_array_length! {
 /// Flexible generic array type.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct FlexArray<T, U: ArrayLength<T>>(pub U::ArrayType);
+pub struct Array<T, U: ArrayLength<T>>(pub U::ArrayType);
 
-impl<T, U, const N: usize> AsRef<[T; N]> for FlexArray<T, U>
+impl<T, U, const N: usize> AsRef<[T; N]> for Array<T, U>
 where
-    Self: Array<T, N>,
+    Self: ArrayOps<T, N>,
     U: ArrayLength<T>,
 {
     #[inline]
@@ -323,9 +323,9 @@ where
     }
 }
 
-impl<T, U, const N: usize> AsMut<[T; N]> for FlexArray<T, U>
+impl<T, U, const N: usize> AsMut<[T; N]> for Array<T, U>
 where
-    Self: Array<T, N>,
+    Self: ArrayOps<T, N>,
     U: ArrayLength<T>,
 {
     #[inline]
@@ -334,9 +334,9 @@ where
     }
 }
 
-impl<T, U, const N: usize> Borrow<[T; N]> for FlexArray<T, U>
+impl<T, U, const N: usize> Borrow<[T; N]> for Array<T, U>
 where
-    Self: Array<T, N>,
+    Self: ArrayOps<T, N>,
     U: ArrayLength<T>,
 {
     #[inline]
@@ -345,9 +345,9 @@ where
     }
 }
 
-impl<T, U, const N: usize> BorrowMut<[T; N]> for FlexArray<T, U>
+impl<T, U, const N: usize> BorrowMut<[T; N]> for Array<T, U>
 where
-    Self: Array<T, N>,
+    Self: ArrayOps<T, N>,
     U: ArrayLength<T>,
 {
     #[inline]
@@ -356,16 +356,16 @@ where
     }
 }
 
-impl<T, U, const N: usize> From<[T; N]> for FlexArray<T, U>
+impl<T, U, const N: usize> From<[T; N]> for Array<T, U>
 where
-    Self: Array<T, N>,
+    Self: ArrayOps<T, N>,
     U: ArrayLength<T>,
 {
     #[inline]
-    fn from(arr: [T; N]) -> FlexArray<T, U> {
-        Self::from_array(arr)
+    fn from(arr: [T; N]) -> Array<T, U> {
+        Self::from_core_array(arr)
     }
 }
 
 /// Byte array type.
-pub type ByteArray<U> = FlexArray<u8, U>;
+pub type ByteArray<U> = Array<u8, U>;
