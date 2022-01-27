@@ -240,4 +240,19 @@ mod custom_derive_tests {
 
         assert_eq!(value.0, 0);
     }
+
+    #[test]
+    fn derive_only_zeroize_on_drop() {
+        #[derive(ZeroizeOnDrop)]
+        struct X([u8; 3]);
+
+        #[derive(ZeroizeOnDrop)]
+        struct Z(X);
+
+        let mut value = Z(X([1, 2, 3]));
+        unsafe {
+            std::ptr::drop_in_place(&mut value);
+        }
+        assert_eq!(&value.0 .0, &[0, 0, 0])
+    }
 }

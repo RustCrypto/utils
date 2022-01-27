@@ -268,11 +268,11 @@ pub mod __internal {
 
     /// Auto-deref workaround for deriving `ZeroizeOnDrop`.
     pub trait AssertZeroizeOnDrop {
-        fn zeroize_or_on_drop(&mut self);
+        fn zeroize_or_on_drop(self);
     }
 
     impl<T: ZeroizeOnDrop> AssertZeroizeOnDrop for &mut T {
-        fn zeroize_or_on_drop(&mut self) {}
+        fn zeroize_or_on_drop(self) {}
     }
 
     /// Auto-deref workaround for deriving `ZeroizeOnDrop`.
