@@ -7,7 +7,7 @@ operation will not be 'optimized away' by the compiler.
 Uses a portable pure Rust implementation that works everywhere,
 even WASM!
 """
-version = "1.5.1" # Also update html_root_url in lib.rs when bumping this
+version = "1.5.2" # Also update html_root_url in lib.rs when bumping this
 authors = ["The RustCrypto Project Developers"]
 license = "Apache-2.0 OR MIT"
 repository = "https://github.com/RustCrypto/utils/tree/master/zeroize"
