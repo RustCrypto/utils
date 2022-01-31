@@ -271,7 +271,7 @@ pub mod __internal {
         fn zeroize_or_on_drop(self);
     }
 
-    impl<T: ZeroizeOnDrop> AssertZeroizeOnDrop for &mut T {
+    impl<T: ZeroizeOnDrop> AssertZeroizeOnDrop for &&mut T {
         fn zeroize_or_on_drop(self) {}
     }
 
