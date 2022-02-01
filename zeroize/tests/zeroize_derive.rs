@@ -287,7 +287,7 @@ mod custom_derive_tests {
     }
 
     #[test]
-    fn check_actual_memory_vec() {
+    fn check_actual_memory_array() {
         #[derive(Zeroize, ZeroizeOnDrop)]
         struct X([u8; 3]);
 
