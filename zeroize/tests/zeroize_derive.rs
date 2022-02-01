@@ -285,4 +285,49 @@ mod custom_derive_tests {
         }
         assert_eq!(&value.0 .0, &[0, 0, 0])
     }
+
+    #[test]
+    fn check_actual_memory_vec() {
+        #[derive(Zeroize, ZeroizeOnDrop)]
+        struct X([u8; 3]);
+
+        #[derive(Zeroize, ZeroizeOnDrop)]
+        struct Z(X);
+
+        let mut value = Z(X([1, 2, 3]));
+        let actual_memory_content = unsafe {
+            let b = value.0 .0;
+            std::slice::from_raw_parts(b.as_ptr(), b.len())
+        };
+
+        assert_eq!(actual_memory_content, value.0 .0);
+        assert_eq!(&actual_memory_content, &[1, 2, 3]);
+
+        drop(value);
+
+        assert_eq!(&actual_memory_content, &[0, 0, 0])
+    }
+
+    #[test]
+    fn check_actual_memory_string() {
+        const content: &str = "a string to make private";
+
+        #[derive(Zeroize, ZeroizeOnDrop)]
+        struct X(String);
+
+        let mut value: X = X(content.to_string());
+        let actual_memory_content = unsafe {
+            let b = value.0.as_bytes();
+            std::slice::from_raw_parts(b.as_ptr(), b.len())
+        };
+
+        assert_eq!(actual_memory_content, content.as_bytes());
+
+        drop(value);
+
+        assert_eq!(
+            &actual_memory_content,
+            &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        )
+    }
 }
