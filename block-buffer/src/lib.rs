@@ -317,8 +317,9 @@ where
 fn to_blocks_mut<N: ArrayLength<u8>>(data: &mut [u8]) -> (&mut [Block<N>], &mut [u8]) {
     let nb = data.len() / N::USIZE;
     let (left, right) = data.split_at_mut(nb * N::USIZE);
-    let p = left.as_ptr() as *mut Block<N>;
-    // SAFETY: we guarantee that `blocks` does not point outside of `data`
+    let p = left.as_mut_ptr() as *mut Block<N>;
+    // SAFETY: we guarantee that `blocks` does not point outside of `data`, and `p` is valid for
+    // mutation
     let blocks = unsafe { slice::from_raw_parts_mut(p, nb) };
     (blocks, right)
 }
