@@ -43,9 +43,10 @@ impl Sealed for super::Lazy {
 
     #[inline(always)]
     fn split_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[Block<N>], &[u8]) {
-        let (nb, tail_len) = if data.is_empty() {
-            (0, 0)
-        } else if data.len() % N::USIZE == 0 {
+        if data.is_empty() {
+            return (&[], &[]);
+        }
+        let (nb, tail_len) = if data.len() % N::USIZE == 0 {
             (data.len() / N::USIZE - 1, N::USIZE)
         } else {
             let nb = data.len() / N::USIZE;
