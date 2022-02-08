@@ -43,13 +43,16 @@ impl Sealed for super::Lazy {
 
     #[inline(always)]
     fn split_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[Block<N>], &[u8]) {
-        let nb = if data.is_empty() || data.len() % N::USIZE != 0 {
-            data.len() / N::USIZE
+        if data.is_empty() {
+            return (&[], &[]);
+        }
+        let (nb, tail_len) = if data.len() % N::USIZE == 0 {
+            (data.len() / N::USIZE - 1, N::USIZE)
         } else {
-            data.len() / N::USIZE - 1
+            let nb = data.len() / N::USIZE;
+            (nb, data.len() - nb * N::USIZE)
         };
         let blocks_len = nb * N::USIZE;
-        let tail_len = data.len() - blocks_len;
         // SAFETY: we guarantee that created slices do not point
         // outside of `data`
         unsafe {
