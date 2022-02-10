@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Use borrow instead of consuming in `InOutBufReserved::get_*_len()` methods ([#734])
 
-[#733]: https://github.com/RustCrypto/utils/pull/733
+[#734]: https://github.com/RustCrypto/utils/pull/734
 
 ## 0.1.1 (2022-02-10)
 ### Fixed
