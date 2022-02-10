@@ -9,7 +9,6 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_root_url = "https://docs.rs/block-padding/0.3.0"
 )]
-#![forbid(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms)]
 
 #[cfg(feature = "std")]
@@ -19,11 +18,25 @@ use core::fmt;
 pub use generic_array;
 use generic_array::{ArrayLength, GenericArray};
 
+/// Padding types
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum PadType {
+    /// Reversible padding
+    Reversible,
+    /// Ambiguous padding
+    Ambiguous,
+    /// No padding, message must be mutliple of block size
+    NoPadding,
+}
+
 /// Block size.
 pub type Block<B> = GenericArray<u8, B>;
 
 /// Trait for padding messages divided into blocks
 pub trait Padding<BlockSize: ArrayLength<u8>> {
+    /// Padding type
+    const TYPE: PadType;
+
     /// Pads `block` filled with data up to `pos` (i.e length of a message
     /// stored in the block is equal to `pos`).
     ///
@@ -36,6 +49,27 @@ pub trait Padding<BlockSize: ArrayLength<u8>> {
     ///
     /// Returns `Err(UnpadError)` if the block containts malformed padding.
     fn unpad(block: &Block<BlockSize>) -> Result<&[u8], UnpadError>;
+
+    /// Unpad data in the `blocks`.
+    ///
+    /// Returns `Err(UnpadError)` if the block containts malformed padding.
+    fn unpad_blocks(blocks: &[Block<BlockSize>]) -> Result<&[u8], UnpadError> {
+        let bs = BlockSize::USIZE;
+        let res_len = match (blocks.last(), Self::TYPE) {
+            (_, PadType::NoPadding) => bs * blocks.len(),
+            (Some(last_block), _) => {
+                let n = Self::unpad(last_block)?.len();
+                n + bs * (blocks.len() - 1)
+            }
+            (None, PadType::Ambiguous) => 0,
+            (None, PadType::Reversible) => return Err(UnpadError),
+        };
+        // SAFETY: `res_len` is always smaller or equal to `bs * blocks.len()`
+        Ok(unsafe {
+            let p = blocks.as_ptr() as *const u8;
+            core::slice::from_raw_parts(p, res_len)
+        })
+    }
 }
 
 /// Pad block with zeros.
@@ -60,6 +94,8 @@ pub trait Padding<BlockSize: ArrayLength<u8>> {
 pub struct ZeroPadding;
 
 impl<B: ArrayLength<u8>> Padding<B> for ZeroPadding {
+    const TYPE: PadType = PadType::Ambiguous;
+
     #[inline]
     fn pad(block: &mut Block<B>, pos: usize) {
         if pos > B::USIZE {
@@ -122,6 +158,8 @@ impl Pkcs7 {
 }
 
 impl<B: ArrayLength<u8>> Padding<B> for Pkcs7 {
+    const TYPE: PadType = PadType::Reversible;
+
     #[inline]
     fn pad(block: &mut Block<B>, pos: usize) {
         // TODO: use bounds to check it at compile time
@@ -164,6 +202,8 @@ impl<B: ArrayLength<u8>> Padding<B> for Pkcs7 {
 pub struct Iso10126;
 
 impl<B: ArrayLength<u8>> Padding<B> for Iso10126 {
+    const TYPE: PadType = PadType::Reversible;
+
     #[inline]
     fn pad(block: &mut Block<B>, pos: usize) {
         // Instead of generating random bytes as specified by Iso10126 we
@@ -197,6 +237,8 @@ impl<B: ArrayLength<u8>> Padding<B> for Iso10126 {
 pub struct AnsiX923;
 
 impl<B: ArrayLength<u8>> Padding<B> for AnsiX923 {
+    const TYPE: PadType = PadType::Reversible;
+
     #[inline]
     fn pad(block: &mut Block<B>, pos: usize) {
         // TODO: use bounds to check it at compile time
@@ -251,6 +293,8 @@ impl<B: ArrayLength<u8>> Padding<B> for AnsiX923 {
 pub struct Iso7816;
 
 impl<B: ArrayLength<u8>> Padding<B> for Iso7816 {
+    const TYPE: PadType = PadType::Reversible;
+
     #[inline]
     fn pad(block: &mut Block<B>, pos: usize) {
         if pos >= B::USIZE {
@@ -300,6 +344,8 @@ impl<B: ArrayLength<u8>> Padding<B> for Iso7816 {
 pub struct NoPadding;
 
 impl<B: ArrayLength<u8>> Padding<B> for NoPadding {
+    const TYPE: PadType = PadType::NoPadding;
+
     #[inline]
     fn pad(_block: &mut Block<B>, pos: usize) {
         if pos > B::USIZE {
@@ -324,4 +370,5 @@ impl fmt::Display for UnpadError {
 }
 
 #[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for UnpadError {}

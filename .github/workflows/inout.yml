@@ -1,16 +1,16 @@
-name: block-padding
+name: inout
 
 on:
   pull_request:
       paths:
-        - "block-padding/**"
+        - "inout/**"
         - "Cargo.*"
   push:
     branches: master
 
 defaults:
   run:
-    working-directory: block-padding
+    working-directory: inout
 
 env:
   CARGO_INCREMENTAL: 0
@@ -36,6 +36,7 @@ jobs:
           target: ${{ matrix.target }}
           override: true
       - run: cargo build --target ${{ matrix.target }}
+      - run: cargo build --features block-padding --target ${{ matrix.target }}
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -51,3 +52,5 @@ jobs:
         toolchain: ${{ matrix.rust }}
         override: true
     - run: cargo test
+    - run: cargo test --features block-padding
+    - run: cargo test --all-features
