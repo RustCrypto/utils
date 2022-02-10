@@ -17,7 +17,7 @@ proc-macro = true
 proc-macro2 = "1"
 quote = "1"
 syn = "1"
-synstructure = "0.12"
+synstructure = "0.12.2"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--document-private-items"]
