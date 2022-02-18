@@ -32,3 +32,8 @@ jobs:
         toolchain: ${{ matrix.rust }}
         override: true
     - run: cargo test --release
+
+  minimal-versions:
+    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
+    with:
+        working-directory: ${{ github.workflow }}
