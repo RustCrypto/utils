@@ -123,6 +123,7 @@ impl Drop for ZeroizeNoDropEnum {
 }
 
 #[test]
+#[cfg(feature = "alloc")]
 fn derive_struct_skip() {
     #[derive(Zeroize, ZeroizeOnDrop)]
     struct Z {
