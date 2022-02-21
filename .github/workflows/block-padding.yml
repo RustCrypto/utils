@@ -28,7 +28,8 @@ jobs:
           - thumbv7em-none-eabi
           - wasm32-unknown-unknown
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+      - uses: RustCrypto/actions/cargo-cache@master
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -50,10 +51,11 @@ jobs:
           - 1.56.0 # MSRV
           - stable
     steps:
-    - uses: actions/checkout@v1
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: ${{ matrix.rust }}
-        override: true
-    - run: cargo test
+      - uses: actions/checkout@v2
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - run: cargo test
