@@ -287,3 +287,31 @@ fn derive_inherit_both() {
     }
     assert_eq!(&value.0 .0, &[0, 0, 0])
 }
+
+#[test]
+fn derive_deref() {
+    struct X([u8; 3]);
+
+    impl std::ops::Deref for X {
+        type Target = [u8];
+
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+
+    impl std::ops::DerefMut for X {
+        fn deref_mut(&mut self) -> &mut Self::Target {
+            &mut self.0
+        }
+    }
+
+    #[derive(Zeroize, ZeroizeOnDrop)]
+    struct Z(X);
+
+    let mut value = Z(X([1, 2, 3]));
+    unsafe {
+        std::ptr::drop_in_place(&mut value);
+    }
+    assert_eq!(&value.0 .0, &[0, 0, 0])
+}
