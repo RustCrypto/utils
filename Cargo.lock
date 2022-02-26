@@ -17,6 +17,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmov"
+version = "0.0.0"
+
+[[package]]
 name = "collectable"
 version = "0.0.2"
 

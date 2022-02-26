@@ -136,7 +136,7 @@ fn main() {
     }
 
     let mut out_file = std::fs::File::create(out_path).unwrap();
-    let blobs: Vec<Vec<u8>> = infos.into_iter().map(|info| info.data).flatten().collect();
+    let blobs: Vec<Vec<u8>> = infos.into_iter().flat_map(|info| info.data).collect();
     let (blb_data, _) = blobby::encode_blobs(&blobs);
     out_file.write_all(&blb_data).unwrap();
 }

@@ -3,6 +3,7 @@ members = [
     "blobby",
     "block-buffer",
     "collectable",
+    "cmov",
     "cpufeatures",
     "dbl",
     "hex-literal",
