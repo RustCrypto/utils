@@ -33,21 +33,19 @@ lowerings, such as the [x86-cmov-conversion] pass.
 
 ## Supported target architectures
 
-This crate will only compile on the following target architectures:
+This crate provides guaranteed constant-time operation using inline assembly
+on the following CPU architectures:
 
 - [x] `x86`
 - [x] `x86_64`
-- [ ] `aarch64`
-- [ ] Others?
 
-Use the following syntax in `Cargo.toml` to conditionally include it:
+On other target architectures, a "best effort" portable fallback implementation
+based on bitwise arithmetic is used instead. However, we cannot guarantee that
+this implementation generates branch-free code.
 
-```toml
-[target.'cfg(any(target_arch = "x86", target_arch = "x86"))'.dependencies]
-cmov = "0"
-```
-
-Please open an issue inquiring about support for other architectures.
+It may be possible to extend constant-time guarantees to other CPU
+architectures by taking advantage of things like [LL/SC] instructions.
+Please open an issue with your desired CPU architecture if this interests you.
 
 ## Minimum Supported Rust Version
 
@@ -89,3 +87,4 @@ dual licensed as above, without any additional terms or conditions.
 [CMOV family]: https://www.jaist.ac.jp/iscenter-new/mpc/altix/altixdata/opt/intel/vtune/doc/users_guide/mergedProjects/analyzer_ec/mergedProjects/reference_olh/mergedProjects/instructions/instruct32_hh/vc35.htm
 [predication]: https://en.wikipedia.org/wiki/Predication_(computer_architecture)
 [x86-cmov-conversion]: https://dsprenkels.com/cmov-conversion.html
+[LL/SC]: https://en.wikipedia.org/wiki/Load-link/store-conditional
