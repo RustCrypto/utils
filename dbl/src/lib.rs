@@ -29,12 +29,14 @@ pub trait Dbl {
     /// `block<<1`, otherwise `(block<<1)^C`, where `C` is the non-leading
     /// coefficients of the lexicographically first irreducible degree-b binary
     /// polynomial with the minimal number of ones.
+    #[must_use]
     fn dbl(self) -> Self;
 
     /// Reverse double block. (alternatively: divbide block by x)
     ///
     /// If least significant bit of the block equals to zero will return
     /// `block>>1`, otherwise `(block>>1)^(1<<n)^(C>>1)`
+    #[must_use]
     fn inv_dbl(self) -> Self;
 }
 

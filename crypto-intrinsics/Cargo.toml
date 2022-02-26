@@ -1,0 +1,21 @@
+[package]
+name = "crypto-intrinsics"
+description = """
+High-level wrappers for architecture-specific CPU intrinsics which are relevant
+to cryptographic use cases, such as the CMOV family, implemented using stable
+inline assembly
+"""
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/RustCrypto/utils/tree/master/crypto-intrinsics"
+categories = ["cryptography"]
+keywords = ["crypto", "cmov", "intrinsics"]
+readme = "README.md"
+edition = "2018" # Can't bump to 2021 due to pre-1.56 MSRV crates in the same workspace
+rust-version = "1.59"
+
+[package.metadata.docs.rs]
+all-features = true
+all-targets = true
+rustdoc-args = ["--cfg", "docsrs"]

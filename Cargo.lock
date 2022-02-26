@@ -28,6 +28,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "crypto-intrinsics"
+version = "0.0.0"
+
+[[package]]
 name = "dbl"
 version = "0.3.2"
 dependencies = [

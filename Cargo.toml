@@ -4,6 +4,7 @@ members = [
     "block-buffer",
     "collectable",
     "cpufeatures",
+    "crypto-intrinsics",
     "dbl",
     "hex-literal",
     "opaque-debug",
