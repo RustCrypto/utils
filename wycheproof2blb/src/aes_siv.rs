@@ -13,6 +13,7 @@ struct TestSuite {
 
 #[derive(Debug, Deserialize)]
 struct TestGroup {
+    #[allow(dead_code)]
     #[serde(flatten)]
     pub group: wycheproof::Group,
     #[serde(rename = "keySize")]

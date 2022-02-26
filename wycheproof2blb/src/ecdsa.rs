@@ -13,10 +13,13 @@ struct TestSuite {
 
 #[derive(Debug, Deserialize)]
 struct TestGroup {
+    #[allow(dead_code)]
     #[serde(flatten)]
     pub group: wycheproof::Group,
+    #[allow(dead_code)]
     #[serde(rename = "keyDer")]
     pub key_der: String,
+    #[allow(dead_code)]
     #[serde(rename = "keyPem")]
     pub key_pem: String,
     pub sha: String,
@@ -27,6 +30,7 @@ struct TestGroup {
 #[derive(Debug, Deserialize)]
 struct TestKey {
     curve: String,
+    #[allow(dead_code)]
     #[serde(rename = "type")]
     key_type: String,
     #[serde(with = "hex_string")]
