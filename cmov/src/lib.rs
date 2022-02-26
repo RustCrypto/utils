@@ -55,10 +55,8 @@ pub fn cmovnz(condition: usize, src: usize, dst: &mut usize) {
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[inline(never)]
 pub fn cmovz(condition: usize, src: usize, dst: &mut usize) {
-    let zero_flag = 1 ^ is_non_zero(condition);
-    let src_mask = zero_flag.wrapping_mul(usize::MAX);
-    let dst_mask = zero_flag.wrapping_sub(1);
-    *dst = (*dst & dst_mask) | (src & src_mask);
+    let mask = (1 ^ is_non_zero(condition)).wrapping_sub(1);
+    *dst = (*dst & mask) | (src & !mask);
 }
 
 /// Move if not zero (portable fallback implementation).
@@ -69,10 +67,8 @@ pub fn cmovz(condition: usize, src: usize, dst: &mut usize) {
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[inline(never)]
 pub fn cmovnz(condition: usize, src: usize, dst: &mut usize) {
-    let nonzero_flag = is_non_zero(condition);
-    let src_mask = nonzero_flag.wrapping_mul(usize::MAX);
-    let dst_mask = nonzero_flag.wrapping_sub(1);
-    *dst = (*dst & dst_mask) | (src & src_mask);
+    let mask = is_non_zero(condition).wrapping_sub(1);
+    *dst = (*dst & mask) | (src & !mask);
 }
 
 /// Check if the given condition value is non-zero
