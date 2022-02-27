@@ -13,6 +13,7 @@ This repository contains various utility crates used in the RustCrypto project.
 | [`blobby`] | [![crates.io](https://img.shields.io/crates/v/blobby.svg)](https://crates.io/crates/blobby) | [![Documentation](https://docs.rs/blobby/badge.svg)](https://docs.rs/blobby) | ![MSRV 1.39][msrv-1.39] | Decoder of the simple de-duplicated binary blob storage format |
 | [`block-buffer`] | [![crates.io](https://img.shields.io/crates/v/block-buffer.svg)](https://crates.io/crates/block-buffer) | [![Documentation](https://docs.rs/block-buffer/badge.svg)](https://docs.rs/block-buffer) | ![MSRV 1.41][msrv-1.41] | Fixed size buffer for block processing of data |
 | [`block‑padding`] | [![crates.io](https://img.shields.io/crates/v/block-padding.svg)](https://crates.io/crates/block-padding) | [![Documentation](https://docs.rs/block-padding/badge.svg)](https://docs.rs/block-padding) | ![MSRV 1.56][msrv-1.56] | Padding and unpadding of messages divided into blocks |
+| [`cmov`] | [![crates.io](https://img.shields.io/crates/v/cmov.svg)](https://crates.io/crates/cmov) | [![Documentation](https://docs.rs/cmov/badge.svg)](https://docs.rs/cmov) | ![MSRV 1.59][msrv-1.59] | Conditional move intrinsics |
 | [`collectable`] | [![crates.io](https://img.shields.io/crates/v/collectable.svg)](https://crates.io/crates/collectable) | [![Documentation](https://docs.rs/collectable/badge.svg)](https://docs.rs/collectable) | ![MSRV 1.41][msrv-1.41] | Fallible, `no_std`-friendly collection traits |
 | [`cpufeatures`] | [![crates.io](https://img.shields.io/crates/v/cpufeatures.svg)](https://crates.io/crates/cpufeatures) | [![Documentation](https://docs.rs/cpufeatures/badge.svg)](https://docs.rs/cpufeatures) | ![MSRV 1.40][msrv-1.40] | Lightweight and efficient alternative to the `is_x86_feature_detected!` macro |
 | [`dbl`] | [![crates.io](https://img.shields.io/crates/v/dbl.svg)](https://crates.io/crates/dbl) | [![Documentation](https://docs.rs/dbl/badge.svg)](https://docs.rs/dbl) | ![MSRV 1.41][msrv-1.41] | Double operation in Galois Field (GF) |
@@ -49,12 +50,14 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [msrv-1.45]: https://img.shields.io/badge/rustc-1.45.0+-blue.svg
 [msrv-1.51]: https://img.shields.io/badge/rustc-1.51.0+-blue.svg
 [msrv-1.56]: https://img.shields.io/badge/rustc-1.56.0+-blue.svg
+[msrv-1.59]: https://img.shields.io/badge/rustc-1.59.0+-blue.svg
 
 [//]: # (crates)
 
 [`blobby`]: ./blobby
 [`block-buffer`]: ./block-buffer
 [`block‑padding`]: ./block‑padding
+[`cmov`]: ./cmov
 [`collectable`]: ./collectable
 [`cpufeatures`]: ./cpufeatures
 [`dbl`]: ./dbl
