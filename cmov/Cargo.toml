@@ -1,0 +1,16 @@
+[package]
+name = "cmov"
+description = """
+Conditional move CPU intrinsics which are guaranteed to execute in
+constant-time and not be rewritten as branches by the compiler.
+Provides wrappers for the CMOV family of instructions on x86/x86_64 CPUs.
+"""
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/RustCrypto/utils/tree/master/cmov"
+categories = ["cryptography"]
+keywords = ["crypto", "intrinsics"]
+readme = "README.md"
+edition = "2018" # Can't bump to 2021 due to pre-1.56 MSRV crates in the same workspace
+rust-version = "1.59"
