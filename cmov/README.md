@@ -3,7 +3,7 @@
 [![Crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
 ![Apache 2.0/MIT Licensed][license-image]
-![MSRV][rustc-image]
+![MSRV][msrv-image]
 [![Build Status][build-image]][build-link]
 
 Conditional move CPU intrinsics which are guaranteed to execute in
@@ -77,7 +77,7 @@ dual licensed as above, without any additional terms or conditions.
 [docs-image]: https://docs.rs/cmov/badge.svg
 [docs-link]: https://docs.rs/cmov/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[rustc-image]: https://img.shields.io/badge/rustc-1.51+-blue.svg
+[msrv-image]: https://img.shields.io/badge/rustc-1.59+-blue.svg
 [build-image]: https://github.com/RustCrypto/utils/actions/workflows/cmov.yml/badge.svg
 [build-link]: https://github.com/RustCrypto/utils/actions/workflows/cmov.yml
 
