@@ -6,7 +6,7 @@
 )]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[cfg(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))]
 use core::arch::asm;
 
 /// Move if zero.
@@ -24,6 +24,46 @@ pub fn cmovz(condition: usize, src: usize, dst: &mut usize) {
             in(reg) condition,
             inlateout(reg) *dst,
             in(reg) src
+        };
+    }
+}
+
+/// Move if zero.
+///
+/// Uses a `cmp` instruction to check if the given `condition` value is
+/// equal to zero, then calls `csel` to conditionally move
+/// `src` to `dst` when `condition` is equal to zero.
+#[cfg(any(target_arch = "aarch64"))]
+#[inline(always)]
+pub fn cmovz(condition: usize, src: usize, dst: &mut usize) {
+    unsafe {
+        asm! {
+            "cmp {0}, 0",
+            "csel {1}, {2}, {3}, EQ",
+            in(reg) condition,
+            inlateout(reg) *dst,
+            in(reg) src,
+            in(reg) *dst,
+        };
+    }
+}
+
+/// Move if not zero.
+///
+/// Uses a `cmp` instruction to check if the given `condition` value is not
+/// equal to zero, then calls `csel` to conditionally move
+/// `src` to `dst` when `condition` is nonzero.
+#[cfg(any(target_arch = "aarch64"))]
+#[inline(always)]
+pub fn cmovnz(condition: usize, src: usize, dst: &mut usize) {
+    unsafe {
+        asm! {
+            "cmp {0}, 0",
+            "csel {1}, {2}, {3}, NE",
+            in(reg) condition,
+            inlateout(reg) *dst,
+            in(reg) src,
+            in(reg) *dst,
         };
     }
 }
@@ -52,7 +92,7 @@ pub fn cmovnz(condition: usize, src: usize, dst: &mut usize) {
 /// This implementation is based on portable bitwise arithmetic but cannot
 /// guarantee that the resulting generated assembly is free of branch
 /// instructions.
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
 #[inline(never)]
 pub fn cmovz(condition: usize, src: usize, dst: &mut usize) {
     let mask = (1 ^ is_non_zero(condition)).wrapping_sub(1);
@@ -64,7 +104,7 @@ pub fn cmovz(condition: usize, src: usize, dst: &mut usize) {
 /// This implementation is based on portable bitwise arithmetic but cannot
 /// guarantee that the resulting generated assembly is free of branch
 /// instructions.
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
 #[inline(never)]
 pub fn cmovnz(condition: usize, src: usize, dst: &mut usize) {
     let mask = is_non_zero(condition).wrapping_sub(1);
@@ -76,7 +116,7 @@ pub fn cmovnz(condition: usize, src: usize, dst: &mut usize) {
 /// # Returns
 /// - `condition` is zero: `0`
 /// - `condition` is non-zero: `1`
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))]
 #[inline(always)]
 fn is_non_zero(condition: usize) -> usize {
     const SHIFT_BITS: usize = core::mem::size_of::<usize>() - 1;
