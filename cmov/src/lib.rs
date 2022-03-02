@@ -23,7 +23,8 @@ pub fn cmovz(condition: usize, src: usize, dst: &mut usize) {
             "cmovz {1}, {2}",
             in(reg) condition,
             inlateout(reg) *dst,
-            in(reg) src
+            in(reg) src,
+            options(pure, nomem, nostack),
         };
     }
 }
@@ -44,6 +45,7 @@ pub fn cmovz(condition: usize, src: usize, dst: &mut usize) {
             inlateout(reg) *dst,
             in(reg) src,
             in(reg) *dst,
+            options(pure, nomem, nostack),
         };
     }
 }
@@ -64,6 +66,7 @@ pub fn cmovnz(condition: usize, src: usize, dst: &mut usize) {
             inlateout(reg) *dst,
             in(reg) src,
             in(reg) *dst,
+            options(pure, nomem, nostack),
         };
     }
 }
@@ -82,7 +85,8 @@ pub fn cmovnz(condition: usize, src: usize, dst: &mut usize) {
             "cmovnz {1}, {2}",
             in(reg) condition,
             inlateout(reg) *dst,
-            in(reg) src
+            in(reg) src,
+            options(pure, nomem, nostack),
         };
     }
 }
