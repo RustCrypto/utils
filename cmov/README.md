@@ -9,7 +9,7 @@
 Conditional move CPU intrinsics which are guaranteed to execute in
 constant-time and not be rewritten as branches by the compiler.
 
-Provides wrappers for the [CMOV family] of instructions on x86/x86_64 CPUs.
+Provides wrappers for the [CMOV family] of instructions on x86/x86_64 and AArch64 CPUs.
 
 [Documentation][docs-link]
 
@@ -36,8 +36,9 @@ lowerings, such as the [x86-cmov-conversion] pass.
 This crate provides guaranteed constant-time operation using inline assembly
 on the following CPU architectures:
 
-- [x] `x86`
-- [x] `x86_64`
+- [x] `x86` (`CMOVZ`, `CMOVNZ`)
+- [x] `x86_64` (`CMOVZ`, CMOVNZ`)
+- [x] `aarch64` (`CSEL`)
 
 On other target architectures, a "best effort" portable fallback implementation
 based on bitwise arithmetic is used instead. However, we cannot guarantee that
