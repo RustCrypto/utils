@@ -7,7 +7,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
-    html_root_url = "https://docs.rs/block-padding/0.3.1"
+    html_root_url = "https://docs.rs/block-padding/0.3.2"
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs, rust_2018_idioms)]
@@ -60,6 +60,7 @@ pub trait Padding<BlockSize: ArrayLength<u8>> {
             (_, PadType::NoPadding) => bs * blocks.len(),
             (Some(last_block), _) => {
                 let n = Self::unpad(last_block)?.len();
+                assert!(n <= bs);
                 n + bs * (blocks.len() - 1)
             }
             (None, PadType::Ambiguous) => 0,
