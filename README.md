@@ -56,7 +56,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 [`blobby`]: ./blobby
 [`block-buffer`]: ./block-buffer
-[`block‑padding`]: ./block‑padding
+[`block‑padding`]: ./block-padding
 [`cmov`]: ./cmov
 [`collectable`]: ./collectable
 [`cpufeatures`]: ./cpufeatures
