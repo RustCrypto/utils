@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.5.4 (2022-03-16)
+### Added
+- Nightly-only upport for zeroizing ARM64 SIMD registers ([#749])
+
+[#749]: https://github.com/RustCrypto/utils/pull/749
+
 ## 1.5.3 (2022-02-25)
 ### Fixed
 - Deriving `ZeroizeOnDrop` on `DerefMut` ([#739])
