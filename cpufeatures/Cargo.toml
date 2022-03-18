@@ -1,9 +1,9 @@
 [package]
 name = "cpufeatures"
-version = "0.2.1" # Also update html_root_url in lib.rs when bumping this
+version = "0.2.2" # Also update html_root_url in lib.rs when bumping this
 description = """
-Lightweight and efficient no-std compatible alternative to the
-is_x86_feature_detected! macro
+Lightweight runtime CPU feature detection for x86/x86_64 and aarch64 with
+no_std support and support for mobile targets including Android and iOS
 """
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"

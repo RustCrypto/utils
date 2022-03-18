@@ -7,17 +7,21 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-Lightweight and efficient `no_std` compatible alternative to the
-`is_x86_feature_detected!` macro providing runtime CPU feature detection
-for x86/x86_64 and ARM64 CPUs.
+Lightweight and efficient runtime CPU feature detection for `aarch64` and
+`x86`/`x86_64` targets.
+
+Supports `no_std` as well as mobile targets including iOS and Android,
+providing an alternative to the `std`-dependent `is_x86_feature_detected!`
+macro.
 
 [Documentation][docs-link]
 
 ## Supported architectures
 
-### `aarch64`: Linux and macOS/M4 only
+### `aarch64`: Android, iOS, Linux, and macOS/M4 only
 
-Note: ARM64 does not support OS-independent feature detection 
+Note: ARM64 does not support OS-independent feature detection, so support must
+be implemented on an OS-by-OS basis.
 
 Target features:
 
