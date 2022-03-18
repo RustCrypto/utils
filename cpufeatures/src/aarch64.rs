@@ -21,7 +21,7 @@ macro_rules! __unless_target_features {
 }
 
 // Linux runtime detection of target CPU features using `getauxval`.
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __detect_target_features {
@@ -32,7 +32,7 @@ macro_rules! __detect_target_features {
 }
 
 /// Linux helper function for calling `getauxval` to get `AT_HWCAP`.
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub fn getauxval_hwcap() -> u64 {
     unsafe { libc::getauxval(libc::AT_HWCAP) }
 }
@@ -48,7 +48,7 @@ macro_rules! __detect_target_features {
 }
 
 // Linux `expand_check_macro`
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 macro_rules! __expand_check_macro {
     ($(($name:tt, $hwcap:ident)),* $(,)?) => {
         #[macro_export]
@@ -64,7 +64,7 @@ macro_rules! __expand_check_macro {
 }
 
 // Linux `expand_check_macro`
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 __expand_check_macro! {
     ("aes",    AES),    // Enable AES support.
     ("sha2",   SHA2),   // Enable SHA1 and SHA256 support.
@@ -78,7 +78,7 @@ __expand_check_macro! {
 /// provide that mapping accordingly.
 ///
 /// See this issue for more info: <https://github.com/RustCrypto/utils/issues/395>
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 pub mod hwcaps {
     use libc::c_ulong;
 
@@ -167,7 +167,12 @@ macro_rules! check {
 }
 
 // On other targets, runtime CPU feature detection is unavailable
-#[cfg(not(any(target_os = "ios", target_os = "linux", target_os = "macos")))]
+#[cfg(not(any(
+    target_os = "ios",
+    target_os = "linux",
+    target_os = "android",
+    target_os = "macos"
+)))]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __detect_target_features {
