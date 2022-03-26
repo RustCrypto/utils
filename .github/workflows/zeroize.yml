@@ -3,6 +3,7 @@ name: zeroize
 on:
   pull_request:
     paths:
+      - ".github/workflows/zeroize.yml"
       - "zeroize/**"
       - "Cargo.*"
   push:
@@ -72,7 +73,7 @@ jobs:
       matrix:
         include:
           - target: aarch64-unknown-linux-gnu
-            rust: nightly-2022-03-01
+            rust: nightly
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
