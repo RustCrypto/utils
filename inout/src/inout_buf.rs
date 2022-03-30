@@ -18,9 +18,10 @@ pub struct InOutBuf<'inp, 'out, T> {
 impl<'a, T> From<&'a mut [T]> for InOutBuf<'a, 'a, T> {
     #[inline(always)]
     fn from(buf: &'a mut [T]) -> Self {
+        let out_ptr = buf.as_mut_ptr();
         Self {
-            in_ptr: buf.as_ptr(),
-            out_ptr: buf.as_mut_ptr(),
+            in_ptr: out_ptr,
+            out_ptr: out_ptr,
             len: buf.len(),
             _pd: PhantomData,
         }
