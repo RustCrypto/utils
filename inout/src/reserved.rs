@@ -28,11 +28,11 @@ impl<'a, T> InOutBufReserved<'a, 'a, T> {
         if msg_len > buf.len() {
             return Err(OutIsTooSmallError);
         }
-        let out_ptr = buf.as_mut_ptr();
+        let p = buf.as_mut_ptr();
         let out_len = buf.len();
         Ok(Self {
-            in_ptr: out_ptr as *const T,
-            out_ptr,
+            in_ptr: p,
+            out_ptr: p,
             in_len: msg_len,
             out_len,
             _pd: PhantomData,

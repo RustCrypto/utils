@@ -18,10 +18,10 @@ pub struct InOutBuf<'inp, 'out, T> {
 impl<'a, T> From<&'a mut [T]> for InOutBuf<'a, 'a, T> {
     #[inline(always)]
     fn from(buf: &'a mut [T]) -> Self {
-        let out_ptr = buf.as_mut_ptr();
+        let p = buf.as_mut_ptr();
         Self {
-            in_ptr: out_ptr,
-            out_ptr: out_ptr,
+            in_ptr: p,
+            out_ptr: p,
             len: buf.len(),
             _pd: PhantomData,
         }
@@ -32,10 +32,10 @@ impl<'a, T> InOutBuf<'a, 'a, T> {
     /// Create `InOutBuf` from a single mutable reference.
     #[inline(always)]
     pub fn from_mut(val: &'a mut T) -> InOutBuf<'a, 'a, T> {
-        let out_ptr = val as *mut T;
+        let p = val as *mut T;
         Self {
-            in_ptr: out_ptr as *const T,
-            out_ptr,
+            in_ptr: p,
+            out_ptr: p,
             len: 1,
             _pd: PhantomData,
         }
