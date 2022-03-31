@@ -78,10 +78,10 @@ impl<'inp, 'out, T: Clone> InOut<'inp, 'out, T> {
 impl<'a, T> From<&'a mut T> for InOut<'a, 'a, T> {
     #[inline(always)]
     fn from(val: &'a mut T) -> Self {
-        let out_ptr = val as *mut T;
+        let p = val as *mut T;
         Self {
-            in_ptr: out_ptr as *const T,
-            out_ptr,
+            in_ptr: p,
+            out_ptr: p,
             _pd: PhantomData,
         }
     }
