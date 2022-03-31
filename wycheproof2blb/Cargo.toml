@@ -1,6 +1,6 @@
 [package]
 name = "wycheproof2blb"
-version = "0.1.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.1.0"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "A utility for converting Wycheproof test vectors to the blobby format"

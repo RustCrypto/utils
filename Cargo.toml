@@ -2,13 +2,18 @@
 members = [
     "blobby",
     "block-buffer",
+    "block-padding",
     "collectable",
     "cmov",
     "cpufeatures",
     "dbl",
     "hex-literal",
+    "inout",
     "opaque-debug",
     "wycheproof2blb",
     "zeroize",
     "zeroize/derive"
 ]
+
+[profile.dev]
+opt-level = 2

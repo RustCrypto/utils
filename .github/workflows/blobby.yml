@@ -32,7 +32,9 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-      - run: cargo test --release
+      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
+      - run: rm ../Cargo.toml
+      - run: cargo test
 
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master

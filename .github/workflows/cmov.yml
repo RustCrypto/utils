@@ -42,7 +42,7 @@ jobs:
           target: ${{ matrix.target }}
           override: true
       - uses: RustCrypto/actions/cargo-hack-install@master
-      - run: cargo build --release --target ${{ matrix.target }}
+      - run: cargo build --target ${{ matrix.target }}
 
   test:
     strategy:
@@ -80,7 +80,7 @@ jobs:
           profile: minimal
           override: true
       - run: ${{ matrix.deps }}
-      - run: cargo test --release
+      - run: cargo test
 
   # Cross-compiled tests
   cross:
@@ -110,4 +110,4 @@ jobs:
           profile: minimal
           override: true
       - uses: RustCrypto/actions/cross-install@master
-      - run: cross test --release --target ${{ matrix.target }}
+      - run: cross test --target ${{ matrix.target }}

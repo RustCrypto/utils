@@ -1,6 +1,6 @@
 [package]
 name = "block-padding"
-version = "0.3.2" # Also update html_root_url in lib.rs when bumping this
+version = "0.3.2"
 description = "Padding and unpadding of messages divided into blocks."
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -10,10 +10,6 @@ documentation = "https://docs.rs/block-padding"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["padding", "pkcs7", "ansix923", "iso7816"]
 categories = ["cryptography", "no-std"]
-
-# Hack to allow this crate to coexist with pre-2021 edition crates
-[workspace]
-members = ["."]
 
 [dependencies]
 generic-array = "0.14"

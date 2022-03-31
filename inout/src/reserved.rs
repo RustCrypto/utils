@@ -202,6 +202,7 @@ impl<'inp, 'out, BS: ArrayLength<u8>> PaddedInOutBuf<'inp, 'out, BS> {
     ///
     /// For paddings with `P::TYPE = PadType::Reversible` it always returns `Some`.
     #[inline(always)]
+    #[allow(clippy::needless_option_as_deref)]
     pub fn get_tail_block<'a>(&'a mut self) -> Option<InOut<'a, 'a, GenericArray<u8, BS>>> {
         match self.tail_out.as_deref_mut() {
             Some(out_block) => Some((&self.tail_in, out_block).into()),

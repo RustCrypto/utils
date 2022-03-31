@@ -38,7 +38,9 @@ jobs:
           target: ${{ matrix.target }}
           override: true
           profile: minimal
-      - run: cargo build --no-default-features --release --target ${{ matrix.target }}
+      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
+      - run: rm ../Cargo.toml
+      - run: cargo build --no-default-features --target ${{ matrix.target }}
 
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
@@ -64,8 +66,10 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           override: true
           profile: minimal
-      - run: cargo test --release
-      - run: cargo test --release --features alloc,derive
+      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
+      - run: rm ../Cargo.toml
+      - run: cargo test
+      - run: cargo test --features alloc,derive
 
   # Feature-gated ARM64 SIMD register support (nightly-only)
   aarch64:
@@ -86,5 +90,7 @@ jobs:
           profile: minimal
           override: true
       - uses: RustCrypto/actions/cross-install@master
-      - run: cross test --release --target ${{ matrix.target }} --features aarch64
-      - run: cross test --release --target ${{ matrix.target }} --all-features
+      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
+      - run: rm ../Cargo.toml
+      - run: cross test --target ${{ matrix.target }} --features aarch64
+      - run: cross test --target ${{ matrix.target }} --all-features
