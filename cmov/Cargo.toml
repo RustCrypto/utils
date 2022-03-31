@@ -13,5 +13,5 @@ repository = "https://github.com/RustCrypto/utils/tree/master/cmov"
 categories = ["cryptography", "hardware-support", "no-std"]
 keywords = ["crypto", "intrinsics"]
 readme = "README.md"
-edition = "2018" # Can't bump to 2021 due to pre-1.56 MSRV crates in the same workspace
+edition = "2021"
 rust-version = "1.59"

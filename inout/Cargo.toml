@@ -10,10 +10,6 @@ documentation = "https://docs.rs/inout"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["custom-reference"]
 
-# Hack to allow this crate to coexist with pre-2021 edition crates
-[workspace]
-members = ["."]
-
 [dependencies]
 generic-array = "0.14"
 block-padding = { version = "0.3", path = "../block-padding", optional = true }

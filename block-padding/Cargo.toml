@@ -11,10 +11,6 @@ repository = "https://github.com/RustCrypto/utils"
 keywords = ["padding", "pkcs7", "ansix923", "iso7816"]
 categories = ["cryptography", "no-std"]
 
-# Hack to allow this crate to coexist with pre-2021 edition crates
-[workspace]
-members = ["."]
-
 [dependencies]
 generic-array = "0.14"
 
