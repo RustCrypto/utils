@@ -69,7 +69,7 @@ jobs:
       # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
       - run: rm ../Cargo.toml
       - run: cargo test
-      - run: cargo test --features alloc,derive
+      - run: cargo test --features alloc,derive,std
 
   # Feature-gated ARM64 SIMD register support (nightly-only)
   aarch64:

@@ -61,7 +61,13 @@
 //! impl'd for `Vec<T>` for the above types as well as `String`, where it provides
 //! [`Vec::clear`] / [`String::clear`]-like behavior (truncating to zero-length)
 //! but ensures the backing memory is securely zeroed with some caveats.
-//! (NOTE: see "Stack/Heap Zeroing Notes" for important `Vec`/`String` details)
+//!
+//! With the `std` feature enabled (which it is **not** by default), [`Zeroize`]
+//! is also implemented for [`CString`]. After calling `zeroize()` on a `CString`,
+//! it will its internal buffer will contain exactly one nul byte. The backing
+//! memory is zeroed by converting it to a `Vec<u8>` and back into a `CString`.
+//! (NOTE: see "Stack/Heap Zeroing Notes" for important `Vec`/`String`/`CString` details)
+//!
 //!
 //! The [`DefaultIsZeroes`] marker trait can be impl'd on types which also
 //! impl [`Default`], which implements [`Zeroize`] by overwriting a value with
@@ -191,10 +197,10 @@
 //! [`Pin`][`core::pin::Pin`] can be leveraged in conjunction with this crate
 //! to ensure data kept on the stack isn't moved.
 //!
-//! The `Zeroize` impls for `Vec` and `String` zeroize the entire capacity of
-//! their backing buffer, but cannot guarantee copies of the data were not
-//! previously made by buffer reallocation. It's therefore important when
-//! attempting to zeroize such buffers to initialize them to the correct
+//! The `Zeroize` impls for `Vec`, `String` and `CString` zeroize the entire
+//! capacity of their backing buffer, but cannot guarantee copies of the data
+//! were not previously made by buffer reallocation. It's therefore important
+//! when attempting to zeroize such buffers to initialize them to the correct
 //! capacity, and take care to prevent subsequent reallocation.
 //!
 //! The `secrecy` crate provides higher-level abstractions for eliminating
@@ -233,6 +239,9 @@
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
 
+#[cfg(feature = "std")]
+extern crate std;
+
 #[cfg(feature = "zeroize_derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "zeroize_derive")))]
 pub use zeroize_derive::{Zeroize, ZeroizeOnDrop};
@@ -252,6 +261,9 @@ use core::{ops, ptr, slice::IterMut, sync::atomic};
 
 #[cfg(feature = "alloc")]
 use alloc::{boxed::Box, string::String, vec::Vec};
+
+#[cfg(feature = "std")]
+use std::ffi::CString;
 
 /// Trait for securely erasing types from memory
 pub trait Zeroize {
@@ -511,6 +523,27 @@ impl Zeroize for String {
     }
 }
 
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl Zeroize for CString {
+    fn zeroize(&mut self) {
+        // mem::take uses replace internally to swap the pointer
+        // Unfortunately this results in an allocation for a Box::new(&[0]) as CString must
+        // contain a trailing zero byte
+        let this = std::mem::take(self);
+        // - CString::into_bytes calls ::into_vec which takes ownership of the heap pointer
+        // as a Vec<u8>
+        // - Calling .zeroize() on the resulting vector clears out the bytes
+        // From: https://github.com/RustCrypto/utils/pull/759#issuecomment-1087976570
+        let mut buf = this.into_bytes();
+        buf.zeroize();
+        // expect() should never fail, because zeroize() truncates the Vec
+        let zeroed = CString::new(buf).expect("buf not truncated");
+        // Replace self by the zeroed CString to maintain the original ptr of the buffer
+        let _ = std::mem::replace(self, zeroed);
+    }
+}
+
 /// Fallible trait for representing cases where zeroization may or may not be
 /// possible.
 ///
@@ -723,6 +756,9 @@ mod tests {
     #[cfg(feature = "alloc")]
     use alloc::vec::Vec;
 
+    #[cfg(feature = "std")]
+    use std::ffi::CString;
+
     #[derive(Clone, Debug, PartialEq)]
     struct ZeroizedOnDrop(u64);
 
@@ -879,6 +915,27 @@ mod tests {
         unsafe { as_vec.set_len(as_vec.capacity()) };
 
         assert!(as_vec.iter().all(|byte| *byte == 0));
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn zeroize_c_string() {
+        let mut cstring = CString::new("Hello, world!").expect("CString::new failed");
+        let orig_len = cstring.as_bytes().len();
+        let orig_ptr = cstring.as_bytes().as_ptr();
+        cstring.zeroize();
+        // This doesn't quite test that the original memory has been cleared, but only that
+        // cstring now owns an empty buffer
+        assert!(cstring.as_bytes().is_empty());
+        for i in 0..orig_len {
+            unsafe {
+                // Using a simple deref, only one iteration of the loop is performed
+                // presumably because after zeroize, the internal buffer has a length of one/
+                // `read_volatile` seems to "fix" this
+                // Note that this is very likely UB
+                assert_eq!(orig_ptr.add(i).read_volatile(), 0);
+            }
+        }
     }
 
     #[cfg(feature = "alloc")]
