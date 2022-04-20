@@ -580,6 +580,26 @@ where
     }
 }
 
+impl<T, Z> AsRef<T> for Zeroizing<Z>
+where
+    T: ?Sized,
+    Z: AsRef<T> + Zeroize,
+{
+    fn as_ref(&self) -> &T {
+        self.0.as_ref()
+    }
+}
+
+impl<T, Z> AsMut<T> for Zeroizing<Z>
+where
+    T: ?Sized,
+    Z: AsMut<T> + Zeroize,
+{
+    fn as_mut(&mut self) -> &mut T {
+        self.0.as_mut()
+    }
+}
+
 impl<Z> Zeroize for Zeroizing<Z>
 where
     Z: Zeroize,
@@ -699,6 +719,9 @@ mod tests {
 
     #[cfg(feature = "alloc")]
     use alloc::boxed::Box;
+
+    #[cfg(feature = "alloc")]
+    use alloc::vec::Vec;
 
     #[derive(Clone, Debug, PartialEq)]
     struct ZeroizedOnDrop(u64);
@@ -864,5 +887,17 @@ mod tests {
         let mut boxed_arr = Box::new([42u8; 3]);
         boxed_arr.zeroize();
         assert_eq!(boxed_arr.as_ref(), &[0u8; 3]);
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn asref() {
+        let mut buffer: Zeroizing<Vec<u8>> = Default::default();
+        let _asmut: &mut [u8] = buffer.as_mut();
+        let _asref: &[u8] = buffer.as_ref();
+
+        let mut buffer: Zeroizing<Box<[u8]>> = Default::default();
+        let _asmut: &mut [u8] = buffer.as_mut();
+        let _asref: &[u8] = buffer.as_ref();
     }
 }
