@@ -24,6 +24,7 @@ default = ["alloc"]
 aarch64 = []
 alloc = []
 derive = ["zeroize_derive"]
+std = ["alloc"]
 
 [package.metadata.docs.rs]
 all-features = true
