@@ -138,28 +138,6 @@ macro_rules! impl_array_length {
                 type ArrayType = [T; $len];
             }
 
-            impl<T, I> Index<I> for Array<T, typenum::$ty>
-            where
-                [T]: Index<I>,
-            {
-                type Output = <[T] as Index<I>>::Output;
-
-                #[inline]
-                fn index(&self, index: I) -> &Self::Output {
-                    Index::index(self.as_slice(), index)
-                }
-            }
-
-            impl<T, I> IndexMut<I> for Array<T, typenum::$ty>
-            where
-                [T]: IndexMut<I>,
-            {
-                #[inline]
-                fn index_mut(&mut self, index: I) -> &mut Self::Output {
-                    IndexMut::index_mut(self.as_mut(), index)
-                }
-            }
-
             impl<T> IntoArray<T> for [T; $len] {
                 type Length = typenum::$ty;
 
@@ -372,6 +350,30 @@ where
     #[inline]
     fn from(arr: [T; N]) -> Array<T, U> {
         Self::from_core_array(arr)
+    }
+}
+
+impl<T, I, U> Index<I> for Array<T, U>
+where
+    [T]: Index<I>,
+    U: ArrayLength<T>,
+{
+    type Output = <[T] as Index<I>>::Output;
+
+    #[inline]
+    fn index(&self, index: I) -> &Self::Output {
+        Index::index(self.as_slice(), index)
+    }
+}
+
+impl<T, I, U> IndexMut<I> for Array<T, U>
+where
+    [T]: IndexMut<I>,
+    U: ArrayLength<T>,
+{
+    #[inline]
+    fn index_mut(&mut self, index: I) -> &mut Self::Output {
+        IndexMut::index_mut(self.as_mut_slice(), index)
     }
 }
 
