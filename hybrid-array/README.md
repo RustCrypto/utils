@@ -1,4 +1,4 @@
-# [RustCrypto]: Flex Array Types
+# [RustCrypto]: Hybrid Const Generic / Typenum Arrays
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -6,6 +6,10 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
+
+Hybrid array type combining const generics with the expressiveness of
+[`typenum`]-based constraints, providing an alternative to [`generic-array`]
+and a incremental transition path to const generics.
 
 [Documentation][docs-link]
 
@@ -26,16 +30,16 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/flex-array.svg
-[crate-link]: https://crates.io/crates/flex-array
-[docs-image]: https://docs.rs/flex-array/badge.svg
-[docs-link]: https://docs.rs/flex-array/
+[crate-image]: https://img.shields.io/crates/v/hybrid-array.svg
+[crate-link]: https://crates.io/crates/hybrid-array
+[docs-image]: https://docs.rs/hybrid-array/badge.svg
+[docs-link]: https://docs.rs/hybrid-array/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.56+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
-[build-image]: https://github.com/RustCrypto/utils/workflows/flex-array/badge.svg?branch=master&event=push
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/flex-array.yml
+[build-image]: https://github.com/RustCrypto/utils/workflows/hybrid-array/badge.svg?branch=master&event=push
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/hybrid-array.yml
 
 [//]: # (general links)
 

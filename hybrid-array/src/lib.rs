@@ -4,7 +4,7 @@
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/flex-array/0.0.0"
+    html_root_url = "https://docs.rs/hybrid-array/0.0.0"
 )]
 #![forbid(unsafe_code, clippy::unwrap_used)]
 #![warn(missing_docs, rust_2018_idioms)]
@@ -106,8 +106,8 @@ pub trait IntoArray<T> {
     /// Length of the [`Array`].
     type Length: ArrayLength<T>;
 
-    /// Convert into the `flex-array` crate's [`Array`] type.
-    fn into_flex_array(self) -> Array<T, Self::Length>;
+    /// Convert into the `hybrid-array` crate's [`Array`] type.
+    fn into_hybrid_array(self) -> Array<T, Self::Length>;
 }
 
 macro_rules! impl_array_length {
@@ -175,7 +175,7 @@ macro_rules! impl_array_length {
             impl<T> IntoArray<T> for [T; $len] {
                 type Length = typenum::$ty;
 
-                fn into_flex_array(self) -> Array<T, Self::Length> {
+                fn into_hybrid_array(self) -> Array<T, Self::Length> {
                     Array::from_core_array(self)
                 }
             }
@@ -307,7 +307,10 @@ impl_array_length! {
     8192 => U8192
 }
 
-/// Flexible generic array type.
+/// Hybrid typenum-based and const generic array type.
+///
+/// Provides the flexibility of typenum-based expressions while also
+/// allowing interoperability and a transition path to const generics.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct Array<T, U: ArrayLength<T>>(pub U::ArrayType);
