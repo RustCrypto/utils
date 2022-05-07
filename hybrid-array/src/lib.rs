@@ -42,18 +42,6 @@ pub trait ArrayOps<T, const N: usize>:
     /// Returns a mutable reference to the inner array.
     fn as_array_mut(&mut self) -> &mut [T; N];
 
-    /// Returns a slice containing the entire array. Equivalent to `&s[..]`.
-    #[inline]
-    fn as_slice(&self) -> &[T] {
-        self.as_array_ref()
-    }
-
-    /// Returns a mutable slice containing the entire array. Equivalent to `&mut s[..]`.
-    #[inline]
-    fn as_mut_slice(&mut self) -> &mut [T] {
-        self.as_array_mut()
-    }
-
     /// Create array from Rust's core array type.
     fn from_core_array(arr: [T; N]) -> Self;
 
@@ -78,13 +66,13 @@ pub trait ArrayOps<T, const N: usize>:
     /// Returns an iterator over the array.
     #[inline]
     fn iter(&self) -> Iter<'_, T> {
-        self.as_slice().iter()
+        self.as_ref().iter()
     }
 
     /// Returns an iterator that allows modifying each value.
     #[inline]
     fn iter_mut(&mut self) -> IterMut<'_, T> {
-        self.as_mut_slice().iter_mut()
+        self.as_mut().iter_mut()
     }
 
     /// Returns an array of the same size as `self`, with function `f` applied to each element
@@ -314,6 +302,23 @@ impl_array_length! {
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct Array<T, U: ArrayLength<T>>(pub U::ArrayType);
+
+impl<T, U> Array<T, U>
+where
+    U: ArrayLength<T>,
+{
+    /// Returns a slice containing the entire array. Equivalent to `&s[..]`.
+    #[inline]
+    pub fn as_slice(&self) -> &[T] {
+        self.0.as_ref()
+    }
+
+    /// Returns a mutable slice containing the entire array. Equivalent to `&mut s[..]`.
+    #[inline]
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        self.0.as_mut()
+    }
+}
 
 impl<T, U, const N: usize> AsRef<[T; N]> for Array<T, U>
 where
