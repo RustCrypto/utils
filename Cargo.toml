@@ -8,6 +8,7 @@ members = [
     "cpufeatures",
     "dbl",
     "hex-literal",
+    "hybrid-array",
     "inout",
     "opaque-debug",
     "wycheproof2blb",

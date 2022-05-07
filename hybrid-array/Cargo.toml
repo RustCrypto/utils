@@ -1,0 +1,19 @@
+[package]
+name = "hybrid-array"
+version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
+description = """
+Hybrid typenum-based and const generic array types designed to provide the
+flexibility of typenum-based expressions while also allowing interoperability
+and a transition path to const generics
+"""
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/hybrid-array"
+repository = "https://github.com/RustCrypto/utils"
+categories = ["no-std"]
+readme = "README.md"
+edition = "2021"
+rust-version = "1.56"
+
+[dependencies]
+typenum = "1.10"
