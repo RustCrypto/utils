@@ -33,8 +33,15 @@ pub trait ArrayOps<T, const N: usize>:
     + IntoIterator
     + Sized
 {
-    /// [`ArrayLength`] type: `typenum`-provided [`Unsigned`] integer.
-    type Length: ArrayLength<T>;
+    /// Size of an array as a `usize`.
+    ///
+    /// Not to be confused with [`ArrayOps::Size`], which is `typenum`-based.
+    const SIZE: usize;
+
+    /// [`ArraySize`] type: `typenum`-provided [`Unsigned`] integer.
+    ///
+    /// Not to be confused with [`ArrayOps::SIZE`], which is a `usize`.
+    type Size: ArraySize<T>;
 
     /// Returns a reference to the inner array.
     fn as_array_ref(&self) -> &[T; N];
@@ -82,27 +89,28 @@ pub trait ArrayOps<T, const N: usize>:
         F: FnMut(T) -> U;
 }
 
-/// Trait which associates a [`usize`] length and `ArrayType` with a
+/// Trait which associates a [`usize`] size and `ArrayType` with a
 /// `typenum`-provided [`Unsigned`] integer.
-pub trait ArrayLength<T>: Unsigned {
-    /// Array type which corresponds to this length.
+pub trait ArraySize<T>: Unsigned {
+    /// Array type which corresponds to this size.
     type ArrayType: AsRef<[T]> + AsMut<[T]> + IntoArray<T> + Sized;
 }
 
 /// Convert the given type into an [`Array`].
 pub trait IntoArray<T> {
-    /// Length of the [`Array`].
-    type Length: ArrayLength<T>;
+    /// Size of the [`Array`].
+    type Size: ArraySize<T>;
 
     /// Convert into the `hybrid-array` crate's [`Array`] type.
-    fn into_hybrid_array(self) -> Array<T, Self::Length>;
+    fn into_hybrid_array(self) -> Array<T, Self::Size>;
 }
 
-macro_rules! impl_array_length {
+macro_rules! impl_array_size {
     ($($len:expr => $ty:ident),+) => {
         $(
             impl<T> ArrayOps<T, $len> for Array<T, typenum::$ty> {
-                type Length = typenum::$ty;
+                const SIZE: usize = $len;
+                type Size = typenum::$ty;
 
                 fn as_array_ref(&self) -> &[T; $len] {
                     &self.0
@@ -134,14 +142,14 @@ macro_rules! impl_array_length {
                 }
             }
 
-            impl<T> ArrayLength<T> for typenum::$ty {
+            impl<T> ArraySize<T> for typenum::$ty {
                 type ArrayType = [T; $len];
             }
 
             impl<T> IntoArray<T> for [T; $len] {
-                type Length = typenum::$ty;
+                type Size = typenum::$ty;
 
-                fn into_hybrid_array(self) -> Array<T, Self::Length> {
+                fn into_hybrid_array(self) -> Array<T, Self::Size> {
                     Array::from_core_array(self)
                 }
             }
@@ -176,23 +184,11 @@ macro_rules! impl_array_length {
                     self.iter_mut()
                 }
             }
-
-            impl<T> TryFrom<&[T]> for Array<T, typenum::$ty>
-            where
-                T: Copy,
-            {
-                type Error = TryFromSliceError;
-
-                #[inline]
-                fn try_from(slice: &[T]) -> Result<Array<T, typenum::$ty>, TryFromSliceError> {
-                    Self::from_slice(slice)
-                }
-            }
         )+
      };
 }
 
-impl_array_length! {
+impl_array_size! {
     0 => U0,
     1 => U1,
     2 => U2,
@@ -279,11 +275,11 @@ impl_array_length! {
 /// allowing interoperability and a transition path to const generics.
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
-pub struct Array<T, U: ArrayLength<T>>(pub U::ArrayType);
+pub struct Array<T, U: ArraySize<T>>(pub U::ArrayType);
 
 impl<T, U> Array<T, U>
 where
-    U: ArrayLength<T>,
+    U: ArraySize<T>,
 {
     /// Returns a slice containing the entire array. Equivalent to `&s[..]`.
     #[inline]
@@ -301,7 +297,7 @@ where
 impl<T, U, const N: usize> AsRef<[T; N]> for Array<T, U>
 where
     Self: ArrayOps<T, N>,
-    U: ArrayLength<T>,
+    U: ArraySize<T>,
 {
     #[inline]
     fn as_ref(&self) -> &[T; N] {
@@ -312,7 +308,7 @@ where
 impl<T, U, const N: usize> AsMut<[T; N]> for Array<T, U>
 where
     Self: ArrayOps<T, N>,
-    U: ArrayLength<T>,
+    U: ArraySize<T>,
 {
     #[inline]
     fn as_mut(&mut self) -> &mut [T; N] {
@@ -323,7 +319,7 @@ where
 impl<T, U, const N: usize> Borrow<[T; N]> for Array<T, U>
 where
     Self: ArrayOps<T, N>,
-    U: ArrayLength<T>,
+    U: ArraySize<T>,
 {
     #[inline]
     fn borrow(&self) -> &[T; N] {
@@ -334,7 +330,7 @@ where
 impl<T, U, const N: usize> BorrowMut<[T; N]> for Array<T, U>
 where
     Self: ArrayOps<T, N>,
-    U: ArrayLength<T>,
+    U: ArraySize<T>,
 {
     #[inline]
     fn borrow_mut(&mut self) -> &mut [T; N] {
@@ -345,7 +341,7 @@ where
 impl<T, U, const N: usize> From<[T; N]> for Array<T, U>
 where
     Self: ArrayOps<T, N>,
-    U: ArrayLength<T>,
+    U: ArraySize<T>,
 {
     #[inline]
     fn from(arr: [T; N]) -> Array<T, U> {
@@ -356,7 +352,7 @@ where
 impl<T, I, U> Index<I> for Array<T, U>
 where
     [T]: Index<I>,
-    U: ArrayLength<T>,
+    U: ArraySize<T>,
 {
     type Output = <[T] as Index<I>>::Output;
 
@@ -369,11 +365,25 @@ where
 impl<T, I, U> IndexMut<I> for Array<T, U>
 where
     [T]: IndexMut<I>,
-    U: ArrayLength<T>,
+    U: ArraySize<T>,
 {
     #[inline]
     fn index_mut(&mut self, index: I) -> &mut Self::Output {
         IndexMut::index_mut(self.as_mut_slice(), index)
+    }
+}
+
+impl<'a, T, U> TryFrom<&'a [T]> for Array<T, U>
+where
+    T: Copy,
+    U: ArraySize<T>,
+    U::ArrayType: TryFrom<&'a [T], Error = TryFromSliceError>,
+{
+    type Error = TryFromSliceError;
+
+    #[inline]
+    fn try_from(slice: &'a [T]) -> Result<Array<T, U>, TryFromSliceError> {
+        U::ArrayType::try_from(slice).map(Self)
     }
 }
 
