@@ -46,7 +46,7 @@ dual licensed as above, without any additional terms or conditions.
 [crate-link]: https://crates.io/crates/hybrid-array
 [docs-image]: https://docs.rs/hybrid-array/badge.svg
 [docs-link]: https://docs.rs/hybrid-array/
-[build-image]: https://github.com/RustCrypto/utils/workflows/hybrid-array/badge.svg?branch=master&event=push
+[build-image]: https://github.com/RustCrypto/utils/workflows/hybrid-array/badge.svg
 [build-link]: https://github.com/RustCrypto/utils/actions/workflows/hybrid-array.yml
 [safety-image]: https://img.shields.io/badge/unsafe-forbidden-success.svg
 [safety-link]: https://github.com/rust-secure-code/safety-dance/
