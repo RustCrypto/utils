@@ -3,11 +3,26 @@
 #![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
-    html_root_url = "https://docs.rs/hybrid-array/0.0.0"
+    html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
-#![forbid(unsafe_code, clippy::unwrap_used)]
-#![warn(missing_docs, rust_2018_idioms)]
+#![forbid(unsafe_code)]
+#![warn(
+    clippy::cast_lossless,
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::checked_conversions,
+    clippy::implicit_saturating_sub,
+    clippy::integer_arithmetic,
+    clippy::panic,
+    clippy::panic_in_result_fn,
+    clippy::unwrap_used,
+    missing_docs,
+    rust_2018_idioms,
+    unused_lifetimes,
+    unused_qualifications
+)]
 
 pub use typenum;
 
@@ -60,7 +75,7 @@ pub trait ArrayOps<T, const N: usize>:
         let mut idx = 0;
         Self::from_core_array([(); N].map(|_| {
             let res = cb(idx);
-            idx += 1;
+            idx = idx.saturating_add(1); // TODO(tarcieri): better overflow handling?
             res
         }))
     }

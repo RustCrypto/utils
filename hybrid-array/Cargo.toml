@@ -1,6 +1,6 @@
 [package]
 name = "hybrid-array"
-version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.1.0" # Also update html_root_url in lib.rs when bumping this
 description = """
 Hybrid typenum-based and const generic array types designed to provide the
 flexibility of typenum-based expressions while also allowing interoperability
@@ -9,8 +9,9 @@ and a transition path to const generics
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/hybrid-array"
-repository = "https://github.com/RustCrypto/utils"
-categories = ["no-std"]
+repository = "https://github.com/RustCrypto/utils/tree/master/hybrid-array"
+categories = ["no-std", "data-structures"]
+keywords = ["generic-array"]
 readme = "README.md"
 edition = "2021"
 rust-version = "1.56"
