@@ -121,6 +121,10 @@ fn main() {
             file: "ecdsa_secp256k1_sha256_test.json",
             generator: ecdsa::generator,
         },
+        "secp384r1" => Algorithm {
+            file: "ecdsa_secp384r1_sha384_test.json",
+            generator: ecdsa::generator,
+        },
         _ => panic!("Unrecognized algorithm '{}'", algorithm),
     };
 
