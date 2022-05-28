@@ -55,7 +55,7 @@ pub fn generator(data: &[u8], algorithm: &str, _key_size: u32) -> Vec<TestInfo> 
     let mut infos = vec![];
     for g in &suite.test_groups {
         assert_eq!(g.key.curve, algorithm);
-        assert_eq!(g.sha, "SHA-256");
+        assert!(matches!(g.sha.as_str(), "SHA-256" | "SHA-384"));
         for tc in &g.tests {
             if tc.case.result == crate::wycheproof::CaseResult::Acceptable {
                 // TODO: figure out what to do with test cases that pass but which have weak params
