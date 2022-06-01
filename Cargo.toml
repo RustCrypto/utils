@@ -7,6 +7,7 @@ members = [
     "cmov",
     "cpufeatures",
     "dbl",
+    "fiat-constify",
     "hex-literal",
     "hybrid-array",
     "inout",
