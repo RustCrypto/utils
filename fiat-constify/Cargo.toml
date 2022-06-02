@@ -1,0 +1,21 @@
+[package]
+name = "fiat-constify"
+version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
+description = """
+Postprocessor for fiat-crypto generated field implementations which rewrites
+them as `const fn`
+"""
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/fiat-constify"
+repository = "https://github.com/RustCrypto/utils/tree/master/fiat-constify"
+categories = ["cryptography"]
+keywords = ["fiat-crypto", "field"]
+readme = "README.md"
+edition = "2021"
+rust-version = "1.56"
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "1", features = ["extra-traits", "full"] }
