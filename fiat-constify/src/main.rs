@@ -31,6 +31,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ast.attrs.push(build_attribute(
         "allow",
         &[
+            "clippy::identity_op",
+            "clippy::unnecessary_cast",
             "dead_code",
             "rustdoc::broken_intra_doc_links",
             "unused_assignments",
