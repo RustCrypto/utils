@@ -284,6 +284,19 @@ pub trait ZeroizeOnDrop {}
 /// Marker trait for types whose [`Default`] is the desired zeroization result
 pub trait DefaultIsZeroes: Copy + Default + Sized {}
 
+/// Fallible trait for representing cases where zeroization may or may not be
+/// possible.
+///
+/// This is primarily useful for scenarios like reference counted data, where
+/// zeroization is only possible when the last reference is dropped.
+pub trait TryZeroize {
+    /// Try to zero out this object from memory using Rust intrinsics which
+    /// ensure the zeroization operation is not "optimized away" by the
+    /// compiler.
+    #[must_use]
+    fn try_zeroize(&mut self) -> bool;
+}
+
 impl<Z> Zeroize for Z
 where
     Z: DefaultIsZeroes,
@@ -598,19 +611,6 @@ impl Zeroize for CString {
     }
 }
 
-/// Fallible trait for representing cases where zeroization may or may not be
-/// possible.
-///
-/// This is primarily useful for scenarios like reference counted data, where
-/// zeroization is only possible when the last reference is dropped.
-pub trait TryZeroize {
-    /// Try to zero out this object from memory using Rust intrinsics which
-    /// ensure the zeroization operation is not "optimized away" by the
-    /// compiler.
-    #[must_use]
-    fn try_zeroize(&mut self) -> bool;
-}
-
 /// `Zeroizing` is a a wrapper for any `Z: Zeroize` type which implements a
 /// `Drop` handler which zeroizes dropped values.
 #[derive(Debug, Default, Eq, PartialEq)]
@@ -622,16 +622,19 @@ where
 {
     /// Move value inside a `Zeroizing` wrapper which ensures it will be
     /// zeroized when it's dropped.
+    #[inline(always)]
     pub fn new(value: Z) -> Self {
-        value.into()
+        Self(value)
     }
 }
 
 impl<Z: Zeroize + Clone> Clone for Zeroizing<Z> {
+    #[inline(always)]
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 
+    #[inline(always)]
     fn clone_from(&mut self, source: &Self) {
         self.0.zeroize();
         self.0.clone_from(&source.0);
@@ -642,6 +645,7 @@ impl<Z> From<Z> for Zeroizing<Z>
 where
     Z: Zeroize,
 {
+    #[inline(always)]
     fn from(value: Z) -> Zeroizing<Z> {
         Zeroizing(value)
     }
@@ -653,6 +657,7 @@ where
 {
     type Target = Z;
 
+    #[inline(always)]
     fn deref(&self) -> &Z {
         &self.0
     }
@@ -662,6 +667,7 @@ impl<Z> ops::DerefMut for Zeroizing<Z>
 where
     Z: Zeroize,
 {
+    #[inline(always)]
     fn deref_mut(&mut self) -> &mut Z {
         &mut self.0
     }
@@ -672,6 +678,7 @@ where
     T: ?Sized,
     Z: AsRef<T> + Zeroize,
 {
+    #[inline(always)]
     fn as_ref(&self) -> &T {
         self.0.as_ref()
     }
@@ -682,6 +689,7 @@ where
     T: ?Sized,
     Z: AsMut<T> + Zeroize,
 {
+    #[inline(always)]
     fn as_mut(&mut self) -> &mut T {
         self.0.as_mut()
     }
@@ -710,13 +718,13 @@ where
 /// Use fences to prevent accesses from being reordered before this
 /// point, which should hopefully help ensure that all accessors
 /// see zeroes after this point.
-#[inline]
+#[inline(always)]
 fn atomic_fence() {
     atomic::compiler_fence(atomic::Ordering::SeqCst);
 }
 
 /// Perform a volatile write to the destination
-#[inline]
+#[inline(always)]
 fn volatile_write<T: Copy + Sized>(dst: &mut T, src: T) {
     unsafe { ptr::write_volatile(dst, src) }
 }
@@ -729,7 +737,7 @@ fn volatile_write<T: Copy + Sized>(dst: &mut T, src: T) {
 /// `count` must not be larger than an `isize`.
 /// `dst` being offset by `mem::size_of::<T> * count` bytes must not wrap around the address space.
 /// Also `dst` must be properly aligned.
-#[inline]
+#[inline(always)]
 unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
     // TODO(tarcieri): use `volatile_set_memory` when stabilized
     for i in 0..count {
