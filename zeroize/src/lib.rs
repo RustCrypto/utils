@@ -251,56 +251,38 @@ mod aarch64;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
 
-use core::marker::{PhantomData, PhantomPinned};
-use core::mem::{self, MaybeUninit};
-use core::num::{
-    NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU128,
-    NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
+use core::{
+    marker::{PhantomData, PhantomPinned},
+    mem::{self, MaybeUninit},
+    num::{
+        NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU128,
+        NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
+    },
+    ops, ptr,
+    slice::IterMut,
+    sync::atomic,
 };
-use core::{ops, ptr, slice::IterMut, sync::atomic};
 
 #[cfg(feature = "alloc")]
-use alloc::{boxed::Box, string::String, vec::Vec};
+use {
+    alloc::{boxed::Box, string::String, vec::Vec},
+    core::slice,
+};
 
 #[cfg(feature = "std")]
 use std::ffi::CString;
 
-/// Trait for securely erasing types from memory
+/// Trait for securely erasing values from memory.
 pub trait Zeroize {
     /// Zero out this object from memory using Rust intrinsics which ensure the
     /// zeroization operation is not "optimized away" by the compiler.
     fn zeroize(&mut self);
 }
 
-/// Marker trait signifying that this type will [`zeroize`](Zeroize::zeroize) itself on [`Drop`].
+/// Marker trait signifying that this type will [`Zeroize::zeroize`] itself on [`Drop`].
 pub trait ZeroizeOnDrop {}
 
-#[doc(hidden)]
-pub mod __internal {
-    use super::*;
-
-    /// Auto-deref workaround for deriving `ZeroizeOnDrop`.
-    pub trait AssertZeroizeOnDrop {
-        fn zeroize_or_on_drop(self);
-    }
-
-    impl<T: ZeroizeOnDrop + ?Sized> AssertZeroizeOnDrop for &&mut T {
-        fn zeroize_or_on_drop(self) {}
-    }
-
-    /// Auto-deref workaround for deriving `ZeroizeOnDrop`.
-    pub trait AssertZeroize {
-        fn zeroize_or_on_drop(&mut self);
-    }
-
-    impl<T: Zeroize + ?Sized> AssertZeroize for T {
-        fn zeroize_or_on_drop(&mut self) {
-            self.zeroize()
-        }
-    }
-}
-
-/// Marker trait for types whose `Default` is the desired zeroization result
+/// Marker trait for types whose [`Default`] is the desired zeroization result
 pub trait DefaultIsZeroes: Copy + Default + Sized {}
 
 impl<Z> Zeroize for Z
@@ -319,19 +301,24 @@ macro_rules! impl_zeroize_with_default {
     };
 }
 
-impl_zeroize_with_default!(i8, i16, i32, i64, i128, isize);
-impl_zeroize_with_default!(u8, u16, u32, u64, u128, usize);
-impl_zeroize_with_default!(f32, f64, char, bool);
+#[rustfmt::skip]
+impl_zeroize_with_default! {
+    bool, char,
+    f32, f64,
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize
+}
 
 macro_rules! impl_zeroize_for_non_zero {
     ($($type:ty),+) => {
-        $(impl Zeroize for $type
-        {
-            fn zeroize(&mut self) {
-                volatile_write(self, unsafe { <$type>::new_unchecked(1) });
-                atomic_fence();
+        $(
+            impl Zeroize for $type {
+                fn zeroize(&mut self) {
+                    volatile_write(self, unsafe { <$type>::new_unchecked(1) });
+                    atomic_fence();
+                }
             }
-        })+
+        )+
     };
 }
 
@@ -341,9 +328,7 @@ impl_zeroize_for_non_zero!(
     NonZeroI32,
     NonZeroI64,
     NonZeroI128,
-    NonZeroIsize
-);
-impl_zeroize_for_non_zero!(
+    NonZeroIsize,
     NonZeroU8,
     NonZeroU16,
     NonZeroU32,
@@ -352,7 +337,7 @@ impl_zeroize_for_non_zero!(
     NonZeroUsize
 );
 
-/// Implement `Zeroize` on arrays of types that impl `Zeroize`
+/// Impl [`Zeroize`] on arrays of types that impl [`Zeroize`].
 impl<Z, const N: usize> Zeroize for [Z; N]
 where
     Z: Zeroize,
@@ -361,7 +346,8 @@ where
         self.iter_mut().zeroize();
     }
 }
-/// Implement `ZeroizeOnDrop` on arrays of types that impl `ZeroizeOnDrop`
+
+/// Impl [`ZeroizeOnDrop`] on arrays of types that impl [`ZeroizeOnDrop`].
 impl<Z, const N: usize> ZeroizeOnDrop for [Z; N] where Z: ZeroizeOnDrop {}
 
 impl<'a, Z> Zeroize for IterMut<'a, Z>
@@ -417,16 +403,21 @@ where
 
 impl<Z> ZeroizeOnDrop for Option<Z> where Z: ZeroizeOnDrop {}
 
-/// Impl `Zeroize` on slices of MaybeUninit types
+/// Impl [`Zeroize`] on slices of [`MaybeUninit`] types.
+///
 /// This impl can eventually be optimized using an memset intrinsic,
-/// such as `core::intrinsics::volatile_set_memory`.
-/// This fills the slice with zeros
-/// Note that this ignore invariants that Z might have, because MaybeUninit removes all invariants.
+/// such as [`core::intrinsics::volatile_set_memory`].
+///
+/// This fills the slice with zeroes.
+///
+/// Note that this ignore invariants that `Z` might have, because
+/// [`MaybeUninit`] removes all invariants.
 impl<Z> Zeroize for [MaybeUninit<Z>] {
     fn zeroize(&mut self) {
         let ptr = self.as_mut_ptr() as *mut MaybeUninit<u8>;
         let size = self.len().checked_mul(mem::size_of::<Z>()).unwrap();
-        assert!(size <= core::isize::MAX as usize);
+        assert!(size <= isize::MAX as usize);
+
         // Safety:
         //
         // This is safe, because every valid pointer is well aligned for u8
@@ -438,20 +429,21 @@ impl<Z> Zeroize for [MaybeUninit<Z>] {
     }
 }
 
-/// Impl `Zeroize` on slices of types that can be zeroized with `Default`.
+/// Impl [`Zeroize`] on slices of types that can be zeroized with [`Default`].
 ///
 /// This impl can eventually be optimized using an memset intrinsic,
-/// such as `core::intrinsics::volatile_set_memory`. For that reason the blanket
-/// impl on slices is bounded by `DefaultIsZeroes`.
+/// such as [`core::intrinsics::volatile_set_memory`]. For that reason the
+/// blanket impl on slices is bounded by [`DefaultIsZeroes`].
 ///
 /// To zeroize a mut slice of `Z: Zeroize` which does not impl
-/// `DefaultIsZeroes`, call `iter_mut().zeroize()`.
+/// [`DefaultIsZeroes`], call `iter_mut().zeroize()`.
 impl<Z> Zeroize for [Z]
 where
     Z: DefaultIsZeroes,
 {
     fn zeroize(&mut self) {
-        assert!(self.len() <= core::isize::MAX as usize);
+        assert!(self.len() <= isize::MAX as usize);
+
         // Safety:
         //
         // This is safe, because the slice is well aligned and is backed by a single allocated
@@ -462,6 +454,65 @@ where
         atomic_fence();
     }
 }
+
+/// [`PhantomData`] is always zero sized so provide a [`Zeroize`] implementation.
+impl<Z> Zeroize for PhantomData<Z> {
+    fn zeroize(&mut self) {}
+}
+
+/// [`PhantomData` is always zero sized so provide a ZeroizeOnDrop implementation.
+impl<Z> ZeroizeOnDrop for PhantomData<Z> {}
+
+/// `PhantomPinned` is zero sized so provide a Zeroize implementation.
+impl Zeroize for PhantomPinned {
+    fn zeroize(&mut self) {}
+}
+
+/// `PhantomPinned` is zero sized so provide a ZeroizeOnDrop implementation.
+impl ZeroizeOnDrop for PhantomPinned {}
+
+/// `()` is zero sized so provide a Zeroize implementation.
+impl Zeroize for () {
+    fn zeroize(&mut self) {}
+}
+
+/// `()` is zero sized so provide a ZeroizeOnDrop implementation.
+impl ZeroizeOnDrop for () {}
+
+/// Generic implementation of Zeroize for tuples up to 10 parameters.
+impl<A: Zeroize> Zeroize for (A,) {
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+/// Generic implementation of ZeroizeOnDrop for tuples up to 10 parameters.
+impl<A: ZeroizeOnDrop> ZeroizeOnDrop for (A,) {}
+
+macro_rules! impl_zeroize_tuple {
+    ( $( $type_name:ident ),+ ) => {
+        impl<$($type_name: Zeroize),+> Zeroize for ($($type_name),+) {
+            fn zeroize(&mut self) {
+                #[allow(non_snake_case)]
+                let ($($type_name),+) = self;
+                $($type_name.zeroize());+
+            }
+        }
+
+        impl<$($type_name: ZeroizeOnDrop),+> ZeroizeOnDrop for ($($type_name),+) { }
+    }
+}
+
+// Generic implementations for tuples up to 10 parameters.
+impl_zeroize_tuple!(A, B);
+impl_zeroize_tuple!(A, B, C);
+impl_zeroize_tuple!(A, B, C, D);
+impl_zeroize_tuple!(A, B, C, D, E);
+impl_zeroize_tuple!(A, B, C, D, E, F);
+impl_zeroize_tuple!(A, B, C, D, E, F, G);
+impl_zeroize_tuple!(A, B, C, D, E, F, G, H);
+impl_zeroize_tuple!(A, B, C, D, E, F, G, H, I);
+impl_zeroize_tuple!(A, B, C, D, E, F, G, H, I, J);
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
@@ -474,12 +525,12 @@ where
     /// Ensures the entire capacity of the `Vec` is zeroed. Cannot ensure that
     /// previous reallocations did not leave values on the heap.
     fn zeroize(&mut self) {
-        use core::slice;
         // Zeroize all the initialized elements.
         self.iter_mut().zeroize();
 
         // Set the Vec's length to 0 and drop all the elements.
         self.clear();
+
         // Zero the full capacity of `Vec`.
         // Safety:
         //
@@ -490,6 +541,7 @@ where
         let uninit_slice = unsafe {
             slice::from_raw_parts_mut(self.as_mut_ptr() as *mut MaybeUninit<Z>, self.capacity())
         };
+
         uninit_slice.zeroize();
     }
 }
@@ -530,17 +582,20 @@ impl Zeroize for CString {
         // mem::take uses replace internally to swap the pointer
         // Unfortunately this results in an allocation for a Box::new(&[0]) as CString must
         // contain a trailing zero byte
-        let this = std::mem::take(self);
+        let this = mem::take(self);
+
         // - CString::into_bytes calls ::into_vec which takes ownership of the heap pointer
         // as a Vec<u8>
         // - Calling .zeroize() on the resulting vector clears out the bytes
         // From: https://github.com/RustCrypto/utils/pull/759#issuecomment-1087976570
         let mut buf = this.into_bytes();
         buf.zeroize();
+
         // expect() should never fail, because zeroize() truncates the Vec
         let zeroed = CString::new(buf).expect("buf not truncated");
+
         // Replace self by the zeroed CString to maintain the original ptr of the buffer
-        let _ = std::mem::replace(self, zeroed);
+        let _ = mem::replace(self, zeroed);
     }
 }
 
@@ -685,6 +740,7 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
         // allocation pointed to by `dst`, because `count <= isize::MAX` and because
         // `dst.add(count)` must not wrap around the address space.
         let ptr = dst.add(i);
+
         // Safety:
         //
         // This is safe, because the pointer is valid and because `dst` is well aligned for `T` and
@@ -693,56 +749,31 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
     }
 }
 
-/// `PhantomData` is always zero sized so provide a Zeroize implementation.
-impl<Z> Zeroize for PhantomData<Z> {
-    fn zeroize(&mut self) {}
-}
-/// `PhantomData` is always zero sized so provide a ZeroizeOnDrop implementation.
-impl<Z> ZeroizeOnDrop for PhantomData<Z> {}
-/// `PhantomPinned` is zero sized so provide a Zeroize implementation.
-impl Zeroize for PhantomPinned {
-    fn zeroize(&mut self) {}
-}
-/// `PhantomPinned` is zero sized so provide a ZeroizeOnDrop implementation.
-impl ZeroizeOnDrop for PhantomPinned {}
-/// `()` is zero sized so provide a Zeroize implementation.
-impl Zeroize for () {
-    fn zeroize(&mut self) {}
-}
-/// `()` is zero sized so provide a ZeroizeOnDrop implementation.
-impl ZeroizeOnDrop for () {}
+/// Internal module used as support for `AssertZeroizeOnDrop`.
+#[doc(hidden)]
+pub mod __internal {
+    use super::*;
 
-/// Generic implementation of Zeroize for tuples up to 10 parameters.
-impl<A: Zeroize> Zeroize for (A,) {
-    fn zeroize(&mut self) {
-        self.0.zeroize();
+    /// Auto-deref workaround for deriving `ZeroizeOnDrop`.
+    pub trait AssertZeroizeOnDrop {
+        fn zeroize_or_on_drop(self);
     }
-}
-/// Generic implementation of ZeroizeOnDrop for tuples up to 10 parameters.
-impl<A: ZeroizeOnDrop> ZeroizeOnDrop for (A,) {}
-macro_rules! impl_zeroize_tuple {
-    ( $( $type_name:ident )+ ) => {
-        impl<$($type_name: Zeroize),+> Zeroize for ($($type_name),+) {
-            fn zeroize(&mut self) {
-                #[allow(non_snake_case)]
-                let ($($type_name),+) = self;
-                $($type_name.zeroize());+
-            }
+
+    impl<T: ZeroizeOnDrop + ?Sized> AssertZeroizeOnDrop for &&mut T {
+        fn zeroize_or_on_drop(self) {}
+    }
+
+    /// Auto-deref workaround for deriving `ZeroizeOnDrop`.
+    pub trait AssertZeroize {
+        fn zeroize_or_on_drop(&mut self);
+    }
+
+    impl<T: Zeroize + ?Sized> AssertZeroize for T {
+        fn zeroize_or_on_drop(&mut self) {
+            self.zeroize()
         }
-
-        impl<$($type_name: ZeroizeOnDrop),+> ZeroizeOnDrop for ($($type_name),+) { }
     }
 }
-// Generic implementations for tuples up to 10 parameters.
-impl_zeroize_tuple! { A B }
-impl_zeroize_tuple! { A B C }
-impl_zeroize_tuple! { A B C D }
-impl_zeroize_tuple! { A B C D E }
-impl_zeroize_tuple! { A B C D E F }
-impl_zeroize_tuple! { A B C D E F G }
-impl_zeroize_tuple! { A B C D E F G H }
-impl_zeroize_tuple! { A B C D E F G H I }
-impl_zeroize_tuple! { A B C D E F G H I L }
 
 #[cfg(test)]
 mod tests {
@@ -784,9 +815,7 @@ mod tests {
             NonZeroI32,
             NonZeroI64,
             NonZeroI128,
-            NonZeroIsize
-        );
-        non_zero_test!(
+            NonZeroIsize,
             NonZeroU8,
             NonZeroU16,
             NonZeroU32,
