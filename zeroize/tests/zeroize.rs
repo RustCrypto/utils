@@ -166,7 +166,9 @@ fn zeroize_string_entire_capacity() {
     assert!(as_vec.iter().all(|byte| *byte == 0));
 }
 
+// TODO(tarcieri): debug flaky test (with potential UB?) See: RustCrypto/utils#774
 #[cfg(feature = "std")]
+#[ignore]
 #[test]
 fn zeroize_c_string() {
     let mut cstring = CString::new("Hello, world!").expect("CString::new failed");
