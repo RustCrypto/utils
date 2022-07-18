@@ -221,6 +221,7 @@ dependencies = [
 name = "zeroize"
 version = "1.5.6"
 dependencies = [
+ "serde",
  "zeroize_derive",
 ]
 

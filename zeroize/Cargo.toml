@@ -17,6 +17,7 @@ keywords = ["memory", "memset", "secure", "volatile", "zero"]
 edition = "2018"
 
 [dependencies]
+serde = { version = "1.0", default-features = false, optional = true }
 zeroize_derive = { version = "1.3", path = "derive", optional = true }
 
 [features]

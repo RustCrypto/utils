@@ -715,6 +715,34 @@ where
     }
 }
 
+#[cfg(feature = "serde")]
+impl<Z> serde::Serialize for Zeroizing<Z>
+where
+    Z: Zeroize + serde::Serialize,
+{
+    #[inline(always)]
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.0.serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, Z> serde::Deserialize<'de> for Zeroizing<Z>
+where
+    Z: Zeroize + serde::Deserialize<'de>,
+{
+    #[inline(always)]
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Self(Z::deserialize(deserializer)?))
+    }
+}
+
 /// Use fences to prevent accesses from being reordered before this
 /// point, which should hopefully help ensure that all accessors
 /// see zeroes after this point.
