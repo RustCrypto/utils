@@ -107,6 +107,8 @@ pub trait ArrayOps<T, const N: usize>:
 /// Trait which associates a [`usize`] size and `ArrayType` with a
 /// `typenum`-provided [`Unsigned`] integer.
 pub trait ArraySize<T>: Unsigned {
+    /// Constant size of the array
+    const SIZE: usize;
     /// Array type which corresponds to this size.
     type ArrayType: AsRef<[T]> + AsMut<[T]> + IntoArray<T> + Sized;
 }
@@ -158,6 +160,7 @@ macro_rules! impl_array_size {
             }
 
             impl<T> ArraySize<T> for typenum::$ty {
+                const SIZE: usize = $len;
                 type ArrayType = [T; $len];
             }
 
