@@ -315,3 +315,9 @@ fn derive_deref() {
     }
     assert_eq!(&value.0 .0, &[0, 0, 0])
 }
+
+#[test]
+fn derive_box() {
+    #[derive(Zeroize, ZeroizeOnDrop)]
+    struct Z<T: Zeroize>(Box<T>);
+}

@@ -71,7 +71,7 @@ fn derive_zeroize(mut s: synstructure::Structure<'_>) -> TokenStream {
 fn derive_zeroize_on_drop(mut s: synstructure::Structure<'_>) -> TokenStream {
     let zeroizers = generate_fields(&mut s, quote! { zeroize_or_on_drop });
 
-    let drop_impl = s.gen_impl(quote! {
+    let drop_impl = s.add_bounds(AddBounds::None).gen_impl(quote! {
         gen impl Drop for @Self {
             fn drop(&mut self) {
                 use zeroize::__internal::AssertZeroize;
