@@ -315,3 +315,13 @@ fn derive_deref() {
     }
     assert_eq!(&value.0 .0, &[0, 0, 0])
 }
+
+#[test]
+#[cfg(feature = "alloc")]
+fn derive_zeroize_on_drop_generic() {
+    #[derive(ZeroizeOnDrop)]
+    struct Y<T: Zeroize>(Box<T>);
+
+    #[derive(ZeroizeOnDrop)]
+    struct Z<T: Zeroize>(Vec<T>);
+}
