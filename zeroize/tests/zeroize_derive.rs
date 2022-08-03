@@ -317,7 +317,11 @@ fn derive_deref() {
 }
 
 #[test]
-fn derive_box() {
-    #[derive(Zeroize, ZeroizeOnDrop)]
-    struct Z<T: Zeroize>(Box<T>);
+#[cfg(feature = "alloc")]
+fn derive_zeroize_on_drop_generic() {
+    #[derive(ZeroizeOnDrop)]
+    struct Y<T: Zeroize>(Box<T>);
+
+    #[derive(ZeroizeOnDrop)]
+    struct Z<T: Zeroize>(Vec<T>);
 }
