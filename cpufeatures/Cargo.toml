@@ -1,6 +1,6 @@
 [package]
 name = "cpufeatures"
-version = "0.2.3"
+version = "0.2.4"
 description = """
 Lightweight runtime CPU feature detection for x86/x86_64 and aarch64 with
 no_std support and support for mobile targets including Android and iOS
