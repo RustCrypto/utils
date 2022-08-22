@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.4 (2022-08-22)
+- Re-release v0.2.3 without any changes to fix [#795] ([#796])
+
+[#795]: https://github.com/RustCrypto/utils/issues/795
+[#796]: https://github.com/RustCrypto/utils/pull/796
+
 ## 0.2.3 (2022-08-18)
 ### Changed
 - Update `libc` version to v0.2.95 ([#789])
