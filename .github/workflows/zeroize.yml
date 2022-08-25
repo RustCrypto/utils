@@ -98,15 +98,17 @@ jobs:
       - run: rm ../Cargo.toml
       - run: ${{ matrix.deps }}
       - run: cargo test
-      - run: cargo test --features alloc,derive,std
+      - run: cargo test --all-features
 
-  # Feature-gated ARM64 SIMD register support (nightly-only)
+  # Feature-gated ARM64 SIMD register support (MSRV 1.59)
   aarch64:
     strategy:
       matrix:
         include:
           - target: aarch64-unknown-linux-gnu
-            rust: nightly
+            rust: 1.59.0
+          - target: aarch64-unknown-linux-gnu
+            rust: stable
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
