@@ -25,7 +25,7 @@ pub enum PadType {
     Reversible,
     /// Ambiguous padding
     Ambiguous,
-    /// No padding, message must be mutliple of block size
+    /// No padding, message must be multiple of block size
     NoPadding,
 }
 
