@@ -8,7 +8,7 @@
 
 pub use generic_array;
 
-use core::{marker::PhantomData, slice};
+use core::{fmt, marker::PhantomData, slice};
 use generic_array::{
     typenum::{IsLess, Le, NonZero, U256},
     ArrayLength, GenericArray,
@@ -39,6 +39,16 @@ impl BufferKind for Lazy {}
 pub type EagerBuffer<B> = BlockBuffer<B, Eager>;
 /// Lazy block buffer.
 pub type LazyBuffer<B> = BlockBuffer<B, Lazy>;
+
+/// Block buffer error.
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub struct Error;
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        f.write_str("Block buffer error")
+    }
+}
 
 /// Buffer for block processing of data.
 #[derive(Debug)]
@@ -95,15 +105,25 @@ where
     /// If slice length is not valid for used buffer kind.
     #[inline(always)]
     pub fn new(buf: &[u8]) -> Self {
+        Self::try_new(buf).unwrap()
+    }
+
+    /// Create new buffer from slice.
+    ///
+    /// Returns an error if slice length is not valid for used buffer kind.
+    #[inline(always)]
+    pub fn try_new(buf: &[u8]) -> Result<Self, Error> {
         let pos = buf.len();
-        assert!(Kind::invariant(pos, BlockSize::USIZE));
+        if !Kind::invariant(pos, BlockSize::USIZE) {
+            return Err(Error);
+        }
         let mut buffer = Block::<BlockSize>::default();
         buffer[..pos].copy_from_slice(buf);
-        Self {
+        Ok(Self {
             buffer,
             pos: pos as u8,
             _pd: PhantomData,
-        }
+        })
     }
 
     /// Digest data in `input` in blocks of size `BlockSize` using
