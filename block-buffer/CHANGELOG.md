@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.10.3 (2022-09-04)
 ### Added
-- `try_new` method ([#731])
+- `try_new` method ([#799])
 
 [#799]: https://github.com/RustCrypto/utils/pull/799
 
