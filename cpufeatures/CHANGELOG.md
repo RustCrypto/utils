@@ -12,13 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [CPUID bug]: https://github.com/rust-lang/rust/issues/101346
 [#800]: https://github.com/RustCrypto/utils/pull/800
 
-## 0.2.4 (2022-08-22)
+## 0.2.4 (2022-08-22) [YANKED]
 - Re-release v0.2.3 without any changes to fix [#795] ([#796])
 
 [#795]: https://github.com/RustCrypto/utils/issues/795
 [#796]: https://github.com/RustCrypto/utils/pull/796
 
-## 0.2.3 (2022-08-18)
+## 0.2.3 (2022-08-18) [YANKED]
 ### Changed
 - Update `libc` version to v0.2.95 ([#789])
 - Disable all target features under MIRI ([#779])
@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#789]: https://github.com/RustCrypto/utils/pull/789
 [#792]: https://github.com/RustCrypto/utils/pull/792
 
-## 0.2.2 (2022-03-18)
+## 0.2.2 (2022-03-18) [YANKED]
 ### Added
 - Support for Android on `aarch64` ([#752])
 
@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#600]: https://github.com/RustCrypto/utils/pull/600
 [#752]: https://github.com/RustCrypto/utils/pull/752
 
-## 0.2.1 (2021-08-26)
+## 0.2.1 (2021-08-26) [YANKED]
 ### Changed
 - Revert [#583] "Use from_bytes_with_nul for string check" ([#597])
 
