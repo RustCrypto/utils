@@ -47,12 +47,12 @@ pub trait Padding<BlockSize: ArrayLength<u8>> {
 
     /// Unpad data in the `block`.
     ///
-    /// Returns `Err(UnpadError)` if the block containts malformed padding.
+    /// Returns `Err(UnpadError)` if the block contains malformed padding.
     fn unpad(block: &Block<BlockSize>) -> Result<&[u8], UnpadError>;
 
     /// Unpad data in the `blocks`.
     ///
-    /// Returns `Err(UnpadError)` if the block containts malformed padding.
+    /// Returns `Err(UnpadError)` if the block contains malformed padding.
     fn unpad_blocks(blocks: &[Block<BlockSize>]) -> Result<&[u8], UnpadError> {
         let bs = BlockSize::USIZE;
         let res_len = match (blocks.last(), Self::TYPE) {

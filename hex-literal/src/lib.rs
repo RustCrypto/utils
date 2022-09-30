@@ -32,7 +32,7 @@
 //! // it's possible to use several literals (results will be concatenated)
 //! let bytes2 = hex!(
 //!     "00010203 04050607" // first half
-//!     "08090a0b 0c0d0e0f" // second hald
+//!     "08090a0b 0c0d0e0f" // second half
 //! );
 //! assert_eq!(bytes2, bytes);
 //!

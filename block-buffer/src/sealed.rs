@@ -7,7 +7,7 @@ pub trait Sealed {
     /// buffer code this function always returns true.
     fn invariant(pos: usize, block_size: usize) -> bool;
 
-    /// Split input data into slice fo blocks and tail.
+    /// Split input data into slice of blocks and tail.
     fn split_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[Block<N>], &[u8]);
 }
 
