@@ -215,13 +215,13 @@ where
         self.set_pos_unchecked(pos);
     }
 
-    /// Return size of the internall buffer in bytes.
+    /// Return size of the internal buffer in bytes.
     #[inline(always)]
     pub fn size(&self) -> usize {
         BlockSize::USIZE
     }
 
-    /// Return number of remaining bytes in the internall buffer.
+    /// Return number of remaining bytes in the internal buffer.
     #[inline(always)]
     pub fn remaining(&self) -> usize {
         self.size() - self.get_pos()
