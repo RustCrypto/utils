@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#699]: https://github.com/RustCrypto/utils/pull/699
 [#700]: https://github.com/RustCrypto/utils/pull/700
 
-## 1.2.2 (2021-11-04)
+## 1.2.2 (2021-11-04) [YANKED]
 ### Added
 - `#[zeroize(skip)]` attribute ([#654])
 
@@ -35,12 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Moved to `RustCrypto/utils` repository
 
-## 1.2.0 (2021-09-21)
+## 1.2.0 (2021-09-21) [YANKED]
 ### Changed
 - Bump MSRV to 1.51+
 - Reject `#[zeroize(drop)]` on struct/enum fields, enum variants
 
-## 1.1.1 (2021-10-09)
+## 1.1.1 (2021-10-09) [YANKED]
 ### Changed
 - Backport 1.2.0 `#[zeroize(drop)]` fixes but with a 1.47+ MSRV.
 
