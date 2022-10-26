@@ -8,57 +8,53 @@
 //! - `' '`, `'\r'`, `'\n'`, `'\t'` — formatting characters which will be
 //!     ignored
 //!
-//! Additionally it accepts line (`//`) and block (`/* .. */`) comments. Characters
-//! inside of those are ignored.
-//!
 //! # Examples
 //! ```
 //! # #[macro_use] extern crate hex_literal;
-//! // the macro can be used in const context
+//! // The macro can be used in const contexts
 //! const DATA: [u8; 4] = hex!("01020304");
 //! # fn main() {
 //! assert_eq!(DATA, [1, 2, 3, 4]);
 //!
-//! // it understands both upper and lower hex values
+//! // Both upper and lower hex values are supported
 //! assert_eq!(hex!("a1 b2 c3 d4"), [0xA1, 0xB2, 0xC3, 0xD4]);
 //! assert_eq!(hex!("E5 E6 90 92"), [0xE5, 0xE6, 0x90, 0x92]);
 //! assert_eq!(hex!("0a0B 0C0d"), [10, 11, 12, 13]);
-//! let bytes = hex!("
+//!
+//! // Multi-line literals
+//! let bytes1 = hex!("
 //!     00010203 04050607
 //!     08090a0b 0c0d0e0f
 //! ");
-//! assert_eq!(bytes, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+//! assert_eq!(bytes1, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
 //!
-//! // it's possible to use several literals (results will be concatenated)
+//! // It's possible to use several literals (results will be concatenated)
 //! let bytes2 = hex!(
 //!     "00010203 04050607" // first half
 //!     "08090a0b 0c0d0e0f" // second half
 //! );
-//! assert_eq!(bytes2, bytes);
-//!
-//! // comments can be also included inside literals
-//! assert_eq!(hex!("0a0B // 0c0d line comments"), [10, 11]);
-//! assert_eq!(hex!("0a0B // line comments
-//!                  0c0d"), [10, 11, 12, 13]);
-//! assert_eq!(hex!("0a0B /* block comments */ 0c0d"), [10, 11, 12, 13]);
-//! assert_eq!(hex!("0a0B /* multi-line
-//!                          block comments
-//!                       */ 0c0d"), [10, 11, 12, 13]);
+//! assert_eq!(bytes1, bytes2);
 //! # }
+//! ```
+//!
+//! Using an unsupported character inside literals will result
+//! in a compilation error:
+//! ```compile_fail
+//! # use hex_literal::hex;
+//! hex!("АА"); // Russian "А"
+//! hex!("11　22"); // Japanese space
+//! hex!("0123 // Сomments inside literals are not supported");
 //! ```
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
 
-mod comments;
 extern crate proc_macro;
 
 use std::vec::IntoIter;
 
 use proc_macro::{Delimiter, Group, Literal, Punct, Spacing, TokenStream, TokenTree};
-
-use crate::comments::{Exclude, ExcludingComments};
 
 /// Strips any outer `Delimiter::None` groups from the input,
 /// returning a `TokenStream` consisting of the innermost
@@ -80,7 +76,7 @@ fn ignore_groups(mut input: TokenStream) -> TokenStream {
 }
 
 struct TokenTreeIter {
-    buf: ExcludingComments<IntoIter<u8>>,
+    buf: IntoIter<u8>,
     is_punct: bool,
 }
 
@@ -97,7 +93,7 @@ impl TokenTreeIter {
             _ => panic!("expected string literal, got `{}`", input),
         };
         buf.pop();
-        let mut iter = buf.into_iter().exclude_comments();
+        let mut iter = buf.into_iter();
         iter.next();
         Self {
             buf: iter,
