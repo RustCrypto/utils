@@ -254,8 +254,8 @@ use core::{
     marker::{PhantomData, PhantomPinned},
     mem::{self, MaybeUninit},
     num::{
-        NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU128,
-        NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
+        self, NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize,
+        NonZeroU128, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
     },
     ops, ptr,
     slice::IterMut,
@@ -348,6 +348,15 @@ impl_zeroize_for_non_zero!(
     NonZeroU128,
     NonZeroUsize
 );
+
+impl<Z> Zeroize for num::Wrapping<Z>
+where
+    Z: Zeroize,
+{
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
 
 /// Impl [`Zeroize`] on arrays of types that impl [`Zeroize`].
 impl<Z, const N: usize> Zeroize for [Z; N]
