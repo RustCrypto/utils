@@ -17,4 +17,4 @@ edition = "2021"
 rust-version = "1.56"
 
 [dependencies]
-typenum = "1.10"
+typenum = "1.16"
