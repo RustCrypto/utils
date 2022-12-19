@@ -9,6 +9,8 @@
 pub use generic_array;
 
 use core::{fmt, ops::Add, slice};
+pub use crypto_common::Block;
+use crypto_common::{BlockSizeUser, BlockSizes};
 use generic_array::{
     typenum::{Add1, B1},
     ArrayLength, GenericArray,
@@ -19,9 +21,7 @@ mod sealed;
 
 pub use read::ReadBuffer;
 
-/// Block on which `BlockBuffer` operates.
-pub type Block<BlockSize> = GenericArray<u8, BlockSize>;
-
+/// Block with additional one byte
 type BlockP1<BlockSize> = GenericArray<u8, Add1<BlockSize>>;
 
 /// Trait for buffer kinds.
@@ -56,16 +56,15 @@ impl fmt::Display for Error {
     }
 }
 
-/// Trait implemented for supported block sizes, i.e. for types from `U1` to `U255`.
-pub trait BlockSizes: ArrayLength<u8> + sealed::BlockSizes {}
-
-impl<T: ArrayLength<u8> + sealed::BlockSizes> BlockSizes for T {}
-
 /// Buffer for block processing of data.
 #[derive(Debug)]
 pub struct BlockBuffer<BS: BlockSizes, K: BufferKind> {
-    buffer: Block<BS>,
+    buffer: Block<Self>,
     pos: K::Pos,
+}
+
+impl<BS: BlockSizes, K: BufferKind> BlockSizeUser for BlockBuffer<BS, K> {
+    type BlockSize = BS;
 }
 
 impl<BS: BlockSizes, K: BufferKind> Default for BlockBuffer<BS, K> {
@@ -116,7 +115,7 @@ impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
     /// Digest data in `input` in blocks of size `BlockSize` using
     /// the `compress` function, which accepts slice of blocks.
     #[inline]
-    pub fn digest_blocks(&mut self, mut input: &[u8], mut compress: impl FnMut(&[Block<BS>])) {
+    pub fn digest_blocks(&mut self, mut input: &[u8], mut compress: impl FnMut(&[Block<Self>])) {
         let pos = self.get_pos();
         // using `self.remaining()` for some reason
         // prevents panic elimination
@@ -160,7 +159,7 @@ impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
 
     /// Pad remaining data with zeros and return resulting block.
     #[inline(always)]
-    pub fn pad_with_zeros(&mut self) -> Block<BS> {
+    pub fn pad_with_zeros(&mut self) -> Block<Self> {
         let pos = self.get_pos();
         let mut res = self.buffer.clone();
         res[pos..].iter_mut().for_each(|b| *b = 0);
@@ -193,7 +192,7 @@ impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
     /// # Panics
     /// If `pos` is bigger or equal to block size.
     #[inline]
-    pub fn set(&mut self, buf: Block<BS>, pos: usize) {
+    pub fn set(&mut self, buf: Block<Self>, pos: usize) {
         assert!(K::invariant(pos, BS::USIZE));
         self.buffer = buf;
         self.set_pos_unchecked(pos);
@@ -226,7 +225,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
     /// # Panics
     /// If suffix length is bigger than block size.
     #[inline(always)]
-    pub fn digest_pad(&mut self, delim: u8, suffix: &[u8], mut compress: impl FnMut(&Block<BS>)) {
+    pub fn digest_pad(&mut self, delim: u8, suffix: &[u8], mut compress: impl FnMut(&Block<Self>)) {
         if suffix.len() > BS::USIZE {
             panic!("suffix is too long");
         }
@@ -239,7 +238,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
         let n = self.size() - suffix.len();
         if self.size() - pos - 1 < suffix.len() {
             compress(&self.buffer);
-            let mut block = Block::<BS>::default();
+            let mut block = Block::<Self>::default();
             block[n..].copy_from_slice(suffix);
             compress(&block);
         } else {
@@ -252,27 +251,27 @@ impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
     /// Pad message with 0x80, zeros and 64-bit message length using
     /// big-endian byte order.
     #[inline]
-    pub fn len64_padding_be(&mut self, data_len: u64, compress: impl FnMut(&Block<BS>)) {
+    pub fn len64_padding_be(&mut self, data_len: u64, compress: impl FnMut(&Block<Self>)) {
         self.digest_pad(0x80, &data_len.to_be_bytes(), compress);
     }
 
     /// Pad message with 0x80, zeros and 64-bit message length using
     /// little-endian byte order.
     #[inline]
-    pub fn len64_padding_le(&mut self, data_len: u64, compress: impl FnMut(&Block<BS>)) {
+    pub fn len64_padding_le(&mut self, data_len: u64, compress: impl FnMut(&Block<Self>)) {
         self.digest_pad(0x80, &data_len.to_le_bytes(), compress);
     }
 
     /// Pad message with 0x80, zeros and 128-bit message length using
     /// big-endian byte order.
     #[inline]
-    pub fn len128_padding_be(&mut self, data_len: u128, compress: impl FnMut(&Block<BS>)) {
+    pub fn len128_padding_be(&mut self, data_len: u128, compress: impl FnMut(&Block<Self>)) {
         self.digest_pad(0x80, &data_len.to_be_bytes(), compress);
     }
 
     /// Serialize buffer into a byte array.
     #[inline]
-    pub fn serialize(&self) -> Block<BS> {
+    pub fn serialize(&self) -> Block<Self> {
         let mut res = self.buffer.clone();
         let pos = self.get_pos();
         // zeroize "garbage" data
@@ -284,7 +283,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
 
     /// Deserialize buffer from a byte array.
     #[inline]
-    pub fn deserialize(buffer: &Block<BS>) -> Result<Self, Error> {
+    pub fn deserialize(buffer: &Block<Self>) -> Result<Self, Error> {
         let pos = buffer[BS::USIZE - 1] as usize;
         if !<Eager as sealed::Sealed>::invariant(pos, BS::USIZE) {
             return Err(Error);
@@ -330,7 +329,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Lazy> {
         }
         Ok(Self {
             buffer: GenericArray::clone_from_slice(&buffer[1..]),
-            pos: pos,
+            pos,
         })
     }
 }

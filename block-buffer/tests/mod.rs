@@ -78,10 +78,11 @@ fn test_lazy_digest_pad() {
 
 #[test]
 fn test_read() {
-    let mut buf = ReadBuffer::<U4>::default();
+    type Buf = ReadBuffer<U4>;
+    let mut buf = Buf::default();
 
     let mut n = 0u8;
-    let mut gen = |block: &mut Block<U4>| {
+    let mut gen = |block: &mut Block<Buf>| {
         block.iter_mut().for_each(|b| *b = n);
         n += 1;
     };
@@ -281,7 +282,7 @@ fn test_read_serialize() {
     type Buf = ReadBuffer<U4>;
 
     let mut n = 42u8;
-    let mut gen = |block: &mut Block<U4>| {
+    let mut gen = |block: &mut Block<Buf>| {
         block.iter_mut().for_each(|b| {
             *b = n;
             n += 1;

@@ -12,6 +12,7 @@ edition = "2021"
 readme = "README.md"
 
 [dependencies]
+crypto-common = { git = "https://github.com/RustCrypto/traits/", branch = "crypto_common_v0.2" }
 generic-array = "0.14"
 
 [dev-dependencies]
