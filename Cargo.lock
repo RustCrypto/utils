@@ -11,7 +11,7 @@ dependencies = [
 
 [[package]]
 name = "block-buffer"
-version = "0.11.0"
+version = "0.11.0-pre"
 dependencies = [
  "crypto-common",
  "generic-array",
@@ -43,7 +43,8 @@ dependencies = [
 [[package]]
 name = "crypto-common"
 version = "0.2.0-pre"
-source = "git+https://github.com/RustCrypto/traits/?branch=crypto_common_v0.2#48d751024011dd39abb3926dacb66b6ca7d7ef37"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6faaa83e7700e0832cbbf84854d4c356270526907d9b14fab927fc7a9b5befb8"
 dependencies = [
  "generic-array",
  "typenum",
