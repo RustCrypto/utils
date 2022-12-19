@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## UNRELEASED
+### Added
+- `ReadBuffer` type
+- `serialize` and `deserialize` methods
+
+### Changed
+- Supported block sizes are now bounded by sealed `BlockSizes` trait
+  implemented for types from `U1` to `U255`
+- Size of `EagerBuffer` is equal to buffer size, while previously it was equal
+  to buffer size plus one byte.
+- MSRV bumped to 1.56
+
+### Removed
+- `EagerBuffer::set_data` method. Use the `ReadBuffer` type instead.
+
 ## 0.10.3 (2022-09-04)
 ### Added
 - `try_new` method ([#799])
