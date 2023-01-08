@@ -60,7 +60,8 @@ jobs:
     strategy:
       matrix:
         toolchain:
-          - 1.40.0 # MSRV
+          # TODO(tarcieri): try re-enabling this when we bump MSRV
+          # - 1.40.0 # MSRV
           - stable
     runs-on: macos-latest
     steps:

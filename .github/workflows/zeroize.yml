@@ -70,9 +70,10 @@ jobs:
             rust: stable
 
           # 64-bit macOS x86_64
-          - target: x86_64-apple-darwin
-            platform: macos-latest
-            rust: 1.51.0 # MSRV
+          # TODO(tarcieri): try re-enabling this when we bump MSRV
+          # - target: x86_64-apple-darwin
+          #  platform: macos-latest
+          #  rust: 1.51.0 # MSRV
           - target: x86_64-apple-darwin
             platform: macos-latest
             rust: stable
