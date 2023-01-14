@@ -31,7 +31,7 @@ pub trait Dbl {
     #[must_use]
     fn dbl(self) -> Self;
 
-    /// Reverse double block. (alternatively: divbide block by x)
+    /// Reverse double block. (alternatively: divide block by x)
     ///
     /// If least significant bit of the block equals to zero will return
     /// `block>>1`, otherwise `(block>>1)^(1<<n)^(C>>1)`
