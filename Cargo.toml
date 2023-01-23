@@ -6,6 +6,7 @@ members = [
     "collectable",
     "cmov",
     "cpufeatures",
+    "cryptopan",
     "dbl",
     "fiat-constify",
     "hex-literal",
