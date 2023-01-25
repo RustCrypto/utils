@@ -49,15 +49,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "block-padding"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a90ec2df9600c28a01c56c4784c9207a96d2451833aeceb8cc97e4c9548bb78"
-dependencies = [
- "generic-array",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -123,7 +114,6 @@ version = "0.1.0-pre"
 dependencies = [
  "aes",
  "bitvec",
- "ecb",
 ]
 
 [[package]]
@@ -131,15 +121,6 @@ name = "dbl"
 version = "0.3.2"
 dependencies = [
  "generic-array",
-]
-
-[[package]]
-name = "ecb"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17fd84ba81a904351ee27bbccb4aa2461e1cca04176a63ab4f8ca087757681a2"
-dependencies = [
- "cipher",
 ]
 
 [[package]]
@@ -194,7 +175,7 @@ dependencies = [
 name = "inout"
 version = "0.1.3"
 dependencies = [
- "block-padding 0.3.2",
+ "block-padding",
  "generic-array",
 ]
 
@@ -204,7 +185,6 @@ version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a0c10553d664a4d0bcff9f4215d0aac67a639cc68ef660840afe309b807bc9f5"
 dependencies = [
- "block-padding 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "generic-array",
 ]
 
