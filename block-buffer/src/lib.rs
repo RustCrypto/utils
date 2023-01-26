@@ -15,6 +15,8 @@ use generic_array::{
     typenum::{Add1, B1},
     ArrayLength, GenericArray,
 };
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 mod read;
 mod sealed;
@@ -58,6 +60,7 @@ impl fmt::Display for Error {
 
 /// Buffer for block processing of data.
 #[derive(Debug)]
+#[cfg_attr(feature = "zeroize", derive(Zeroize))]
 pub struct BlockBuffer<BS: BlockSizes, K: BufferKind> {
     buffer: Block<Self>,
     pos: K::Pos,
