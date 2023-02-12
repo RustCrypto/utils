@@ -52,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("#![doc = \" fiat-crypto output postprocessed by fiat-constify: https://github.com/rustcrypto/utils\"]");
+    println!("#![doc = \" fiat-crypto output postprocessed by fiat-constify: <https://github.com/rustcrypto/utils>\"]");
     println!("{}", ast.into_token_stream());
     Ok(())
 }
