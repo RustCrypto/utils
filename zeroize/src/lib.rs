@@ -64,7 +64,7 @@
 //!
 //! With the `std` feature enabled (which it is **not** by default), [`Zeroize`]
 //! is also implemented for [`CString`]. After calling `zeroize()` on a `CString`,
-//! it will its internal buffer will contain exactly one nul byte. The backing
+//! its internal buffer will contain exactly one nul byte. The backing
 //! memory is zeroed by converting it to a `Vec<u8>` and back into a `CString`.
 //! (NOTE: see "Stack/Heap Zeroing Notes" for important `Vec`/`String`/`CString` details)
 //!
