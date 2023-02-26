@@ -357,7 +357,7 @@ impl Outputs {
     pub fn to_return_value(&self) -> Stmt {
         let span = Span::call_site();
 
-        let mut elems = self.0.iter().map(|(ident, _)| {
+        let mut elems = self.0.keys().map(|ident| {
             let mut segments = Punctuated::new();
             segments.push(PathSegment {
                 ident: ident.clone(),
