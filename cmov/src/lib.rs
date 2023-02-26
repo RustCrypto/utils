@@ -17,6 +17,7 @@ mod x86;
 pub type Condition = u8;
 
 /// Conditional move
+// TODO(tarcieri): make one of `cmovz`/`cmovnz` a provided method which calls the other?
 pub trait Cmov {
     /// Move if zero.
     ///

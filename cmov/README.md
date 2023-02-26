@@ -1,4 +1,4 @@
-# [RustCrypto]: Conditional Move Intrinsics
+# [RustCrypto]: CMOV (Conditional Move)
 
 [![Crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -10,7 +10,8 @@ Conditional move CPU intrinsics which are guaranteed to execute in
 constant-time and not be rewritten as branches by the compiler.
 
 Provides wrappers for the [CMOV family] of instructions on x86/x86_64 and
-the [CSEL] instruction on AArch64 CPUs.
+the [CSEL] instruction on AArch64 CPUs, along with a portable fallback
+implementation for other CPU architectures.
 
 [Documentation][docs-link]
 
@@ -50,7 +51,7 @@ Please open an issue with your desired CPU architecture if this interests you.
 
 ## Minimum Supported Rust Version
 
-Rust **1.59** or newer.
+Rust **1.60** or newer.
 
 In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope
 for this crate's SemVer guarantees), however when we do it will be accompanied by
@@ -78,7 +79,7 @@ dual licensed as above, without any additional terms or conditions.
 [docs-image]: https://docs.rs/cmov/badge.svg
 [docs-link]: https://docs.rs/cmov/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[msrv-image]: https://img.shields.io/badge/rustc-1.59+-blue.svg
+[msrv-image]: https://img.shields.io/badge/rustc-1.60+-blue.svg
 [build-image]: https://github.com/RustCrypto/utils/actions/workflows/cmov.yml/badge.svg
 [build-link]: https://github.com/RustCrypto/utils/actions/workflows/cmov.yml
 
