@@ -71,7 +71,7 @@ impl<'inp, 'out, T: Clone> InOut<'inp, 'out, T> {
     /// Clone input value and return it.
     #[inline(always)]
     pub fn clone_in(&self) -> T {
-        unsafe { (&*self.in_ptr).clone() }
+        unsafe { (*self.in_ptr).clone() }
     }
 }
 
