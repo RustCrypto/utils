@@ -471,7 +471,17 @@ where
         // object for at least `self.len()` elements of type `Z`.
         // `self.len()` is also not larger than an `isize`, because of the assertion above.
         // The memory of the slice should not wrap around the address space.
-        unsafe { volatile_set(self.as_mut_ptr(), Z::default(), self.len()) };
+        for z in self.iter_mut() {
+            *z = Z::default();
+        }
+        unsafe {
+            core::arch::asm!(
+                "/* {ptr} */",
+                ptr = in(reg) self.as_mut_ptr(),
+                options(nostack, readonly, preserves_flags),
+            );
+        }
+
         atomic_fence();
     }
 }
