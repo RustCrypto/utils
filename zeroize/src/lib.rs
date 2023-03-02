@@ -476,6 +476,14 @@ where
     }
 }
 
+impl Zeroize for str {
+    fn zeroize(&mut self) {
+        // Safety:
+        // A zeroized byte slice is a valid UTF-8 string.
+        unsafe { self.as_bytes_mut().zeroize() }
+    }
+}
+
 /// [`PhantomData`] is always zero sized so provide a [`Zeroize`] implementation.
 impl<Z> Zeroize for PhantomData<Z> {
     fn zeroize(&mut self) {}
@@ -587,6 +595,14 @@ where
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<Z> ZeroizeOnDrop for Box<[Z]> where Z: ZeroizeOnDrop {}
+
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+impl Zeroize for Box<str> {
+    fn zeroize(&mut self) {
+        self.as_mut().zeroize();
+    }
+}
 
 #[cfg(feature = "alloc")]
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
