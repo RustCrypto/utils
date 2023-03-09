@@ -70,6 +70,9 @@ where
     Kind: BufferKind,
 {
     fn default() -> Self {
+        if BlockSize::USIZE == 0 {
+            panic!("Block size can not be equal to zero");
+        }
         Self {
             buffer: Default::default(),
             pos: 0,
@@ -113,6 +116,9 @@ where
     /// Returns an error if slice length is not valid for used buffer kind.
     #[inline(always)]
     pub fn try_new(buf: &[u8]) -> Result<Self, Error> {
+        if BlockSize::USIZE == 0 {
+            panic!("Block size can not be equal to zero");
+        }
         let pos = buf.len();
         if !Kind::invariant(pos, BlockSize::USIZE) {
             return Err(Error);
