@@ -41,7 +41,7 @@ pub trait Padding<BlockSize: ArrayLength<u8>> {
     /// stored in the block is equal to `pos`).
     ///
     /// # Panics
-    /// If `pos` is bigger than `BlockSize`. Most paddin algorithms also
+    /// If `pos` is bigger than `BlockSize`. Most padding algorithms also
     /// panic if they are equal.
     fn pad(block: &mut Block<BlockSize>, pos: usize);
 
