@@ -14,7 +14,7 @@ categories = ["no-std"]
 edition = "2018"
 readme = "README.md"
 
-[target.aarch64-apple-darwin.dependencies]
+[target.'cfg(all(target_arch = "aarch64", target_vendor = "apple"))'.dependencies]
 libc = "0.2.95"
 
 [target.'cfg(all(target_arch = "aarch64", target_os = "linux"))'.dependencies]
