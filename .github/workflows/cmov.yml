@@ -35,12 +35,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: RustCrypto/actions/cargo-cache@master
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.target }}
-          override: true
+          targets: ${{ matrix.target }}
       - uses: RustCrypto/actions/cargo-hack-install@master
       - run: cargo build --target ${{ matrix.target }}
 
@@ -73,12 +71,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: RustCrypto/actions/cargo-cache@master
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.target }}
-          profile: minimal
-          override: true
+          targets: ${{ matrix.target }}
       - run: ${{ matrix.deps }}
       - run: cargo test
 
@@ -103,11 +99,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: RustCrypto/actions/cargo-cache@master
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.target }}
-          profile: minimal
-          override: true
+          targets: ${{ matrix.target }}
       - uses: RustCrypto/actions/cross-install@master
       - run: cross test --target ${{ matrix.target }}

@@ -28,10 +28,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: RustCrypto/actions/cargo-cache@master
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-          override: true
-          profile: minimal
       - run: cargo test
       - run: cargo test --all-features
