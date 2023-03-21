@@ -44,12 +44,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: RustCrypto/actions/cargo-cache@master
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.target }}
-          override: true
-          profile: minimal
+          targets: ${{ matrix.target }}
       # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
       - run: rm ../Cargo.toml
       - run: ${{ matrix.deps }}
@@ -67,12 +65,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: RustCrypto/actions/cargo-cache@master
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          target: x86_64-apple-darwin
-          override: true
+          targets: x86_64-apple-darwin
       # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
       - run: rm ../Cargo.toml
       - run: cargo test
@@ -92,12 +88,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: RustCrypto/actions/cargo-cache@master
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          target: ${{ matrix.target }}
-          override: true
+          targets: ${{ matrix.target }}
       # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
       - run: rm ../Cargo.toml
       - run: cargo test --target ${{ matrix.target }}
@@ -117,12 +111,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: RustCrypto/actions/cargo-cache@master
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-          target: ${{ matrix.target }}
-          override: true
-          profile: minimal
+          targets: ${{ matrix.target }}
       - uses: RustCrypto/actions/cross-install@master
       # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
       - run: rm ../Cargo.toml
