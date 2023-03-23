@@ -5,16 +5,16 @@
 
 #![allow(clippy::single_match, clippy::new_without_default)]
 
-use proc_macro2::Span;
+use proc_macro2::{Literal, Span};
 use quote::{quote, ToTokens};
 use std::{collections::BTreeMap as Map, env, fs, ops::Deref};
 use syn::{
     punctuated::Punctuated,
-    token::{Bang, Brace, Bracket, Colon, Const, Eq, Let, Mut, Paren, Pound, RArrow, Semi},
+    token::{Brace, Bracket, Colon, Const, Eq, Let, Mut, Not, Paren, Pound, RArrow, Semi},
     AttrStyle, Attribute, Block, Expr, ExprAssign, ExprCall, ExprLit, ExprPath, ExprReference,
-    ExprRepeat, ExprTuple, FnArg, Ident, Item, ItemFn, ItemType, Lit, LitInt, Local, Pat, PatIdent,
-    PatTuple, PatType, Path, PathArguments, PathSegment, ReturnType, Stmt, Type, TypeArray,
-    TypePath, TypeReference, TypeTuple, UnOp,
+    ExprRepeat, ExprTuple, FnArg, Ident, Item, ItemFn, ItemType, Lit, LitInt, Local, LocalInit,
+    MacroDelimiter, Meta, MetaList, Pat, PatIdent, PatTuple, PatType, Path, PathArguments,
+    PathSegment, ReturnType, Stmt, Type, TypeArray, TypePath, TypeReference, TypeTuple, UnOp,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -59,29 +59,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Build a toplevel attribute with the given name and comma-separated values.
 fn build_attribute(name: &str, values: &[&str]) -> Attribute {
-    let span = Span::call_site();
     let values = values
         .iter()
         .map(|value| build_path(value))
         .collect::<Vec<_>>();
+    let path = build_path(name);
+    let tokens = quote! { (#(#values),*) };
+    let delimiter = MacroDelimiter::Paren(Paren::default());
 
     Attribute {
-        pound_token: Pound { spans: [span] },
-        style: AttrStyle::Inner(Bang { spans: [span] }),
-        bracket_token: Bracket { span },
-        path: build_path(name),
-        tokens: quote! { (#(#values),*) },
+        pound_token: Pound::default(),
+        style: AttrStyle::Inner(Not::default()),
+        bracket_token: Bracket::default(),
+        meta: Meta::List(MetaList {
+            path,
+            delimiter,
+            tokens,
+        }),
     }
 }
 
 /// Parse a path from a double-colon-delimited string.
 fn build_path(path: &str) -> Path {
-    let span = Span::call_site();
     let mut segments = Punctuated::new();
 
     for segment in path.split("::") {
         segments.push(PathSegment {
-            ident: Ident::new(segment, span),
+            ident: Ident::new(segment, Span::call_site()),
             arguments: PathArguments::None,
         });
     }
@@ -103,10 +107,8 @@ fn get_ident_from_pat(pat: &Pat) -> Ident {
 /// Rewrite a fiat-crypto generated `fn` as a `const fn`, making the necessary
 /// transformations to the code in order for it to work in that context.
 fn rewrite_fn_as_const(func: &mut ItemFn, type_registry: &TypeRegistry) {
-    let span = Span::call_site();
-
     // Mark function as being `const fn`.
-    func.sig.constness = Some(Const { span });
+    func.sig.constness = Some(Const::default());
 
     // Transform mutable arguments into return values.
     let mut inputs = Punctuated::new();
@@ -142,7 +144,6 @@ fn rewrite_fn_as_const(func: &mut ItemFn, type_registry: &TypeRegistry) {
 /// values for outputs, removing mutable references, and adding a return
 /// value/tuple.
 fn rewrite_fn_body(statements: &[Stmt], outputs: &Outputs, registry: &TypeRegistry) -> Block {
-    let span = Span::call_site();
     let mut stmts = Vec::new();
 
     stmts.extend(outputs.to_let_bindings(registry).into_iter());
@@ -156,7 +157,7 @@ fn rewrite_fn_body(statements: &[Stmt], outputs: &Outputs, registry: &TypeRegist
     stmts.push(outputs.to_return_value());
 
     Block {
-        brace_token: Brace { span },
+        brace_token: Brace::default(),
         stmts,
     }
 }
@@ -165,7 +166,7 @@ fn rewrite_fn_body(statements: &[Stmt], outputs: &Outputs, registry: &TypeRegist
 /// operations into value assignments.
 fn rewrite_fn_stmt(stmt: &mut Stmt) {
     match stmt {
-        Stmt::Semi(expr, _) => match expr {
+        Stmt::Expr(expr, Some(_)) => match expr {
             Expr::Assign(ExprAssign { left, .. }) => match *left.clone() {
                 Expr::Unary(unary) => {
                     // Remove deref since we're removing mutable references
@@ -225,20 +226,22 @@ fn rewrite_fn_call(mut call: ExprCall) -> Local {
     // Overwrite call arguments with the ones that aren't mutable references
     call.args = args;
 
-    let span = Span::call_site();
-
     let pat = Pat::Tuple(PatTuple {
         attrs: Vec::new(),
-        paren_token: Paren { span },
+        paren_token: Paren::default(),
         elems: output,
     });
 
     Local {
         attrs: Vec::new(),
-        let_token: Let { span },
+        let_token: Let::default(),
         pat,
-        init: Some((Eq { spans: [span] }, Box::new(Expr::Call(call)))),
-        semi_token: Semi { spans: [span] },
+        init: Some(LocalInit {
+            eq_token: Eq::default(),
+            expr: Box::new(Expr::Call(call)),
+            diverge: None,
+        }),
+        semi_token: Semi::default(),
     }
 }
 
@@ -299,28 +302,30 @@ impl Outputs {
     /// Generate `let mut outN: Ty = <zero>` bindings at the start
     /// of the function.
     pub fn to_let_bindings(&self, registry: &TypeRegistry) -> Vec<Stmt> {
-        let span = Span::call_site();
-
         self.0
             .iter()
             .map(|(ident, ty)| {
                 Stmt::Local(Local {
                     attrs: Vec::new(),
-                    let_token: Let { span },
+                    let_token: Let::default(),
                     pat: Pat::Type(PatType {
                         attrs: Vec::new(),
                         pat: Box::new(Pat::Ident(PatIdent {
                             attrs: Vec::new(),
                             by_ref: None,
-                            mutability: Some(Mut { span }),
+                            mutability: Some(Mut::default()),
                             ident: ident.clone(),
                             subpat: None,
                         })),
-                        colon_token: Colon { spans: [span] },
+                        colon_token: Colon::default(),
                         ty: Box::new(ty.clone()),
                     }),
-                    init: Some((Eq { spans: [span] }, Box::new(default_for(ty, registry)))),
-                    semi_token: Semi { spans: [span] },
+                    init: Some(LocalInit {
+                        eq_token: Eq::default(),
+                        expr: Box::new(default_for(ty, registry)),
+                        diverge: None,
+                    }),
+                    semi_token: Semi::default(),
                 })
             })
             .collect()
@@ -328,10 +333,7 @@ impl Outputs {
 
     /// Finish annotating outputs, updating the provided `Signature`.
     pub fn to_return_type(&self) -> ReturnType {
-        let span = Span::call_site();
-        let rarrow = RArrow {
-            spans: [span, span],
-        };
+        let rarrow = RArrow::default();
 
         let ret = match self.0.len() {
             0 => panic!("expected at least one output"),
@@ -344,7 +346,7 @@ impl Outputs {
                 }
 
                 Type::Tuple(TypeTuple {
-                    paren_token: Paren { span },
+                    paren_token: Paren::default(),
                     elems,
                 })
             }
@@ -355,8 +357,6 @@ impl Outputs {
 
     /// Generate the return value for the statement as a tuple of the outputs.
     pub fn to_return_value(&self) -> Stmt {
-        let span = Span::call_site();
-
         let mut elems = self.0.keys().map(|ident| {
             let mut segments = Punctuated::new();
             segments.push(PathSegment {
@@ -377,31 +377,33 @@ impl Outputs {
         });
 
         if elems.len() == 1 {
-            Stmt::Expr(elems.next().unwrap())
+            Stmt::Expr(elems.next().unwrap(), None)
         } else {
-            Stmt::Expr(Expr::Tuple(ExprTuple {
-                attrs: Vec::new(),
-                paren_token: Paren { span },
-                elems: elems.collect(),
-            }))
+            Stmt::Expr(
+                Expr::Tuple(ExprTuple {
+                    attrs: Vec::new(),
+                    paren_token: Paren::default(),
+                    elems: elems.collect(),
+                }),
+                None,
+            )
         }
     }
 }
 
 /// Get a default value for the given type.
 fn default_for(ty: &Type, registry: &TypeRegistry) -> Expr {
-    let span = Span::call_site();
     let zero = Expr::Lit(ExprLit {
         attrs: Vec::new(),
-        lit: Lit::Int(LitInt::new("0", span)),
+        lit: Lit::Int(LitInt::from(Literal::u8_unsuffixed(0))),
     });
 
     match ty {
         Type::Array(TypeArray { len, .. }) => Expr::Repeat(ExprRepeat {
             attrs: Vec::new(),
-            bracket_token: Bracket { span },
+            bracket_token: Bracket::default(),
             expr: Box::new(zero),
-            semi_token: Semi { spans: [span] },
+            semi_token: Semi::default(),
             len: Box::new(len.clone()),
         }),
         Type::Path(TypePath { path, .. }) => {

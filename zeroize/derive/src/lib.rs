@@ -10,7 +10,7 @@ use syn::{
     parse::{Parse, ParseStream},
     punctuated::Punctuated,
     token::Comma,
-    Attribute, Lit, Meta, NestedMeta, Result, WherePredicate,
+    Attribute, Expr, ExprLit, Lit, Meta, Result, WherePredicate,
 };
 use synstructure::{decl_derive, AddBounds, BindStyle, BindingInfo, VariantInfo};
 
@@ -142,10 +142,7 @@ impl ZeroizeAttrs {
         variant: Option<&VariantInfo<'_>>,
         binding: Option<&BindingInfo<'_>>,
     ) {
-        let meta_list = match attr
-            .parse_meta()
-            .unwrap_or_else(|e| panic!("error parsing attribute: {:?} ({})", attr, e))
-        {
+        let meta_list = match &attr.meta {
             Meta::List(list) => list,
             _ => return,
         };
@@ -155,12 +152,11 @@ impl ZeroizeAttrs {
             return;
         }
 
-        for nested_meta in &meta_list.nested {
-            if let NestedMeta::Meta(meta) = nested_meta {
-                self.parse_meta(meta, variant, binding);
-            } else {
-                panic!("malformed #[zeroize] attribute: {:?}", nested_meta);
-            }
+        for meta in attr
+            .parse_args_with(Punctuated::<Meta, Comma>::parse_terminated)
+            .unwrap_or_else(|e| panic!("error parsing attribute: {:?} ({})", attr, e))
+        {
+            self.parse_meta(&meta, variant, binding);
         }
     }
 
@@ -221,7 +217,10 @@ impl ZeroizeAttrs {
                 )),
                 (None, None) => {
                     if let Meta::NameValue(meta_name_value) = meta {
-                        if let Lit::Str(lit) = &meta_name_value.lit {
+                        if let Expr::Lit(ExprLit {
+                            lit: Lit::Str(lit), ..
+                        }) = &meta_name_value.value
+                        {
                             if lit.value().is_empty() {
                                 self.bound = Some(Bounds(Punctuated::new()));
                             } else {
@@ -273,11 +272,14 @@ fn generate_fields(s: &mut synstructure::Structure<'_>, method: TokenStream) -> 
 fn filter_skip(attrs: &[Attribute], start: bool) -> bool {
     let mut result = start;
 
-    for attr in attrs.iter().filter_map(|attr| attr.parse_meta().ok()) {
+    for attr in attrs.iter().map(|attr| &attr.meta) {
         if let Meta::List(list) = attr {
             if list.path.is_ident(ZEROIZE_ATTR) {
-                for nested in list.nested {
-                    if let NestedMeta::Meta(Meta::Path(path)) = nested {
+                for meta in list
+                    .parse_args_with(Punctuated::<Meta, Comma>::parse_terminated)
+                    .unwrap_or_else(|e| panic!("error parsing attribute: {:?} ({})", list, e))
+                {
+                    if let Meta::Path(path) = meta {
                         if path.is_ident("skip") {
                             assert!(result, "duplicate #[zeroize] skip flags");
                             result = false;
