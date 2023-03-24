@@ -49,7 +49,7 @@ impl Cmov for u32 {
     }
 }
 
-#[cfg(not(target_arch = "x86"))]
+#[cfg(target_arch = "x86_64")]
 impl Cmov for u64 {
     #[inline(always)]
     fn cmovz(&mut self, value: Self, condition: Condition) {
