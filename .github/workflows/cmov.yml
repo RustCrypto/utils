@@ -76,7 +76,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - run: ${{ matrix.deps }}
-      - run: cargo test
+      - run: cargo test --target ${{ matrix.target }}
 
   # Cross-compiled tests
   cross:
