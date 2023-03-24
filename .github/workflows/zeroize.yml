@@ -7,7 +7,7 @@ on:
       - "zeroize/**"
       - "Cargo.*"
   push:
-    branches: main
+    branches: master
 
 defaults:
   run:
@@ -43,7 +43,7 @@ jobs:
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
-        working-directory: ${{ github.workflow }}
+      working-directory: ${{ github.workflow }}
 
   test:
     strategy:
@@ -94,8 +94,8 @@ jobs:
       # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
       - run: rm ../Cargo.toml
       - run: ${{ matrix.deps }}
-      - run: cargo test
-      - run: cargo test --all-features
+      - run: cargo test --target ${{ matrix.target }}
+      - run: cargo test --target ${{ matrix.target }} --all-features
 
   # Feature-gated ARM64 SIMD register support (MSRV 1.59)
   aarch64:

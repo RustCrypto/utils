@@ -3,6 +3,7 @@ name: cmov
 on:
   pull_request:
     paths:
+      - ".github/workflows/cmov.yml"
       - "cmov/**"
       - "Cargo.*"
   push:
@@ -76,7 +77,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - run: ${{ matrix.deps }}
-      - run: cargo test
+      - run: cargo test --target ${{ matrix.target }}
 
   # Cross-compiled tests
   cross:
