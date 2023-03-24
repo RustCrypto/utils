@@ -7,7 +7,7 @@ on:
       - "zeroize/**"
       - "Cargo.*"
   push:
-    branches: main
+    branches: master
 
 defaults:
   run:

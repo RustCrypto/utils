@@ -3,6 +3,7 @@ name: cmov
 on:
   pull_request:
     paths:
+      - ".github/workflows/cmov.yml"
       - "cmov/**"
       - "Cargo.*"
   push:
