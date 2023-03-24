@@ -49,6 +49,7 @@ impl Cmov for u32 {
     }
 }
 
+#[cfg(target_arch = "x86_64")]
 impl Cmov for u64 {
     #[inline(always)]
     fn cmovz(&mut self, value: Self, condition: Condition) {
@@ -58,5 +59,30 @@ impl Cmov for u64 {
     #[inline(always)]
     fn cmovnz(&mut self, value: Self, condition: Condition) {
         cmov!("cmovnz {1:r}, {2:r}", self, value, condition);
+    }
+}
+
+#[cfg(target_arch = "x86")]
+impl Cmov for u64 {
+    #[inline(always)]
+    fn cmovz(&mut self, value: Self, condition: Condition) {
+        let mut lo = (*self & u32::MAX as u64) as u32;
+        let mut hi = (*self >> 32) as u32;
+
+        lo.cmovz((value & u32::MAX as u64) as u32, condition);
+        hi.cmovz((value >> 32) as u32, condition);
+
+        *self = (lo as u64) | (hi as u64) << 32;
+    }
+
+    #[inline(always)]
+    fn cmovnz(&mut self, value: Self, condition: Condition) {
+        let mut lo = (*self & u32::MAX as u64) as u32;
+        let mut hi = (*self >> 32) as u32;
+
+        lo.cmovnz((value & u32::MAX as u64) as u32, condition);
+        hi.cmovnz((value >> 32) as u32, condition);
+
+        *self = (lo as u64) | (hi as u64) << 32;
     }
 }
