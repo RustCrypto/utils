@@ -6,10 +6,15 @@
 )]
 #![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
 
+#[cfg(not(miri))]
 #[cfg(target_arch = "aarch64")]
 mod aarch64;
-#[cfg(not(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(any(
+    not(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")),
+    miri
+))]
 mod portable;
+#[cfg(not(miri))]
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
 
