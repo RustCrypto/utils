@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.6 (2023-03-24)
+### Added
+- Support dynamic feature detection on iOS and derivative platforms ([#848])
+- Support for detecting AVX-512 target features ([#862])
+
+[#848]: https://github.com/RustCrypto/utils/issues/848
+[#862]: https://github.com/RustCrypto/utils/pull/862
+
 ## 0.2.5 (2022-09-04)
 ### Fixed
 - Add workaround for [CPUID bug] in `std` ([#800])
