@@ -17,8 +17,7 @@ proc-macro = true
 [dependencies]
 proc-macro2 = "1"
 quote = "1"
-syn = "2"
-synstructure = "0.12.2"
+syn = {version = "2", features = ["full", "extra-traits"]}
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--document-private-items"]
