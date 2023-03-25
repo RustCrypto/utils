@@ -19,23 +19,23 @@ macro_rules! csel {
 
 impl Cmov for u16 {
     #[inline(always)]
-    fn cmovz(&mut self, value: Self, condition: Condition) {
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
         csel!(
             "cmp {0:w}, 0",
-            "csel {1:w}, {2:w}, {3:w}, EQ",
+            "csel {1:w}, {2:w}, {3:w}, NE",
             self,
-            value,
+            *value,
             condition
         );
     }
 
     #[inline(always)]
-    fn cmovnz(&mut self, value: Self, condition: Condition) {
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
         csel!(
             "cmp {0:w}, 0",
-            "csel {1:w}, {2:w}, {3:w}, NE",
+            "csel {1:w}, {2:w}, {3:w}, EQ",
             self,
-            value,
+            *value,
             condition
         );
     }
@@ -43,23 +43,23 @@ impl Cmov for u16 {
 
 impl Cmov for u32 {
     #[inline(always)]
-    fn cmovz(&mut self, value: Self, condition: Condition) {
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
         csel!(
             "cmp {0:w}, 0",
-            "csel {1:w}, {2:w}, {3:w}, EQ",
+            "csel {1:w}, {2:w}, {3:w}, NE",
             self,
-            value,
+            *value,
             condition
         );
     }
 
     #[inline(always)]
-    fn cmovnz(&mut self, value: Self, condition: Condition) {
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
         csel!(
             "cmp {0:w}, 0",
-            "csel {1:w}, {2:w}, {3:w}, NE",
+            "csel {1:w}, {2:w}, {3:w}, EQ",
             self,
-            value,
+            *value,
             condition
         );
     }
@@ -67,23 +67,23 @@ impl Cmov for u32 {
 
 impl Cmov for u64 {
     #[inline(always)]
-    fn cmovz(&mut self, value: Self, condition: Condition) {
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
         csel!(
             "cmp {0:x}, 0",
-            "csel {1:x}, {2:x}, {3:x}, EQ",
+            "csel {1:x}, {2:x}, {3:x}, NE",
             self,
-            value,
+            *value,
             condition
         );
     }
 
     #[inline(always)]
-    fn cmovnz(&mut self, value: Self, condition: Condition) {
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
         csel!(
             "cmp {0:x}, 0",
-            "csel {1:x}, {2:x}, {3:x}, NE",
+            "csel {1:x}, {2:x}, {3:x}, EQ",
             self,
-            value,
+            *value,
             condition
         );
     }
