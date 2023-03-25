@@ -92,7 +92,10 @@ pub trait Padding<BlockSize: ArrayLength<u8>> {
     }
 }
 
-impl<T, B: ArrayLength<u8>> Padding<B> for T where T: RawPadding {
+impl<T, B: ArrayLength<u8>> Padding<B> for T
+where
+    T: RawPadding,
+{
     const TYPE: PadType = T::TYPE;
 
     #[inline]
