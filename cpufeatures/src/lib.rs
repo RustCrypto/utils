@@ -2,17 +2,18 @@
 //! as a stopgap until Rust [RFC 2725] adding first-class target feature detection
 //! macros to `libcore` is implemented.
 //!
-//!
 //! # Supported target architectures
 //!
-//! *NOTE: target features with an asterisk are unstable and subject to change
-//! to match upstream name changes in the Rust standard library.
+//! *NOTE: target features with an asterisk are unstable (nightly-only) and
+//! subject to change to match upstream name changes in the Rust standard
+//! library.
 //!
 //! ## `aarch64`
 //!
 //! Linux, iOS, and macOS/ARM only (ARM64 does not support OS-independent feature detection)
 //!
 //! Target features:
+//!
 //! - `aes`*
 //! - `sha2`*
 //! - `sha3`*
@@ -22,6 +23,7 @@
 //! OS independent and `no_std`-friendly
 //!
 //! Target features:
+//!
 //! - `adx`
 //! - `aes`
 //! - `avx`
