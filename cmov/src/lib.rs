@@ -24,56 +24,58 @@ pub type Condition = u8;
 /// Conditional move
 // TODO(tarcieri): make one of `cmovz`/`cmovnz` a provided method which calls the other?
 pub trait Cmov {
-    /// Move if zero.
-    ///
-    /// Uses a `cmp` instruction to check if the given `condition` value is
-    /// equal to zero, and if so, conditionally moves `value` to `self`
-    /// when `condition` is equal to zero.
-    fn cmovz(&mut self, value: Self, condition: Condition);
-
     /// Move if non-zero.
     ///
     /// Uses a `test` instruction to check if the given `condition` value is
     /// equal to zero, conditionally moves `value` to `self` when `condition` is
     /// equal to zero.
-    fn cmovnz(&mut self, value: Self, condition: Condition);
+    fn cmovnz(&mut self, value: &Self, condition: Condition);
+
+    /// Move if zero.
+    ///
+    /// Uses a `cmp` instruction to check if the given `condition` value is
+    /// equal to zero, and if so, conditionally moves `value` to `self`
+    /// when `condition` is equal to zero.
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
+        self.cmovnz(value, !condition)
+    }
 }
 
 impl Cmov for u8 {
     #[inline(always)]
-    fn cmovz(&mut self, value: Self, condition: Condition) {
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
         let mut tmp = *self as u16;
-        tmp.cmovz(value as u16, condition);
+        tmp.cmovnz(&(*value as u16), condition);
         *self = tmp as u8;
     }
 
     #[inline(always)]
-    fn cmovnz(&mut self, value: Self, condition: Condition) {
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
         let mut tmp = *self as u16;
-        tmp.cmovnz(value as u16, condition);
+        tmp.cmovz(&(*value as u16), condition);
         *self = tmp as u8;
     }
 }
 
 impl Cmov for u128 {
     #[inline(always)]
-    fn cmovz(&mut self, value: Self, condition: Condition) {
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
         let mut lo = (*self & u64::MAX as u128) as u64;
         let mut hi = (*self >> 64) as u64;
 
-        lo.cmovz((value & u64::MAX as u128) as u64, condition);
-        hi.cmovz((value >> 64) as u64, condition);
+        lo.cmovnz(&((*value & u64::MAX as u128) as u64), condition);
+        hi.cmovnz(&((*value >> 64) as u64), condition);
 
         *self = (lo as u128) | (hi as u128) << 64;
     }
 
     #[inline(always)]
-    fn cmovnz(&mut self, value: Self, condition: Condition) {
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
         let mut lo = (*self & u64::MAX as u128) as u64;
         let mut hi = (*self >> 64) as u64;
 
-        lo.cmovnz((value & u64::MAX as u128) as u64, condition);
-        hi.cmovnz((value >> 64) as u64, condition);
+        lo.cmovz(&((*value & u64::MAX as u128) as u64), condition);
+        hi.cmovz(&((*value >> 64) as u64), condition);
 
         *self = (lo as u128) | (hi as u128) << 64;
     }

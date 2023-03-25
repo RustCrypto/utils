@@ -10,47 +10,47 @@ use crate::{Cmov, Condition};
 
 impl Cmov for u16 {
     #[inline(always)]
-    fn cmovz(&mut self, value: Self, condition: Condition) {
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
         let mut tmp = *self as u64;
-        tmp.cmovz(value as u64, condition);
+        tmp.cmovnz(&(*value as u64), condition);
         *self = tmp as u16;
     }
 
     #[inline(always)]
-    fn cmovnz(&mut self, value: Self, condition: Condition) {
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
         let mut tmp = *self as u64;
-        tmp.cmovnz(value as u64, condition);
+        tmp.cmovz(&(*value as u64), condition);
         *self = tmp as u16;
     }
 }
 
 impl Cmov for u32 {
     #[inline(always)]
-    fn cmovz(&mut self, value: Self, condition: Condition) {
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
         let mut tmp = *self as u64;
-        tmp.cmovz(value as u64, condition);
+        tmp.cmovnz(&(*value as u64), condition);
         *self = tmp as u32;
     }
 
     #[inline(always)]
-    fn cmovnz(&mut self, value: Self, condition: Condition) {
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
         let mut tmp = *self as u64;
-        tmp.cmovnz(value as u64, condition);
+        tmp.cmovz(&(*value as u64), condition);
         *self = tmp as u32;
     }
 }
 
 impl Cmov for u64 {
     #[inline(always)]
-    fn cmovz(&mut self, value: Self, condition: Condition) {
-        let mask = (1 ^ is_non_zero(condition)).wrapping_sub(1);
-        *self = (*self & mask) | (value & !mask);
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
+        let mask = is_non_zero(condition).wrapping_sub(1);
+        *self = (*self & mask) | (*value & !mask);
     }
 
     #[inline(always)]
-    fn cmovnz(&mut self, value: Self, condition: Condition) {
-        let mask = is_non_zero(condition).wrapping_sub(1);
-        *self = (*self & mask) | (value & !mask);
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
+        let mask = (1 ^ is_non_zero(condition)).wrapping_sub(1);
+        *self = (*self & mask) | (*value & !mask);
     }
 }
 
