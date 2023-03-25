@@ -3,7 +3,7 @@
 //! macros to `libcore` is implemented.
 //!
 //!
-//! # Supported target architecutres
+//! # Supported target architectures
 //!
 //! *NOTE: target features with an asterisk are unstable and subject to change
 //! to match upstream name changes in the Rust standard library.
