@@ -9,7 +9,7 @@ macro_rules! csel {
                 $csel,
                 in(reg) $condition,
                 inlateout(reg) *$dst,
-                in(reg) $src,
+                in(reg) *$src,
                 in(reg) *$dst,
                 options(pure, nomem, nostack),
             };
@@ -42,12 +42,12 @@ macro_rules! csel_eq {
 impl Cmov for u16 {
     #[inline(always)]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:w}, {2:w}, {3:w}, NE", self, *value, condition);
+        csel!("csel {1:w}, {2:w}, {3:w}, NE", self, value, condition);
     }
 
     #[inline(always)]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:w}, {2:w}, {3:w}, EQ", self, *value, condition);
+        csel!("csel {1:w}, {2:w}, {3:w}, EQ", self, value, condition);
     }
 }
 
@@ -64,12 +64,12 @@ impl CmovEq for u16 {
 impl Cmov for u32 {
     #[inline(always)]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:w}, {2:w}, {3:w}, NE", self, *value, condition);
+        csel!("csel {1:w}, {2:w}, {3:w}, NE", self, value, condition);
     }
 
     #[inline(always)]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:w}, {2:w}, {3:w}, EQ", self, *value, condition);
+        csel!("csel {1:w}, {2:w}, {3:w}, EQ", self, value, condition);
     }
 }
 
@@ -86,12 +86,12 @@ impl CmovEq for u32 {
 impl Cmov for u64 {
     #[inline(always)]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:x}, {2:x}, {3:x}, NE", self, *value, condition);
+        csel!("csel {1:x}, {2:x}, {3:x}, NE", self, value, condition);
     }
 
     #[inline(always)]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:x}, {2:x}, {3:x}, EQ", self, *value, condition);
+        csel!("csel {1:x}, {2:x}, {3:x}, EQ", self, value, condition);
     }
 }
 

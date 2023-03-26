@@ -18,7 +18,7 @@ macro_rules! cmov {
                 $instruction,
                 in(reg_byte) $condition,
                 inlateout(reg) *$dst,
-                in(reg) $src,
+                in(reg) *$src,
                 options(pure, nomem, nostack),
             };
         }
@@ -32,8 +32,8 @@ macro_rules! cmov_eq {
             asm! {
                 "xor {0:e}, {1:e}",
                 $instruction,
-                in(reg) $lhs,
-                in(reg) $rhs,
+                in(reg) *$lhs,
+                in(reg) *$rhs,
                 inlateout(reg) tmp,
                 in(reg) $condition as u16,
                 options(pure, nomem, nostack),
@@ -46,44 +46,44 @@ macro_rules! cmov_eq {
 impl Cmov for u16 {
     #[inline(always)]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        cmov!("cmovnz {1:e}, {2:e}", self, *value, condition);
+        cmov!("cmovnz {1:e}, {2:e}", self, value, condition);
     }
 
     #[inline(always)]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        cmov!("cmovz {1:e}, {2:e}", self, *value, condition);
+        cmov!("cmovz {1:e}, {2:e}", self, value, condition);
     }
 }
 
 impl CmovEq for u16 {
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovz {2:e}, {3:e}", *self, *rhs, input, output);
+        cmov_eq!("cmovz {2:e}, {3:e}", self, rhs, input, output);
     }
 
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovnz {2:e}, {3:e}", *self, *rhs, input, output);
+        cmov_eq!("cmovnz {2:e}, {3:e}", self, rhs, input, output);
     }
 }
 
 impl Cmov for u32 {
     #[inline(always)]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        cmov!("cmovnz {1:e}, {2:e}", self, *value, condition);
+        cmov!("cmovnz {1:e}, {2:e}", self, value, condition);
     }
 
     #[inline(always)]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        cmov!("cmovz {1:e}, {2:e}", self, *value, condition);
+        cmov!("cmovz {1:e}, {2:e}", self, value, condition);
     }
 }
 
 impl CmovEq for u32 {
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovz {2:e}, {3:e}", *self, *rhs, input, output);
+        cmov_eq!("cmovz {2:e}, {3:e}", self, rhs, input, output);
     }
 
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovnz {2:e}, {3:e}", *self, *rhs, input, output);
+        cmov_eq!("cmovnz {2:e}, {3:e}", self, rhs, input, output);
     }
 }
 
@@ -141,22 +141,22 @@ impl CmovEq for u64 {
 impl Cmov for u64 {
     #[inline(always)]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        cmov!("cmovnz {1:r}, {2:r}", self, *value, condition);
+        cmov!("cmovnz {1:r}, {2:r}", self, value, condition);
     }
 
     #[inline(always)]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        cmov!("cmovz {1:r}, {2:r}", self, *value, condition);
+        cmov!("cmovz {1:r}, {2:r}", self, value, condition);
     }
 }
 
 #[cfg(target_arch = "x86_64")]
 impl CmovEq for u64 {
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovz {2:e}, {3:e}", *self, *rhs, input, output);
+        cmov_eq!("cmovz {2:e}, {3:e}", self, rhs, input, output);
     }
 
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovnz {2:e}, {3:e}", *self, *rhs, input, output);
+        cmov_eq!("cmovnz {2:e}, {3:e}", self, rhs, input, output);
     }
 }
