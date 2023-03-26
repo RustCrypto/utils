@@ -22,7 +22,6 @@ mod x86;
 pub type Condition = u8;
 
 /// Conditional move
-// TODO(tarcieri): make one of `cmovz`/`cmovnz` a provided method which calls the other?
 pub trait Cmov {
     /// Move if non-zero.
     ///
@@ -41,7 +40,7 @@ pub trait Cmov {
     }
 }
 
-///
+/// Conditional move with equality comparison
 pub trait CmovEq {
     /// Move if both inputs are equal.
     ///
