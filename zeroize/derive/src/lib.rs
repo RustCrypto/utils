@@ -284,7 +284,7 @@ fn field_ident(n: usize, field: &Field) -> Ident {
     if let Some(ref name) = field.ident {
         name.clone()
     } else {
-        format_ident!("__zeroize_field_{n}")
+        format_ident!("__zeroize_field_{}", n)
     }
 }
 
