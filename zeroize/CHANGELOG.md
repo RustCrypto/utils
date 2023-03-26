@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.6.0 (2023-03-26)
+### Added
+- Impl `Zeroize` for `core::num::Wrapping` ([#818])
+- Impl `Zeroize` for `str` and `Box<str>` ([#842])
+
+### Changed
+- 2021 edition upgrade; MSRV 1.56 ([#869])
+
+[#818]: https://github.com/RustCrypto/utils/pull/818
+[#842]: https://github.com/RustCrypto/utils/pull/842
+[#869]: https://github.com/RustCrypto/utils/pull/869
+
 ## 1.5.7 (2022-07-20)
 ### Added
 - Optional `serde` support ([#780])
