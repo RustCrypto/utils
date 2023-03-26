@@ -7,7 +7,7 @@
 //! > quadword from a register or memory location to a register location.
 //! > The source and destination must be of the same size.
 
-use crate::{Cmov, Condition};
+use crate::{Cmov, CmovEq, Condition};
 use core::arch::asm;
 
 macro_rules! cmov {
@@ -25,6 +25,24 @@ macro_rules! cmov {
     };
 }
 
+macro_rules! cmov_eq {
+    ($instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
+        let mut tmp = *$dst as u16;
+        unsafe {
+            asm! {
+                "xor {0:e}, {1:e}",
+                $instruction,
+                in(reg) $lhs,
+                in(reg) $rhs,
+                inlateout(reg) tmp,
+                in(reg) $condition as u16,
+                options(pure, nomem, nostack),
+            };
+        };
+        *$dst = tmp as u8;
+    };
+}
+
 impl Cmov for u16 {
     #[inline(always)]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -37,6 +55,16 @@ impl Cmov for u16 {
     }
 }
 
+impl CmovEq for u16 {
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        cmov_eq!("cmovz {2:e}, {3:e}", *self, *rhs, input, output);
+    }
+
+    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        cmov_eq!("cmovnz {2:e}, {3:e}", *self, *rhs, input, output);
+    }
+}
+
 impl Cmov for u32 {
     #[inline(always)]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -46,6 +74,16 @@ impl Cmov for u32 {
     #[inline(always)]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
         cmov!("cmovz {1:e}, {2:e}", self, *value, condition);
+    }
+}
+
+impl CmovEq for u32 {
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        cmov_eq!("cmovz {2:e}, {3:e}", *self, *rhs, input, output);
+    }
+
+    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        cmov_eq!("cmovnz {2:e}, {3:e}", *self, *rhs, input, output);
     }
 }
 
@@ -74,6 +112,31 @@ impl Cmov for u64 {
     }
 }
 
+#[cfg(target_arch = "x86")]
+impl CmovEq for u64 {
+    #[inline(always)]
+    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        let lo = (*self & u32::MAX as u64) as u32;
+        let hi = (*self >> 32) as u32;
+
+        let mut tmp = 1u8;
+        lo.cmovne(&((*rhs & u32::MAX as u64) as u32), 0, &mut tmp);
+        hi.cmovne(&((*rhs >> 32) as u32), 0, &mut tmp);
+        tmp.cmoveq(&0, input, output);
+    }
+
+    #[inline(always)]
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        let lo = (*self & u32::MAX as u64) as u32;
+        let hi = (*self >> 32) as u32;
+
+        let mut tmp = 1u8;
+        lo.cmovne(&((*rhs & u32::MAX as u64) as u32), 0, &mut tmp);
+        hi.cmovne(&((*rhs >> 32) as u32), 0, &mut tmp);
+        tmp.cmoveq(&1, input, output);
+    }
+}
+
 #[cfg(target_arch = "x86_64")]
 impl Cmov for u64 {
     #[inline(always)]
@@ -84,5 +147,16 @@ impl Cmov for u64 {
     #[inline(always)]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
         cmov!("cmovz {1:r}, {2:r}", self, *value, condition);
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+impl CmovEq for u64 {
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        cmov_eq!("cmovz {2:e}, {3:e}", *self, *rhs, input, output);
+    }
+
+    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        cmov_eq!("cmovnz {2:e}, {3:e}", *self, *rhs, input, output);
     }
 }
