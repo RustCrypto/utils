@@ -92,6 +92,27 @@ jobs:
       - run: cargo test --target ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }} --all-features
 
+  # Cross-compiled tests
+  cross:
+    strategy:
+      matrix:
+        include:
+          # PPC32
+          - target: powerpc-unknown-linux-gnu
+            rust: 1.56.0 # MSRV
+          - target: powerpc-unknown-linux-gnu
+            rust: stable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - uses: RustCrypto/actions/cross-install@master
+      - run: cross test --target ${{ matrix.target }}
+
   # Feature-gated ARM64 SIMD register support (MSRV 1.59)
   aarch64:
     strategy:
