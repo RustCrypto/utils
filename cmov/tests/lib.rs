@@ -135,8 +135,8 @@ mod u16 {
 mod u32 {
     use cmov::{Cmov, CmovEq};
 
-    pub const U32_A: u32 = 0x11111111;
-    pub const U32_B: u32 = 0x22222222;
+    pub const U32_A: u32 = 0x1111_1111;
+    pub const U32_B: u32 = 0x2222_2222;
 
     #[test]
     fn cmovz_works() {
