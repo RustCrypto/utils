@@ -24,7 +24,7 @@ macro_rules! csel_eq {
             asm! {
                 "eor {0:w}, {1:w}, {2:w}",
                 "cmp {0:w}, 0",
-                "csel {3:w}, {4:w}, {5:w}, NE",
+                $instruction,
                 out(reg) _,
                 in(reg) *$lhs,
                 in(reg) *$rhs,
@@ -65,7 +65,11 @@ impl Cmov for u16 {
 
 impl CmovEq for u16 {
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        csel_eq!("csel {2:w}, {3:w}, {4:w}, NE", self, rhs, input, output);
+        csel_eq!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
+    }
+
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        csel_eq!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
     }
 }
 
@@ -95,7 +99,11 @@ impl Cmov for u32 {
 
 impl CmovEq for u32 {
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        csel_eq!("csel {2:w}, {3:w}, {4:w}, NE", self, rhs, input, output);
+        csel_eq!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
+    }
+
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        csel_eq!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
     }
 }
 
@@ -125,6 +133,10 @@ impl Cmov for u64 {
 
 impl CmovEq for u64 {
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        csel_eq!("csel {2:w}, {3:w}, {4:w}, NE", self, rhs, input, output);
+        csel_eq!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
+    }
+
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        csel_eq!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
     }
 }
