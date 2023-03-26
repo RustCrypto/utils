@@ -64,7 +64,7 @@ fn build_attribute(name: &str, values: &[&str]) -> Attribute {
         .map(|value| build_path(value))
         .collect::<Vec<_>>();
     let path = build_path(name);
-    let tokens = quote! { (#(#values),*) };
+    let tokens = quote! { #(#values),* };
     let delimiter = MacroDelimiter::Paren(Paren::default());
 
     Attribute {
