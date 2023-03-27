@@ -325,3 +325,29 @@ fn derive_zeroize_on_drop_generic() {
     #[derive(ZeroizeOnDrop)]
     struct Z<T: Zeroize>(Vec<T>);
 }
+
+#[test]
+fn derive_zeroize_unused_param() {
+    #[derive(Zeroize)]
+    struct Z<T> {
+        arr: [u32; 5],
+        #[zeroize(skip)]
+        skipped: T,
+    }
+}
+
+#[test]
+// Issue #878
+fn derive_zeroize_with_marker() {
+    #[derive(ZeroizeOnDrop, Zeroize)]
+    struct Test<A: Marker> {
+        #[zeroize(skip)]
+        field: Option<A>,
+    }
+
+    trait Secret: ZeroizeOnDrop + Zeroize {}
+
+    impl<A: Marker> Secret for Test<A> {}
+
+    trait Marker {}
+}
