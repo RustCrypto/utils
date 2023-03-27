@@ -8,11 +8,10 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use syn::{
     parse::{Parse, ParseStream},
-    parse_quote,
     punctuated::Punctuated,
     token::Comma,
-    Attribute, Data, DeriveInput, Expr, ExprLit, Field, Fields, GenericParam, Lit, Meta, Result,
-    Variant, WherePredicate,
+    Attribute, Data, DeriveInput, Expr, ExprLit, Field, Fields, Lit, Meta, Result, Variant,
+    WherePredicate,
 };
 
 /// Name of zeroize-related attributes
@@ -39,16 +38,7 @@ fn derive_zeroize_impl(input: DeriveInput) -> TokenStream {
 
     let extra_bounds = match attributes.bound {
         Some(bounds) => bounds.0,
-        None => {
-            let mut out: Punctuated<WherePredicate, Comma> = Default::default();
-            for param in &input.generics.params {
-                if let GenericParam::Type(type_param) = param {
-                    let type_name = &type_param.ident;
-                    out.push(parse_quote! { #type_name: Zeroize })
-                }
-            }
-            out
-        }
+        None => Default::default(),
     };
 
     let mut generics = input.generics.clone();
