@@ -46,17 +46,17 @@ pub trait CmovEq {
     ///
     /// Uses a `xor` instruction to compare the two values, and
     /// conditionally moves `input` to `output` when they are equal.
-    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let mut tmp = 1u8;
-        self.cmovne(rhs, 0u8, &mut tmp);
-        tmp.cmovne(&0u8, input, output);
-    }
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition);
 
     /// Move if both inputs are not equal.
     ///
     /// Uses a `xor` instruction to compare the two values, and
     /// conditionally moves `input` to `output` when they are not equal.
-    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition);
+    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        let mut tmp = 1u8;
+        self.cmoveq(rhs, 0u8, &mut tmp);
+        tmp.cmoveq(&1u8, input, output);
+    }
 }
 
 impl Cmov for u8 {
