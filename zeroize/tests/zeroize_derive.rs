@@ -351,3 +351,12 @@ fn derive_zeroize_with_marker() {
 
     trait Marker {}
 }
+
+#[test]
+// Issue #878
+fn derive_zeroize_used_param() {
+    #[derive(Zeroize)]
+    struct Z<T> {
+        used: T
+    }
+}
