@@ -357,6 +357,6 @@ fn derive_zeroize_with_marker() {
 fn derive_zeroize_used_param() {
     #[derive(Zeroize)]
     struct Z<T> {
-        used: T
+        used: T,
     }
 }
