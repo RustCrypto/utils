@@ -25,10 +25,12 @@ impl Cmov for u16 {
 }
 
 impl CmovEq for u16 {
+    #[inline(always)]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         (*self as u64).cmovne(&(*rhs as u64), input, output);
     }
 
+    #[inline(always)]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         (*self as u64).cmoveq(&(*rhs as u64), input, output);
     }
@@ -51,10 +53,12 @@ impl Cmov for u32 {
 }
 
 impl CmovEq for u32 {
+    #[inline(always)]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         (*self as u64).cmovne(&(*rhs as u64), input, output);
     }
 
+    #[inline(always)]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         (*self as u64).cmoveq(&(*rhs as u64), input, output);
     }
@@ -75,10 +79,12 @@ impl Cmov for u64 {
 }
 
 impl CmovEq for u64 {
+    #[inline(always)]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         output.cmovnz(&input, (self ^ rhs) as u8);
     }
 
+    #[inline(always)]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         output.cmovz(&input, (self ^ rhs) as u8);
     }

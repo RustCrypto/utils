@@ -52,10 +52,12 @@ impl Cmov for u16 {
 }
 
 impl CmovEq for u16 {
+    #[inline(always)]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         csel_eq!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
     }
 
+    #[inline(always)]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         csel_eq!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
     }
@@ -74,10 +76,12 @@ impl Cmov for u32 {
 }
 
 impl CmovEq for u32 {
+    #[inline(always)]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         csel_eq!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
     }
 
+    #[inline(always)]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         csel_eq!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
     }
@@ -96,10 +100,12 @@ impl Cmov for u64 {
 }
 
 impl CmovEq for u64 {
+    #[inline(always)]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         csel_eq!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
     }
 
+    #[inline(always)]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         csel_eq!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
     }

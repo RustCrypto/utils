@@ -76,10 +76,12 @@ impl Cmov for u8 {
 }
 
 impl CmovEq for u8 {
+    #[inline(always)]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         (*self as u16).cmoveq(&(*rhs as u16), input, output);
     }
 
+    #[inline(always)]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         (*self as u16).cmovne(&(*rhs as u16), input, output);
     }
