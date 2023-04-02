@@ -8,4 +8,4 @@ documentation = "https://docs.rs/hex-literal"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["hex", "literals"]
 edition = "2021"
-rust = "1.57"
+rust-version = "1.57"
