@@ -126,7 +126,6 @@ pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> [u8; LEN] {
 macro_rules! hex {
     ($($s:literal)*) => {{
         const STRINGS: &[&'static [u8]] = &[$($s.as_bytes(),)*];
-        const LEN: usize = $crate::len(STRINGS);
-        $crate::decode::<LEN>(STRINGS)
+        $crate::decode::<{ $crate::len(STRINGS) }>(STRINGS)
     }};
 }
