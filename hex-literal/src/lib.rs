@@ -79,6 +79,9 @@ const fn next_byte(string: &[u8], pos: usize) -> Option<(u8, usize)> {
     Some(((half1 << 4) + half2, pos))
 }
 
+/// Compute length of a byte array which will be decoded from the strings.
+///
+/// This function is an implementation detail and SHOULD NOT be called directly!
 #[doc(hidden)]
 pub const fn len(strings: &[&[u8]]) -> usize {
     let mut i = 0;
@@ -94,6 +97,9 @@ pub const fn len(strings: &[&[u8]]) -> usize {
     len
 }
 
+/// Decode hex strings into a byte array of pre-computed length.
+///
+/// This function is an implementation detail and SHOULD NOT be called directly!
 #[doc(hidden)]
 pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> [u8; LEN] {
     let mut i = 0;
