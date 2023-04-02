@@ -9,6 +9,9 @@ on:
     paths-ignore:
       - README.md
 
+permissions:
+  contents: read
+
 jobs:
   clippy:
     runs-on: ubuntu-latest

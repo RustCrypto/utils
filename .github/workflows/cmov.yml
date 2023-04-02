@@ -9,6 +9,9 @@ on:
   push:
     branches: master
 
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: cmov
