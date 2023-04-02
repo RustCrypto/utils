@@ -7,4 +7,5 @@ description = "Macro for converting hexadecimal string to a byte array at compil
 documentation = "https://docs.rs/hex-literal"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["hex", "literals"]
-edition = "2018"
+edition = "2021"
+rust = "1.57"
