@@ -16,4 +16,4 @@ crypto-common = "0.2.0-pre"
 generic-array = "0.14"
 
 [dev-dependencies]
-hex-literal = "0.3.3"
+hex-literal = "0.4.0"
