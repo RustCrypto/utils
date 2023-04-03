@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 (2023-04-02)
+### Added
+- `miri` support by forcing the `portable` backend ([#864])
+- Constant-time equality comparisons ([#873])
+
+### Changed
+- Make `Cmov::cmovz` a provided method ([#871])
+
+### Fixed
+- Builds on `x86` (32-bit) targets ([#863])
+
+[#863]: https://github.com/RustCrypto/utils/pull/863
+[#864]: https://github.com/RustCrypto/utils/pull/864
+[#871]: https://github.com/RustCrypto/utils/pull/881
+[#873]: https://github.com/RustCrypto/utils/pull/883
+
 ## 0.2.0 (2023-02-26)
 ### Added
 - `Condition` alias for `u8` ([#830])
