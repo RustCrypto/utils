@@ -31,22 +31,37 @@ let bytes1 = hex!("
     00010203 04050607
     08090a0b 0c0d0e0f
 ");
-assert_eq!(bytes1, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]);
+assert_eq!(
+    bytes1,
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+);
 
-// It's possible to use several literals (results will be concatenated)
+// It's possible to use several literals
+// (results will be concatenated)
 let bytes2 = hex!(
     "00010203 04050607" // first half
-    "08090a0b" /* block comment */ "0c0d0e0f" // second half
+    "08090a0b 0c0d0e0f" // second half
 );
 assert_eq!(bytes1, bytes2);
 ```
 
 Using an unsupported character inside literals will result in a compilation error:
 ```rust,compile_fail
-# use hex_literal::hex;
-hex!("АА"); // Cyrillic "А"
-hex!("11　22"); // Japanese space
-hex!("0123 // Сomments inside literals are not supported");
+hex_literal::hex!("АА"); // Cyrillic "А"
+hex_literal::hex!("11　22"); // Japanese space
+```
+
+Сomments inside literals are not supported:
+```rust,compile_fail
+hex_literal::hex!("0123 // foo");
+```
+
+Each literal must contain an even number of hex characters:
+```rust,compile_fail
+hex_literal::hex!(
+    "01234"
+    "567"
+);
 ```
 
 ## Minimum Supported Rust Version
