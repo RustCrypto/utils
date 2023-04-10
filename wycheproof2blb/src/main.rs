@@ -112,6 +112,10 @@ fn main() {
             file: "eddsa_test.json",
             generator: ed25519::generator,
         },
+        "secp224r1" => Algorithm {
+            file: "ecdsa_secp224r1_sha224_test.json",
+            generator: ecdsa::generator,
+        },
         "secp256r1" => Algorithm {
             file: "ecdsa_secp256r1_sha256_test.json",
             generator: ecdsa::generator,
