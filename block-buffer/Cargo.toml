@@ -18,6 +18,3 @@ zeroize = { version = "1.4", optional = true, features = ["zeroize_derive"] }
 
 [dev-dependencies]
 hex-literal = "0.3.3"
-
-[features]
-zeroize = ["dep:zeroize"]
