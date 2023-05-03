@@ -35,7 +35,7 @@ version = "0.0.2"
 
 [[package]]
 name = "cpufeatures"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "libc",
 ]
@@ -94,7 +94,7 @@ version = "0.4.1"
 
 [[package]]
 name = "hybrid-array"
-version = "0.1.0"
+version = "0.2.0-pre"
 dependencies = [
  "typenum",
 ]
