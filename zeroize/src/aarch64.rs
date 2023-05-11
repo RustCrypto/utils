@@ -1,7 +1,7 @@
 //! [`Zeroize`] impls for ARM64 SIMD registers.
 //!
 //! Gated behind the `aarch64` feature: MSRV 1.59
-//! (the overall crate is MSRV 1.51)
+//! (the overall crate is MSRV 1.56)
 
 use crate::{atomic_fence, volatile_write, Zeroize};
 
