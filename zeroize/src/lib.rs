@@ -263,10 +263,7 @@ use core::{
 };
 
 #[cfg(feature = "alloc")]
-use {
-    alloc::{boxed::Box, string::String, vec::Vec},
-    core::slice,
-};
+use alloc::{boxed::Box, string::String, vec::Vec};
 
 #[cfg(feature = "std")]
 use std::ffi::CString;
@@ -326,7 +323,11 @@ macro_rules! impl_zeroize_for_non_zero {
         $(
             impl Zeroize for $type {
                 fn zeroize(&mut self) {
-                    volatile_write(self, unsafe { <$type>::new_unchecked(1) });
+                    const ONE: $type = match <$type>::new(1) {
+                        Some(one) => one,
+                        None => unreachable!(),
+                    };
+                    volatile_write(self, ONE);
                     atomic_fence();
                 }
             }
@@ -575,17 +576,7 @@ where
         self.clear();
 
         // Zero the full capacity of `Vec`.
-        // Safety:
-        //
-        // This is safe, because `Vec` never allocates more than `isize::MAX` bytes.
-        // This exact use case is even mentioned in the documentation of `pointer::add`.
-        // This is safe because MaybeUninit ignores all invariants,
-        // so we can create a slice of MaybeUninit<Z> using the full capacity of the Vec
-        let uninit_slice = unsafe {
-            slice::from_raw_parts_mut(self.as_mut_ptr() as *mut MaybeUninit<Z>, self.capacity())
-        };
-
-        uninit_slice.zeroize();
+        self.spare_capacity_mut().zeroize();
     }
 }
 
