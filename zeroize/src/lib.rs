@@ -424,6 +424,20 @@ where
 
 impl<Z> ZeroizeOnDrop for Option<Z> where Z: ZeroizeOnDrop {}
 
+/// Impl [`Zeroize`] on [`MaybeUninit`] types.
+///
+/// This fills the memory with zeroes.
+/// Note that this ignore invariants that `Z` might have, because
+/// [`MaybeUninit`] removes all invariants.
+impl<Z> Zeroize for MaybeUninit<Z> {
+    fn zeroize(&mut self) {
+        // Safety:
+        // `MaybeUninit` is valid for any byte pattern, including zeros.
+        unsafe { ptr::write_volatile(self, MaybeUninit::zeroed()) }
+        atomic_fence();
+    }
+}
+
 /// Impl [`Zeroize`] on slices of [`MaybeUninit`] types.
 ///
 /// This impl can eventually be optimized using an memset intrinsic,
