@@ -28,7 +28,7 @@ pub use typenum;
 use core::{
     array::{IntoIter, TryFromSliceError},
     borrow::{Borrow, BorrowMut},
-    ops::{Index, IndexMut, Range},
+    ops::{Deref, DerefMut, Index, IndexMut, Range},
     slice::{Iter, IterMut},
 };
 use typenum::Unsigned;
@@ -148,6 +148,26 @@ where
 {
     fn default() -> Self {
         Self(sealed::ArrayExt::from_fn(|_| Default::default()))
+    }
+}
+
+impl<T, U> Deref for Array<T, U>
+where
+    U: ArraySize,
+{
+    type Target = U::ArrayType<T>;
+
+    fn deref(&self) -> &U::ArrayType<T> {
+        &self.0
+    }
+}
+
+impl<T, U> DerefMut for Array<T, U>
+where
+    U: ArraySize,
+{
+    fn deref_mut(&mut self) -> &mut U::ArrayType<T> {
+        &mut self.0
     }
 }
 
@@ -273,6 +293,8 @@ pub trait ArrayOps<T, const N: usize>:
     + AsMut<[T; N]>
     + Borrow<[T; N]>
     + BorrowMut<[T; N]>
+    + Deref<Target = [T; N]>
+    + DerefMut
     + From<[T; N]>
     + Index<usize>
     + Index<Range<usize>>
