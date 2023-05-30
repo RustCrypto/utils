@@ -45,6 +45,34 @@ impl<T, U> Array<T, U>
 where
     U: ArraySize,
 {
+    /// Create array where each array element `T` is returned by the `cb` call.
+    pub fn from_fn<F>(cb: F) -> Self
+    where
+        F: FnMut(usize) -> T,
+    {
+        Self(sealed::ArrayExt::from_fn(cb))
+    }
+
+    /// Create array from a slice.
+    pub fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
+    where
+        T: Copy,
+    {
+        sealed::ArrayExt::from_slice(slice).map(Self)
+    }
+
+    /// Returns an iterator over the array.
+    #[inline]
+    fn iter(&self) -> Iter<'_, T> {
+        self.as_ref().iter()
+    }
+
+    /// Returns an iterator that allows modifying each value.
+    #[inline]
+    fn iter_mut(&mut self) -> IterMut<'_, T> {
+        self.as_mut().iter_mut()
+    }
+
     /// Returns a slice containing the entire array. Equivalent to `&s[..]`.
     #[inline]
     pub fn as_slice(&self) -> &[T] {
@@ -232,13 +260,12 @@ impl<'a, T, U> TryFrom<&'a [T]> for Array<T, U>
 where
     T: Copy,
     U: ArraySize,
-    U::ArrayType<T>: TryFrom<&'a [T], Error = TryFromSliceError>,
 {
     type Error = TryFromSliceError;
 
     #[inline]
     fn try_from(slice: &'a [T]) -> Result<Array<T, U>, TryFromSliceError> {
-        U::ArrayType::try_from(slice).map(Self)
+        sealed::ArrayExt::from_slice(slice).map(Self)
     }
 }
 
@@ -328,31 +355,6 @@ pub trait ArrayOps<T, const N: usize>:
     /// Create mutable array reference from reference to Rust's core array type.
     fn from_core_array_mut(arr: &mut [T; N]) -> &mut Self;
 
-    /// Create array where each array element `T` is returned by the `cb` call.
-    fn from_fn<F>(cb: F) -> Self
-    where
-        F: FnMut(usize) -> T,
-    {
-        Self::from_core_array(sealed::ArrayExt::from_fn(cb))
-    }
-
-    /// Create array from a slice.
-    fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
-    where
-        T: Copy;
-
-    /// Returns an iterator over the array.
-    #[inline]
-    fn iter(&self) -> Iter<'_, T> {
-        self.as_ref().iter()
-    }
-
-    /// Returns an iterator that allows modifying each value.
-    #[inline]
-    fn iter_mut(&mut self) -> IterMut<'_, T> {
-        self.as_mut().iter_mut()
-    }
-
     /// Returns an array of the same size as `self`, with function `f` applied to each element
     /// in order.
     fn map<F, U>(self, f: F) -> [U; N]
@@ -378,11 +380,17 @@ pub trait IntoArray<T> {
 
 /// Sealed traits.
 mod sealed {
+    use core::array::TryFromSliceError;
+
     /// Extension trait with helper functions for core arrays.
     pub trait ArrayExt<T>: Sized {
         fn from_fn<F>(cb: F) -> Self
         where
             F: FnMut(usize) -> T;
+
+        fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
+        where
+            T: Copy;
     }
 
     impl<T, const N: usize> ArrayExt<T> for [T; N] {
@@ -397,6 +405,13 @@ mod sealed {
                 idx = idx.saturating_add(1); // TODO(tarcieri): better overflow handling?
                 res
             })
+        }
+
+        fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
+        where
+            T: Copy,
+        {
+            slice.try_into()
         }
     }
 }
@@ -425,22 +440,14 @@ macro_rules! impl_array_size {
 
                 #[inline]
                 fn from_core_array_ref(array_ref: &[T; $len]) -> &Self {
-                    // SAFETY: `$ty` is a `repr(transparent)` newtype for `[T; $len]`
+                    // SAFETY: `Self` is a `repr(transparent)` newtype for `[T; $len]`
                     unsafe { &*(array_ref.as_ptr() as *const Self) }
                 }
 
                 #[inline]
                 fn from_core_array_mut(array_ref: &mut [T; $len]) -> &mut Self {
-                    // SAFETY: `$ty` is a `repr(transparent)` newtype for `[T; $len]`
+                    // SAFETY: `Self` is a `repr(transparent)` newtype for `[T; $len]`
                     unsafe { &mut *(array_ref.as_mut_ptr() as *mut Self) }
-                }
-
-                #[inline]
-                fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
-                where
-                    T: Copy
-                {
-                    slice.try_into().map(Self)
                 }
 
                 #[inline]
