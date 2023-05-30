@@ -141,6 +141,16 @@ where
     }
 }
 
+impl<T, U> Default for Array<T, U>
+where
+    T: Default,
+    U: ArraySize,
+{
+    fn default() -> Self {
+        Self(sealed::ArrayExt::from_fn(|_| Default::default()))
+    }
+}
+
 impl<T, U, const N: usize> From<[T; N]> for Array<T, U>
 where
     Self: ArrayOps<T, N>,
@@ -297,16 +307,11 @@ pub trait ArrayOps<T, const N: usize>:
     fn from_core_array_mut(arr: &mut [T; N]) -> &mut Self;
 
     /// Create array where each array element `T` is returned by the `cb` call.
-    fn from_fn<F>(mut cb: F) -> Self
+    fn from_fn<F>(cb: F) -> Self
     where
         F: FnMut(usize) -> T,
     {
-        let mut idx = 0;
-        Self::from_core_array([(); N].map(|_| {
-            let res = cb(idx);
-            idx = idx.saturating_add(1); // TODO(tarcieri): better overflow handling?
-            res
-        }))
+        Self::from_core_array(sealed::ArrayExt::from_fn(cb))
     }
 
     /// Create array from a slice.
@@ -337,7 +342,7 @@ pub trait ArrayOps<T, const N: usize>:
 /// `typenum`-provided [`Unsigned`] integer.
 pub trait ArraySize: Unsigned {
     /// Array type which corresponds to this size.
-    type ArrayType<T>: AsRef<[T]> + AsMut<[T]> + IntoArray<T> + Sized;
+    type ArrayType<T>: AsRef<[T]> + AsMut<[T]> + IntoArray<T> + sealed::ArrayExt<T>;
 }
 
 /// Convert the given type into an [`Array`].
@@ -347,6 +352,31 @@ pub trait IntoArray<T> {
 
     /// Convert into the `hybrid-array` crate's [`Array`] type.
     fn into_hybrid_array(self) -> Array<T, Self::Size>;
+}
+
+/// Sealed traits.
+mod sealed {
+    /// Extension trait with helper functions for core arrays.
+    pub trait ArrayExt<T>: Sized {
+        fn from_fn<F>(cb: F) -> Self
+        where
+            F: FnMut(usize) -> T;
+    }
+
+    impl<T, const N: usize> ArrayExt<T> for [T; N] {
+        fn from_fn<F>(mut cb: F) -> Self
+        where
+            F: FnMut(usize) -> T,
+        {
+            let mut idx = 0;
+
+            [(); N].map(|_| {
+                let res = cb(idx);
+                idx = idx.saturating_add(1); // TODO(tarcieri): better overflow handling?
+                res
+            })
+        }
+    }
 }
 
 macro_rules! impl_array_size {
@@ -405,15 +435,6 @@ macro_rules! impl_array_size {
 
                 fn into_hybrid_array(self) -> Array<T, Self::Size> {
                     Array::from_core_array(self)
-                }
-            }
-
-            impl<T> Default for Array<T, typenum::$ty>
-            where
-                T: Default
-            {
-                fn default() -> Self {
-                    Self([(); $len].map(|_| T::default()))
                 }
             }
 
