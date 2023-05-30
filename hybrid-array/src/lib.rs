@@ -50,7 +50,7 @@ where
     where
         F: FnMut(usize) -> T,
     {
-        Self(sealed::ArrayExt::from_fn(cb))
+        Self(ArrayExt::from_fn(cb))
     }
 
     /// Create array from a slice.
@@ -58,7 +58,7 @@ where
     where
         T: Copy,
     {
-        sealed::ArrayExt::from_slice(slice).map(Self)
+        ArrayExt::from_slice(slice).map(Self)
     }
 
     /// Returns an iterator over the array.
@@ -175,7 +175,7 @@ where
     U: ArraySize,
 {
     fn default() -> Self {
-        Self(sealed::ArrayExt::from_fn(|_| Default::default()))
+        Self(ArrayExt::from_fn(|_| Default::default()))
     }
 }
 
@@ -265,7 +265,7 @@ where
 
     #[inline]
     fn try_from(slice: &'a [T]) -> Result<Array<T, U>, TryFromSliceError> {
-        sealed::ArrayExt::from_slice(slice).map(Self)
+        ArrayExt::from_slice(slice).map(Self)
     }
 }
 
@@ -362,11 +362,47 @@ pub trait ArrayOps<T, const N: usize>:
         F: FnMut(T) -> U;
 }
 
+/// Extension trait with helper functions for core arrays.
+pub trait ArrayExt<T>: Sized {
+    /// Create array using the given callback function for each element.
+    fn from_fn<F>(cb: F) -> Self
+    where
+        F: FnMut(usize) -> T;
+
+    /// Create array from a slice, returning [`TryFromSliceError`] if the slice
+    /// length does not match the array length.
+    fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
+    where
+        T: Copy;
+}
+
+impl<T, const N: usize> ArrayExt<T> for [T; N] {
+    fn from_fn<F>(mut cb: F) -> Self
+    where
+        F: FnMut(usize) -> T,
+    {
+        let mut idx = 0;
+
+        [(); N].map(|_| {
+            let res = cb(idx);
+            idx = idx.saturating_add(1); // TODO(tarcieri): better overflow handling?
+            res
+        })
+    }
+
+    fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
+    where
+        T: Copy,
+    {
+        slice.try_into()
+    }
+}
+
 /// Trait which associates a [`usize`] size and `ArrayType` with a
 /// `typenum`-provided [`Unsigned`] integer.
 pub trait ArraySize: Unsigned {
     /// Array type which corresponds to this size.
-    type ArrayType<T>: AsRef<[T]> + AsMut<[T]> + IntoArray<T> + sealed::ArrayExt<T>;
+    type ArrayType<T>: AsRef<[T]> + AsMut<[T]> + IntoArray<T> + ArrayExt<T>;
 }
 
 /// Convert the given type into an [`Array`].
@@ -376,44 +412,6 @@ pub trait IntoArray<T> {
 
     /// Convert into the `hybrid-array` crate's [`Array`] type.
     fn into_hybrid_array(self) -> Array<T, Self::Size>;
-}
-
-/// Sealed traits.
-mod sealed {
-    use core::array::TryFromSliceError;
-
-    /// Extension trait with helper functions for core arrays.
-    pub trait ArrayExt<T>: Sized {
-        fn from_fn<F>(cb: F) -> Self
-        where
-            F: FnMut(usize) -> T;
-
-        fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
-        where
-            T: Copy;
-    }
-
-    impl<T, const N: usize> ArrayExt<T> for [T; N] {
-        fn from_fn<F>(mut cb: F) -> Self
-        where
-            F: FnMut(usize) -> T,
-        {
-            let mut idx = 0;
-
-            [(); N].map(|_| {
-                let res = cb(idx);
-                idx = idx.saturating_add(1); // TODO(tarcieri): better overflow handling?
-                res
-            })
-        }
-
-        fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
-        where
-            T: Copy,
-        {
-            slice.try_into()
-        }
-    }
 }
 
 macro_rules! impl_array_size {
