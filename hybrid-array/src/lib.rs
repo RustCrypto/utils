@@ -244,6 +244,16 @@ where
     }
 }
 
+/// Generate a [`TryFromSliceError`] if the slice doesn't match the given length.
+fn check_slice_length<T, U: Unsigned>(slice: &[T]) -> Result<(), TryFromSliceError> {
+    if slice.len() != U::USIZE {
+        // Hack: `TryFromSliceError` lacks a public constructor
+        <&[T; 1]>::try_from([].as_slice())?;
+    }
+
+    Ok(())
+}
+
 /// Byte array type.
 pub type ByteArray<U> = Array<u8, U>;
 
@@ -398,6 +408,15 @@ macro_rules! impl_array_size {
                 }
             }
 
+            impl<T> Default for Array<T, typenum::$ty>
+            where
+                T: Default
+            {
+                fn default() -> Self {
+                    Self([(); $len].map(|_| T::default()))
+                }
+            }
+
             impl<T> IntoIterator for Array<T, typenum::$ty> {
                 type Item = T;
                 type IntoIter = IntoIter<T, $len>;
@@ -511,14 +530,4 @@ impl_array_size! {
     2048 => U2048,
     4096 => U4096,
     8192 => U8192
-}
-
-/// Generate a [`TryFromSliceError`] if the slice doesn't match the given length.
-fn check_slice_length<T, U: Unsigned>(slice: &[T]) -> Result<(), TryFromSliceError> {
-    if slice.len() != U::USIZE {
-        // Hack: `TryFromSliceError` lacks a public constructor
-        <&[T; 1]>::try_from([].as_slice())?;
-    }
-
-    Ok(())
 }
