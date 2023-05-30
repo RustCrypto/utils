@@ -183,10 +183,11 @@ impl<T, U> Deref for Array<T, U>
 where
     U: ArraySize,
 {
-    type Target = U::ArrayType<T>;
+    type Target = [T];
 
-    fn deref(&self) -> &U::ArrayType<T> {
-        &self.0
+    #[inline]
+    fn deref(&self) -> &[T] {
+        self.0.as_ref()
     }
 }
 
@@ -194,8 +195,9 @@ impl<T, U> DerefMut for Array<T, U>
 where
     U: ArraySize,
 {
-    fn deref_mut(&mut self) -> &mut U::ArrayType<T> {
-        &mut self.0
+    #[inline]
+    fn deref_mut(&mut self) -> &mut [T] {
+        self.0.as_mut()
     }
 }
 
@@ -320,8 +322,6 @@ pub trait ArrayOps<T, const N: usize>:
     + AsMut<[T; N]>
     + Borrow<[T; N]>
     + BorrowMut<[T; N]>
-    + Deref<Target = [T; N]>
-    + DerefMut
     + From<[T; N]>
     + Index<usize>
     + Index<Range<usize>>
