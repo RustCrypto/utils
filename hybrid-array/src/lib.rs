@@ -408,10 +408,12 @@ macro_rules! impl_array_size {
                 const SIZE: usize = $len;
                 type Size = typenum::$ty;
 
+                #[inline]
                 fn as_array_ref(&self) -> &[T; $len] {
                     &self.0
                 }
 
+                #[inline]
                 fn as_array_mut(&mut self) -> &mut [T; $len] {
                     &mut self.0
                 }
@@ -421,11 +423,13 @@ macro_rules! impl_array_size {
                     Self(arr)
                 }
 
+                #[inline]
                 fn from_core_array_ref(array_ref: &[T; $len]) -> &Self {
                     // SAFETY: `$ty` is a `repr(transparent)` newtype for `[T; $len]`
                     unsafe { &*(array_ref.as_ptr() as *const Self) }
                 }
 
+                #[inline]
                 fn from_core_array_mut(array_ref: &mut [T; $len]) -> &mut Self {
                     // SAFETY: `$ty` is a `repr(transparent)` newtype for `[T; $len]`
                     unsafe { &mut *(array_ref.as_mut_ptr() as *mut Self) }
@@ -573,4 +577,20 @@ impl_array_size! {
     2048 => U2048,
     4096 => U4096,
     8192 => U8192
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ByteArray;
+    use typenum::{U0, U3, U6};
+
+    #[test]
+    fn tryfrom_slice_for_array_ref() {
+        let slice: &[u8] = &[1, 2, 3, 4, 5, 6];
+        assert!(ByteArray::<U0>::try_from(slice).is_err());
+        assert!(ByteArray::<U3>::try_from(slice).is_err());
+
+        let array_ref = ByteArray::<U6>::try_from(slice).unwrap();
+        assert_eq!(&*array_ref, slice);
+    }
 }
