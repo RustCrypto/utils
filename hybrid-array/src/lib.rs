@@ -5,7 +5,6 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
-#![forbid(unsafe_code)]
 #![warn(
     clippy::cast_lossless,
     clippy::cast_possible_truncation,
@@ -66,6 +65,12 @@ pub trait ArrayOps<T, const N: usize>:
 
     /// Create array from Rust's core array type.
     fn from_core_array(arr: [T; N]) -> Self;
+
+    /// Create array reference from reference to Rust's core array type.
+    fn from_core_array_ref(arr: &[T; N]) -> &Self;
+
+    /// Create mutable array reference from reference to Rust's core array type.
+    fn from_core_array_mut(arr: &mut [T; N]) -> &mut Self;
 
     /// Create array where each array element `T` is returned by the `cb` call.
     fn from_fn<F>(mut cb: F) -> Self
@@ -138,6 +143,16 @@ macro_rules! impl_array_size {
                 #[inline]
                 fn from_core_array(arr: [T; $len]) -> Self {
                     Self(arr)
+                }
+
+                fn from_core_array_ref(array_ref: &[T; $len]) -> &Self {
+                    // SAFETY: `$ty` is a `repr(transparent)` newtype for `[T; $len]`
+                    unsafe { &*(array_ref.as_ptr() as *const Self) }
+                }
+
+                fn from_core_array_mut(array_ref: &mut [T; $len]) -> &mut Self {
+                    // SAFETY: `$ty` is a `repr(transparent)` newtype for `[T; $len]`
+                    unsafe { &mut *(array_ref.as_mut_ptr() as *mut Self) }
                 }
 
                 #[inline]
@@ -307,6 +322,45 @@ where
     pub fn as_mut_slice(&mut self) -> &mut [T] {
         self.0.as_mut()
     }
+
+    /// Convert the given slice into a reference to a hybrid array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the slice's length doesn't match the array type.
+    // TODO(tarcieri): deprecate this before the v0.2 release
+    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
+    #[inline]
+    pub fn ref_from_slice(slice: &[T]) -> &Self {
+        slice.try_into().expect("slice length mismatch")
+    }
+
+    /// Convert the given mutable slice to a mutable reference to a hybrid array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the slice's length doesn't match the array type.
+    // TODO(tarcieri): deprecate this before the v0.2 release
+    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
+    #[inline]
+    pub fn ref_from_mut_slice(slice: &mut [T]) -> &mut Self {
+        slice.try_into().expect("slice length mismatch")
+    }
+
+    /// Clone the contents of the slice as a new hybrid array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the slice's length doesn't match the array type.
+    // TODO(tarcieri): deprecate this before the v0.2 release
+    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
+    #[inline]
+    pub fn clone_from_slice(slice: &[T]) -> Self
+    where
+        Self: Clone,
+    {
+        Self::ref_from_slice(slice).clone()
+    }
 }
 
 impl<T, U, const N: usize> AsRef<[T; N]> for Array<T, U>
@@ -364,6 +418,28 @@ where
     }
 }
 
+impl<'a, T, U, const N: usize> From<&'a [T; N]> for &'a Array<T, U>
+where
+    Array<T, U>: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn from(array_ref: &'a [T; N]) -> &'a Array<T, U> {
+        <Array<T, U>>::from_core_array_ref(array_ref)
+    }
+}
+
+impl<'a, T, U, const N: usize> From<&'a mut [T; N]> for &'a mut Array<T, U>
+where
+    Array<T, U>: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn from(array_ref: &'a mut [T; N]) -> &'a mut Array<T, U> {
+        <Array<T, U>>::from_core_array_mut(array_ref)
+    }
+}
+
 impl<T, I, U> Index<I> for Array<T, U>
 where
     [T]: Index<I>,
@@ -402,5 +478,47 @@ where
     }
 }
 
+impl<'a, T, U> TryFrom<&'a [T]> for &'a Array<T, U>
+where
+    U: ArraySize,
+{
+    type Error = TryFromSliceError;
+
+    #[inline]
+    fn try_from(slice: &'a [T]) -> Result<Self, TryFromSliceError> {
+        check_slice_length::<T, U>(slice)?;
+
+        // SAFETY: `Array<T, U>` is a `repr(transparent)` newtype for a core
+        // array with length checked above.
+        Ok(unsafe { *(slice.as_ptr() as *const Self) })
+    }
+}
+
+impl<'a, T, U> TryFrom<&'a mut [T]> for &'a mut Array<T, U>
+where
+    U: ArraySize,
+{
+    type Error = TryFromSliceError;
+
+    #[inline]
+    fn try_from(slice: &'a mut [T]) -> Result<Self, TryFromSliceError> {
+        check_slice_length::<T, U>(slice)?;
+
+        // SAFETY: `Array<T, U>` is a `repr(transparent)` newtype for a core
+        // array with length checked above.
+        Ok(unsafe { *(slice.as_ptr() as *mut Self) })
+    }
+}
+
 /// Byte array type.
 pub type ByteArray<U> = Array<u8, U>;
+
+/// Generate a [`TryFromSliceError`] if the slice doesn't match the given length.
+fn check_slice_length<T, U: Unsigned>(slice: &[T]) -> Result<(), TryFromSliceError> {
+    if slice.len() != U::USIZE {
+        // Hack: `TryFromSliceError` lacks a public constructor
+        <&[T; 1]>::try_from([].as_slice())?;
+    }
+
+    Ok(())
+}
