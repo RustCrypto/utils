@@ -33,6 +33,220 @@ use core::{
 };
 use typenum::Unsigned;
 
+/// Hybrid typenum-based and const generic array type.
+///
+/// Provides the flexibility of typenum-based expressions while also
+/// allowing interoperability and a transition path to const generics.
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[repr(transparent)]
+pub struct Array<T, U: ArraySize>(pub U::ArrayType<T>);
+
+impl<T, U> Array<T, U>
+where
+    U: ArraySize,
+{
+    /// Returns a slice containing the entire array. Equivalent to `&s[..]`.
+    #[inline]
+    pub fn as_slice(&self) -> &[T] {
+        self.0.as_ref()
+    }
+
+    /// Returns a mutable slice containing the entire array. Equivalent to `&mut s[..]`.
+    #[inline]
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        self.0.as_mut()
+    }
+
+    /// Convert the given slice into a reference to a hybrid array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the slice's length doesn't match the array type.
+    // TODO(tarcieri): deprecate this before the v0.2 release
+    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
+    #[inline]
+    pub fn ref_from_slice(slice: &[T]) -> &Self {
+        slice.try_into().expect("slice length mismatch")
+    }
+
+    /// Convert the given mutable slice to a mutable reference to a hybrid array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the slice's length doesn't match the array type.
+    // TODO(tarcieri): deprecate this before the v0.2 release
+    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
+    #[inline]
+    pub fn ref_from_mut_slice(slice: &mut [T]) -> &mut Self {
+        slice.try_into().expect("slice length mismatch")
+    }
+
+    /// Clone the contents of the slice as a new hybrid array.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the slice's length doesn't match the array type.
+    // TODO(tarcieri): deprecate this before the v0.2 release
+    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
+    #[inline]
+    pub fn clone_from_slice(slice: &[T]) -> Self
+    where
+        Self: Clone,
+    {
+        Self::ref_from_slice(slice).clone()
+    }
+}
+
+impl<T, U, const N: usize> AsRef<[T; N]> for Array<T, U>
+where
+    Self: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn as_ref(&self) -> &[T; N] {
+        self.as_array_ref()
+    }
+}
+
+impl<T, U, const N: usize> AsMut<[T; N]> for Array<T, U>
+where
+    Self: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn as_mut(&mut self) -> &mut [T; N] {
+        self.as_array_mut()
+    }
+}
+
+impl<T, U, const N: usize> Borrow<[T; N]> for Array<T, U>
+where
+    Self: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn borrow(&self) -> &[T; N] {
+        self.as_array_ref()
+    }
+}
+
+impl<T, U, const N: usize> BorrowMut<[T; N]> for Array<T, U>
+where
+    Self: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn borrow_mut(&mut self) -> &mut [T; N] {
+        self.as_array_mut()
+    }
+}
+
+impl<T, U, const N: usize> From<[T; N]> for Array<T, U>
+where
+    Self: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn from(arr: [T; N]) -> Array<T, U> {
+        Self::from_core_array(arr)
+    }
+}
+
+impl<'a, T, U, const N: usize> From<&'a [T; N]> for &'a Array<T, U>
+where
+    Array<T, U>: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn from(array_ref: &'a [T; N]) -> &'a Array<T, U> {
+        <Array<T, U>>::from_core_array_ref(array_ref)
+    }
+}
+
+impl<'a, T, U, const N: usize> From<&'a mut [T; N]> for &'a mut Array<T, U>
+where
+    Array<T, U>: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn from(array_ref: &'a mut [T; N]) -> &'a mut Array<T, U> {
+        <Array<T, U>>::from_core_array_mut(array_ref)
+    }
+}
+
+impl<T, I, U> Index<I> for Array<T, U>
+where
+    [T]: Index<I>,
+    U: ArraySize,
+{
+    type Output = <[T] as Index<I>>::Output;
+
+    #[inline]
+    fn index(&self, index: I) -> &Self::Output {
+        Index::index(self.as_slice(), index)
+    }
+}
+
+impl<T, I, U> IndexMut<I> for Array<T, U>
+where
+    [T]: IndexMut<I>,
+    U: ArraySize,
+{
+    #[inline]
+    fn index_mut(&mut self, index: I) -> &mut Self::Output {
+        IndexMut::index_mut(self.as_mut_slice(), index)
+    }
+}
+
+impl<'a, T, U> TryFrom<&'a [T]> for Array<T, U>
+where
+    T: Copy,
+    U: ArraySize,
+    U::ArrayType<T>: TryFrom<&'a [T], Error = TryFromSliceError>,
+{
+    type Error = TryFromSliceError;
+
+    #[inline]
+    fn try_from(slice: &'a [T]) -> Result<Array<T, U>, TryFromSliceError> {
+        U::ArrayType::try_from(slice).map(Self)
+    }
+}
+
+impl<'a, T, U> TryFrom<&'a [T]> for &'a Array<T, U>
+where
+    U: ArraySize,
+{
+    type Error = TryFromSliceError;
+
+    #[inline]
+    fn try_from(slice: &'a [T]) -> Result<Self, TryFromSliceError> {
+        check_slice_length::<T, U>(slice)?;
+
+        // SAFETY: `Array<T, U>` is a `repr(transparent)` newtype for a core
+        // array with length checked above.
+        Ok(unsafe { *(slice.as_ptr() as *const Self) })
+    }
+}
+
+impl<'a, T, U> TryFrom<&'a mut [T]> for &'a mut Array<T, U>
+where
+    U: ArraySize,
+{
+    type Error = TryFromSliceError;
+
+    #[inline]
+    fn try_from(slice: &'a mut [T]) -> Result<Self, TryFromSliceError> {
+        check_slice_length::<T, U>(slice)?;
+
+        // SAFETY: `Array<T, U>` is a `repr(transparent)` newtype for a core
+        // array with length checked above.
+        Ok(unsafe { *(slice.as_ptr() as *mut Self) })
+    }
+}
+
+/// Byte array type.
+pub type ByteArray<U> = Array<u8, U>;
+
 /// Array operations which are const generic over a given array size.
 pub trait ArrayOps<T, const N: usize>:
     AsRef<[T; N]>
@@ -298,220 +512,6 @@ impl_array_size! {
     4096 => U4096,
     8192 => U8192
 }
-
-/// Hybrid typenum-based and const generic array type.
-///
-/// Provides the flexibility of typenum-based expressions while also
-/// allowing interoperability and a transition path to const generics.
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
-#[repr(transparent)]
-pub struct Array<T, U: ArraySize>(pub U::ArrayType<T>);
-
-impl<T, U> Array<T, U>
-where
-    U: ArraySize,
-{
-    /// Returns a slice containing the entire array. Equivalent to `&s[..]`.
-    #[inline]
-    pub fn as_slice(&self) -> &[T] {
-        self.0.as_ref()
-    }
-
-    /// Returns a mutable slice containing the entire array. Equivalent to `&mut s[..]`.
-    #[inline]
-    pub fn as_mut_slice(&mut self) -> &mut [T] {
-        self.0.as_mut()
-    }
-
-    /// Convert the given slice into a reference to a hybrid array.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the slice's length doesn't match the array type.
-    // TODO(tarcieri): deprecate this before the v0.2 release
-    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
-    #[inline]
-    pub fn ref_from_slice(slice: &[T]) -> &Self {
-        slice.try_into().expect("slice length mismatch")
-    }
-
-    /// Convert the given mutable slice to a mutable reference to a hybrid array.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the slice's length doesn't match the array type.
-    // TODO(tarcieri): deprecate this before the v0.2 release
-    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
-    #[inline]
-    pub fn ref_from_mut_slice(slice: &mut [T]) -> &mut Self {
-        slice.try_into().expect("slice length mismatch")
-    }
-
-    /// Clone the contents of the slice as a new hybrid array.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the slice's length doesn't match the array type.
-    // TODO(tarcieri): deprecate this before the v0.2 release
-    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
-    #[inline]
-    pub fn clone_from_slice(slice: &[T]) -> Self
-    where
-        Self: Clone,
-    {
-        Self::ref_from_slice(slice).clone()
-    }
-}
-
-impl<T, U, const N: usize> AsRef<[T; N]> for Array<T, U>
-where
-    Self: ArrayOps<T, N>,
-    U: ArraySize,
-{
-    #[inline]
-    fn as_ref(&self) -> &[T; N] {
-        self.as_array_ref()
-    }
-}
-
-impl<T, U, const N: usize> AsMut<[T; N]> for Array<T, U>
-where
-    Self: ArrayOps<T, N>,
-    U: ArraySize,
-{
-    #[inline]
-    fn as_mut(&mut self) -> &mut [T; N] {
-        self.as_array_mut()
-    }
-}
-
-impl<T, U, const N: usize> Borrow<[T; N]> for Array<T, U>
-where
-    Self: ArrayOps<T, N>,
-    U: ArraySize,
-{
-    #[inline]
-    fn borrow(&self) -> &[T; N] {
-        self.as_array_ref()
-    }
-}
-
-impl<T, U, const N: usize> BorrowMut<[T; N]> for Array<T, U>
-where
-    Self: ArrayOps<T, N>,
-    U: ArraySize,
-{
-    #[inline]
-    fn borrow_mut(&mut self) -> &mut [T; N] {
-        self.as_array_mut()
-    }
-}
-
-impl<T, U, const N: usize> From<[T; N]> for Array<T, U>
-where
-    Self: ArrayOps<T, N>,
-    U: ArraySize,
-{
-    #[inline]
-    fn from(arr: [T; N]) -> Array<T, U> {
-        Self::from_core_array(arr)
-    }
-}
-
-impl<'a, T, U, const N: usize> From<&'a [T; N]> for &'a Array<T, U>
-where
-    Array<T, U>: ArrayOps<T, N>,
-    U: ArraySize,
-{
-    #[inline]
-    fn from(array_ref: &'a [T; N]) -> &'a Array<T, U> {
-        <Array<T, U>>::from_core_array_ref(array_ref)
-    }
-}
-
-impl<'a, T, U, const N: usize> From<&'a mut [T; N]> for &'a mut Array<T, U>
-where
-    Array<T, U>: ArrayOps<T, N>,
-    U: ArraySize,
-{
-    #[inline]
-    fn from(array_ref: &'a mut [T; N]) -> &'a mut Array<T, U> {
-        <Array<T, U>>::from_core_array_mut(array_ref)
-    }
-}
-
-impl<T, I, U> Index<I> for Array<T, U>
-where
-    [T]: Index<I>,
-    U: ArraySize,
-{
-    type Output = <[T] as Index<I>>::Output;
-
-    #[inline]
-    fn index(&self, index: I) -> &Self::Output {
-        Index::index(self.as_slice(), index)
-    }
-}
-
-impl<T, I, U> IndexMut<I> for Array<T, U>
-where
-    [T]: IndexMut<I>,
-    U: ArraySize,
-{
-    #[inline]
-    fn index_mut(&mut self, index: I) -> &mut Self::Output {
-        IndexMut::index_mut(self.as_mut_slice(), index)
-    }
-}
-
-impl<'a, T, U> TryFrom<&'a [T]> for Array<T, U>
-where
-    T: Copy,
-    U: ArraySize,
-    U::ArrayType<T>: TryFrom<&'a [T], Error = TryFromSliceError>,
-{
-    type Error = TryFromSliceError;
-
-    #[inline]
-    fn try_from(slice: &'a [T]) -> Result<Array<T, U>, TryFromSliceError> {
-        U::ArrayType::try_from(slice).map(Self)
-    }
-}
-
-impl<'a, T, U> TryFrom<&'a [T]> for &'a Array<T, U>
-where
-    U: ArraySize,
-{
-    type Error = TryFromSliceError;
-
-    #[inline]
-    fn try_from(slice: &'a [T]) -> Result<Self, TryFromSliceError> {
-        check_slice_length::<T, U>(slice)?;
-
-        // SAFETY: `Array<T, U>` is a `repr(transparent)` newtype for a core
-        // array with length checked above.
-        Ok(unsafe { *(slice.as_ptr() as *const Self) })
-    }
-}
-
-impl<'a, T, U> TryFrom<&'a mut [T]> for &'a mut Array<T, U>
-where
-    U: ArraySize,
-{
-    type Error = TryFromSliceError;
-
-    #[inline]
-    fn try_from(slice: &'a mut [T]) -> Result<Self, TryFromSliceError> {
-        check_slice_length::<T, U>(slice)?;
-
-        // SAFETY: `Array<T, U>` is a `repr(transparent)` newtype for a core
-        // array with length checked above.
-        Ok(unsafe { *(slice.as_ptr() as *mut Self) })
-    }
-}
-
-/// Byte array type.
-pub type ByteArray<U> = Array<u8, U>;
 
 /// Generate a [`TryFromSliceError`] if the slice doesn't match the given length.
 fn check_slice_length<T, U: Unsigned>(slice: &[T]) -> Result<(), TryFromSliceError> {
