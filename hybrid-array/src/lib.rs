@@ -24,6 +24,7 @@
 )]
 
 pub use typenum;
+pub use typenum::consts;
 
 use core::{
     array::{IntoIter, TryFromSliceError},
