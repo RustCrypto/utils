@@ -133,7 +133,7 @@ where
 {
     #[inline]
     fn as_ref(&self) -> &[T; N] {
-        self.as_array_ref()
+        self.as_core_array()
     }
 }
 
@@ -144,7 +144,7 @@ where
 {
     #[inline]
     fn as_mut(&mut self) -> &mut [T; N] {
-        self.as_array_mut()
+        self.as_mut_core_array()
     }
 }
 
@@ -155,7 +155,7 @@ where
 {
     #[inline]
     fn borrow(&self) -> &[T; N] {
-        self.as_array_ref()
+        self.as_core_array()
     }
 }
 
@@ -166,7 +166,7 @@ where
 {
     #[inline]
     fn borrow_mut(&mut self) -> &mut [T; N] {
-        self.as_array_mut()
+        self.as_mut_core_array()
     }
 }
 
@@ -220,7 +220,7 @@ where
 {
     #[inline]
     fn from(array_ref: &'a [T; N]) -> &'a Array<T, U> {
-        <Array<T, U>>::from_core_array_ref(array_ref)
+        <Array<T, U>>::ref_from_core_array(array_ref)
     }
 }
 
@@ -231,7 +231,7 @@ where
 {
     #[inline]
     fn from(array_ref: &'a mut [T; N]) -> &'a mut Array<T, U> {
-        <Array<T, U>>::from_core_array_mut(array_ref)
+        <Array<T, U>>::ref_from_mut_core_array(array_ref)
     }
 }
 
@@ -348,23 +348,23 @@ pub trait ArrayOps<T, const N: usize>:
     type Size: ArraySize;
 
     /// Returns a reference to the inner array.
-    fn as_array_ref(&self) -> &[T; N];
+    fn as_core_array(&self) -> &[T; N];
 
     /// Returns a mutable reference to the inner array.
-    fn as_array_mut(&mut self) -> &mut [T; N];
+    fn as_mut_core_array(&mut self) -> &mut [T; N];
 
     /// Create array from Rust's core array type.
     fn from_core_array(arr: [T; N]) -> Self;
 
     /// Create array reference from reference to Rust's core array type.
-    fn from_core_array_ref(arr: &[T; N]) -> &Self;
+    fn ref_from_core_array(arr: &[T; N]) -> &Self;
 
     /// Create mutable array reference from reference to Rust's core array type.
-    fn from_core_array_mut(arr: &mut [T; N]) -> &mut Self;
+    fn ref_from_mut_core_array(arr: &mut [T; N]) -> &mut Self;
 
     /// Returns an array of the same size as `self`, with function `f` applied to each element
     /// in order.
-    fn map<F, U>(self, f: F) -> [U; N]
+    fn map_to_core_array<F, U>(self, f: F) -> [U; N]
     where
         F: FnMut(T) -> U;
 }
@@ -439,12 +439,12 @@ macro_rules! impl_array_size {
                 type Size = typenum::$ty;
 
                 #[inline]
-                fn as_array_ref(&self) -> &[T; $len] {
+                fn as_core_array(&self) -> &[T; $len] {
                     &self.0
                 }
 
                 #[inline]
-                fn as_array_mut(&mut self) -> &mut [T; $len] {
+                fn as_mut_core_array(&mut self) -> &mut [T; $len] {
                     &mut self.0
                 }
 
@@ -454,19 +454,19 @@ macro_rules! impl_array_size {
                 }
 
                 #[inline]
-                fn from_core_array_ref(array_ref: &[T; $len]) -> &Self {
+                fn ref_from_core_array(array_ref: &[T; $len]) -> &Self {
                     // SAFETY: `Self` is a `repr(transparent)` newtype for `[T; $len]`
                     unsafe { &*(array_ref.as_ptr() as *const Self) }
                 }
 
                 #[inline]
-                fn from_core_array_mut(array_ref: &mut [T; $len]) -> &mut Self {
+                fn ref_from_mut_core_array(array_ref: &mut [T; $len]) -> &mut Self {
                     // SAFETY: `Self` is a `repr(transparent)` newtype for `[T; $len]`
                     unsafe { &mut *(array_ref.as_mut_ptr() as *mut Self) }
                 }
 
                 #[inline]
-                fn map<F, U>(self, f: F) -> [U; $len]
+                fn map_to_core_array<F, U>(self, f: F) -> [U; $len]
                 where
                     F: FnMut(T) -> U
                 {
