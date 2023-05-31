@@ -304,10 +304,16 @@ where
 }
 
 /// Generate a [`TryFromSliceError`] if the slice doesn't match the given length.
-fn check_slice_length<T, U: Unsigned>(slice: &[T]) -> Result<(), TryFromSliceError> {
+#[cfg_attr(debug_assertions, allow(clippy::panic_in_result_fn))]
+fn check_slice_length<T, U: ArraySize>(slice: &[T]) -> Result<(), TryFromSliceError> {
+    debug_assert_eq!(Array::<(), U>::default().len(), U::USIZE);
+
     if slice.len() != U::USIZE {
         // Hack: `TryFromSliceError` lacks a public constructor
         <&[T; 1]>::try_from([].as_slice())?;
+
+        #[cfg(debug_assertions)]
+        unreachable!();
     }
 
     Ok(())
@@ -400,7 +406,17 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
 
 /// Trait which associates a [`usize`] size and `ArrayType` with a
 /// `typenum`-provided [`Unsigned`] integer.
-pub trait ArraySize: Unsigned {
+///
+/// # Safety
+///
+/// `ArrayType` MUST be an array with a number of elements exactly equal to
+/// [`Unsigned::USIZE`].
+///
+/// Failure to so will cause undefined behavior.
+///
+/// NOTE: do not implement this trait yourself. It is implemented for types in
+/// [`typenum::consts`].
+pub unsafe trait ArraySize: Unsigned {
     /// Array type which corresponds to this size.
     type ArrayType<T>: AsRef<[T]> + AsMut<[T]> + IntoArray<T> + ArrayExt<T>;
 }
@@ -457,7 +473,7 @@ macro_rules! impl_array_size {
                 }
             }
 
-            impl ArraySize for typenum::$ty {
+            unsafe impl ArraySize for typenum::$ty {
                 type ArrayType<T> = [T; $len];
             }
 
@@ -587,7 +603,7 @@ impl_array_size! {
 #[cfg(test)]
 mod tests {
     use super::ByteArray;
-    use typenum::{U0, U3, U6};
+    use typenum::{U0, U3, U6, U7};
 
     #[test]
     fn tryfrom_slice_for_array_ref() {
@@ -597,5 +613,7 @@ mod tests {
 
         let array_ref = ByteArray::<U6>::try_from(slice).unwrap();
         assert_eq!(&*array_ref, slice);
+
+        assert!(ByteArray::<U7>::try_from(slice).is_err());
     }
 }
