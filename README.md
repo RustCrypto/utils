@@ -17,7 +17,7 @@ This repository contains various utility crates used in the RustCrypto project.
 | [`collectable`] | [![crates.io](https://img.shields.io/crates/v/collectable.svg)](https://crates.io/crates/collectable) | [![Documentation](https://docs.rs/collectable/badge.svg)](https://docs.rs/collectable) | ![MSRV 1.41][msrv-1.41] | Fallible, `no_std`-friendly collection traits |
 | [`cpufeatures`] | [![crates.io](https://img.shields.io/crates/v/cpufeatures.svg)](https://crates.io/crates/cpufeatures) | [![Documentation](https://docs.rs/cpufeatures/badge.svg)](https://docs.rs/cpufeatures) | ![MSRV 1.40][msrv-1.40] | Lightweight and efficient alternative to the `is_x86_feature_detected!` macro |
 | [`dbl`] | [![crates.io](https://img.shields.io/crates/v/dbl.svg)](https://crates.io/crates/dbl) | [![Documentation](https://docs.rs/dbl/badge.svg)](https://docs.rs/dbl) | ![MSRV 1.41][msrv-1.41] | Double operation in Galois Field (GF) |
-| [`hex-literal`] | [![crates.io](https://img.shields.io/crates/v/hex-literal.svg)](https://crates.io/crates/hex-literal) | [![Documentation](https://docs.rs/hex-literal/badge.svg)](https://docs.rs/hex-literal) | ![MSRV 1.45][msrv-1.45] | Procedural macro for converting hexadecimal string to byte array at compile time |
+| [`hex-literal`] | [![crates.io](https://img.shields.io/crates/v/hex-literal.svg)](https://crates.io/crates/hex-literal) | [![Documentation](https://docs.rs/hex-literal/badge.svg)](https://docs.rs/hex-literal) | ![MSRV 1.57][msrv-1.57] | Procedural macro for converting hexadecimal string to byte array at compile time |
 | [`inout`] | [![crates.io](https://img.shields.io/crates/v/inout.svg)](https://crates.io/crates/inout) | [![Documentation](https://docs.rs/inout/badge.svg)](https://docs.rs/inout) | ![MSRV 1.56][msrv-1.56] | Custom reference types for code generic over in-place and buffer-to-buffer modes of operation. |
 | [`opaque-debug`] | [![crates.io](https://img.shields.io/crates/v/opaque-debug.svg)](https://crates.io/crates/opaque-debug) | [![Documentation](https://docs.rs/opaque-debug/badge.svg)](https://docs.rs/opaque-debug) | ![MSRV 1.41][msrv-1.41] | Macro for opaque `Debug` trait implementation |
 | [`wycheproof2blb`] |  |  | | Utility for converting [Wycheproof] test vectors to the blobby format |
@@ -50,6 +50,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [msrv-1.45]: https://img.shields.io/badge/rustc-1.45.0+-blue.svg
 [msrv-1.51]: https://img.shields.io/badge/rustc-1.51.0+-blue.svg
 [msrv-1.56]: https://img.shields.io/badge/rustc-1.56.0+-blue.svg
+[msrv-1.57]: https://img.shields.io/badge/rustc-1.57.0+-blue.svg
 [msrv-1.59]: https://img.shields.io/badge/rustc-1.59.0+-blue.svg
 
 [//]: # (crates)
