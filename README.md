@@ -21,7 +21,7 @@ This repository contains various utility crates used in the RustCrypto project.
 | [`inout`] | [![crates.io](https://img.shields.io/crates/v/inout.svg)](https://crates.io/crates/inout) | [![Documentation](https://docs.rs/inout/badge.svg)](https://docs.rs/inout) | ![MSRV 1.56][msrv-1.56] | Custom reference types for code generic over in-place and buffer-to-buffer modes of operation. |
 | [`opaque-debug`] | [![crates.io](https://img.shields.io/crates/v/opaque-debug.svg)](https://crates.io/crates/opaque-debug) | [![Documentation](https://docs.rs/opaque-debug/badge.svg)](https://docs.rs/opaque-debug) | ![MSRV 1.41][msrv-1.41] | Macro for opaque `Debug` trait implementation |
 | [`wycheproof2blb`] |  |  | | Utility for converting [Wycheproof] test vectors to the blobby format |
-| [`zeroize`] | [![crates.io](https://img.shields.io/crates/v/zeroize.svg)](https://crates.io/crates/zeroize) | [![Documentation](https://docs.rs/zeroize/badge.svg)](https://docs.rs/zeroize) | ![MSRV 1.51][msrv-1.51] | Securely zero memory while avoiding compiler optimizations |
+| [`zeroize`] | [![crates.io](https://img.shields.io/crates/v/zeroize.svg)](https://crates.io/crates/zeroize) | [![Documentation](https://docs.rs/zeroize/badge.svg)](https://docs.rs/zeroize) | ![MSRV 1.60][msrv-1.60] | Securely zero memory while avoiding compiler optimizations |
 
 ## License
 
@@ -51,6 +51,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [msrv-1.51]: https://img.shields.io/badge/rustc-1.51.0+-blue.svg
 [msrv-1.56]: https://img.shields.io/badge/rustc-1.56.0+-blue.svg
 [msrv-1.59]: https://img.shields.io/badge/rustc-1.59.0+-blue.svg
+[msrv-1.60]: https://img.shields.io/badge/rustc-1.60.0+-blue.svg
 
 [//]: # (crates)
 
