@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.8 (2023-06-15)
+### Fixed
+- Check OS register support on x86 targets ([#919])
+
+[#919]: https://github.com/RustCrypto/utils/issues/919
+
 ## 0.2.7 (2023-04-20)
 ### Added
 - Support freestanding/UEFI `x86` targets ([#821])
