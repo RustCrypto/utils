@@ -3,11 +3,11 @@
 //! Portable, `no_std`-friendly implementation that relies on the x86 `CPUID`
 //! instruction for feature detection.
 
-// Evaluate the given `$body` expression any of the supplied target features
-// are not enabled. Otherwise returns true.
-//
-// The `$body` expression is not evaluated on SGX targets, and returns false
-// on these targets unless *all* supplied target features are enabled.
+/// Evaluate the given `$body` expression any of the supplied target features
+/// are not enabled. Otherwise returns true.
+///
+/// The `$body` expression is not evaluated on SGX targets, and returns false
+/// on these targets unless *all* supplied target features are enabled.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __unless_target_features {
@@ -28,7 +28,7 @@ macro_rules! __unless_target_features {
     }};
 }
 
-// Use CPUID to detect the presence of all supplied target features.
+/// Use CPUID to detect the presence of all supplied target features.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __detect_target_features {
@@ -61,7 +61,7 @@ macro_rules! __detect_target_features {
     }};
 }
 
-/// Check that OS support for SIMD registers
+/// Check that OS supports required SIMD registers
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __xgetbv {
@@ -111,10 +111,6 @@ macro_rules! __expand_check_macro {
     };
 }
 
-// Note that according to the [Intel manual][0] AVX2 and FMA require
-// that we check availability of AVX before using them.
-//
-// [0]: https://www.intel.com/content/dam/develop/external/us/en/documents/36945
 __expand_check_macro! {
     ("sse3", "xmm", 0, ecx, 0),
     ("pclmulqdq", "xmm", 0, ecx, 1),
