@@ -90,10 +90,15 @@ macro_rules! __expand_check_macro {
         macro_rules! check {
             $(
                 ($cr:expr, $name) => {{
+                    // Register bits are listed here:
+                    // https://wiki.osdev.org/CPU_Registers_x86#Extended_Control_Registers
                     let reg_cap = match $reg_cap {
-                        "xmm" => $crate::__xgetbv!($cr, 0b110),
+                        // Bit 1
+                        "xmm" => $crate::__xgetbv!($cr, 0b10),
+                        // Bits 1 and 2
                         "ymm" => $crate::__xgetbv!($cr, 0b110),
-                        "zmm" => $crate::__xgetbv!($cr, 0b110),
+                        // Bits 1, 2, 5, 6, and 7
+                        "zmm" => $crate::__xgetbv!($cr, 0b1110_0110),
                         _ => true,
                     };
                     reg_cap
