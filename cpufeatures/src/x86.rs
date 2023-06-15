@@ -14,12 +14,12 @@ macro_rules! __unless_target_features {
     ($($tf:tt),+ => $body:expr ) => {{
         #[cfg(not(all($(target_feature=$tf,)*)))]
         {
-            #[cfg(not(any(target_env = "sgx", target_os = "none", target_os = "uefi")))]
+            #[cfg(not(any(target_env = "sgx", target_os = "", target_os = "uefi")))]
             $body
 
             // CPUID is not available on SGX. Freestanding and UEFI targets
             // do not support SIMD features with default compilation flags.
-            #[cfg(any(target_env = "sgx", target_os = "none", target_os = "uefi"))]
+            #[cfg(any(target_env = "sgx", target_os = "", target_os = "uefi"))]
             false
         }
 
@@ -111,27 +111,29 @@ macro_rules! __expand_check_macro {
 //
 // [0]: https://www.intel.com/content/dam/develop/external/us/en/documents/36945
 __expand_check_macro! {
-    ("mmx", "none", 0, edx, 23),
-    ("sse", "xmm", 0, edx, 25),
-    ("sse2", "xmm", 0, edx, 26),
     ("sse3", "xmm", 0, ecx, 0),
     ("pclmulqdq", "xmm", 0, ecx, 1),
     ("ssse3", "xmm", 0, ecx, 9),
-    ("fma", "xmm", 0, ecx, 28, 0, ecx, 12),
+    ("fma", "xmm", 0, ecx, 12, 0, ecx, 28),
     ("sse4.1", "xmm", 0, ecx, 19),
     ("sse4.2", "xmm", 0, ecx, 20),
-    ("popcnt", "none", 0, ecx, 23),
+    ("popcnt", "", 0, ecx, 23),
     ("aes", "xmm", 0, ecx, 25),
     ("avx", "xmm", 0, ecx, 28),
-    ("rdrand", "none", 0, ecx, 30),
-    ("sgx", "none", 1, ebx, 2),
-    ("bmi1", "none", 1, ebx, 3),
-    ("bmi2", "none", 1, ebx, 8),
-    ("avx2", "ymm", 0, ecx, 28, 1, ebx, 5),
+    ("rdrand", "", 0, ecx, 30),
+
+    ("mmx", "", 0, edx, 23),
+    ("sse", "xmm", 0, edx, 25),
+    ("sse2", "xmm", 0, edx, 26),
+
+    ("sgx", "", 1, ebx, 2),
+    ("bmi1", "", 1, ebx, 3),
+    ("bmi2", "", 1, ebx, 8),
+    ("avx2", "ymm", 1, ebx, 5, 0, ecx, 28),
     ("avx512f", "zmm", 1, ebx, 16),
     ("avx512dq", "zmm", 1, ebx, 17),
-    ("rdseed", "none", 1, ebx, 18),
-    ("adx", "none", 1, ebx, 19),
+    ("rdseed", "", 1, ebx, 18),
+    ("adx", "", 1, ebx, 19),
     ("avx512ifma", "zmm", 1, ebx, 21),
     ("avx512pf", "zmm", 1, ebx, 26),
     ("avx512er", "zmm", 1, ebx, 27),
