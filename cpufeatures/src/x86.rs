@@ -61,18 +61,46 @@ macro_rules! __detect_target_features {
     }};
 }
 
+/// Check that OS support for SIMD registers
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __xgetbv {
+    ($cr:expr, $mask:expr) => {{
+        #[cfg(target_arch = "x86")]
+        use core::arch::x86 as arch;
+        #[cfg(target_arch = "x86_64")]
+        use core::arch::x86_64 as arch;
+
+        // Check bits 26 and 27
+        let xmask = 0b11 << 26;
+        let xsave = $cr[0].ecx & xmask == xmask;
+        if xsave {
+            let xcr0 = unsafe { arch::_xgetbv(arch::_XCR_XFEATURE_ENABLED_MASK) };
+            (xcr0 & $mask) == $mask
+        } else {
+            false
+        }
+    }};
+}
+
 macro_rules! __expand_check_macro {
-    ($(($name:tt $(, $i:expr, $reg:ident, $offset:expr)*)),* $(,)?) => {
+    ($(($name:tt, $reg_cap:tt $(, $i:expr, $reg:ident, $offset:expr)*)),* $(,)?) => {
         #[macro_export]
         #[doc(hidden)]
         macro_rules! check {
             $(
-                ($cr:expr, $name) => {
-                    true
+                ($cr:expr, $name) => {{
+                    let reg_cap = match $reg_cap {
+                        "xmm" => $crate::__xgetbv!($cr, 0b110),
+                        "ymm" => $crate::__xgetbv!($cr, 0b110),
+                        "zmm" => $crate::__xgetbv!($cr, 0b110),
+                        _ => true,
+                    };
+                    reg_cap
                     $(
                         & ($cr[$i].$reg & (1 << $offset) != 0)
                     )*
-                };
+                }};
             )*
         }
     };
@@ -83,32 +111,32 @@ macro_rules! __expand_check_macro {
 //
 // [0]: https://www.intel.com/content/dam/develop/external/us/en/documents/36945
 __expand_check_macro! {
-    ("mmx", 0, edx, 23),
-    ("sse", 0, edx, 25),
-    ("sse2", 0, edx, 26),
-    ("sse3", 0, ecx, 0),
-    ("pclmulqdq", 0, ecx, 1),
-    ("ssse3", 0, ecx, 9),
-    ("fma", 0, ecx, 28, 0, ecx, 12),
-    ("sse4.1", 0, ecx, 19),
-    ("sse4.2", 0, ecx, 20),
-    ("popcnt", 0, ecx, 23),
-    ("aes", 0, ecx, 25),
-    ("avx", 0, ecx, 28),
-    ("rdrand", 0, ecx, 30),
-    ("sgx", 1, ebx, 2),
-    ("bmi1", 1, ebx, 3),
-    ("avx2", 0, ecx, 28, 1, ebx, 5),
-    ("bmi2", 1, ebx, 8),
-    ("avx512f", 1, ebx, 16),
-    ("avx512dq", 1, ebx, 17),
-    ("rdseed", 1, ebx, 18),
-    ("adx", 1, ebx, 19),
-    ("avx512ifma", 1, ebx, 21),
-    ("avx512pf", 1, ebx, 26),
-    ("avx512er", 1, ebx, 27),
-    ("avx512cd", 1, ebx, 28),
-    ("sha", 1, ebx, 29),
-    ("avx512bw", 1, ebx, 30),
-    ("avx512vl", 1, ebx, 31),
+    ("mmx", "none", 0, edx, 23),
+    ("sse", "xmm", 0, edx, 25),
+    ("sse2", "xmm", 0, edx, 26),
+    ("sse3", "xmm", 0, ecx, 0),
+    ("pclmulqdq", "xmm", 0, ecx, 1),
+    ("ssse3", "xmm", 0, ecx, 9),
+    ("fma", "xmm", 0, ecx, 28, 0, ecx, 12),
+    ("sse4.1", "xmm", 0, ecx, 19),
+    ("sse4.2", "xmm", 0, ecx, 20),
+    ("popcnt", "none", 0, ecx, 23),
+    ("aes", "xmm", 0, ecx, 25),
+    ("avx", "xmm", 0, ecx, 28),
+    ("rdrand", "none", 0, ecx, 30),
+    ("sgx", "none", 1, ebx, 2),
+    ("bmi1", "none", 1, ebx, 3),
+    ("bmi2", "none", 1, ebx, 8),
+    ("avx2", "ymm", 0, ecx, 28, 1, ebx, 5),
+    ("avx512f", "zmm", 1, ebx, 16),
+    ("avx512dq", "zmm", 1, ebx, 17),
+    ("rdseed", "none", 1, ebx, 18),
+    ("adx", "none", 1, ebx, 19),
+    ("avx512ifma", "zmm", 1, ebx, 21),
+    ("avx512pf", "zmm", 1, ebx, 26),
+    ("avx512er", "zmm", 1, ebx, 27),
+    ("avx512cd", "zmm", 1, ebx, 28),
+    ("sha", "xmm", 1, ebx, 29),
+    ("avx512bw", "zmm", 1, ebx, 30),
+    ("avx512vl", "zmm", 1, ebx, 31),
 }
