@@ -10,15 +10,17 @@ This crate provides the `hex!` macro for converting hexadecimal string literals 
 
 It accepts the following characters in the input string:
 
+- `0x` — the hex prefix which is valid only at the start of a literal and will be ignored
 - `'0'...'9'`, `'a'...'f'`, `'A'...'F'` — hex characters which will be used in construction of the output byte array
 - `' '`, `'\r'`, `'\n'`, `'\t'` — formatting characters which will be ignored
 
 # Examples
+
 ```rust
 use hex_literal::hex;
 
 // The macro can be used in const contexts
-const DATA: [u8; 4] = hex!("01020304");
+const DATA: [u8; 4] = hex!("0x01020304");
 assert_eq!(DATA, [1, 2, 3, 4]);
 
 // Both upper and lower hex values are supported

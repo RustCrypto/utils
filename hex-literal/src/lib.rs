@@ -34,6 +34,18 @@ const fn next_byte(string: &[u8], pos: usize) -> Option<(u8, usize)> {
     Some(((half1 << 4) + half2, pos))
 }
 
+/// Strips the `0x` prefix from a hex string.
+///
+/// This function is an implementation detail and SHOULD NOT be called directly!
+#[doc(hidden)]
+pub const fn strip_hex_prefix(string: &[u8]) -> &[u8] {
+    if let [b'0', b'x' | b'X', rest @ ..] = string {
+        rest
+    } else {
+        string
+    }
+}
+
 /// Compute length of a byte array which will be decoded from the strings.
 ///
 /// This function is an implementation detail and SHOULD NOT be called directly!
@@ -80,7 +92,7 @@ pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> [u8; LEN] {
 #[macro_export]
 macro_rules! hex {
     ($($s:literal)*) => {{
-        const STRINGS: &[&'static [u8]] = &[$($s.as_bytes(),)*];
+        const STRINGS: &[&'static [u8]] = &[$( $crate::strip_hex_prefix($s.as_bytes()), )*];
         const LEN: usize = $crate::len(STRINGS);
         const RES: [u8; LEN] = $crate::decode(STRINGS);
         RES

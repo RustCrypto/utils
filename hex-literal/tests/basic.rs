@@ -26,6 +26,12 @@ fn mixed_case() {
 }
 
 #[test]
+fn can_strip_prefix() {
+    assert_eq!(hex!("0x1a2b3c"), [0x1a, 0x2b, 0x3c]);
+    assert_eq!(hex!("0xa1" "0xb2" "0xc3"), [0xa1, 0xb2, 0xc3]);
+}
+
+#[test]
 fn multiple_literals() {
     assert_eq!(
         hex!(
