@@ -103,7 +103,7 @@
 )]
 
 #[cfg(not(miri))]
-#[cfg(all(target_arch = "aarch64"))]
+#[cfg(target_arch = "aarch64")]
 #[doc(hidden)]
 pub mod aarch64;
 
