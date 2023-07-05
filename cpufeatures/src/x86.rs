@@ -142,4 +142,6 @@ __expand_check_macro! {
     ("sha", "xmm", 1, ebx, 29),
     ("avx512bw", "zmm", 1, ebx, 30),
     ("avx512vl", "zmm", 1, ebx, 31),
+    ("avx512vbmi", "zmm", 1, ecx, 1),
+    ("avx512vbmi2", "zmm", 1, ecx, 6),
 }
