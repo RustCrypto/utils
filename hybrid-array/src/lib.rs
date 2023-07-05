@@ -13,7 +13,7 @@
     clippy::cast_sign_loss,
     clippy::checked_conversions,
     clippy::implicit_saturating_sub,
-    clippy::integer_arithmetic,
+    clippy::arithmetic_side_effects,
     clippy::panic,
     clippy::panic_in_result_fn,
     clippy::unwrap_used,
@@ -612,7 +612,7 @@ mod tests {
         assert!(ByteArray::<U0>::try_from(slice).is_err());
         assert!(ByteArray::<U3>::try_from(slice).is_err());
 
-        let array_ref = ByteArray::<U6>::try_from(slice).unwrap();
+        let array_ref = ByteArray::<U6>::try_from(slice).expect("slice contains 6 bytes");
         assert_eq!(&*array_ref, slice);
 
         assert!(ByteArray::<U7>::try_from(slice).is_err());
