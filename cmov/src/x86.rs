@@ -31,9 +31,10 @@ macro_rules! cmov_eq {
             asm! {
                 "xor {0:e}, {1:e}",
                 $instruction,
-                in(reg_byte) $condition,
-                inlateout(reg) *$dst,
-                in(reg) *$src,
+                in(reg) *$lhs,
+                in(reg) *$rhs,
+                inlateout(reg) tmp,
+                in(reg) $condition as u16,
                 options(pure, nomem, nostack),
             };
         }
