@@ -27,6 +27,7 @@ macro_rules! cmov {
 
 macro_rules! cmov_eq {
     ($instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
+        let mut tmp = *$dst as u16;
         unsafe {
             asm! {
                 "xor {0:e}, {1:e}",
@@ -38,6 +39,7 @@ macro_rules! cmov_eq {
                 options(pure, nomem, nostack),
             };
         }
+        *$dst = tmp as u8;
     };
 }
 
