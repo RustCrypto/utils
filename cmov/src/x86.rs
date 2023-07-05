@@ -25,6 +25,21 @@ macro_rules! cmov {
     };
 }
 
+macro_rules! cmov_eq {
+    ($instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
+        unsafe {
+            asm! {
+                "xor {0:e}, {1:e}",
+                $instruction,
+                in(reg_byte) $condition,
+                inlateout(reg) *$dst,
+                in(reg) *$src,
+                options(pure, nomem, nostack),
+            };
+        }
+    };
+}
+
 impl Cmov for u16 {
     #[inline(always)]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -40,12 +55,12 @@ impl Cmov for u16 {
 impl CmovEq for u16 {
     #[inline(always)]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        output.cmovz(&input, (self ^ rhs) as u8);
+        cmov_eq(&input, self, rhs, input, output);
     }
 
     #[inline(always)]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        output.cmovnz(&input, (self ^ rhs) as u8);
+        cmov_eq(&input, self, rhs, input, output);
     }
 }
 
@@ -64,12 +79,12 @@ impl Cmov for u32 {
 impl CmovEq for u32 {
     #[inline(always)]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        output.cmovz(&input, (self ^ rhs) as u8);
+        cmov_eq(&input, self, rhs, input, output);
     }
 
     #[inline(always)]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        output.cmovnz(&input, (self ^ rhs) as u8);
+        cmov_eq(&input, self, rhs, input, output);
     }
 }
 
@@ -140,11 +155,11 @@ impl Cmov for u64 {
 impl CmovEq for u64 {
     #[inline(always)]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        output.cmovz(&input, (self ^ rhs) as u8);
+        cmov_eq(&input, self, rhs, input, output);
     }
 
     #[inline(always)]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        output.cmovnz(&input, (self ^ rhs) as u8);
+        cmov_eq(&input, self, rhs, input, output);
     }
 }
