@@ -146,7 +146,7 @@ fn rewrite_fn_as_const(func: &mut ItemFn, type_registry: &TypeRegistry) {
 fn rewrite_fn_body(statements: &[Stmt], outputs: &Outputs, registry: &TypeRegistry) -> Block {
     let mut stmts = Vec::new();
 
-    stmts.extend(outputs.to_let_bindings(registry).into_iter());
+    stmts.extend(outputs.to_let_bindings(registry));
 
     for stmt in statements {
         let mut stmt = stmt.clone();
