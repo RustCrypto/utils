@@ -158,11 +158,11 @@ impl Cmov for u64 {
 impl CmovEq for u64 {
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovz {2:e}, {3:e}", self, rhs, input, output);
+        cmov_eq!("cmovz {2:r}, {3:r}", self, rhs, input, output);
     }
 
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovnz {2:e}, {3:e}", self, rhs, input, output);
+        cmov_eq!("cmovnz {2:r}, {3:r}", self, rhs, input, output);
     }
 }
