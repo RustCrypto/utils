@@ -16,8 +16,6 @@ macro.
 
 [Documentation][docs-link]
 
-## Supported architectures
-
 # Supported target architectures
 
 *NOTE: target features with an asterisk are unstable (nightly-only) and subject
