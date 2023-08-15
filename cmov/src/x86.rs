@@ -32,7 +32,7 @@ macro_rules! cmov_eq {
             asm! {
                 "xor {0:e}, {1:e}",
                 $instruction,
-                in(reg) *$lhs,
+                inout(reg) *$lhs => _,
                 in(reg) *$rhs,
                 inlateout(reg) tmp,
                 in(reg) $condition as u16,
