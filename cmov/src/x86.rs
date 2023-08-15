@@ -30,7 +30,7 @@ macro_rules! cmov_eq {
         let mut tmp = *$dst as u16;
         unsafe {
             asm! {
-                "xor {0:x}, {1:x}",
+                "xor {0:e}, {1:e}",
                 $instruction,
                 inout(reg) *$lhs => _,
                 in(reg) *$rhs,
@@ -46,48 +46,48 @@ macro_rules! cmov_eq {
 impl Cmov for u16 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        cmov!("cmovnz {1:x}, {2:x}", self, value, condition);
+        cmov!("cmovnz {1:e}, {2:e}", self, value, condition);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        cmov!("cmovz {1:x}, {2:x}", self, value, condition);
+        cmov!("cmovz {1:e}, {2:e}", self, value, condition);
     }
 }
 
 impl CmovEq for u16 {
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovz {2:x}, {3:x}", self, rhs, input, output);
+        cmov_eq!("cmovz {2:e}, {3:e}", self, rhs, input, output);
     }
 
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovnz {2:x}, {3:x}", self, rhs, input, output);
+        cmov_eq!("cmovnz {2:e}, {3:e}", self, rhs, input, output);
     }
 }
 
 impl Cmov for u32 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        cmov!("cmovnz {1:x}, {2:x}", self, value, condition);
+        cmov!("cmovnz {1:e}, {2:e}", self, value, condition);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        cmov!("cmovz {1:x}, {2:x}", self, value, condition);
+        cmov!("cmovz {1:e}, {2:e}", self, value, condition);
     }
 }
 
 impl CmovEq for u32 {
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovz {2:x}, {3:x}", self, rhs, input, output);
+        cmov_eq!("cmovz {2:e}, {3:e}", self, rhs, input, output);
     }
 
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cmov_eq!("cmovnz {2:x}, {3:x}", self, rhs, input, output);
+        cmov_eq!("cmovnz {2:e}, {3:e}", self, rhs, input, output);
     }
 }
 
