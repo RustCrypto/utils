@@ -59,7 +59,7 @@ impl CmovEq for u16 {
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         cmov_eq!(
-            "xor {0:e}, {1:e}",
+            "xor {0:x}, {1:x}",
             "cmovz {2:e}, {3:e}",
             self,
             rhs,
@@ -71,7 +71,7 @@ impl CmovEq for u16 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         cmov_eq!(
-            "xor {0:e}, {1:e}",
+            "xor {0:x}, {1:x}",
             "cmovnz {2:e}, {3:e}",
             self,
             rhs,
