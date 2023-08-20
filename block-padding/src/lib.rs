@@ -18,6 +18,9 @@ use core::fmt;
 pub use generic_array;
 use generic_array::{ArrayLength, GenericArray};
 
+#[cfg(feature = "iso-10126")]
+use rand_core::{RngCore, SeedableRng};
+
 /// Padding types
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum PadType {
@@ -174,26 +177,6 @@ impl RawPadding for ZeroPadding {
 #[derive(Clone, Copy, Debug)]
 pub struct Pkcs7;
 
-impl Pkcs7 {
-    #[inline]
-    fn unpad(block: &[u8], strict: bool) -> Result<&[u8], UnpadError> {
-        // TODO: use bounds to check it at compile time
-        if block.len() > 255 {
-            panic!("block size is too big for PKCS#7");
-        }
-        let bs = block.len();
-        let n = block[bs - 1];
-        if n == 0 || n as usize > bs {
-            return Err(UnpadError);
-        }
-        let s = bs - n as usize;
-        if strict && block[s..bs - 1].iter().any(|&v| v != n) {
-            return Err(UnpadError);
-        }
-        Ok(&block[..s])
-    }
-}
-
 impl RawPadding for Pkcs7 {
     const TYPE: PadType = PadType::Reversible;
 
@@ -214,7 +197,20 @@ impl RawPadding for Pkcs7 {
 
     #[inline]
     fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
-        Pkcs7::unpad(block, true)
+        // TODO: use bounds to check it at compile time
+        if block.len() > 255 {
+            panic!("block size is too big for PKCS#7");
+        }
+        let bs = block.len();
+        let n = block[bs - 1];
+        if n == 0 || n as usize > bs {
+            return Err(UnpadError);
+        }
+        let s = bs - n as usize;
+        if block[s..bs - 1].iter().any(|&v| v != n) {
+            return Err(UnpadError);
+        }
+        Ok(&block[..s])
     }
 }
 
@@ -225,32 +221,55 @@ impl RawPadding for Pkcs7 {
 /// ```
 /// use block_padding::{Iso10126, Padding};
 /// use generic_array::{GenericArray, typenum::U8};
+/// use rand_chacha::ChaCha8Rng;
 ///
 /// let msg = b"test";
 /// let pos = msg.len();
 /// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
 /// block[..pos].copy_from_slice(msg);
-/// Iso10126::pad(&mut block, pos);
-/// assert_eq!(&block[..], b"test\x04\x04\x04\x04");
-/// let res = Iso10126::unpad(&block).unwrap();
+/// Iso10126::<ChaCha8Rng>::pad(&mut block, pos);
+/// assert_eq!(&block[..4], b"test");
+/// assert_eq!(block[7], b'\x04');
+/// let res = Iso10126::<ChaCha8Rng>::unpad(&block).unwrap();
 /// assert_eq!(res, msg);
 /// ```
+#[cfg(feature = "iso-10126")]
 #[derive(Clone, Copy, Debug)]
-pub struct Iso10126;
+pub struct Iso10126<R: RngCore + SeedableRng> {
+    rand: core::marker::PhantomData<R>,
+}
 
-impl RawPadding for Iso10126 {
+#[cfg(feature = "iso-10126")]
+impl<R: RngCore + SeedableRng> RawPadding for Iso10126<R> {
     const TYPE: PadType = PadType::Reversible;
 
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
-        // Instead of generating random bytes as specified by Iso10126 we
-        // simply use Pkcs7 padding.
-        Pkcs7::raw_pad(block, pos)
+        // TODO: use bounds to check it at compile time
+        if block.len() > 255 {
+            panic!("block size is too big for ISO 10126");
+        }
+        if pos >= block.len() {
+            panic!("`pos` is bigger or equal to block size");
+        }
+        let bs = block.len();
+        let mut rand = R::from_entropy();
+        rand.fill_bytes(&mut block[pos..bs - 1]);
+        block[bs - 1] = (bs - pos) as u8;
     }
 
     #[inline]
     fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
-        Pkcs7::unpad(block, false)
+        // TODO: use bounds to check it at compile time
+        if block.len() > 255 {
+            panic!("block size is too big for ISO 10126");
+        }
+        let bs = block.len();
+        let n = block[bs - 1] as usize;
+        if n == 0 || n > bs {
+            return Err(UnpadError);
+        }
+        Ok(&block[..bs - n])
     }
 }
 
