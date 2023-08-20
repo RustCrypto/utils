@@ -280,7 +280,7 @@ impl RawPadding for AnsiX923 {
     fn raw_pad(block: &mut [u8], pos: usize) {
         // TODO: use bounds to check it at compile time
         if block.len() > 255 {
-            panic!("block size is too big for PKCS#7");
+            panic!("block size is too big for ANSI X9.23");
         }
         if pos >= block.len() {
             panic!("`pos` is bigger or equal to block size");
@@ -296,7 +296,7 @@ impl RawPadding for AnsiX923 {
     fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
         // TODO: use bounds to check it at compile time
         if block.len() > 255 {
-            panic!("block size is too big for PKCS#7");
+            panic!("block size is too big for ANSI X9.23");
         }
         let bs = block.len();
         let n = block[bs - 1] as usize;
