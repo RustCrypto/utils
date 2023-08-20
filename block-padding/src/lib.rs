@@ -138,9 +138,7 @@ impl RawPadding for ZeroPadding {
         if pos > block.len() {
             panic!("`pos` is bigger than block size");
         }
-        for b in &mut block[pos..] {
-            *b = 0;
-        }
+        block[pos..].fill(0);
     }
 
     #[inline]
@@ -207,9 +205,7 @@ impl RawPadding for Pkcs7 {
             panic!("`pos` is bigger or equal to block size");
         }
         let n = (block.len() - pos) as u8;
-        for b in &mut block[pos..] {
-            *b = n;
-        }
+        block[pos..].fill(n);
     }
 
     #[inline]
@@ -286,9 +282,7 @@ impl RawPadding for AnsiX923 {
             panic!("`pos` is bigger or equal to block size");
         }
         let bs = block.len();
-        for b in &mut block[pos..bs - 1] {
-            *b = 0;
-        }
+        block[pos..bs - 1].fill(0);
         block[bs - 1] = (bs - pos) as u8;
     }
 
@@ -338,9 +332,7 @@ impl RawPadding for Iso7816 {
             panic!("`pos` is bigger or equal to block size");
         }
         block[pos] = 0x80;
-        for b in &mut block[pos + 1..] {
-            *b = 0;
-        }
+        block[pos + 1..].fill(0);
     }
 
     #[inline]
