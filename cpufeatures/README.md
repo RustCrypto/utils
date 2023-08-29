@@ -49,6 +49,8 @@ Target features:
 - `avx512ifma`*
 - `avx512pf`*
 - `avx512vl`*
+- `avx512vbmi`*
+- `avx512vbmi2`*
 - `bmi1`
 - `bmi2`
 - `fma`,
