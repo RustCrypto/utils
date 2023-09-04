@@ -13,7 +13,6 @@ readme = "README.md"
 
 [dependencies]
 crypto-common = "0.2.0-pre"
-generic-array = "0.14"
 zeroize = { version = "1.4", optional = true, default-features = false }
 
 [dev-dependencies]

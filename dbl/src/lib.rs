@@ -6,10 +6,8 @@
 )]
 #![forbid(unsafe_code)]
 
-extern crate generic_array;
-
-use generic_array::typenum::{U16, U32, U8};
-use generic_array::GenericArray;
+use hybrid_array::typenum::{U16, U32, U8};
+use hybrid_array::Array;
 
 use core::convert::TryInto;
 
@@ -39,7 +37,7 @@ pub trait Dbl {
     fn inv_dbl(self) -> Self;
 }
 
-impl Dbl for GenericArray<u8, U8> {
+impl Dbl for Array<u8, U8> {
     #[inline]
     fn dbl(self) -> Self {
         let mut val = u64::from_be_bytes(self.into());
@@ -63,7 +61,7 @@ impl Dbl for GenericArray<u8, U8> {
     }
 }
 
-impl Dbl for GenericArray<u8, U16> {
+impl Dbl for Array<u8, U16> {
     #[inline]
     fn dbl(self) -> Self {
         let mut val = [
@@ -108,7 +106,7 @@ impl Dbl for GenericArray<u8, U16> {
     }
 }
 
-impl Dbl for GenericArray<u8, U32> {
+impl Dbl for Array<u8, U32> {
     #[inline]
     fn dbl(self) -> Self {
         let mut val = [

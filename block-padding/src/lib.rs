@@ -14,9 +14,10 @@
 #[cfg(feature = "std")]
 extern crate std;
 
+pub use hybrid_array as array;
+
 use core::fmt;
-pub use generic_array;
-use generic_array::{ArrayLength, GenericArray};
+use hybrid_array::{Array, ArraySize};
 
 /// Padding types
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -49,10 +50,10 @@ pub trait RawPadding {
 }
 
 /// Block size.
-pub type Block<B> = GenericArray<u8, B>;
+pub type Block<B> = Array<u8, B>;
 
 /// Trait for padding messages divided into blocks
-pub trait Padding<BlockSize: ArrayLength<u8>> {
+pub trait Padding<BlockSize: ArraySize> {
     /// Padding type
     const TYPE: PadType;
 
@@ -92,7 +93,7 @@ pub trait Padding<BlockSize: ArrayLength<u8>> {
     }
 }
 
-impl<T, B: ArrayLength<u8>> Padding<B> for T
+impl<T, B: ArraySize> Padding<B> for T
 where
     T: RawPadding,
 {
@@ -113,11 +114,11 @@ where
 ///
 /// ```
 /// use block_padding::{ZeroPadding, Padding};
-/// use generic_array::{GenericArray, typenum::U8};
+/// use block_padding::array::{Array, typenum::U8};
 ///
 /// let msg = b"test";
 /// let pos = msg.len();
-/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// let mut block: Array::<u8, U8> = [0xff; 8].into();
 /// block[..pos].copy_from_slice(msg);
 /// ZeroPadding::pad(&mut block, pos);
 /// assert_eq!(&block[..], b"test\x00\x00\x00\x00");
@@ -158,11 +159,11 @@ impl RawPadding for ZeroPadding {
 ///
 /// ```
 /// use block_padding::{Pkcs7, Padding};
-/// use generic_array::{GenericArray, typenum::U8};
+/// use block_padding::array::{Array, typenum::U8};
 ///
 /// let msg = b"test";
 /// let pos = msg.len();
-/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// let mut block: Array::<u8, U8> = [0xff; 8].into();
 /// block[..pos].copy_from_slice(msg);
 /// Pkcs7::pad(&mut block, pos);
 /// assert_eq!(&block[..], b"test\x04\x04\x04\x04");
@@ -220,11 +221,11 @@ impl RawPadding for Pkcs7 {
 ///
 /// ```
 /// use block_padding::{Iso10126, Padding};
-/// use generic_array::{GenericArray, typenum::U8};
+/// use block_padding::array::{Array, typenum::U8};
 ///
 /// let msg = b"test";
 /// let pos = msg.len();
-/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// let mut block: Array::<u8, U8> = [0xff; 8].into();
 /// block[..pos].copy_from_slice(msg);
 /// Iso10126::pad(&mut block, pos);
 /// assert_eq!(&block[..], b"test\x04\x04\x04\x04");
@@ -255,11 +256,11 @@ impl RawPadding for Iso10126 {
 ///
 /// ```
 /// use block_padding::{AnsiX923, Padding};
-/// use generic_array::{GenericArray, typenum::U8};
+/// use block_padding::array::{Array, typenum::U8};
 ///
 /// let msg = b"test";
 /// let pos = msg.len();
-/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// let mut block: Array::<u8, U8> = [0xff; 8].into();
 /// block[..pos].copy_from_slice(msg);
 /// AnsiX923::pad(&mut block, pos);
 /// assert_eq!(&block[..], b"test\x00\x00\x00\x04");
@@ -309,11 +310,11 @@ impl RawPadding for AnsiX923 {
 ///
 /// ```
 /// use block_padding::{Iso7816, Padding};
-/// use generic_array::{GenericArray, typenum::U8};
+/// use block_padding::array::{Array, typenum::U8};
 ///
 /// let msg = b"test";
 /// let pos = msg.len();
-/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// let mut block: Array::<u8, U8> = [0xff; 8].into();
 /// block[..pos].copy_from_slice(msg);
 /// Iso7816::pad(&mut block, pos);
 /// assert_eq!(&block[..], b"test\x80\x00\x00\x00");
@@ -352,11 +353,11 @@ impl RawPadding for Iso7816 {
 ///
 /// ```
 /// use block_padding::{NoPadding, Padding};
-/// use generic_array::{GenericArray, typenum::U8};
+/// use block_padding::array::{Array, typenum::U8};
 ///
 /// let msg = b"test";
 /// let pos = msg.len();
-/// let mut block: GenericArray::<u8, U8> = [0xff; 8].into();
+/// let mut block: Array::<u8, U8> = [0xff; 8].into();
 /// block[..pos].copy_from_slice(msg);
 /// NoPadding::pad(&mut block, pos);
 /// assert_eq!(&block[..], b"test\xff\xff\xff\xff");

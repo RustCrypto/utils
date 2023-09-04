@@ -1,6 +1,6 @@
 use crate::InOutBuf;
 use core::{marker::PhantomData, ptr};
-use generic_array::{ArrayLength, GenericArray};
+use hybrid_array::{Array, ArraySize};
 
 /// Custom pointer type which contains one immutable (input) and one mutable
 /// (output) pointer, which are either equal or non-overlapping.
@@ -98,7 +98,7 @@ impl<'inp, 'out, T> From<(&'inp T, &'out mut T)> for InOut<'inp, 'out, T> {
     }
 }
 
-impl<'inp, 'out, T, N: ArrayLength<T>> InOut<'inp, 'out, GenericArray<T, N>> {
+impl<'inp, 'out, T, N: ArraySize> InOut<'inp, 'out, Array<T, N>> {
     /// Returns `InOut` for the given position.
     ///
     /// # Panics
@@ -127,7 +127,7 @@ impl<'inp, 'out, T, N: ArrayLength<T>> InOut<'inp, 'out, GenericArray<T, N>> {
     }
 }
 
-impl<'inp, 'out, N: ArrayLength<u8>> InOut<'inp, 'out, GenericArray<u8, N>> {
+impl<'inp, 'out, N: ArraySize> InOut<'inp, 'out, Array<u8, N>> {
     /// XOR `data` with values behind the input slice and write
     /// result to the output slice.
     ///
@@ -135,10 +135,10 @@ impl<'inp, 'out, N: ArrayLength<u8>> InOut<'inp, 'out, GenericArray<u8, N>> {
     /// If `data` length is not equal to the buffer length.
     #[inline(always)]
     #[allow(clippy::needless_range_loop)]
-    pub fn xor_in2out(&mut self, data: &GenericArray<u8, N>) {
+    pub fn xor_in2out(&mut self, data: &Array<u8, N>) {
         unsafe {
             let input = ptr::read(self.in_ptr);
-            let mut temp = GenericArray::<u8, N>::default();
+            let mut temp = Array::<u8, N>::default();
             for i in 0..N::USIZE {
                 temp[i] = input[i] ^ data[i];
             }
@@ -147,10 +147,10 @@ impl<'inp, 'out, N: ArrayLength<u8>> InOut<'inp, 'out, GenericArray<u8, N>> {
     }
 }
 
-impl<'inp, 'out, N, M> InOut<'inp, 'out, GenericArray<GenericArray<u8, N>, M>>
+impl<'inp, 'out, N, M> InOut<'inp, 'out, Array<Array<u8, N>, M>>
 where
-    N: ArrayLength<u8>,
-    M: ArrayLength<GenericArray<u8, N>>,
+    N: ArraySize,
+    M: ArraySize,
 {
     /// XOR `data` with values behind the input slice and write
     /// result to the output slice.
@@ -159,10 +159,10 @@ where
     /// If `data` length is not equal to the buffer length.
     #[inline(always)]
     #[allow(clippy::needless_range_loop)]
-    pub fn xor_in2out(&mut self, data: &GenericArray<GenericArray<u8, N>, M>) {
+    pub fn xor_in2out(&mut self, data: &Array<Array<u8, N>, M>) {
         unsafe {
             let input = ptr::read(self.in_ptr);
-            let mut temp = GenericArray::<GenericArray<u8, N>, M>::default();
+            let mut temp = Array::<Array<u8, N>, M>::default();
             for i in 0..M::USIZE {
                 for j in 0..N::USIZE {
                     temp[i][j] = input[i][j] ^ data[i][j];
