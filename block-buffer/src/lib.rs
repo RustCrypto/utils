@@ -6,15 +6,14 @@
 )]
 #![warn(missing_docs, rust_2018_idioms)]
 
-pub use generic_array;
+pub use crypto_common::{array, Block};
 
-use core::{fmt, ops::Add, slice};
-pub use crypto_common::Block;
-use crypto_common::{BlockSizeUser, BlockSizes};
-use generic_array::{
+use array::{
     typenum::{Add1, B1},
-    ArrayLength, GenericArray,
+    Array, ArraySize,
 };
+use core::{fmt, ops::Add, slice};
+use crypto_common::{BlockSizeUser, BlockSizes};
 
 mod read;
 mod sealed;
@@ -22,7 +21,7 @@ mod sealed;
 pub use read::ReadBuffer;
 
 /// Block with additional one byte
-type BlockP1<BlockSize> = GenericArray<u8, Add1<BlockSize>>;
+type BlockP1<BlockSize> = Array<u8, Add1<BlockSize>>;
 
 /// Trait for buffer kinds.
 pub trait BufferKind: sealed::Sealed {}
@@ -304,7 +303,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Lazy> {
     pub fn serialize(&self) -> BlockP1<BS>
     where
         BS: Add<B1>,
-        Add1<BS>: ArrayLength<u8>,
+        Add1<BS>: ArraySize,
     {
         let mut res = BlockP1::<BS>::default();
         res[0] = self.pos;
@@ -318,7 +317,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Lazy> {
     pub fn deserialize(buffer: &BlockP1<BS>) -> Result<Self, Error>
     where
         BS: Add<B1>,
-        Add1<BS>: ArrayLength<u8>,
+        Add1<BS>: ArraySize,
     {
         let pos = buffer[0];
         if !<Lazy as sealed::Sealed>::invariant(pos as usize, BS::USIZE) {
@@ -327,9 +326,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Lazy> {
         if buffer[1..][pos as usize..].iter().any(|&b| b != 0) {
             return Err(Error);
         }
-        Ok(Self {
-            buffer: GenericArray::clone_from_slice(&buffer[1..]),
-            pos,
-        })
+        let buffer = Array::clone_from_slice(&buffer[1..]);
+        Ok(Self { buffer, pos })
     }
 }

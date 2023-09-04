@@ -14,15 +14,14 @@ name = "block-buffer"
 version = "0.11.0-pre"
 dependencies = [
  "crypto-common",
- "generic-array",
  "hex-literal 0.3.4",
 ]
 
 [[package]]
 name = "block-padding"
-version = "0.3.3"
+version = "0.4.0-pre"
 dependencies = [
- "generic-array",
+ "hybrid-array",
 ]
 
 [[package]]
@@ -43,18 +42,16 @@ dependencies = [
 [[package]]
 name = "crypto-common"
 version = "0.2.0-pre"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6faaa83e7700e0832cbbf84854d4c356270526907d9b14fab927fc7a9b5befb8"
+source = "git+https://github.com/RustCrypto/traits?branch=crypto-common/hybrid-array#9a65db3f26abd298e7fc58b0caa04fffbef9b237"
 dependencies = [
- "generic-array",
- "typenum",
+ "hybrid-array",
 ]
 
 [[package]]
 name = "dbl"
-version = "0.3.2"
+version = "0.4.0-pre"
 dependencies = [
- "generic-array",
+ "hybrid-array",
 ]
 
 [[package]]
@@ -64,16 +61,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "generic-array"
-version = "0.14.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
-dependencies = [
- "typenum",
- "version_check",
 ]
 
 [[package]]
@@ -101,10 +88,10 @@ dependencies = [
 
 [[package]]
 name = "inout"
-version = "0.1.3"
+version = "0.2.0-pre"
 dependencies = [
  "block-padding",
- "generic-array",
+ "hybrid-array",
 ]
 
 [[package]]
@@ -200,12 +187,6 @@ name = "unicode-ident"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "301abaae475aa91687eb82514b328ab47a211a533026cb25fc3e519b86adfc3c"
-
-[[package]]
-name = "version_check"
-version = "0.9.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "wycheproof2blb"

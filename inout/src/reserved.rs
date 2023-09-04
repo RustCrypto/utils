@@ -8,7 +8,7 @@ use crate::{InOut, InOutBuf};
 #[cfg(feature = "block-padding")]
 use block_padding::{PadType, Padding};
 #[cfg(feature = "block-padding")]
-use generic_array::{ArrayLength, GenericArray};
+use hybrid_array::{Array, ArraySize};
 
 /// Custom slice type which references one immutable (input) slice and one
 /// mutable (output) slice. Input and output slices are either the same or
@@ -134,19 +134,19 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
     pub fn into_padded_blocks<P, BS>(self) -> Result<PaddedInOutBuf<'inp, 'out, BS>, PadError>
     where
         P: Padding<BS>,
-        BS: ArrayLength<u8>,
+        BS: ArraySize,
     {
         let bs = BS::USIZE;
         let blocks_len = self.in_len / bs;
         let tail_len = self.in_len - bs * blocks_len;
         let blocks = unsafe {
             InOutBuf::from_raw(
-                self.in_ptr as *const GenericArray<u8, BS>,
-                self.out_ptr as *mut GenericArray<u8, BS>,
+                self.in_ptr as *const Array<u8, BS>,
+                self.out_ptr as *mut Array<u8, BS>,
                 blocks_len,
             )
         };
-        let mut tail_in = GenericArray::<u8, BS>::default();
+        let mut tail_in = Array::<u8, BS>::default();
         let tail_out = match P::TYPE {
             PadType::NoPadding | PadType::Ambiguous if tail_len == 0 => None,
             PadType::NoPadding => return Err(PadError),
@@ -167,7 +167,7 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
                         tail_in.as_mut_ptr(),
                         tail_len,
                     );
-                    &mut *(self.out_ptr.add(blen) as *mut GenericArray<u8, BS>)
+                    &mut *(self.out_ptr.add(blen) as *mut Array<u8, BS>)
                 };
                 P::pad(&mut tail_in, tail_len);
                 Some(out_block)
@@ -184,17 +184,17 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
 /// Variant of [`InOutBuf`] with optional padded tail block.
 #[cfg(feature = "block-padding")]
 #[cfg_attr(docsrs, doc(cfg(feature = "block-padding")))]
-pub struct PaddedInOutBuf<'inp, 'out, BS: ArrayLength<u8>> {
-    blocks: InOutBuf<'inp, 'out, GenericArray<u8, BS>>,
-    tail_in: GenericArray<u8, BS>,
-    tail_out: Option<&'out mut GenericArray<u8, BS>>,
+pub struct PaddedInOutBuf<'inp, 'out, BS: ArraySize> {
+    blocks: InOutBuf<'inp, 'out, Array<u8, BS>>,
+    tail_in: Array<u8, BS>,
+    tail_out: Option<&'out mut Array<u8, BS>>,
 }
 
 #[cfg(feature = "block-padding")]
-impl<'inp, 'out, BS: ArrayLength<u8>> PaddedInOutBuf<'inp, 'out, BS> {
+impl<'inp, 'out, BS: ArraySize> PaddedInOutBuf<'inp, 'out, BS> {
     /// Get full blocks.
     #[inline(always)]
-    pub fn get_blocks<'a>(&'a mut self) -> InOutBuf<'a, 'a, GenericArray<u8, BS>> {
+    pub fn get_blocks<'a>(&'a mut self) -> InOutBuf<'a, 'a, Array<u8, BS>> {
         self.blocks.reborrow()
     }
 
@@ -203,7 +203,7 @@ impl<'inp, 'out, BS: ArrayLength<u8>> PaddedInOutBuf<'inp, 'out, BS> {
     /// For paddings with `P::TYPE = PadType::Reversible` it always returns `Some`.
     #[inline(always)]
     #[allow(clippy::needless_option_as_deref)]
-    pub fn get_tail_block<'a>(&'a mut self) -> Option<InOut<'a, 'a, GenericArray<u8, BS>>> {
+    pub fn get_tail_block<'a>(&'a mut self) -> Option<InOut<'a, 'a, Array<u8, BS>>> {
         match self.tail_out.as_deref_mut() {
             Some(out_block) => Some((&self.tail_in, out_block).into()),
             None => None,
