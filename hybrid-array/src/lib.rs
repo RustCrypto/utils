@@ -38,7 +38,7 @@ use typenum::Unsigned;
 ///
 /// Provides the flexibility of typenum-based expressions while also
 /// allowing interoperability and a transition path to const generics.
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct Array<T, U: ArraySize>(pub U::ArrayType<T>);
 
@@ -168,6 +168,24 @@ where
     fn borrow_mut(&mut self) -> &mut [T; N] {
         self.as_mut_core_array()
     }
+}
+
+impl<T, U> Clone for Array<T, U>
+where
+    T: Clone,
+    U: ArraySize,
+{
+    fn clone(&self) -> Self {
+        Self(U::ArrayType::<T>::from_fn(|n| self.0.as_ref()[n].clone()))
+    }
+}
+
+impl<T, U> Copy for Array<T, U>
+where
+    T: Copy,
+    U: ArraySize,
+    U::ArrayType<T>: Copy,
+{
 }
 
 impl<T, U> Default for Array<T, U>
