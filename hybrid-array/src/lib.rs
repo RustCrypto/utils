@@ -29,6 +29,9 @@ pub use typenum::consts;
 use core::{
     array::{IntoIter, TryFromSliceError},
     borrow::{Borrow, BorrowMut},
+    cmp::Ordering,
+    fmt::{self, Debug},
+    hash::{Hash, Hasher},
     ops::{Deref, DerefMut, Index, IndexMut, Range},
     slice::{Iter, IterMut},
 };
@@ -38,7 +41,6 @@ use typenum::Unsigned;
 ///
 /// Provides the flexibility of typenum-based expressions while also
 /// allowing interoperability and a transition path to const generics.
-#[derive(Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[repr(transparent)]
 pub struct Array<T, U: ArraySize>(pub U::ArrayType<T>);
 
@@ -188,6 +190,17 @@ where
 {
 }
 
+impl<T, U> Debug for Array<T, U>
+where
+    T: Debug,
+    U: ArraySize,
+    U::ArrayType<T>: Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("Array").field(&self.0).finish()
+    }
+}
+
 impl<T, U> Default for Array<T, U>
 where
     T: Default,
@@ -218,6 +231,13 @@ where
     fn deref_mut(&mut self) -> &mut [T] {
         self.0.as_mut()
     }
+}
+
+impl<T, U> Eq for Array<T, U>
+where
+    T: Eq,
+    U: ArraySize,
+{
 }
 
 impl<T, U, const N: usize> From<[T; N]> for Array<T, U>
@@ -253,6 +273,17 @@ where
     }
 }
 
+impl<T, U> Hash for Array<T, U>
+where
+    T: Hash,
+    U: ArraySize,
+{
+    #[inline]
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.as_ref().hash(state);
+    }
+}
+
 impl<T, I, U> Index<I> for Array<T, U>
 where
     [T]: Index<I>,
@@ -274,6 +305,36 @@ where
     #[inline]
     fn index_mut(&mut self, index: I) -> &mut Self::Output {
         IndexMut::index_mut(self.as_mut_slice(), index)
+    }
+}
+
+impl<T, U> PartialEq for Array<T, U>
+where
+    T: PartialEq,
+    U: ArraySize,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.0.as_ref().eq(other.0.as_ref())
+    }
+}
+
+impl<T, U> PartialOrd for Array<T, U>
+where
+    T: PartialOrd,
+    U: ArraySize,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.0.as_ref().partial_cmp(other.0.as_ref())
+    }
+}
+
+impl<T, U> Ord for Array<T, U>
+where
+    T: Ord,
+    U: ArraySize,
+{
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.as_ref().cmp(other.0.as_ref())
     }
 }
 
