@@ -194,10 +194,9 @@ impl<T, U> Debug for Array<T, U>
 where
     T: Debug,
     U: ArraySize,
-    U::ArrayType<T>: Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("Array").field(&self.0).finish()
+        f.debug_tuple("Array").field(&self.0.as_ref()).finish()
     }
 }
 
