@@ -556,6 +556,12 @@ macro_rules! impl_array_size {
                 type ArrayType<T> = [T; $len];
             }
 
+            impl<T> From<Array<T, typenum::$ty>> for [T; $len] {
+                fn from(arr: Array<T, typenum::$ty>) -> [T; $len] {
+                    arr.0
+                }
+            }
+
             impl<T> IntoArray<T> for [T; $len] {
                 type Size = typenum::$ty;
 
