@@ -362,7 +362,7 @@ where
 
         // SAFETY: `Array<T, U>` is a `repr(transparent)` newtype for a core
         // array with length checked above.
-        Ok(unsafe { *(slice.as_ptr() as *const Self) })
+        Ok(unsafe { &*(slice.as_ptr() as *const Array<T, U>) })
     }
 }
 
@@ -378,7 +378,7 @@ where
 
         // SAFETY: `Array<T, U>` is a `repr(transparent)` newtype for a core
         // array with length checked above.
-        Ok(unsafe { *(slice.as_ptr() as *mut Self) })
+        Ok(unsafe { &mut *(slice.as_ptr() as *mut Array<T, U>) })
     }
 }
 
@@ -497,7 +497,7 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
 /// [`typenum::consts`].
 pub unsafe trait ArraySize: Unsigned {
     /// Array type which corresponds to this size.
-    type ArrayType<T>: AsRef<[T]> + AsMut<[T]> + IntoArray<T> + ArrayExt<T>;
+    type ArrayType<T>: ArrayExt<T> + AsRef<[T]> + AsMut<[T]> + IntoArray<T>;
 }
 
 /// Convert the given type into an [`Array`].
@@ -682,17 +682,36 @@ impl_array_size! {
 #[cfg(test)]
 mod tests {
     use super::ByteArray;
+    use crate::Array;
     use typenum::{U0, U3, U6, U7};
+
+    const EXAMPLE_SLICE: &[u8] = &[1, 2, 3, 4, 5, 6];
+
+    #[test]
+    fn clone_from_slice() {
+        let array = Array::<u8, U6>::clone_from_slice(EXAMPLE_SLICE);
+        assert_eq!(array.as_slice(), EXAMPLE_SLICE);
+    }
+
+    #[test]
+    fn tryfrom_slice_for_array() {
+        assert!(ByteArray::<U0>::try_from(EXAMPLE_SLICE).is_err());
+        assert!(ByteArray::<U3>::try_from(EXAMPLE_SLICE).is_err());
+
+        let array_ref = ByteArray::<U6>::try_from(EXAMPLE_SLICE).expect("slice contains 6 bytes");
+        assert_eq!(&*array_ref, EXAMPLE_SLICE);
+
+        assert!(ByteArray::<U7>::try_from(EXAMPLE_SLICE).is_err());
+    }
 
     #[test]
     fn tryfrom_slice_for_array_ref() {
-        let slice: &[u8] = &[1, 2, 3, 4, 5, 6];
-        assert!(ByteArray::<U0>::try_from(slice).is_err());
-        assert!(ByteArray::<U3>::try_from(slice).is_err());
+        assert!(<&ByteArray<U0>>::try_from(EXAMPLE_SLICE).is_err());
+        assert!(<&ByteArray::<U3>>::try_from(EXAMPLE_SLICE).is_err());
 
-        let array_ref = ByteArray::<U6>::try_from(slice).expect("slice contains 6 bytes");
-        assert_eq!(&*array_ref, slice);
+        let array_ref = <&ByteArray<U6>>::try_from(EXAMPLE_SLICE).expect("slice contains 6 bytes");
+        assert_eq!(array_ref.as_slice(), EXAMPLE_SLICE);
 
-        assert!(ByteArray::<U7>::try_from(slice).is_err());
+        assert!(<&ByteArray::<U7>>::try_from(EXAMPLE_SLICE).is_err());
     }
 }
