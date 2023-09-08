@@ -7,7 +7,7 @@
 [![Project Chat][chat-image]][chat-link]
 [![Build Status][build-image]][build-link]
 
-Lightweight and efficient runtime CPU feature detection for `aarch64` and
+Lightweight and efficient runtime CPU feature detection for `aarch64`, `loongarch64`, and
 `x86`/`x86_64` targets.
 
 Supports `no_std` as well as mobile targets including iOS and Android,
@@ -30,6 +30,26 @@ Target features:
 - `aes`*
 - `sha2`*
 - `sha3`*
+
+## `loongarch64`
+
+Linux only (LoongArch64 does not support OS-independent feature detection)
+
+Target features:
+
+- `lam`*
+- `ual`*
+- `fpu`*
+- `lsx`*
+- `lasx`*
+- `crc32`*
+- `complex`*
+- `crypto`*
+- `lvz`*
+- `lbt.x86`*
+- `lbt.arm`*
+- `lbt.mips`*
+- `ptw`*
 
 ## `x86`/`x86_64`
 

@@ -18,6 +18,26 @@
 //! - `sha2`*
 //! - `sha3`*
 //!
+//! ## `loongarch64`
+//!
+//! Linux only (LoongArch64 does not support OS-independent feature detection)
+//!
+//! Target features:
+//!
+//! - `lam`*
+//! - `ual`*
+//! - `fpu`*
+//! - `lsx`*
+//! - `lasx`*
+//! - `crc32`*
+//! - `complex`*
+//! - `crypto`*
+//! - `lvz`*
+//! - `lbt.x86`*
+//! - `lbt.arm`*
+//! - `lbt.mips`*
+//! - `ptw`*
+//!
 //! ## `x86`/`x86_64`
 //!
 //! OS independent and `no_std`-friendly
@@ -108,14 +128,24 @@
 pub mod aarch64;
 
 #[cfg(not(miri))]
+#[cfg(target_arch = "loongarch64")]
+#[doc(hidden)]
+pub mod loongarch64;
+
+#[cfg(not(miri))]
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
 
 #[cfg(miri)]
 mod miri;
 
-#[cfg(not(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")))]
-compile_error!("This crate works only on `aarch64`, `x86`, and `x86-64` targets.");
+#[cfg(not(any(
+    target_arch = "aarch64",
+    target_arch = "loongarch64",
+    target_arch = "x86",
+    target_arch = "x86_64"
+)))]
+compile_error!("This crate works only on `aarch64`, `loongarch64`, `x86`, and `x86-64` targets.");
 
 /// Create module with CPU feature detection code.
 #[macro_export]
