@@ -11,7 +11,7 @@ repository = "https://github.com/RustCrypto/utils"
 keywords = ["custom-reference"]
 
 [dependencies]
-generic-array = "0.14"
+generic-array = "1.0"
 block-padding = { version = "0.3", path = "../block-padding", optional = true }
 
 [features]

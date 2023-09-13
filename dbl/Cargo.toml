@@ -9,4 +9,4 @@ repository = "https://github.com/RustCrypto/utils"
 keywords = ["crypto", "dbl", "gf", "galois"]
 
 [dependencies]
-generic-array = "0.14"
+generic-array = "1.0"

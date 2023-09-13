@@ -14,7 +14,7 @@ name = "block-buffer"
 version = "0.11.0-pre"
 dependencies = [
  "crypto-common",
- "generic-array",
+ "generic-array 1.0.0",
  "hex-literal 0.3.4",
 ]
 
@@ -22,7 +22,7 @@ dependencies = [
 name = "block-padding"
 version = "0.3.3"
 dependencies = [
- "generic-array",
+ "generic-array 1.0.0",
 ]
 
 [[package]]
@@ -46,7 +46,7 @@ version = "0.2.0-pre"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6faaa83e7700e0832cbbf84854d4c356270526907d9b14fab927fc7a9b5befb8"
 dependencies = [
- "generic-array",
+ "generic-array 0.14.7",
  "typenum",
 ]
 
@@ -54,7 +54,7 @@ dependencies = [
 name = "dbl"
 version = "0.3.2"
 dependencies = [
- "generic-array",
+ "generic-array 1.0.0",
 ]
 
 [[package]]
@@ -74,6 +74,15 @@ checksum = "85649ca51fd72272d7821adaf274ad91c288277713d9c18820d8499a7ff69e9a"
 dependencies = [
  "typenum",
  "version_check",
+]
+
+[[package]]
+name = "generic-array"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe739944a5406424e080edccb6add95685130b9f160d5407c639c7df0c5836b0"
+dependencies = [
+ "typenum",
 ]
 
 [[package]]
@@ -104,7 +113,7 @@ name = "inout"
 version = "0.1.3"
 dependencies = [
  "block-padding",
- "generic-array",
+ "generic-array 1.0.0",
 ]
 
 [[package]]
