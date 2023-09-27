@@ -332,3 +332,41 @@ mod u128 {
         assert_eq!(o, 55u8);
     }
 }
+
+mod slices {
+    use cmov::CmovEq;
+
+    #[test]
+    fn cmoveq_works() {
+        let mut o = 0u8;
+
+        // Same slices.
+        [1u8, 2, 3].cmoveq(&[1, 2, 3], 43, &mut o);
+        assert_eq!(o, 43);
+
+        // Different lengths.
+        [1u8, 2, 3].cmoveq(&[1, 2], 44, &mut o);
+        assert_ne!(o, 44);
+
+        // Different contents.
+        [1u8, 2, 3].cmoveq(&[1, 2, 4], 45, &mut o);
+        assert_ne!(o, 45);
+    }
+
+    #[test]
+    fn cmovne_works() {
+        let mut o = 0u8;
+
+        // Same slices.
+        [1u8, 2, 3].cmovne(&[1, 2, 3], 43, &mut o);
+        assert_ne!(o, 43);
+
+        // Different lengths.
+        [1u8, 2, 3].cmovne(&[1, 2], 44, &mut o);
+        assert_eq!(o, 44);
+
+        // Different contents.
+        [1u8, 2, 3].cmovne(&[1, 2, 4], 45, &mut o);
+        assert_eq!(o, 45);
+    }
+}

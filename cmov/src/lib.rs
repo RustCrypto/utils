@@ -134,3 +134,25 @@ impl CmovEq for u128 {
         tmp.cmoveq(&1, input, output);
     }
 }
+
+impl<T: CmovEq> CmovEq for [T] {
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        let mut tmp = 1u8;
+        self.cmovne(rhs, 0u8, &mut tmp);
+        tmp.cmoveq(&1, input, output);
+    }
+
+    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        // Short-circuit the comparison if the slices are of different lengths, and set the output
+        // condition to the input condition.
+        if self.len() != rhs.len() {
+            *output = input;
+            return;
+        }
+
+        // Compare each byte.
+        for (a, b) in self.iter().zip(rhs.iter()) {
+            a.cmovne(b, input, output);
+        }
+    }
+}
