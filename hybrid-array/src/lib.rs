@@ -27,7 +27,7 @@ pub use typenum;
 pub use typenum::consts;
 
 use core::{
-    array::{IntoIter, TryFromSliceError},
+    array::TryFromSliceError,
     borrow::{Borrow, BorrowMut},
     cmp::Ordering,
     fmt::{self, Debug},
@@ -307,6 +307,21 @@ where
     }
 }
 
+impl<T, U> IntoIterator for Array<T, U>
+where
+    U: ArraySize,
+{
+    type Item = T;
+    type IntoIter = <U::ArrayType<T> as IntoIterator>::IntoIter;
+
+    /// Creates a consuming iterator, that is, one that moves each value out of
+    /// the array (from start to end). The array cannot be used after calling
+    /// this unless `T` implements `Copy`, so the whole array is copied.
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
 impl<T, U> PartialEq for Array<T, U>
 where
     T: PartialEq,
@@ -495,9 +510,9 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
 ///
 /// NOTE: do not implement this trait yourself. It is implemented for types in
 /// [`typenum::consts`].
-pub unsafe trait ArraySize: Unsigned {
+pub unsafe trait ArraySize: Unsigned + 'static {
     /// Array type which corresponds to this size.
-    type ArrayType<T>: ArrayExt<T> + AsRef<[T]> + AsMut<[T]> + IntoArray<T>;
+    type ArrayType<T>: ArrayExt<T> + AsRef<[T]> + AsMut<[T]> + IntoArray<T> + IntoIterator<Item = T>;
 }
 
 /// Convert the given type into an [`Array`].
@@ -567,18 +582,6 @@ macro_rules! impl_array_size {
 
                 fn into_hybrid_array(self) -> Array<T, Self::Size> {
                     Array::from_core_array(self)
-                }
-            }
-
-            impl<T> IntoIterator for Array<T, typenum::$ty> {
-                type Item = T;
-                type IntoIter = IntoIter<T, $len>;
-
-                /// Creates a consuming iterator, that is, one that moves each value out of
-                /// the array (from start to end). The array cannot be used after calling
-                /// this unless `T` implements `Copy`, so the whole array is copied.
-                fn into_iter(self) -> Self::IntoIter {
-                    self.0.into_iter()
                 }
             }
 
