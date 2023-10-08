@@ -66,13 +66,13 @@ where
 
     /// Returns an iterator over the array.
     #[inline]
-    fn iter(&self) -> Iter<'_, T> {
+    pub fn iter(&self) -> Iter<'_, T> {
         self.as_ref().iter()
     }
 
     /// Returns an iterator that allows modifying each value.
     #[inline]
-    fn iter_mut(&mut self) -> IterMut<'_, T> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
         self.as_mut().iter_mut()
     }
 
@@ -319,6 +319,31 @@ where
     /// this unless `T` implements `Copy`, so the whole array is copied.
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
+    }
+}
+
+impl<'a, T, U> IntoIterator for &'a Array<T, U>
+where
+    U: ArraySize,
+{
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Iter<'a, T> {
+        self.iter()
+    }
+}
+
+impl<'a, T, U> IntoIterator for &'a mut Array<T, U>
+where
+    U: ArraySize,
+{
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+
+    #[inline]
+    fn into_iter(self) -> IterMut<'a, T> {
+        self.iter_mut()
     }
 }
 
@@ -582,25 +607,6 @@ macro_rules! impl_array_size {
 
                 fn into_hybrid_array(self) -> Array<T, Self::Size> {
                     Array::from_core_array(self)
-                }
-            }
-
-            impl<'a, T> IntoIterator for &'a Array<T, typenum::$ty> {
-                type Item = &'a T;
-                type IntoIter = Iter<'a, T>;
-
-                fn into_iter(self) -> Iter<'a, T> {
-                    self.iter()
-                }
-            }
-
-            impl<'a, T> IntoIterator for &'a mut Array<T, typenum::$ty> {
-                type Item = &'a mut T;
-                type IntoIter = IterMut<'a, T>;
-
-                #[inline]
-                fn into_iter(self) -> IterMut<'a, T> {
-                    self.iter_mut()
                 }
             }
         )+
