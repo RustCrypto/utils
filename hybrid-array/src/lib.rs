@@ -32,10 +32,12 @@ use core::{
     cmp::Ordering,
     fmt::{self, Debug},
     hash::{Hash, Hasher},
-    ops::{Deref, DerefMut, Index, IndexMut, Range},
+    mem::{ManuallyDrop, MaybeUninit},
+    ops::{Add, Deref, DerefMut, Index, IndexMut, Range, Sub},
+    ptr,
     slice::{Iter, IterMut},
 };
-use typenum::Unsigned;
+use typenum::{Diff, Sum, Unsigned};
 
 /// Hybrid typenum-based and const generic array type.
 ///
@@ -43,6 +45,10 @@ use typenum::Unsigned;
 /// allowing interoperability and a transition path to const generics.
 #[repr(transparent)]
 pub struct Array<T, U: ArraySize>(pub U::ArrayType<T>);
+
+type SplitResult<T, U, N> = (Array<T, N>, Array<T, Diff<U, N>>);
+type SplitRefResult<'a, T, U, N> = (&'a Array<T, N>, &'a Array<T, Diff<U, N>>);
+type SplitRefMutResult<'a, T, U, N> = (&'a mut Array<T, N>, &'a mut Array<T, Diff<U, N>>);
 
 impl<T, U> Array<T, U>
 where
@@ -125,6 +131,74 @@ where
         Self: Clone,
     {
         Self::ref_from_slice(slice).clone()
+    }
+
+    /// Concatenates `self` with `other`.
+    #[inline]
+    pub fn concat<N>(self, other: Array<T, N>) -> Array<T, Sum<U, N>>
+    where
+        N: ArraySize,
+        U: Add<N>,
+        Sum<U, N>: ArraySize,
+    {
+        let mut result = MaybeUninit::uninit();
+        let result_ptr = result.as_mut_ptr() as *mut Self;
+
+        unsafe {
+            ptr::write(result_ptr, self);
+            ptr::write(result_ptr.add(1) as *mut _, other);
+            result.assume_init()
+        }
+    }
+
+    /// Splits `self` at index `N` in two arrays.
+    ///
+    /// New arrays hold the original memory from `self`.
+    #[inline]
+    pub fn split<N>(self) -> SplitResult<T, U, N>
+    where
+        U: Sub<N>,
+        N: ArraySize,
+        Diff<U, N>: ArraySize,
+    {
+        unsafe {
+            let array = ManuallyDrop::new(self);
+            let head = ptr::read(array.as_ptr() as *const _);
+            let tail = ptr::read(array.as_ptr().add(N::USIZE) as *const _);
+            (head, tail)
+        }
+    }
+
+    /// Splits `&self` at index `N` in two array references.
+    #[inline]
+    pub fn split_ref<N>(&self) -> SplitRefResult<'_, T, U, N>
+    where
+        U: Sub<N>,
+        N: ArraySize,
+        Diff<U, N>: ArraySize,
+    {
+        unsafe {
+            let array_ptr = self.as_ptr();
+            let head = &*(array_ptr as *const _);
+            let tail = &*(array_ptr.add(N::USIZE) as *const _);
+            (head, tail)
+        }
+    }
+
+    /// Splits `&mut self` at index `N` in two mutable array references.
+    #[inline]
+    pub fn split_ref_mut<N>(&mut self) -> SplitRefMutResult<'_, T, U, N>
+    where
+        U: Sub<N>,
+        N: ArraySize,
+        Diff<U, N>: ArraySize,
+    {
+        unsafe {
+            let array_ptr = self.as_mut_ptr();
+            let head = &mut *(array_ptr as *mut _);
+            let tail = &mut *(array_ptr.add(N::USIZE) as *mut _);
+            (head, tail)
+        }
     }
 }
 
@@ -698,7 +772,7 @@ impl_array_size! {
 mod tests {
     use super::ByteArray;
     use crate::Array;
-    use typenum::{U0, U3, U6, U7};
+    use typenum::{U0, U2, U3, U4, U6, U7};
 
     const EXAMPLE_SLICE: &[u8] = &[1, 2, 3, 4, 5, 6];
 
@@ -728,5 +802,44 @@ mod tests {
         assert_eq!(array_ref.as_slice(), EXAMPLE_SLICE);
 
         assert!(<&ByteArray::<U7>>::try_from(EXAMPLE_SLICE).is_err());
+    }
+
+    #[test]
+    fn concat() {
+        let prefix = ByteArray::<U2>::clone_from_slice(&EXAMPLE_SLICE[..2]);
+        let suffix = ByteArray::<U4>::clone_from_slice(&EXAMPLE_SLICE[2..]);
+
+        let array = prefix.concat(suffix);
+        assert_eq!(array.as_slice(), EXAMPLE_SLICE);
+    }
+
+    #[test]
+    fn split() {
+        let array = ByteArray::<U6>::clone_from_slice(EXAMPLE_SLICE);
+
+        let (prefix, suffix) = array.split::<U2>();
+
+        assert_eq!(prefix.as_slice(), &EXAMPLE_SLICE[..2]);
+        assert_eq!(suffix.as_slice(), &EXAMPLE_SLICE[2..]);
+    }
+
+    #[test]
+    fn split_ref() {
+        let array = ByteArray::<U6>::clone_from_slice(EXAMPLE_SLICE);
+
+        let (prefix, suffix) = array.split_ref::<U3>();
+
+        assert_eq!(prefix.as_slice(), &EXAMPLE_SLICE[..3]);
+        assert_eq!(suffix.as_slice(), &EXAMPLE_SLICE[3..]);
+    }
+
+    #[test]
+    fn split_ref_mut() {
+        let array = &mut ByteArray::<U6>::clone_from_slice(EXAMPLE_SLICE);
+
+        let (prefix, suffix) = array.split_ref_mut::<U4>();
+
+        assert_eq!(prefix.as_slice(), &EXAMPLE_SLICE[..4]);
+        assert_eq!(suffix.as_slice(), &EXAMPLE_SLICE[4..]);
     }
 }
