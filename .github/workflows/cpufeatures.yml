@@ -134,5 +134,3 @@ jobs:
           toolchain: stable
       - run: rustup target add loongarch64-unknown-linux-gnu
       - run: cargo build --target loongarch64-unknown-linux-gnu
-      - run: rustup target add loongarch64-unknown-none
-      - run: cargo build --target loongarch64-unknown-none
