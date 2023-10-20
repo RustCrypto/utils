@@ -122,3 +122,17 @@ jobs:
       # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
       - run: rm ../Cargo.toml
       - run: cross test --target ${{ matrix.target }}
+
+  # Build-only tests
+  build-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - run: rustup target add loongarch64-unknown-linux-gnu
+      - run: cargo build --target loongarch64-unknown-linux-gnu
+      - run: rustup target add loongarch64-unknown-none
+      - run: cargo build --target loongarch64-unknown-none
