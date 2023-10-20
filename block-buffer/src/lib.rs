@@ -15,6 +15,8 @@ use generic_array::{
     typenum::{Add1, B1},
     ArrayLength, GenericArray,
 };
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 mod read;
 mod sealed;
@@ -331,5 +333,14 @@ impl<BS: BlockSizes> BlockBuffer<BS, Lazy> {
             buffer: GenericArray::clone_from_slice(&buffer[1..]),
             pos,
         })
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl<BS: BlockSizes, K: BufferKind> Zeroize for BlockBuffer<BS, K> {
+    #[inline]
+    fn zeroize(&mut self) {
+        self.buffer.zeroize();
+        self.pos.zeroize();
     }
 }

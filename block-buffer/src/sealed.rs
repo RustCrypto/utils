@@ -3,7 +3,10 @@ use generic_array::{ArrayLength, GenericArray};
 
 /// Sealed trait for buffer kinds.
 pub trait Sealed {
+    #[cfg(not(feature = "zeroize"))]
     type Pos: Default + Clone;
+    #[cfg(feature = "zeroize")]
+    type Pos: Default + Clone + zeroize::Zeroize;
 
     fn get_pos(buf: &[u8], pos: &Self::Pos) -> usize;
 
