@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `ReadBuffer` type ([#823])
 - `serialize` and `deserialize` methods ([#823])
+- Optional implementation of the `Zeroize` trait ([#963])
 
 ### Changed
 - Supported block sizes are now bounded by the `crypto_common::BlockSizes` trait,
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `EagerBuffer::set_data` method. Use the `ReadBuffer` type instead. ([#823])
 
 [#823]: https://github.com/RustCrypto/utils/pull/823
+[#963]: https://github.com/RustCrypto/utils/pull/963
 
 ## 0.10.3 (2022-09-04)
 ### Added

@@ -1,6 +1,8 @@
 use super::{Block, Error};
 use core::{fmt, slice};
 use crypto_common::{BlockSizeUser, BlockSizes};
+#[cfg(feature = "zeroize")]
+use zeroize::Zeroize;
 
 /// Buffer for reading block-generated data.
 pub struct ReadBuffer<BS: BlockSizes> {
@@ -144,5 +146,13 @@ impl<BS: BlockSizes> ReadBuffer<BS> {
         // mutation
         let blocks = unsafe { slice::from_raw_parts_mut(p, nb) };
         (blocks, right)
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl<BS: BlockSizes> Zeroize for ReadBuffer<BS> {
+    #[inline]
+    fn zeroize(&mut self) {
+        self.buffer.zeroize();
     }
 }
