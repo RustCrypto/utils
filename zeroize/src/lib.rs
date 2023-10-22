@@ -31,7 +31,7 @@
 //!
 //! ## Minimum Supported Rust Version
 //!
-//! Requires Rust **1.60** or newer.
+//! Requires Rust **1.61** or newer.
 //!
 //! In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope
 //! for this crate's `SemVer` guarantees), however when we do it will be accompanied
