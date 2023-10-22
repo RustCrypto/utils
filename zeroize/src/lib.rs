@@ -26,6 +26,7 @@
 //! - No FFI or inline assembly! **WASM friendly** (and tested)!
 //! - `#![no_std]` i.e. **embedded-friendly**!
 //! - No functionality besides securely zeroing memory!
+//! - Support for zeroing SIMD registers on `x86`, `x86_64`, `aarch64` targets!
 //! - (Optional) Custom derive support for zeroing complex structures
 //!
 //! ## Minimum Supported Rust Version
