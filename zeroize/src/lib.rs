@@ -34,7 +34,7 @@
 //! Requires Rust **1.60** or newer.
 //!
 //! In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope
-//! for this crate's SemVer guarantees), however when we do it will be accompanied
+//! for this crate's `SemVer` guarantees), however when we do it will be accompanied
 //! by a minor version bump.
 //!
 //! ## Usage
@@ -312,10 +312,10 @@ impl_zeroize_with_default! {
     u8, u16, u32, u64, u128, usize
 }
 
-/// `PhantomPinned` is zero sized so provide a ZeroizeOnDrop implementation.
+/// [`PhantomPinned`] is zero sized so provide a [`ZeroizeOnDrop`] implementation.
 impl ZeroizeOnDrop for PhantomPinned {}
 
-/// `()` is zero sized so provide a ZeroizeOnDrop implementation.
+/// `()` is zero sized so provide a [`ZeroizeOnDrop`] implementation.
 impl ZeroizeOnDrop for () {}
 
 macro_rules! impl_zeroize_for_non_zero {
@@ -393,7 +393,7 @@ where
 
             // Ensures self is None and that the value was dropped. Without the take, the drop
             // of the (zeroized) value isn't called, which might lead to a leak or other
-            // unexpected behavior. For example, if this were Option<Vec<T>>, the above call to
+            // unexpected behavior. For example, if this were `Option<Vec<T>>`, the above call to
             // zeroize would not free the allocated memory, but the the `take` call will.
             self.take();
         }
@@ -434,7 +434,7 @@ impl<Z> Zeroize for MaybeUninit<Z> {
     fn zeroize(&mut self) {
         // Safety:
         // `MaybeUninit` is valid for any byte pattern, including zeros.
-        unsafe { ptr::write_volatile(self, MaybeUninit::zeroed()) }
+        unsafe { ptr::write_volatile(self, Self::zeroed()) }
         atomic_fence();
     }
 }
@@ -452,12 +452,12 @@ impl<Z> Zeroize for [MaybeUninit<Z>] {
     fn zeroize(&mut self) {
         let ptr = self.as_mut_ptr().cast::<MaybeUninit<u8>>();
         let size = self.len().checked_mul(mem::size_of::<Z>()).unwrap();
-        assert!(size <= isize::MAX as usize);
+        assert!(isize::try_from(size).is_ok());
 
         // Safety:
         //
         // This is safe, because every valid pointer is well aligned for u8
-        // and it is backed by a single allocated object for at least `self.len() * size_pf::<Z>()` bytes.
+        // and it is backed by a single allocated object for at least `self.len() * size_of::<Z>()` bytes.
         // and 0 is a valid value for `MaybeUninit<Z>`
         // The memory of the slice should not wrap around the address space.
         unsafe { volatile_set(ptr, MaybeUninit::zeroed(), size) }
@@ -478,7 +478,7 @@ where
     Z: DefaultIsZeroes,
 {
     fn zeroize(&mut self) {
-        assert!(self.len() <= isize::MAX as usize);
+        assert!(isize::try_from(self.len()).is_ok());
 
         // Safety:
         //
@@ -504,7 +504,7 @@ impl<Z> Zeroize for PhantomData<Z> {
     fn zeroize(&mut self) {}
 }
 
-/// [`PhantomData` is always zero sized so provide a ZeroizeOnDrop implementation.
+/// [`PhantomData`] is always zero sized so provide a [`ZeroizeOnDrop`] implementation.
 impl<Z> ZeroizeOnDrop for PhantomData<Z> {}
 
 macro_rules! impl_zeroize_tuple {
@@ -616,8 +616,8 @@ impl Zeroize for CString {
     }
 }
 
-/// `Zeroizing` is a a wrapper for any `Z: Zeroize` type which implements a
-/// `Drop` handler which zeroizes dropped values.
+/// [`Zeroizing`] is a a wrapper for any `Z: Zeroize` type which implements a
+/// [`Drop`] handler which zeroizes dropped values.
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct Zeroizing<Z: Zeroize>(Z);
 
@@ -625,10 +625,10 @@ impl<Z> Zeroizing<Z>
 where
     Z: Zeroize,
 {
-    /// Move value inside a `Zeroizing` wrapper which ensures it will be
+    /// Move value inside a [`Zeroizing`] wrapper which ensures it will be
     /// zeroized when it's dropped.
     #[inline(always)]
-    pub fn new(value: Z) -> Self {
+    pub const fn new(value: Z) -> Self {
         Self(value)
     }
 }
@@ -651,8 +651,8 @@ where
     Z: Zeroize,
 {
     #[inline(always)]
-    fn from(value: Z) -> Zeroizing<Z> {
-        Zeroizing(value)
+    fn from(value: Z) -> Self {
+        Self(value)
     }
 }
 
@@ -716,7 +716,7 @@ where
     Z: Zeroize,
 {
     fn drop(&mut self) {
-        self.0.zeroize()
+        self.0.zeroize();
     }
 }
 
@@ -792,7 +792,7 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
 /// Internal module used as support for `AssertZeroizeOnDrop`.
 #[doc(hidden)]
 pub mod __internal {
-    use super::*;
+    use super::{Zeroize, ZeroizeOnDrop};
 
     /// Auto-deref workaround for deriving `ZeroizeOnDrop`.
     pub trait AssertZeroizeOnDrop {
@@ -810,7 +810,7 @@ pub mod __internal {
 
     impl<T: Zeroize + ?Sized> AssertZeroize for T {
         fn zeroize_or_on_drop(&mut self) {
-            self.zeroize()
+            self.zeroize();
         }
     }
 }
