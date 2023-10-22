@@ -23,7 +23,6 @@ zeroize_derive = { version = "1.3", path = "derive", optional = true }
 
 [features]
 default = ["alloc"]
-aarch64 = []
 alloc = []
 derive = ["zeroize_derive"]
 std = ["alloc"]

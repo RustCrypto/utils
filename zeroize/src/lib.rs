@@ -26,6 +26,7 @@
 //! - No FFI or inline assembly! **WASM friendly** (and tested)!
 //! - `#![no_std]` i.e. **embedded-friendly**!
 //! - No functionality besides securely zeroing memory!
+//! - Support for zeroing SIMD registers on `x86`, `x86_64`, `aarch64` and `wasm` targets!
 //! - (Optional) Custom derive support for zeroing complex structures
 //!
 //! ## Minimum Supported Rust Version
@@ -204,15 +205,10 @@
 //!
 //! <https://crates.io/crates/secrecy>
 //!
-//! ## What about: clearing registers, mlock, mprotect, etc?
+//! ## What about: mlock, mprotect, etc?
 //!
 //! This crate is focused on providing simple, unobtrusive support for reliably
 //! zeroing memory using the best approach possible on stable Rust.
-//!
-//! Clearing registers is a difficult problem that can't easily be solved by
-//! something like a crate, and requires either inline ASM or rustc support.
-//! See <https://github.com/rust-lang/rust/issues/17046> for background on
-//! this particular problem.
 //!
 //! Other memory protection mechanisms are interesting and useful, but often
 //! overkill (e.g. defending against RAM scraping or attackers with swap access).
@@ -241,7 +237,7 @@ extern crate std;
 #[cfg_attr(docsrs, doc(cfg(feature = "zeroize_derive")))]
 pub use zeroize_derive::{Zeroize, ZeroizeOnDrop};
 
-#[cfg(all(feature = "aarch64", target_arch = "aarch64"))]
+#[cfg(target_arch = "aarch64")]
 mod aarch64;
 #[cfg(all(target_arch = "wasm32", target_family = "wasm"))]
 mod wasm32;
