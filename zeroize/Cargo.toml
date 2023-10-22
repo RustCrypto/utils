@@ -15,7 +15,7 @@ readme = "README.md"
 categories = ["cryptography", "memory-management", "no-std", "os"]
 keywords = ["memory", "memset", "secure", "volatile", "zero"]
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.61"
 
 [dependencies]
 serde = { version = "1.0", default-features = false, optional = true }
