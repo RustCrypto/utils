@@ -2,6 +2,7 @@
 
 use crate::{atomic_fence, volatile_write, Zeroize};
 
+#[allow(clippy::wildcard_imports)]
 use core::arch::aarch64::*;
 
 macro_rules! impl_zeroize_for_simd_register {

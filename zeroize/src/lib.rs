@@ -227,6 +227,8 @@
 //! [good cryptographic hygiene]: https://github.com/veorq/cryptocoding#clean-memory-of-secret-data
 //! [`Ordering::SeqCst`]: core::sync::atomic::Ordering::SeqCst
 
+#![allow(clippy::inline_always)]
+
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
