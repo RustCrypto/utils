@@ -3,9 +3,11 @@
 use crate::{atomic_fence, volatile_write, Zeroize};
 
 #[cfg(target_arch = "x86")]
+#[allow(clippy::wildcard_imports)]
 use core::arch::x86::*;
 
 #[cfg(target_arch = "x86_64")]
+#[allow(clippy::wildcard_imports)]
 use core::arch::x86_64::*;
 
 macro_rules! impl_zeroize_for_simd_register {
