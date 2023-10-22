@@ -41,15 +41,13 @@
 //! ```
 //! use zeroize::Zeroize;
 //!
-//! fn main() {
-//!     // Protip: don't embed secrets in your source code.
-//!     // This is just an example.
-//!     let mut secret = b"Air shield password: 1,2,3,4,5".to_vec();
-//!     // [ ... ] open the air shield here
+//! // Protip: don't embed secrets in your source code.
+//! // This is just an example.
+//! let mut secret = b"Air shield password: 1,2,3,4,5".to_vec();
+//! // [ ... ] open the air shield here
 //!
-//!     // Now that we're done using the secret, zero it out.
-//!     secret.zeroize();
-//! }
+//! // Now that we're done using the secret, zero it out.
+//! secret.zeroize();
 //! ```
 //!
 //! The [`Zeroize`] trait is impl'd on all of Rust's core scalar types including
@@ -143,16 +141,14 @@
 //! ```
 //! use zeroize::Zeroizing;
 //!
-//! fn main() {
-//!     let mut secret = Zeroizing::new([0u8; 5]);
+//! let mut secret = Zeroizing::new([0u8; 5]);
 //!
-//!     // Set the air shield password
-//!     // Protip (again): don't embed secrets in your source code.
-//!     secret.copy_from_slice(&[1, 2, 3, 4, 5]);
-//!     assert_eq!(secret.as_ref(), &[1, 2, 3, 4, 5]);
+//! // Set the air shield password
+//! // Protip (again): don't embed secrets in your source code.
+//! secret.copy_from_slice(&[1, 2, 3, 4, 5]);
+//! assert_eq!(secret.as_ref(), &[1, 2, 3, 4, 5]);
 //!
-//!     // The contents of `secret` will be automatically zeroized on drop
-//! }
+//! // The contents of `secret` will be automatically zeroized on drop
 //! ```
 //!
 //! ## What guarantees does this crate provide?
