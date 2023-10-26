@@ -69,6 +69,7 @@ __expand_check_macro! {
     ("aes",    AES),    // Enable AES support.
     ("sha2",   SHA2),   // Enable SHA1 and SHA256 support.
     ("sha3",   SHA3),   // Enable SHA512 and SHA3 support.
+    ("sm4",    SM4),    // Enable SM3 and SM4 support.
 }
 
 /// Linux hardware capabilities mapped to target features.
@@ -85,6 +86,7 @@ pub mod hwcaps {
     pub const AES: c_ulong = libc::HWCAP_AES | libc::HWCAP_PMULL;
     pub const SHA2: c_ulong = libc::HWCAP_SHA2;
     pub const SHA3: c_ulong = libc::HWCAP_SHA3 | libc::HWCAP_SHA512;
+    pub const SM4: c_ulong = libc::HWCAP_SM3 | libc::HWCAP_SM4;
 }
 
 // Apple OS (macOS, iOS, watchOS, and tvOS) `check!` macro.
