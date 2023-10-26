@@ -18,6 +18,10 @@
 //! - `sha2`*
 //! - `sha3`*
 //!
+//! Linux only
+//!
+//! - `sm4`*
+//!
 //! ## `loongarch64`
 //!
 //! Linux only (LoongArch64 does not support OS-independent feature detection)
