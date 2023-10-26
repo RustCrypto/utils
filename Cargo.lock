@@ -95,7 +95,7 @@ version = "0.4.1"
 
 [[package]]
 name = "hybrid-array"
-version = "0.2.0-pre.4"
+version = "0.2.0-pre.5"
 dependencies = [
  "typenum",
 ]
