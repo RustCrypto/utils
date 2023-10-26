@@ -3,7 +3,7 @@ use crate::{
     InOut,
 };
 use core::{marker::PhantomData, slice};
-use generic_array::{ArrayLength, GenericArray};
+use hybrid_array::{Array, ArraySize};
 
 /// Custom slice type which references one immutable (input) slice and one
 /// mutable (output) slice of equal length. Input and output slices are
@@ -209,19 +209,16 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
 
     /// Partition buffer into 2 parts: buffer of arrays and tail.
     #[inline(always)]
-    pub fn into_chunks<N: ArrayLength<T>>(
+    pub fn into_chunks<N: ArraySize>(
         self,
-    ) -> (
-        InOutBuf<'inp, 'out, GenericArray<T, N>>,
-        InOutBuf<'inp, 'out, T>,
-    ) {
+    ) -> (InOutBuf<'inp, 'out, Array<T, N>>, InOutBuf<'inp, 'out, T>) {
         let chunks = self.len() / N::USIZE;
         let tail_pos = N::USIZE * chunks;
         let tail_len = self.len() - tail_pos;
         unsafe {
             let chunks = InOutBuf {
-                in_ptr: self.in_ptr as *const GenericArray<T, N>,
-                out_ptr: self.out_ptr as *mut GenericArray<T, N>,
+                in_ptr: self.in_ptr as *const Array<T, N>,
+                out_ptr: self.out_ptr as *mut Array<T, N>,
                 len: chunks,
                 _pd: PhantomData,
             };
@@ -256,14 +253,14 @@ impl<'inp, 'out> InOutBuf<'inp, 'out, u8> {
     }
 }
 
-impl<'inp, 'out, T, N> TryInto<InOut<'inp, 'out, GenericArray<T, N>>> for InOutBuf<'inp, 'out, T>
+impl<'inp, 'out, T, N> TryInto<InOut<'inp, 'out, Array<T, N>>> for InOutBuf<'inp, 'out, T>
 where
-    N: ArrayLength<T>,
+    N: ArraySize,
 {
     type Error = IntoArrayError;
 
     #[inline(always)]
-    fn try_into(self) -> Result<InOut<'inp, 'out, GenericArray<T, N>>, Self::Error> {
+    fn try_into(self) -> Result<InOut<'inp, 'out, Array<T, N>>, Self::Error> {
         if self.len() == N::USIZE {
             Ok(InOut {
                 in_ptr: self.in_ptr as *const _,

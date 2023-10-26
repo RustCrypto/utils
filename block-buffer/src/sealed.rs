@@ -1,5 +1,5 @@
+use crate::array::{Array, ArraySize};
 use core::slice;
-use generic_array::{ArrayLength, GenericArray};
 
 /// Sealed trait for buffer kinds.
 pub trait Sealed {
@@ -17,7 +17,7 @@ pub trait Sealed {
     fn invariant(pos: usize, block_size: usize) -> bool;
 
     /// Split input data into slice of blocks and tail.
-    fn split_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[GenericArray<u8, N>], &[u8]);
+    fn split_blocks<N: ArraySize>(data: &[u8]) -> (&[Array<u8, N>], &[u8]);
 }
 
 impl Sealed for super::Eager {
@@ -38,14 +38,14 @@ impl Sealed for super::Eager {
     }
 
     #[inline(always)]
-    fn split_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[GenericArray<u8, N>], &[u8]) {
+    fn split_blocks<N: ArraySize>(data: &[u8]) -> (&[Array<u8, N>], &[u8]) {
         let nb = data.len() / N::USIZE;
         let blocks_len = nb * N::USIZE;
         let tail_len = data.len() - blocks_len;
         // SAFETY: we guarantee that created slices do not point
         // outside of `data`
         unsafe {
-            let blocks_ptr = data.as_ptr() as *const GenericArray<u8, N>;
+            let blocks_ptr = data.as_ptr() as *const Array<u8, N>;
             let tail_ptr = data.as_ptr().add(blocks_len);
             (
                 slice::from_raw_parts(blocks_ptr, nb),
@@ -73,7 +73,7 @@ impl Sealed for super::Lazy {
     }
 
     #[inline(always)]
-    fn split_blocks<N: ArrayLength<u8>>(data: &[u8]) -> (&[GenericArray<u8, N>], &[u8]) {
+    fn split_blocks<N: ArraySize>(data: &[u8]) -> (&[Array<u8, N>], &[u8]) {
         if data.is_empty() {
             return (&[], &[]);
         }
@@ -87,7 +87,7 @@ impl Sealed for super::Lazy {
         // SAFETY: we guarantee that created slices do not point
         // outside of `data`
         unsafe {
-            let blocks_ptr = data.as_ptr() as *const GenericArray<u8, N>;
+            let blocks_ptr = data.as_ptr() as *const Array<u8, N>;
             let tail_ptr = data.as_ptr().add(blocks_len);
             (
                 slice::from_raw_parts(blocks_ptr, nb),

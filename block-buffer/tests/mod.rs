@@ -1,7 +1,7 @@
 use block_buffer::{
-    generic_array::{
+    array::{
         typenum::{U10, U16, U24, U4, U8},
-        GenericArray,
+        Array,
     },
     Block, EagerBuffer, LazyBuffer, ReadBuffer,
 };
@@ -203,17 +203,17 @@ fn test_eager_serialize() {
     assert_eq!(buf3.serialize(), ser3);
 
     // Invalid position
-    let buf = GenericArray::from_slice(&[0, 0, 0, 4]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[0, 0, 0, 10]);
-    assert!(Buf::deserialize(buf).is_err());
+    let buf = Array([0, 0, 0, 4]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([0, 0, 0, 10]);
+    assert!(Buf::deserialize(&buf).is_err());
     // "Garbage" bytes are not zeroized
-    let buf = GenericArray::from_slice(&[1, 0, 0, 0]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[0, 1, 0, 1]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[0, 0, 1, 2]);
-    assert!(Buf::deserialize(buf).is_err());
+    let buf = Array([1, 0, 0, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([0, 1, 0, 1]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([0, 0, 1, 2]);
+    assert!(Buf::deserialize(&buf).is_err());
 }
 
 #[test]
@@ -223,6 +223,7 @@ fn test_lazy_serialize() {
     let mut buf1 = Buf::default();
     let ser0 = buf1.serialize();
     assert_eq!(&ser0[..], &[0, 0, 0, 0, 0]);
+    Buf::deserialize(&ser0).unwrap();
     assert_eq!(Buf::deserialize(&ser0).unwrap().serialize(), ser0);
 
     buf1.digest_blocks(&[41, 42], |_| {});
@@ -262,19 +263,19 @@ fn test_lazy_serialize() {
     assert_eq!(buf3.serialize(), ser4);
 
     // Invalid position
-    let buf = GenericArray::from_slice(&[10, 0, 0, 0, 0]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[5, 0, 0, 0, 0]);
-    assert!(Buf::deserialize(buf).is_err());
+    let buf = Array([10, 0, 0, 0, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([5, 0, 0, 0, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
     // "Garbage" bytes are not zeroized
-    let buf = GenericArray::from_slice(&[0, 1, 0, 0, 0]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[1, 0, 1, 0, 0]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[2, 0, 0, 1, 0]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[3, 0, 0, 0, 1]);
-    assert!(Buf::deserialize(buf).is_err());
+    let buf = Array([0, 1, 0, 0, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([1, 0, 1, 0, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([2, 0, 0, 1, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([3, 0, 0, 0, 1]);
+    assert!(Buf::deserialize(&buf).is_err());
 }
 
 #[test]
@@ -332,17 +333,17 @@ fn test_read_serialize() {
     assert_eq!(&buf3.serialize()[..], &[1, 55, 56, 57]);
 
     // Invalid position
-    let buf = GenericArray::from_slice(&[0, 0, 0, 0]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[5, 0, 0, 0]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[10, 0, 0, 0]);
-    assert!(Buf::deserialize(buf).is_err());
+    let buf = Array([0, 0, 0, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([5, 0, 0, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([10, 0, 0, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
     // "Garbage" bytes are not zeroized
-    let buf = GenericArray::from_slice(&[2, 1, 0, 0]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[3, 0, 1, 0]);
-    assert!(Buf::deserialize(buf).is_err());
-    let buf = GenericArray::from_slice(&[4, 0, 0, 1]);
-    assert!(Buf::deserialize(buf).is_err());
+    let buf = Array([2, 1, 0, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([3, 0, 1, 0]);
+    assert!(Buf::deserialize(&buf).is_err());
+    let buf = Array([4, 0, 0, 1]);
+    assert!(Buf::deserialize(&buf).is_err());
 }
