@@ -605,13 +605,11 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
 /// # Safety
 ///
 /// `ArrayType` MUST be an array with a number of elements exactly equal to
-/// [`Unsigned::USIZE`].
+/// [`Unsigned::USIZE`]. Breaking this requirement will cause undefined behavior.
 ///
-/// Failure to so will cause undefined behavior.
-///
-/// NOTE: do not implement this trait yourself. It is implemented for types in
-/// [`typenum::consts`].
-pub unsafe trait ArraySize: Unsigned + 'static {
+/// NOTE: This trait is effectively sealed and can not be implemented by third-party crates.
+/// It is implemented only for a number of types defined in [`typenum::consts`].
+pub unsafe trait ArraySize: Unsigned {
     /// Array type which corresponds to this size.
     type ArrayType<T>: ArrayExt<T> + AsRef<[T]> + AsMut<[T]> + IntoArray<T> + IntoIterator<Item = T>;
 }
