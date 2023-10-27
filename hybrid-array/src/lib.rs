@@ -633,6 +633,9 @@ pub trait IntoArray<T> {
 #[allow(clippy::arithmetic_side_effects)]
 pub fn slice_as_chunks<T, N: ArraySize>(buf: &[T]) -> (&[Array<T, N>], &[T]) {
     assert!(N::USIZE != 0, "chunk size must be non-zero");
+    // Arithmetic safety: we have checked that `N::USIZE` is not zero, thus
+    // division always returns correct result. `tail_pos` can not be bigger than `buf.len()`,
+    // thus overflow on multiplication and underflow on substraction are impossible.
     let chunks_len = buf.len() / N::USIZE;
     let tail_pos = N::USIZE * chunks_len;
     let tail_len = buf.len() - tail_pos;
@@ -652,6 +655,9 @@ pub fn slice_as_chunks<T, N: ArraySize>(buf: &[T]) -> (&[Array<T, N>], &[T]) {
 #[allow(clippy::arithmetic_side_effects)]
 pub fn slice_as_chunks_mut<T, N: ArraySize>(buf: &mut [T]) -> (&mut [Array<T, N>], &mut [T]) {
     assert!(N::USIZE != 0, "chunk size must be non-zero");
+    // Arithmetic safety: we have checked that `N::USIZE` is not zero, thus
+    // division always returns correct result. `tail_pos` can not be bigger than `buf.len()`,
+    // thus overflow on multiplication and underflow on substraction are impossible.
     let chunks_len = buf.len() / N::USIZE;
     let tail_pos = N::USIZE * chunks_len;
     let tail_len = buf.len() - tail_pos;
