@@ -13,6 +13,7 @@
     clippy::cast_sign_loss,
     clippy::checked_conversions,
     clippy::implicit_saturating_sub,
+    clippy::arithmetic_side_effects,
     clippy::panic,
     clippy::panic_in_result_fn,
     clippy::unwrap_used,
@@ -629,6 +630,7 @@ pub trait IntoArray<T> {
 ///
 /// # Panics
 /// Panics if `N` is 0.
+#[allow(clippy::arithmetic_side_effects)]
 pub fn slice_as_chunks<T, N: ArraySize>(buf: &[T]) -> (&[Array<T, N>], &[T]) {
     assert!(N::USIZE != 0, "chunk size must be non-zero");
     let chunks_len = buf.len() / N::USIZE;
@@ -647,6 +649,7 @@ pub fn slice_as_chunks<T, N: ArraySize>(buf: &[T]) -> (&[Array<T, N>], &[T]) {
 ///
 /// # Panics
 /// Panics if `N` is 0.
+#[allow(clippy::arithmetic_side_effects)]
 pub fn slice_as_chunks_mut<T, N: ArraySize>(buf: &mut [T]) -> (&mut [Array<T, N>], &mut [T]) {
     assert!(N::USIZE != 0, "chunk size must be non-zero");
     let chunks_len = buf.len() / N::USIZE;
