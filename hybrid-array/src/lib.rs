@@ -35,9 +35,11 @@ use core::{
     mem::{ManuallyDrop, MaybeUninit},
     ops::{Add, Deref, DerefMut, Index, IndexMut, Range, Sub},
     ptr,
-    slice::{Iter, IterMut},
+    slice::{self, Iter, IterMut},
 };
 use typenum::{Diff, Sum, Unsigned};
+
+mod impls;
 
 /// Hybrid typenum-based and const generic array type.
 ///
@@ -623,223 +625,46 @@ pub trait IntoArray<T> {
     fn into_hybrid_array(self) -> Array<T, Self::Size>;
 }
 
-macro_rules! impl_array_size {
-    ($($len:expr => $ty:ident),+) => {
-        $(
-            impl<T> ArrayOps<T, $len> for Array<T, typenum::$ty> {
-                const SIZE: usize = $len;
-                type Size = typenum::$ty;
-
-                #[inline]
-                fn as_core_array(&self) -> &[T; $len] {
-                    &self.0
-                }
-
-                #[inline]
-                fn as_mut_core_array(&mut self) -> &mut [T; $len] {
-                    &mut self.0
-                }
-
-                #[inline]
-                fn from_core_array(arr: [T; $len]) -> Self {
-                    Self(arr)
-                }
-
-                #[inline]
-                fn ref_from_core_array(array_ref: &[T; $len]) -> &Self {
-                    // SAFETY: `Self` is a `repr(transparent)` newtype for `[T; $len]`
-                    unsafe { &*(array_ref.as_ptr() as *const Self) }
-                }
-
-                #[inline]
-                fn ref_from_mut_core_array(array_ref: &mut [T; $len]) -> &mut Self {
-                    // SAFETY: `Self` is a `repr(transparent)` newtype for `[T; $len]`
-                    unsafe { &mut *(array_ref.as_mut_ptr() as *mut Self) }
-                }
-
-                #[inline]
-                fn map_to_core_array<F, U>(self, f: F) -> [U; $len]
-                where
-                    F: FnMut(T) -> U
-                {
-                    self.0.map(f)
-                }
-            }
-
-            unsafe impl ArraySize for typenum::$ty {
-                type ArrayType<T> = [T; $len];
-            }
-
-            impl<T> From<Array<T, typenum::$ty>> for [T; $len] {
-                fn from(arr: Array<T, typenum::$ty>) -> [T; $len] {
-                    arr.0
-                }
-            }
-
-            impl<T> IntoArray<T> for [T; $len] {
-                type Size = typenum::$ty;
-
-                fn into_hybrid_array(self) -> Array<T, Self::Size> {
-                    Array::from_core_array(self)
-                }
-            }
-        )+
-     };
+/// Splits the shared slice into a slice of `N`-element arrays, starting at the beginning
+/// of the slice, and a remainder slice with length strictly less than `N`.
+///
+/// # Panics
+/// Panics if `N` is 0.
+#[allow(clippy::arithmetic_side_effects)]
+pub fn slice_as_chunks<T, N: ArraySize>(buf: &[T]) -> (&[Array<T, N>], &[T]) {
+    assert!(N::USIZE != 0, "chunk size must be non-zero");
+    // Arithmetic safety: we have checked that `N::USIZE` is not zero, thus
+    // division always returns correct result. `tail_pos` can not be bigger than `buf.len()`,
+    // thus overflow on multiplication and underflow on substraction are impossible.
+    let chunks_len = buf.len() / N::USIZE;
+    let tail_pos = N::USIZE * chunks_len;
+    let tail_len = buf.len() - tail_pos;
+    unsafe {
+        let ptr = buf.as_ptr();
+        let chunks = slice::from_raw_parts(ptr as *const Array<T, N>, chunks_len);
+        let tail = slice::from_raw_parts(ptr.add(tail_pos), tail_len);
+        (chunks, tail)
+    }
 }
 
-impl_array_size! {
-    0 => U0,
-    1 => U1,
-    2 => U2,
-    3 => U3,
-    4 => U4,
-    5 => U5,
-    6 => U6,
-    7 => U7,
-    8 => U8,
-    9 => U9,
-    10 => U10,
-    11 => U11,
-    12 => U12,
-    13 => U13,
-    14 => U14,
-    15 => U15,
-    16 => U16,
-    17 => U17,
-    18 => U18,
-    19 => U19,
-    20 => U20,
-    21 => U21,
-    22 => U22,
-    23 => U23,
-    24 => U24,
-    25 => U25,
-    26 => U26,
-    27 => U27,
-    28 => U28,
-    29 => U29,
-    30 => U30,
-    31 => U31,
-    32 => U32,
-    33 => U33,
-    34 => U34,
-    35 => U35,
-    36 => U36,
-    37 => U37,
-    38 => U38,
-    39 => U39,
-    40 => U40,
-    41 => U41,
-    42 => U42,
-    43 => U43,
-    44 => U44,
-    45 => U45,
-    46 => U46,
-    47 => U47,
-    48 => U48,
-    49 => U49,
-    50 => U50,
-    51 => U51,
-    52 => U52,
-    53 => U53,
-    54 => U54,
-    55 => U55,
-    56 => U56,
-    57 => U57,
-    58 => U58,
-    59 => U59,
-    60 => U60,
-    61 => U61,
-    62 => U62,
-    63 => U63,
-    64 => U64,
-    96 => U96,
-    128 => U128,
-    192 => U192,
-    256 => U256,
-    384 => U384,
-    448 => U448,
-    512 => U512,
-    768 => U768,
-    896 => U896,
-    1024 => U1024,
-    2048 => U2048,
-    4096 => U4096,
-    8192 => U8192
-}
-
-#[cfg(test)]
-mod tests {
-    use super::ByteArray;
-    use crate::Array;
-    use typenum::{U0, U2, U3, U4, U6, U7};
-
-    const EXAMPLE_SLICE: &[u8] = &[1, 2, 3, 4, 5, 6];
-
-    #[test]
-    fn clone_from_slice() {
-        let array = Array::<u8, U6>::clone_from_slice(EXAMPLE_SLICE);
-        assert_eq!(array.as_slice(), EXAMPLE_SLICE);
-    }
-
-    #[test]
-    fn tryfrom_slice_for_array() {
-        assert!(ByteArray::<U0>::try_from(EXAMPLE_SLICE).is_err());
-        assert!(ByteArray::<U3>::try_from(EXAMPLE_SLICE).is_err());
-
-        let array_ref = ByteArray::<U6>::try_from(EXAMPLE_SLICE).expect("slice contains 6 bytes");
-        assert_eq!(&*array_ref, EXAMPLE_SLICE);
-
-        assert!(ByteArray::<U7>::try_from(EXAMPLE_SLICE).is_err());
-    }
-
-    #[test]
-    fn tryfrom_slice_for_array_ref() {
-        assert!(<&ByteArray<U0>>::try_from(EXAMPLE_SLICE).is_err());
-        assert!(<&ByteArray::<U3>>::try_from(EXAMPLE_SLICE).is_err());
-
-        let array_ref = <&ByteArray<U6>>::try_from(EXAMPLE_SLICE).expect("slice contains 6 bytes");
-        assert_eq!(array_ref.as_slice(), EXAMPLE_SLICE);
-
-        assert!(<&ByteArray::<U7>>::try_from(EXAMPLE_SLICE).is_err());
-    }
-
-    #[test]
-    fn concat() {
-        let prefix = ByteArray::<U2>::clone_from_slice(&EXAMPLE_SLICE[..2]);
-        let suffix = ByteArray::<U4>::clone_from_slice(&EXAMPLE_SLICE[2..]);
-
-        let array = prefix.concat(suffix);
-        assert_eq!(array.as_slice(), EXAMPLE_SLICE);
-    }
-
-    #[test]
-    fn split() {
-        let array = ByteArray::<U6>::clone_from_slice(EXAMPLE_SLICE);
-
-        let (prefix, suffix) = array.split::<U2>();
-
-        assert_eq!(prefix.as_slice(), &EXAMPLE_SLICE[..2]);
-        assert_eq!(suffix.as_slice(), &EXAMPLE_SLICE[2..]);
-    }
-
-    #[test]
-    fn split_ref() {
-        let array = ByteArray::<U6>::clone_from_slice(EXAMPLE_SLICE);
-
-        let (prefix, suffix) = array.split_ref::<U3>();
-
-        assert_eq!(prefix.as_slice(), &EXAMPLE_SLICE[..3]);
-        assert_eq!(suffix.as_slice(), &EXAMPLE_SLICE[3..]);
-    }
-
-    #[test]
-    fn split_ref_mut() {
-        let array = &mut ByteArray::<U6>::clone_from_slice(EXAMPLE_SLICE);
-
-        let (prefix, suffix) = array.split_ref_mut::<U4>();
-
-        assert_eq!(prefix.as_slice(), &EXAMPLE_SLICE[..4]);
-        assert_eq!(suffix.as_slice(), &EXAMPLE_SLICE[4..]);
+/// Splits the exclusive slice into a slice of `N`-element arrays, starting at the beginning
+/// of the slice, and a remainder slice with length strictly less than `N`.
+///
+/// # Panics
+/// Panics if `N` is 0.
+#[allow(clippy::arithmetic_side_effects)]
+pub fn slice_as_chunks_mut<T, N: ArraySize>(buf: &mut [T]) -> (&mut [Array<T, N>], &mut [T]) {
+    assert!(N::USIZE != 0, "chunk size must be non-zero");
+    // Arithmetic safety: we have checked that `N::USIZE` is not zero, thus
+    // division always returns correct result. `tail_pos` can not be bigger than `buf.len()`,
+    // thus overflow on multiplication and underflow on substraction are impossible.
+    let chunks_len = buf.len() / N::USIZE;
+    let tail_pos = N::USIZE * chunks_len;
+    let tail_len = buf.len() - tail_pos;
+    unsafe {
+        let ptr = buf.as_mut_ptr();
+        let chunks = slice::from_raw_parts_mut(ptr as *mut Array<T, N>, chunks_len);
+        let tail = slice::from_raw_parts_mut(ptr.add(tail_pos), tail_len);
+        (chunks, tail)
     }
 }
