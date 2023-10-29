@@ -7,6 +7,8 @@ use crate::{atomic_fence, volatile_write, Zeroize};
 
 use core::arch::aarch64::*;
 
+use zerocopy::FromZeroes;
+
 macro_rules! impl_zeroize_for_simd_register {
     ($($type:ty),* $(,)?) => {
         $(
@@ -14,7 +16,7 @@ macro_rules! impl_zeroize_for_simd_register {
             impl Zeroize for $type {
                 #[inline]
                 fn zeroize(&mut self) {
-                    volatile_write(self, unsafe { core::mem::zeroed() });
+                    volatile_write(self, Self::new_zeroed());
                     atomic_fence();
                 }
             }

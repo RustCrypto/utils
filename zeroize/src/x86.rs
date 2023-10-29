@@ -8,6 +8,8 @@ use core::arch::x86::*;
 #[cfg(target_arch = "x86_64")]
 use core::arch::x86_64::*;
 
+use zerocopy::FromZeroes;
+
 macro_rules! impl_zeroize_for_simd_register {
     ($($type:ty),* $(,)?) => {
         $(
@@ -15,7 +17,7 @@ macro_rules! impl_zeroize_for_simd_register {
             impl Zeroize for $type {
                 #[inline]
                 fn zeroize(&mut self) {
-                    volatile_write(self, unsafe { core::mem::zeroed() });
+                    volatile_write(self, Self::new_zeroed());
                     atomic_fence();
                 }
             }
