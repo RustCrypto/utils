@@ -16,6 +16,7 @@ edition = "2021"
 rust-version = "1.56"
 
 [dependencies]
+prettyplease = "0.2.15"
 proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = ["extra-traits", "full"] }
