@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("#![doc = \" fiat-crypto output postprocessed by fiat-constify: <https://github.com/rustcrypto/utils>\"]");
+    println!("//! fiat-crypto output postprocessed by fiat-constify: <https://github.com/rustcrypto/utils>");
     println!("{}", prettyplease::unparse(&ast));
     Ok(())
 }
