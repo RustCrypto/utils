@@ -130,16 +130,18 @@ fn rewrite_fn_body(stmts: &[Stmt], outputs: &Outputs) -> Vec<Stmt> {
         if let Stmt::Expr(Expr::Assign(assignment), Some(_)) = stmt {
             let lhs_path = match assignment.left.as_ref() {
                 Expr::Unary(lhs) => {
-                    let Expr::Path(exprpath) = lhs.expr.as_ref() else {
-                        unreachable!()
-                    };
-                    Some(exprpath)
+                    if let Expr::Path(exprpath) = lhs.expr.as_ref() {
+                        Some(exprpath)
+                    } else {
+                        panic!("All unary exprpaths should have the LHS as the path");
+                    }
                 }
                 Expr::Index(lhs) => {
-                    let Expr::Path(exprpath) = lhs.expr.as_ref() else {
-                        unreachable!()
-                    };
-                    Some(exprpath)
+                    if let Expr::Path(exprpath) = lhs.expr.as_ref() {
+                        Some(exprpath)
+                    } else {
+                        panic!("All unary exprpaths should have the LHS as the path");
+                    }
                 }
                 Expr::Call(expr) => {
                     rewritten.push(Stmt::Local(rewrite_fn_call(expr.clone())));
@@ -163,12 +165,9 @@ fn rewrite_fn_body(stmts: &[Stmt], outputs: &Outputs) -> Vec<Stmt> {
     let mut asts = Vec::new();
     for (ident, ty) in outputs.ident_type_pairs() {
         let value = ident_assignments.get(ident).unwrap();
-        let type_prefix = if type_registry::type_to_ident(ty)
-            .is_some_and(|ident| outputs.type_registry().is_new_type(ident))
-        {
-            Some(ty)
-        } else {
-            None
+        let type_prefix = match type_registry::type_to_ident(ty) {
+            Some(ident) if outputs.type_registry().is_new_type(ident) => Some(ty),
+            _ => None,
         };
 
         let ast = match (type_prefix, value.len()) {
