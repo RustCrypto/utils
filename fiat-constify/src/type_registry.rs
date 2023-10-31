@@ -47,13 +47,9 @@ impl TypeRegistry {
         self.0.get(ident).copied()
     }
 
+    #[inline]
     pub fn is_new_type(&self, ident: &syn::Ident) -> bool {
-        let mut included = false;
-        if matches!(self.get(ident), Some(Type::NewType)) {
-            included = true;
-        }
-
-        included
+        matches!(self.get(ident), Some(Type::NewType))
     }
 }
 
