@@ -576,16 +576,22 @@ pub trait ArrayOps<T, const N: usize>:
 
 /// Extension trait with helper functions for core arrays.
 pub trait ArrayExt<T>: Sized {
-    /// Create array using the given callback function for each element.
-    fn from_fn<F>(cb: F) -> Self
-    where
-        F: FnMut(usize) -> T;
-
     /// Try to create an array using the given callback function for each element. Returns an error
     /// if any one of the calls errors
     fn try_from_fn<F, E>(cb: F) -> Result<Self, E>
     where
         F: FnMut(usize) -> Result<T, E>;
+
+    /// Create array using the given callback function for each element.
+    fn from_fn<F>(mut cb: F) -> Self
+    where
+        F: FnMut(usize) -> T,
+    {
+        // Turn the ordinary callback into a Result callback that always returns Ok
+        let wrapped_cb = |x| Result::<T, ::core::convert::Infallible>::Ok(cb(x));
+        // Now use the try_from version of this method
+        Self::try_from_fn(wrapped_cb).unwrap()
+    }
 
     /// Create array from a slice, returning [`TryFromSliceError`] if the slice
     /// length does not match the array length.
@@ -595,6 +601,9 @@ pub trait ArrayExt<T>: Sized {
 }
 
 impl<T, const N: usize> ArrayExt<T> for [T; N] {
+    // TODO: Eventually remove this and just use the default implementation. It's still
+    // here because the current Self::try_from_fn might be doing multiple passes over the data,
+    // depending on optimizations. Thus, this may be faster.
     fn from_fn<F>(mut cb: F) -> Self
     where
         F: FnMut(usize) -> T,
@@ -628,8 +637,8 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
                 Ok(val) => {
                     elem.write(val);
                 }
-                Err(e) => {
-                    err_info = Some((idx, e));
+                Err(err) => {
+                    err_info = Some((idx, err));
                 }
             }
         }
@@ -646,7 +655,7 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
         // If we've made it this far, all the elements have been written. Convert the uninitialized
         // array to an initialized array
         // TODO: Replace this map with MaybeUninit::array_assume_init() once it stabilizes
-        let arr = arr.map(|elem: MaybeUninit<T>| unsafe { elem.assume_init() });
+        let arr = arr.map(|v: MaybeUninit<T>| unsafe { v.assume_init() });
         Ok(arr)
     }
 
