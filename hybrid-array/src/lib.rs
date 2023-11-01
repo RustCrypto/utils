@@ -41,6 +41,9 @@ use typenum::{Diff, Sum, Unsigned};
 
 mod impls;
 
+#[cfg(feature = "serde")]
+mod impl_serde;
+
 /// Hybrid typenum-based and const generic array type.
 ///
 /// Provides the flexibility of typenum-based expressions while also
@@ -62,6 +65,14 @@ where
         F: FnMut(usize) -> T,
     {
         Self(ArrayExt::from_fn(cb))
+    }
+
+    /// Create array where each array element `T` is returned by the `cb` call.
+    pub fn try_from_fn<F, E>(cb: F) -> Result<Self, E>
+    where
+        F: FnMut(usize) -> Result<T, E>,
+    {
+        ArrayExt::try_from_fn(cb).map(Self)
     }
 
     /// Create array from a slice.
@@ -570,6 +581,12 @@ pub trait ArrayExt<T>: Sized {
     where
         F: FnMut(usize) -> T;
 
+    /// Try to create an array using the given callback function for each element. Returns an error
+    /// if any one of the calls errors
+    fn try_from_fn<F, E>(cb: F) -> Result<Self, E>
+    where
+        F: FnMut(usize) -> Result<T, E>;
+
     /// Create array from a slice, returning [`TryFromSliceError`] if the slice
     /// length does not match the array length.
     fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
@@ -589,6 +606,37 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
             idx = idx.saturating_add(1); // TODO(tarcieri): better overflow handling?
             res
         })
+    }
+
+    fn try_from_fn<F, E>(mut cb: F) -> Result<Self, E>
+    where
+        F: FnMut(usize) -> Result<T, E>,
+    {
+        // TODO: Replace this entire function with array::try_map once it stabilizes
+        // https://doc.rust-lang.org/std/primitive.array.html#method.try_map
+
+        // Make an uninitialized array. We will populate it element-by-element
+        let mut arr: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+
+        // Dropping a `MaybeUninit` does nothing, so if there is a panic during this loop,
+        // we have a memory leak, but there is no memory safety issue.
+        for (idx, elem) in arr.iter_mut().enumerate() {
+            // Run the callback. On success, write it to the array. On error, return immediately
+            match cb(idx) {
+                Ok(val) => {
+                    elem.write(val);
+                }
+                Err(e) => {
+                    return Err(e);
+                }
+            }
+        }
+
+        // If we've made it this far, all the elements have been written. Convert the uninitialized
+        // array to an initialized array
+        // TODO: Replace this map with MaybeUninit::array_assume_init() once it stabilizes
+        let arr = arr.map(|elem: MaybeUninit<T>| unsafe { elem.assume_init() });
+        Ok(arr)
     }
 
     fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
