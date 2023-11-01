@@ -74,7 +74,9 @@ where
         // If there's a value allegedly remaining, and deserializing it doesn't fail, then that's a
         // length mismatch error
         if seq.size_hint() != Some(0) && seq.next_element::<Dummy>()?.is_some() {
-            Err(de::Error::invalid_length(N::USIZE + 1, &self))
+            // The addition only saturates if this array is the size of all addressable memory. Not
+            // going to happen. And if it did, the only effect is an off-by-one error message
+            Err(de::Error::invalid_length(N::USIZE.saturating_add(1), &self))
         } else {
             arr
         }
