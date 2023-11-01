@@ -2,10 +2,12 @@
 // https://github.com/fizyk20/generic-array/blob/0e2a03714b05bb7a737a677f8df77d6360d19c99/src/impl_serde.rs
 
 use crate::{Array, ArraySize};
-use core::fmt;
-use core::marker::PhantomData;
-use serde::de::{self, SeqAccess, Visitor};
-use serde::{ser::SerializeTuple, Deserialize, Deserializer, Serialize, Serializer};
+use core::{fmt, marker::PhantomData};
+use serde::{
+    de::{self, SeqAccess, Visitor},
+    ser::SerializeTuple,
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 
 impl<T, N: ArraySize> Serialize for Array<T, N>
 where
@@ -25,7 +27,7 @@ where
     }
 }
 
-struct GAVisitor<T, N> {
+struct ArrayVisitor<T, N> {
     _t: PhantomData<T>,
     _n: PhantomData<N>,
 }
@@ -41,7 +43,7 @@ impl<'de> Deserialize<'de> for Dummy {
     }
 }
 
-impl<'de, T, N: ArraySize> Visitor<'de> for GAVisitor<T, N>
+impl<'de, T, N: ArraySize> Visitor<'de> for ArrayVisitor<T, N>
 where
     T: Deserialize<'de>,
 {
@@ -87,7 +89,7 @@ where
     where
         D: Deserializer<'de>,
     {
-        let visitor = GAVisitor {
+        let visitor = ArrayVisitor {
             _t: PhantomData,
             _n: PhantomData,
         };
