@@ -583,12 +583,13 @@ pub trait ArrayExt<T>: Sized {
         F: FnMut(usize) -> Result<T, E>;
 
     /// Create array using the given callback function for each element.
+    #[allow(clippy::unwrap_used)]
     fn from_fn<F>(mut cb: F) -> Self
     where
         F: FnMut(usize) -> T,
     {
         // Turn the ordinary callback into a Result callback that always returns Ok
-        let wrapped_cb = |x| Result::<T, ::core::convert::Infallible>::Ok(cb(x));
+        let wrapped_cb = |idx| Result::<_, ::core::convert::Infallible>::Ok(cb(idx));
         // Now use the try_from version of this method
         Self::try_from_fn(wrapped_cb).unwrap()
     }
