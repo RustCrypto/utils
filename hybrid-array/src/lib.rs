@@ -618,18 +618,29 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
         // Make an uninitialized array. We will populate it element-by-element
         let mut arr: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
 
-        // Dropping a `MaybeUninit` does nothing, so if there is a panic during this loop,
-        // we have a memory leak, but there is no memory safety issue.
+        // Run the callbacks. On success, write it to the array. On error, drop the values we've
+        // allocated already, then return the error. Note: dropping a `MaybeUninit` does nothing,
+        // so if there is a panic during this loop, we have a memory leak, but there is no memory
+        // safety issue.
+        let mut err_info = None;
         for (idx, elem) in arr.iter_mut().enumerate() {
-            // Run the callback. On success, write it to the array. On error, return immediately
             match cb(idx) {
                 Ok(val) => {
                     elem.write(val);
                 }
                 Err(e) => {
-                    return Err(e);
+                    err_info = Some((idx, e));
                 }
             }
+        }
+
+        // If an error occurred, go back and drop all the initialized values. Otherwise the values
+        // leak.
+        if let Some((err_idx, err)) = err_info {
+            arr.iter_mut()
+                .take(err_idx)
+                .for_each(|v| unsafe { v.assume_init_drop() });
+            return Err(err);
         }
 
         // If we've made it this far, all the elements have been written. Convert the uninitialized
