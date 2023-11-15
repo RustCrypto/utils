@@ -1,6 +1,6 @@
 [package]
 name = "zeroize"
-version = "1.6.0"
+version = "1.6.1"
 description = """
 Securely clear secrets from memory with a simple trait built on
 stable Rust primitives which guarantee memory is zeroed using an
