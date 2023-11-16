@@ -216,7 +216,7 @@ checksum = "2a0956f1ba7c7909bfb66c2e9e4124ab6f6482560f6628b5aaeba39207c9aad9"
 
 [[package]]
 name = "zeroize"
-version = "1.6.1"
+version = "1.7.0"
 dependencies = [
  "serde",
  "zeroize_derive",
