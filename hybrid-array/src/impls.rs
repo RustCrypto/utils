@@ -1,5 +1,5 @@
 use super::{Array, ArrayOps, ArraySize, IntoArray};
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 impl<T, U> Zeroize for Array<T, U>
 where
@@ -9,6 +9,13 @@ where
     fn zeroize(&mut self) {
         self.0.as_mut().iter_mut().zeroize()
     }
+}
+
+impl<T, U> ZeroizeOnDrop for Array<T, U>
+where
+    T: ZeroizeOnDrop,
+    U: ArraySize,
+{
 }
 
 macro_rules! impl_array_size {
