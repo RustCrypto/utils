@@ -1,6 +1,9 @@
 use super::{Array, ArrayOps, ArraySize, IntoArray};
+
+#[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
+#[cfg(feature = "zeroize")]
 impl<T, U> Zeroize for Array<T, U>
 where
     T: Zeroize,
@@ -11,6 +14,7 @@ where
     }
 }
 
+#[cfg(feature = "zeroize")]
 impl<T, U> ZeroizeOnDrop for Array<T, U>
 where
     T: ZeroizeOnDrop,
