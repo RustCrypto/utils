@@ -29,7 +29,7 @@ it possible to convert between const generic types and `typenum` types.
 
 This crate exposes the following feature flags. The default is NO features.
 
-* [`zeroize`] - Implements [`Zeroize`](https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html) for `Array<T: Zeroize, U>`
+* `zeroize` - Implements [`Zeroize`](https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html) for `Array<T: Zeroize, U>`
 
 ## License
 
