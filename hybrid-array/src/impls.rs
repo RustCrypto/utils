@@ -1,4 +1,15 @@
 use super::{Array, ArrayOps, ArraySize, IntoArray};
+use zeroize::Zeroize;
+
+impl<T, U> Zeroize for Array<T, U>
+where
+    T: Zeroize,
+    U: ArraySize,
+{
+    fn zeroize(&mut self) {
+        self.0.as_mut().iter_mut().zeroize()
+    }
+}
 
 macro_rules! impl_array_size {
     ($($len:expr => $ty:ident),+) => {
