@@ -25,6 +25,12 @@ possible with the stable implementation of const generics:
 Internally the crate is built on const generics and provides traits which make
 it possible to convert between const generic types and `typenum` types.
 
+## Features
+
+This crate exposes the following feature flags. The default is NO features.
+
+* `zeroize` - Implements [`Zeroize`](https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html) for `Array<T: Zeroize, U>`
+
 ## License
 
 Licensed under either of:

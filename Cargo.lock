@@ -85,6 +85,7 @@ name = "hybrid-array"
 version = "0.2.0-pre.5"
 dependencies = [
  "typenum",
+ "zeroize 1.7.0",
 ]
 
 [[package]]

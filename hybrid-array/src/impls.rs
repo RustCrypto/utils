@@ -1,5 +1,27 @@
 use super::{Array, ArrayOps, ArraySize, IntoArray};
 
+#[cfg(feature = "zeroize")]
+use zeroize::{Zeroize, ZeroizeOnDrop};
+
+#[cfg(feature = "zeroize")]
+impl<T, U> Zeroize for Array<T, U>
+where
+    T: Zeroize,
+    U: ArraySize,
+{
+    fn zeroize(&mut self) {
+        self.0.as_mut().iter_mut().zeroize()
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl<T, U> ZeroizeOnDrop for Array<T, U>
+where
+    T: ZeroizeOnDrop,
+    U: ArraySize,
+{
+}
+
 macro_rules! impl_array_size {
     ($($len:expr => $ty:ident),+) => {
         $(
