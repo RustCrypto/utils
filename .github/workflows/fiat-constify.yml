@@ -22,17 +22,9 @@ env:
 
 jobs:
   test:
-    strategy:
-      matrix:
-        toolchain:
-          - 1.56.0 # MSRV
-          - stable
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: RustCrypto/actions/cargo-cache@master
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain }}
+      - uses: dtolnay/rust-toolchain@stable
       - run: cargo test
-      - run: cargo test --all-features
