@@ -22,4 +22,3 @@ zeroize = { version = "1.7", path = "../zeroize", optional = true }
 
 [features]
 default = []
-zeroize = ["dep:zeroize"]
