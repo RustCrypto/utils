@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "algorithm-registry",
     "blobby",
     "block-buffer",
     "block-padding",
@@ -15,7 +16,7 @@ members = [
     "opaque-debug",
     "wycheproof2blb",
     "zeroize",
-    "zeroize/derive"
+    "zeroize/derive",
 ]
 
 [profile.dev]
