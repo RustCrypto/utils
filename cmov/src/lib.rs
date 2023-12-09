@@ -27,7 +27,7 @@ pub trait Cmov {
     ///
     /// Uses a `test` instruction to check if the given `condition` value is
     /// equal to zero, conditionally moves `value` to `self` when `condition` is
-    /// equal to zero.
+    /// not equal to zero.
     fn cmovnz(&mut self, value: &Self, condition: Condition);
 
     /// Move if zero.
