@@ -23,7 +23,7 @@ pub struct Outputs<'a> {
 impl<'a> Outputs<'a> {
     #[inline]
     /// Create new output storage.
-    pub fn new(type_registry: &'a TypeRegistry) -> Self {
+    pub const fn new(type_registry: &'a TypeRegistry) -> Self {
         Self {
             type_registry,
             outputs: Vec::new(),
@@ -31,24 +31,24 @@ impl<'a> Outputs<'a> {
     }
 
     #[inline]
-    pub fn type_registry(&self) -> &TypeRegistry {
+    pub const fn type_registry(&self) -> &TypeRegistry {
         self.type_registry
     }
 
     #[inline]
-    pub fn ident_type_pairs(&self) -> impl Iterator<Item = &(Ident, Type)> + ExactSizeIterator {
+    pub fn ident_type_pairs(&self) -> impl ExactSizeIterator<Item = &(Ident, Type)> {
         self.outputs.iter()
     }
 
     #[inline]
-    fn types(&self) -> impl Iterator<Item = &Type> + ExactSizeIterator {
+    fn types(&self) -> impl ExactSizeIterator<Item = &Type> {
         self.outputs.iter().map(|(_, ty)| ty)
     }
 
     /// Add an output variable with the given name and type.
     #[inline]
     pub fn add(&mut self, name: Ident, ty: Type) {
-        self.outputs.push((name.clone(), ty));
+        self.outputs.push((name, ty));
     }
 
     /// Finish annotating outputs, updating the provided `Signature`.

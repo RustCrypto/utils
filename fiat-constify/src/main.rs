@@ -9,14 +9,15 @@ mod outputs;
 mod type_registry;
 
 use outputs::Outputs;
-use quote::quote;
+use proc_macro2::{Punct, Spacing, Span};
+use quote::{quote, TokenStreamExt};
 use std::{collections::BTreeMap as Map, env, fs, ops::Deref};
 use syn::{
     parse_quote,
     punctuated::Punctuated,
     token::{Const, Eq, Let, Paren, Semi},
-    Expr, ExprCall, ExprPath, ExprReference, FnArg, Ident, Item, ItemFn, Local, LocalInit, Pat,
-    PatIdent, PatTuple, Path, Stmt, TypeReference,
+    Expr, ExprCall, ExprPath, ExprReference, Fields, FnArg, Ident, Item, ItemFn, Local, LocalInit,
+    Meta, Pat, PatIdent, PatTuple, Path, Stmt, TypeReference,
 };
 use type_registry::TypeRegistry;
 
@@ -44,14 +45,55 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut type_registry = TypeRegistry::new();
 
     // Iterate over functions, transforming them into `const fn`
+    let mut const_deref = Vec::new();
     for item in &mut ast.items {
         match item {
             Item::Fn(func) => rewrite_fn_as_const(func, &type_registry),
             Item::Type(ty) => type_registry.add_type_alias(ty),
-            Item::Struct(ty) => type_registry.add_new_type(ty),
+            Item::Struct(ty) => {
+                if let Some(derive) = ty
+                    .attrs
+                    .iter_mut()
+                    .find(|x| x.meta.path().is_ident("derive"))
+                {
+                    ["Debug", "PartialEq", "Eq", "PartialOrd", "Ord"]
+                        .iter()
+                        .for_each(|x| {
+                            if let Meta::List(derive_list) = &mut derive.meta {
+                                derive_list.tokens.append(Punct::new(',', Spacing::Alone));
+                                derive_list
+                                    .tokens
+                                    .append(proc_macro2::Ident::new(x, Span::call_site()));
+                            }
+                        });
+                }
+
+                let ident = &ty.ident;
+                if let Fields::Unnamed(unnamed) = &ty.fields {
+                    if let Some(unit) = unnamed.unnamed.first() {
+                        let unit_ty = &unit.ty;
+                        const_deref.push(parse_quote! {
+                            impl #ident {
+                                #[inline]
+                                pub const fn as_inner(&self) -> &#unit_ty {
+                                    &self.0
+                                }
+
+                                #[inline]
+                                pub const fn into_inner(self) -> #unit_ty {
+                                    self.0
+                                }
+                            }
+                        });
+                    }
+                }
+
+                type_registry.add_new_type(ty)
+            }
             _ => (),
         }
     }
+    ast.items.extend_from_slice(&const_deref);
 
     println!("//! fiat-crypto output postprocessed by fiat-constify: <https://github.com/rustcrypto/utils>");
     println!("{}", prettyplease::unparse(&ast));
@@ -100,7 +142,7 @@ fn rewrite_fn_as_const(func: &mut ItemFn, type_registry: &TypeRegistry) {
                     let ident = get_ident_from_pat(&t.pat);
                     if outputs.type_registry().is_new_type(ty) {
                         stmts.push(parse_quote! {
-                            let #ident = &#ident.0;
+                            let #ident = #ident.as_inner();
                         });
                     }
                 }

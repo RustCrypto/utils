@@ -3,7 +3,7 @@
 //!
 use std::collections::BTreeMap as Map;
 use syn::{Ident, ItemStruct, ItemType, Path};
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Type {
     Alias,
     NewType,
@@ -14,7 +14,7 @@ pub struct TypeRegistry(Map<Ident, Type>);
 
 impl TypeRegistry {
     /// Create a new type registry.
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self(Map::new())
     }
 
