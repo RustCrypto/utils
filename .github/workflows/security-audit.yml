@@ -9,8 +9,15 @@ on:
   schedule:
     - cron: "0 0 * * *"
 
+permissions:  # added using https://github.com/step-security/secure-repo
+  contents: read
+
 jobs:
   security_audit:
+    permissions:
+      checks: write  # for actions-rs/audit-check to create check
+      contents: read  # for actions/checkout to fetch code
+      issues: write  # for actions-rs/audit-check to create issues
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
