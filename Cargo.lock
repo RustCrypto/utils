@@ -101,7 +101,7 @@ dependencies = [
 
 [[package]]
 name = "inout"
-version = "0.2.0-pre"
+version = "0.2.0-pre.1"
 dependencies = [
  "block-padding",
  "hybrid-array 0.2.0-pre.6 (registry+https://github.com/rust-lang/crates.io-index)",

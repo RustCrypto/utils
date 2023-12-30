@@ -1,6 +1,6 @@
 [package]
 name = "inout"
-version = "0.2.0-pre"
+version = "0.2.0-pre.1"
 description = "Custom reference types for code generic over in-place and buffer-to-buffer modes of operation."
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -9,6 +9,7 @@ rust-version = "1.56"
 documentation = "https://docs.rs/inout"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["custom-reference"]
+readme = "README.md"
 
 [dependencies]
 block-padding = { version = "=0.4.0-pre.1", path = "../block-padding", optional = true }
