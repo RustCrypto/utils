@@ -1,4 +1,4 @@
-use super::{Array, ArrayOps, ArraySize, IntoArray};
+use super::{Array, ArrayOps, ArraySize, AssociatedArraySize};
 
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -27,7 +27,6 @@ macro_rules! impl_array_size {
         $(
             impl<T> ArrayOps<T, $len> for Array<T, typenum::$ty> {
                 const SIZE: usize = $len;
-                type Size = typenum::$ty;
 
                 #[inline]
                 fn as_core_array(&self) -> &[T; $len] {
@@ -69,17 +68,17 @@ macro_rules! impl_array_size {
                 type ArrayType<T> = [T; $len];
             }
 
+            impl<T> AssociatedArraySize for [T; $len] {
+                type Size = typenum::$ty;
+            }
+
+            impl<T> AssociatedArraySize for Array<T, typenum::$ty> {
+                type Size = typenum::$ty;
+            }
+
             impl<T> From<Array<T, typenum::$ty>> for [T; $len] {
                 fn from(arr: Array<T, typenum::$ty>) -> [T; $len] {
                     arr.0
-                }
-            }
-
-            impl<T> IntoArray<T> for [T; $len] {
-                type Size = typenum::$ty;
-
-                fn into_hybrid_array(self) -> Array<T, Self::Size> {
-                    Array::from_core_array(self)
                 }
             }
         )+
@@ -169,10 +168,9 @@ impl_array_size! {
 
 impl<T, const N: usize> ArrayOps<T, N> for [T; N]
 where
-    Self: IntoArray<T>,
+    Self: AssociatedArraySize,
 {
     const SIZE: usize = N;
-    type Size = <Self as IntoArray<T>>::Size;
 
     #[inline]
     fn as_core_array(&self) -> &[T; N] {
