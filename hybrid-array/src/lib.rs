@@ -648,7 +648,11 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
 /// It is implemented only for a number of types defined in [`typenum::consts`].
 pub unsafe trait ArraySize: Unsigned {
     /// Array type which corresponds to this size.
-    type ArrayType<T>: ArrayExt<T> + Into<Array<T, Self>> + IntoIterator<Item = T> + SliceOps<T>;
+    type ArrayType<T>: ArrayExt<T>
+        + From<Array<T, Self>>
+        + Into<Array<T, Self>>
+        + IntoIterator<Item = T>
+        + SliceOps<T>;
 }
 
 /// Associates an [`ArraySize`] with a given type.
