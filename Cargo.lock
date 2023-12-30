@@ -22,7 +22,7 @@ dependencies = [
 name = "block-padding"
 version = "0.4.0-pre"
 dependencies = [
- "hybrid-array 0.2.0-pre.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hybrid-array 0.2.0-pre.5",
 ]
 
 [[package]]
@@ -45,14 +45,14 @@ name = "crypto-common"
 version = "0.2.0-pre"
 source = "git+https://github.com/RustCrypto/traits#766c138c2671329bc7bd89a40981027659b016c9"
 dependencies = [
- "hybrid-array 0.2.0-pre.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hybrid-array 0.2.0-pre.5",
 ]
 
 [[package]]
 name = "dbl"
 version = "0.4.0-pre"
 dependencies = [
- "hybrid-array 0.2.0-pre.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hybrid-array 0.2.0-pre.5",
 ]
 
 [[package]]
@@ -84,14 +84,6 @@ version = "0.4.1"
 [[package]]
 name = "hybrid-array"
 version = "0.2.0-pre.5"
-dependencies = [
- "typenum",
- "zeroize 1.7.0",
-]
-
-[[package]]
-name = "hybrid-array"
-version = "0.2.0-pre.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "431615b6a66a159a76ac38f4b0bcbd5999433d08425d79e152438e3ab9f1013c"
 dependencies = [
@@ -99,11 +91,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "hybrid-array"
+version = "0.2.0-pre.6"
+dependencies = [
+ "typenum",
+ "zeroize 1.7.0",
+]
+
+[[package]]
 name = "inout"
 version = "0.2.0-pre"
 dependencies = [
  "block-padding",
- "hybrid-array 0.2.0-pre.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hybrid-array 0.2.0-pre.5",
 ]
 
 [[package]]
