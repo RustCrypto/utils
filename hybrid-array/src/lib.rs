@@ -204,6 +204,16 @@ where
     }
 }
 
+impl<T, U> AsRef<[T]> for Array<T, U>
+where
+    U: ArraySize,
+{
+    #[inline]
+    fn as_ref(&self) -> &[T] {
+        self.0.as_ref()
+    }
+}
+
 impl<T, U, const N: usize> AsRef<[T; N]> for Array<T, U>
 where
     Self: ArrayOps<T, N>,
@@ -212,6 +222,16 @@ where
     #[inline]
     fn as_ref(&self) -> &[T; N] {
         self.as_core_array()
+    }
+}
+
+impl<T, U> AsMut<[T]> for Array<T, U>
+where
+    U: ArraySize,
+{
+    #[inline]
+    fn as_mut(&mut self) -> &mut [T] {
+        self.0.as_mut()
     }
 }
 
@@ -516,8 +536,8 @@ fn check_slice_length<T, U: ArraySize>(slice: &[T]) -> Result<(), TryFromSliceEr
 
 /// Array operations which are const generic over a given array size.
 pub trait ArrayOps<T, const N: usize>:
-    AsRef<[T; N]>
-    + AsMut<[T; N]>
+    AsRef<[T]>
+    + AsMut<[T]>
     + Borrow<[T; N]>
     + BorrowMut<[T; N]>
     + From<[T; N]>
@@ -525,6 +545,7 @@ pub trait ArrayOps<T, const N: usize>:
     + Index<Range<usize>>
     + IndexMut<usize>
     + IndexMut<Range<usize>>
+    + Into<[T; N]>
     + IntoIterator
     + Sized
 {
