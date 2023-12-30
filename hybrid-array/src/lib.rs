@@ -61,7 +61,7 @@ where
     where
         F: FnMut(usize) -> T,
     {
-        Self(ArrayExt::from_fn(cb))
+        Self(FromFn::from_fn(cb))
     }
 
     /// Create array from a slice.
@@ -276,7 +276,7 @@ where
     U: ArraySize,
 {
     fn clone(&self) -> Self {
-        Self(U::ArrayType::<T>::from_fn(|n| self.0.as_ref()[n].clone()))
+        Self::from_fn(|n| self.0.as_ref()[n].clone())
     }
 }
 
@@ -304,7 +304,7 @@ where
     U: ArraySize,
 {
     fn default() -> Self {
-        Self(ArrayExt::from_fn(|_| Default::default()))
+        Self::from_fn(|_| Default::default())
     }
 }
 
@@ -603,29 +603,6 @@ impl<T> SliceOps<T> for [T] {}
 impl<T, const N: usize> SliceOps<T> for [T; N] {}
 impl<T, U: ArraySize> SliceOps<T> for Array<T, U> {}
 
-/// Extension trait with helper functions for core arrays.
-pub trait ArrayExt<T>: Sized {
-    /// Create array using the given callback function for each element.
-    fn from_fn<F>(cb: F) -> Self
-    where
-        F: FnMut(usize) -> T;
-}
-
-impl<T, const N: usize> ArrayExt<T> for [T; N] {
-    fn from_fn<F>(mut cb: F) -> Self
-    where
-        F: FnMut(usize) -> T,
-    {
-        let mut idx = 0;
-
-        [(); N].map(|_| {
-            let res = cb(idx);
-            idx = idx.saturating_add(1); // TODO(tarcieri): better overflow handling?
-            res
-        })
-    }
-}
-
 /// Trait which associates a [`usize`] size and `ArrayType` with a
 /// `typenum`-provided [`Unsigned`] integer.
 ///
@@ -638,7 +615,8 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
 /// It is implemented only for a number of types defined in [`typenum::consts`].
 pub unsafe trait ArraySize: Unsigned {
     /// Array type which corresponds to this size.
-    type ArrayType<T>: ArrayExt<T>
+    type ArrayType<T>: AssociatedArraySize<Size = Self>
+        + FromFn<T>
         + From<Array<T, Self>>
         + Into<Array<T, Self>>
         + IntoIterator<Item = T>
@@ -649,6 +627,35 @@ pub unsafe trait ArraySize: Unsigned {
 pub trait AssociatedArraySize: Sized {
     /// Size of an array type, expressed as a [`typenum`]-based [`ArraySize`].
     type Size: ArraySize;
+}
+
+/// Construct an array type from the given function.
+pub trait FromFn<T>: Sized {
+    /// Create array using the given callback function for each element.
+    fn from_fn<F>(cb: F) -> Self
+    where
+        F: FnMut(usize) -> T;
+}
+
+impl<T, U> FromFn<T> for Array<T, U>
+where
+    U: ArraySize,
+{
+    fn from_fn<F>(cb: F) -> Self
+    where
+        F: FnMut(usize) -> T,
+    {
+        Array::from_fn(cb)
+    }
+}
+
+impl<T, const N: usize> FromFn<T> for [T; N] {
+    fn from_fn<F>(cb: F) -> Self
+    where
+        F: FnMut(usize) -> T,
+    {
+        core::array::from_fn(cb)
+    }
 }
 
 /// Splits the shared slice into a slice of `N`-element arrays, starting at the beginning
