@@ -65,11 +65,13 @@ where
     }
 
     /// Create array from a slice.
+    // TODO(tarcieri): deprecate this before the v0.2 release
+    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
     pub fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
     where
         T: Copy,
     {
-        ArrayExt::from_slice(slice).map(Self)
+        slice.try_into()
     }
 
     /// Returns an iterator over the array.
@@ -482,7 +484,8 @@ where
 
     #[inline]
     fn try_from(slice: &'a [T]) -> Result<Array<T, U>, TryFromSliceError> {
-        ArrayExt::from_slice(slice).map(Self)
+        check_slice_length::<T, U>(slice)?;
+        Ok(Self::from_fn(|n| slice[n]))
     }
 }
 
@@ -606,12 +609,6 @@ pub trait ArrayExt<T>: Sized {
     fn from_fn<F>(cb: F) -> Self
     where
         F: FnMut(usize) -> T;
-
-    /// Create array from a slice, returning [`TryFromSliceError`] if the slice
-    /// length does not match the array length.
-    fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
-    where
-        T: Copy;
 }
 
 impl<T, const N: usize> ArrayExt<T> for [T; N] {
@@ -626,13 +623,6 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
             idx = idx.saturating_add(1); // TODO(tarcieri): better overflow handling?
             res
         })
-    }
-
-    fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
-    where
-        T: Copy,
-    {
-        slice.try_into()
     }
 }
 
