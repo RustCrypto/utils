@@ -166,3 +166,44 @@ impl_array_size! {
     4096 => U4096,
     8192 => U8192
 }
+
+impl<T, const N: usize> ArrayOps<T, N> for [T; N]
+where
+    Self: IntoArray<T>,
+{
+    const SIZE: usize = N;
+    type Size = <Self as IntoArray<T>>::Size;
+
+    #[inline]
+    fn as_core_array(&self) -> &[T; N] {
+        self
+    }
+
+    #[inline]
+    fn as_mut_core_array(&mut self) -> &mut [T; N] {
+        self
+    }
+
+    #[inline]
+    fn from_core_array(arr: [T; N]) -> Self {
+        arr
+    }
+
+    #[inline]
+    fn ref_from_core_array(array_ref: &[T; N]) -> &Self {
+        array_ref
+    }
+
+    #[inline]
+    fn ref_from_mut_core_array(array_ref: &mut [T; N]) -> &mut Self {
+        array_ref
+    }
+
+    #[inline]
+    fn map_to_core_array<F, U>(self, f: F) -> [U; N]
+    where
+        F: FnMut(T) -> U,
+    {
+        self.map(f)
+    }
+}
