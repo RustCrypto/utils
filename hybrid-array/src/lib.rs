@@ -536,18 +536,13 @@ fn check_slice_length<T, U: ArraySize>(slice: &[T]) -> Result<(), TryFromSliceEr
 
 /// Array operations which are const generic over a given array size.
 pub trait ArrayOps<T, const N: usize>:
-    AsRef<[T]>
-    + AsMut<[T]>
-    + Borrow<[T; N]>
+    Borrow<[T; N]>
     + BorrowMut<[T; N]>
     + From<[T; N]>
-    + Index<usize>
-    + Index<Range<usize>>
-    + IndexMut<usize>
-    + IndexMut<Range<usize>>
     + Into<[T; N]>
-    + IntoIterator
+    + IntoIterator<Item = T>
     + Sized
+    + SliceOps<T>
 {
     /// Size of an array as a `usize`.
     ///
@@ -580,6 +575,21 @@ pub trait ArrayOps<T, const N: usize>:
     where
         F: FnMut(T) -> U;
 }
+
+/// Slice operations which don't have access to a const generic array size.
+pub trait SliceOps<T>:
+    AsRef<[T]>
+    + AsMut<[T]>
+    + Index<usize>
+    + Index<Range<usize>>
+    + IndexMut<usize>
+    + IndexMut<Range<usize>>
+{
+}
+
+impl<T> SliceOps<T> for [T] {}
+impl<T, const N: usize> SliceOps<T> for [T; N] {}
+impl<T, U: ArraySize> SliceOps<T> for Array<T, U> {}
 
 /// Extension trait with helper functions for core arrays.
 pub trait ArrayExt<T>: Sized {
@@ -629,7 +639,7 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
 /// It is implemented only for a number of types defined in [`typenum::consts`].
 pub unsafe trait ArraySize: Unsigned {
     /// Array type which corresponds to this size.
-    type ArrayType<T>: ArrayExt<T> + AsRef<[T]> + AsMut<[T]> + IntoArray<T> + IntoIterator<Item = T>;
+    type ArrayType<T>: ArrayExt<T> + IntoArray<T> + IntoIterator<Item = T> + SliceOps<T>;
 }
 
 /// Convert the given type into an [`Array`].
