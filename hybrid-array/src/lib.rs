@@ -585,6 +585,19 @@ pub trait SliceOps<T>:
     + IndexMut<usize>
     + IndexMut<Range<usize>>
 {
+    /// Splits the shared slice into a slice of `N`-element arrays.
+    ///
+    /// See [`slice_as_chunks`] for more information.
+    fn as_array_chunks<N: ArraySize>(&self) -> (&[Array<T, N>], &[T]) {
+        slice_as_chunks(self.as_ref())
+    }
+
+    /// Splits the exclusive slice into a slice of `N`-element arrays.
+    ///
+    /// See [`slice_as_chunks_mut`] for more information.
+    fn as_array_chunks_mut<N: ArraySize>(&mut self) -> (&mut [Array<T, N>], &mut [T]) {
+        slice_as_chunks_mut(self.as_mut())
+    }
 }
 
 impl<T> SliceOps<T> for [T] {}
