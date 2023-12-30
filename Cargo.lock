@@ -51,7 +51,7 @@ dependencies = [
 
 [[package]]
 name = "dbl"
-version = "0.4.0-pre"
+version = "0.4.0-pre.1"
 dependencies = [
  "hybrid-array 0.2.0-pre.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
