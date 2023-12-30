@@ -1,14 +1,15 @@
 [package]
 name = "dbl"
-version = "0.4.0-pre"
+version = "0.4.0-pre.1"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
-description = "Double operation in Galois Field (GF)"
+description = "Double operation in Galois Field GF(2^128) as used by e.g. CMAC/PMAC"
 documentation = "https://docs.rs/dbl"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["crypto", "dbl", "gf", "galois"]
 edition = "2021"
 rust-version = "1.65"
+readme = "README.md"
 
 [dependencies]
 hybrid-array = "=0.2.0-pre.6"
