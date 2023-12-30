@@ -59,6 +59,7 @@ dependencies = [
 name = "fiat-constify"
 version = "0.0.0"
 dependencies = [
+ "prettyplease",
  "proc-macro2",
  "quote",
  "syn",
@@ -120,6 +121,16 @@ checksum = "a08173bc88b7955d1b3145aa561539096c421ac8debde8cbc3612ec635fee29b"
 [[package]]
 name = "opaque-debug"
 version = "0.3.0"
+
+[[package]]
+name = "prettyplease"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae005bd773ab59b4725093fd7df83fd7892f7d8eafb48dbd7de6e024e4215f9d"
+dependencies = [
+ "proc-macro2",
+ "syn",
+]
 
 [[package]]
 name = "proc-macro2"

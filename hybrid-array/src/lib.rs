@@ -514,9 +514,6 @@ fn check_slice_length<T, U: ArraySize>(slice: &[T]) -> Result<(), TryFromSliceEr
     Ok(())
 }
 
-/// Byte array type.
-pub type ByteArray<U> = Array<u8, U>;
-
 /// Array operations which are const generic over a given array size.
 pub trait ArrayOps<T, const N: usize>:
     AsRef<[T; N]>
