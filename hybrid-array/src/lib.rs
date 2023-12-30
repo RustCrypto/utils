@@ -536,7 +536,8 @@ fn check_slice_length<T, U: ArraySize>(slice: &[T]) -> Result<(), TryFromSliceEr
 
 /// Array operations which are const generic over a given array size.
 pub trait ArrayOps<T, const N: usize>:
-    Borrow<[T; N]>
+    AssociatedArraySize
+    + Borrow<[T; N]>
     + BorrowMut<[T; N]>
     + From<[T; N]>
     + Into<[T; N]>
@@ -546,13 +547,8 @@ pub trait ArrayOps<T, const N: usize>:
 {
     /// Size of an array as a `usize`.
     ///
-    /// Not to be confused with [`ArrayOps::Size`], which is `typenum`-based.
+    /// Not to be confused with [`AssociatedArraySize::Size`], which is [`typenum`]-based.
     const SIZE: usize;
-
-    /// [`ArraySize`] type: `typenum`-provided [`Unsigned`] integer.
-    ///
-    /// Not to be confused with [`ArrayOps::SIZE`], which is a `usize`.
-    type Size: ArraySize;
 
     /// Returns a reference to the inner array.
     fn as_core_array(&self) -> &[T; N];
@@ -652,16 +648,13 @@ impl<T, const N: usize> ArrayExt<T> for [T; N] {
 /// It is implemented only for a number of types defined in [`typenum::consts`].
 pub unsafe trait ArraySize: Unsigned {
     /// Array type which corresponds to this size.
-    type ArrayType<T>: ArrayExt<T> + IntoArray<T> + IntoIterator<Item = T> + SliceOps<T>;
+    type ArrayType<T>: ArrayExt<T> + Into<Array<T, Self>> + IntoIterator<Item = T> + SliceOps<T>;
 }
 
-/// Convert the given type into an [`Array`].
-pub trait IntoArray<T> {
-    /// Size of the [`Array`].
+/// Associates an [`ArraySize`] with a given type.
+pub trait AssociatedArraySize: Sized {
+    /// Size of an array type, expressed as a [`typenum`]-based [`ArraySize`].
     type Size: ArraySize;
-
-    /// Convert into the `hybrid-array` crate's [`Array`] type.
-    fn into_hybrid_array(self) -> Array<T, Self::Size>;
 }
 
 /// Splits the shared slice into a slice of `N`-element arrays, starting at the beginning
