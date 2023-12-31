@@ -3,7 +3,6 @@
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
 [![Build Status][build-image]][build-link]
-[![Safety Dance][safety-image]][safety-link]
 ![Apache2/MIT licensed][license-image]
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
@@ -54,8 +53,6 @@ dual licensed as above, without any additional terms or conditions.
 [docs-link]: https://docs.rs/hybrid-array/
 [build-image]: https://github.com/RustCrypto/utils/workflows/hybrid-array/badge.svg
 [build-link]: https://github.com/RustCrypto/utils/actions/workflows/hybrid-array.yml
-[safety-image]: https://img.shields.io/badge/unsafe-forbidden-success.svg
-[safety-link]: https://github.com/rust-secure-code/safety-dance/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.65+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
