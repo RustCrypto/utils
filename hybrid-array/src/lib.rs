@@ -67,16 +67,6 @@ where
         Self(FromFn::from_fn(cb))
     }
 
-    /// Create array from a slice.
-    // TODO(tarcieri): deprecate this before the v0.2 release
-    // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
-    pub fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
-    where
-        Self: Copy,
-    {
-        slice.try_into()
-    }
-
     /// Returns an iterator over the array.
     #[inline]
     pub fn iter(&self) -> Iter<'_, T> {
