@@ -212,6 +212,17 @@ where
     }
 }
 
+impl<T, U, const N: usize> AsRef<[T; N]> for Array<T, U>
+where
+    Self: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn as_ref(&self) -> &[T; N] {
+        self.as_core_array()
+    }
+}
+
 impl<T, U> AsMut<[T]> for Array<T, U>
 where
     U: ArraySize,
@@ -219,6 +230,17 @@ where
     #[inline]
     fn as_mut(&mut self) -> &mut [T] {
         self.0.as_mut()
+    }
+}
+
+impl<T, U, const N: usize> AsMut<[T; N]> for Array<T, U>
+where
+    Self: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn as_mut(&mut self) -> &mut [T; N] {
+        self.as_mut_core_array()
     }
 }
 
