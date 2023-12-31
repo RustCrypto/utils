@@ -250,6 +250,16 @@ where
     }
 }
 
+impl<T, U> Borrow<[T]> for Array<T, U>
+where
+    U: ArraySize,
+{
+    #[inline]
+    fn borrow(&self) -> &[T] {
+        self.0.as_ref()
+    }
+}
+
 impl<T, U, const N: usize> Borrow<[T; N]> for Array<T, U>
 where
     Self: ArrayOps<T, N>,
@@ -258,6 +268,16 @@ where
     #[inline]
     fn borrow(&self) -> &[T; N] {
         self.as_core_array()
+    }
+}
+
+impl<T, U> BorrowMut<[T]> for Array<T, U>
+where
+    U: ArraySize,
+{
+    #[inline]
+    fn borrow_mut(&mut self) -> &mut [T] {
+        self.0.as_mut()
     }
 }
 
@@ -633,6 +653,8 @@ impl<T, const N: usize> ArrayOps<T, N> for [T; N] {
 pub trait SliceOps<T>:
     AsRef<[T]>
     + AsMut<[T]>
+    + Borrow<[T]>
+    + BorrowMut<[T]>
     + Index<usize>
     + Index<Range<usize>>
     + IndexMut<usize>
