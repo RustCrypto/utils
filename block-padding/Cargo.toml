@@ -13,7 +13,7 @@ categories = ["cryptography", "no-std"]
 readme = "README.md"
 
 [dependencies]
-hybrid-array = "=0.2.0-pre.6"
+hybrid-array = "=0.2.0-pre.7"
 
 [features]
 std = []
