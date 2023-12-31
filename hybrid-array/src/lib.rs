@@ -102,7 +102,10 @@ where
     // TODO(tarcieri): deprecate this before the v0.2 release
     // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
     #[inline]
-    pub fn ref_from_slice(slice: &[T]) -> &Self {
+    pub fn ref_from_slice<'a>(slice: &'a [T]) -> &'a Self
+    where
+        &'a Self: TryFrom<&'a [T], Error = TryFromSliceError>,
+    {
         slice.try_into().expect("slice length mismatch")
     }
 
@@ -114,7 +117,10 @@ where
     // TODO(tarcieri): deprecate this before the v0.2 release
     // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
     #[inline]
-    pub fn ref_from_mut_slice(slice: &mut [T]) -> &mut Self {
+    pub fn ref_from_mut_slice<'a>(slice: &'a mut [T]) -> &'a mut Self
+    where
+        &'a mut Self: TryFrom<&'a mut [T], Error = TryFromSliceError>,
+    {
         slice.try_into().expect("slice length mismatch")
     }
 
@@ -128,9 +134,9 @@ where
     #[inline]
     pub fn clone_from_slice(slice: &[T]) -> Self
     where
-        Self: Clone,
+        T: Clone,
     {
-        slice.try_into().expect("slice length mismatch")
+        Self::from_fn(|n| slice[n].clone())
     }
 
     /// Concatenates `self` with `other`.
@@ -482,10 +488,10 @@ where
     }
 }
 
-impl<'a, T, U> TryFrom<&'a [T]> for Array<T, U>
+impl<'a, T, U, const N: usize> TryFrom<&'a [T]> for Array<T, U>
 where
-    Self: Clone,
-    U: ArraySize,
+    Self: ArrayOps<T, N> + Clone,
+    U: ArraySize<ArrayType<T> = [T; N]>,
 {
     type Error = TryFromSliceError;
 
@@ -495,35 +501,37 @@ where
     }
 }
 
-impl<'a, T, U> TryFrom<&'a [T]> for &'a Array<T, U>
+impl<'a, T, U, const N: usize> TryFrom<&'a [T]> for &'a Array<T, U>
 where
-    U: ArraySize,
+    Array<T, U>: ArrayOps<T, N>,
+    U: ArraySize<ArrayType<T> = [T; N]>,
 {
     type Error = TryFromSliceError;
 
     #[inline]
     fn try_from(slice: &'a [T]) -> Result<Self, TryFromSliceError> {
-        check_slice_length::<T, U>(slice)?;
+        let array_ref = <&'a [T; N]>::try_from(slice)?;
 
         // SAFETY: `Array<T, U>` is a `repr(transparent)` newtype for a core
         // array with length checked above.
-        Ok(unsafe { &*(slice.as_ptr() as *const Array<T, U>) })
+        Ok(unsafe { &*(array_ref.as_ptr() as *const Array<T, U>) })
     }
 }
 
-impl<'a, T, U> TryFrom<&'a mut [T]> for &'a mut Array<T, U>
+impl<'a, T, U, const N: usize> TryFrom<&'a mut [T]> for &'a mut Array<T, U>
 where
-    U: ArraySize,
+    Array<T, U>: ArrayOps<T, N>,
+    U: ArraySize<ArrayType<T> = [T; N]>,
 {
     type Error = TryFromSliceError;
 
     #[inline]
     fn try_from(slice: &'a mut [T]) -> Result<Self, TryFromSliceError> {
-        check_slice_length::<T, U>(slice)?;
+        let array_ref = <&'a mut [T; N]>::try_from(slice)?;
 
         // SAFETY: `Array<T, U>` is a `repr(transparent)` newtype for a core
         // array with length checked above.
-        Ok(unsafe { &mut *(slice.as_ptr() as *mut Array<T, U>) })
+        Ok(unsafe { &mut *(array_ref.as_ptr() as *mut Array<T, U>) })
     }
 }
 
@@ -544,22 +552,6 @@ where
     T: ZeroizeOnDrop,
     U: ArraySize,
 {
-}
-
-/// Generate a [`TryFromSliceError`] if the slice doesn't match the given length.
-#[cfg_attr(debug_assertions, allow(clippy::panic_in_result_fn))]
-fn check_slice_length<T, U: ArraySize>(slice: &[T]) -> Result<(), TryFromSliceError> {
-    debug_assert_eq!(Array::<(), U>::default().len(), U::USIZE);
-
-    if slice.len() != U::USIZE {
-        // Hack: `TryFromSliceError` lacks a public constructor
-        <&[T; 1]>::try_from([].as_slice())?;
-
-        #[cfg(debug_assertions)]
-        unreachable!();
-    }
-
-    Ok(())
 }
 
 /// Array operations which are const generic over a given array size.
