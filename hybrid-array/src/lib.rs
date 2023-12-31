@@ -482,6 +482,26 @@ where
     }
 }
 
+impl<T, U, const N: usize> PartialEq<[T; N]> for Array<T, U>
+where
+    T: PartialEq,
+    U: ArraySize<ArrayType<T> = [T; N]>,
+{
+    fn eq(&self, other: &[T; N]) -> bool {
+        self.0.eq(other)
+    }
+}
+
+impl<T, U, const N: usize> PartialEq<Array<T, U>> for [T; N]
+where
+    T: PartialEq,
+    U: ArraySize<ArrayType<T> = [T; N]>,
+{
+    fn eq(&self, other: &Array<T, U>) -> bool {
+        self.eq(&other.0)
+    }
+}
+
 impl<T, U> PartialOrd for Array<T, U>
 where
     T: PartialOrd,
