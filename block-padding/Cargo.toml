@@ -1,6 +1,6 @@
 [package]
 name = "block-padding"
-version = "0.4.0-pre.2"
+version = "0.4.0-pre.3"
 description = "Padding and unpadding of messages divided into blocks."
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
@@ -13,7 +13,7 @@ categories = ["cryptography", "no-std"]
 readme = "README.md"
 
 [dependencies]
-hybrid-array = "=0.2.0-pre.7"
+hybrid-array = "=0.2.0-pre.8"
 
 [features]
 std = []
