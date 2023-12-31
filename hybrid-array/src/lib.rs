@@ -351,12 +351,11 @@ where
 impl<T, U, const N: usize> From<Array<T, U>> for [T; N]
 where
     Array<T, U>: ArrayOps<T, N>,
-    U: ArraySize,
+    U: ArraySize<ArrayType<T> = [T; N]>,
 {
     #[inline]
     fn from(arr: Array<T, U>) -> [T; N] {
-        let mut items = arr.0.into_iter();
-        core::array::from_fn(|_| items.next().expect("should always have item"))
+        arr.0
     }
 }
 
