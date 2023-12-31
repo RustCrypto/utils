@@ -72,7 +72,7 @@ where
     // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
     pub fn from_slice(slice: &[T]) -> Result<Self, TryFromSliceError>
     where
-        T: Copy,
+        Self: Copy,
     {
         slice.try_into()
     }
@@ -491,15 +491,14 @@ where
 
 impl<'a, T, U> TryFrom<&'a [T]> for Array<T, U>
 where
-    T: Copy,
+    Self: Copy,
     U: ArraySize,
 {
     type Error = TryFromSliceError;
 
     #[inline]
     fn try_from(slice: &'a [T]) -> Result<Array<T, U>, TryFromSliceError> {
-        check_slice_length::<T, U>(slice)?;
-        Ok(Self::from_fn(|n| slice[n]))
+        <&'a Self>::try_from(slice).map(|ret| *ret)
     }
 }
 
