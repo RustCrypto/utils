@@ -5,6 +5,14 @@ use super::{Array, ArrayOps, ArraySize, AssociatedArraySize};
 macro_rules! impl_array_size {
     ($($len:expr => $ty:ident),+) => {
         $(
+            unsafe impl ArraySize for typenum::$ty {
+                type ArrayType<T> = [T; $len];
+            }
+
+            impl<T> AssociatedArraySize for [T; $len] {
+                type Size = typenum::$ty;
+            }
+
             impl<T> ArrayOps<T, $len> for Array<T, typenum::$ty> {
                 const SIZE: usize = $len;
 
@@ -42,14 +50,6 @@ macro_rules! impl_array_size {
                 {
                     self.0.map(f)
                 }
-            }
-
-            unsafe impl ArraySize for typenum::$ty {
-                type ArrayType<T> = [T; $len];
-            }
-
-            impl<T> AssociatedArraySize for [T; $len] {
-                type Size = typenum::$ty;
             }
         )+
      };
