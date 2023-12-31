@@ -51,10 +51,6 @@ macro_rules! impl_array_size {
             impl<T> AssociatedArraySize for [T; $len] {
                 type Size = typenum::$ty;
             }
-
-            impl<T> AssociatedArraySize for Array<T, typenum::$ty> {
-                type Size = typenum::$ty;
-            }
         )+
      };
 }
