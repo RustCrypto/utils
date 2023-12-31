@@ -1,4 +1,4 @@
-# [RustCrypto]: Input/Output Reference Types
+# [RustCrypto]: In/Out Ref Types
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]

@@ -1,6 +1,6 @@
 [package]
 name = "block-buffer"
-version = "0.11.0-pre.2"
+version = "0.11.0-pre.3"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Buffer type for block processing of data"
@@ -13,7 +13,7 @@ readme = "README.md"
 rust-version = "1.65"
 
 [dependencies]
-crypto-common = "=0.2.0-pre.2"
+crypto-common = "=0.2.0-pre.3"
 zeroize = { version = "1.4", optional = true, default-features = false }
 
 [dev-dependencies]
