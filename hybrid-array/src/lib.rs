@@ -44,6 +44,9 @@ use typenum::{Diff, Sum, Unsigned};
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
+/// Type alias for [`Array`] which is const generic around a size `N`, ala `[T; N]`.
+pub type ArrayN<T, const N: usize> = Array<T, <[T; N] as AssociatedArraySize>::Size>;
+
 /// Hybrid typenum-based and const generic array type.
 ///
 /// Provides the flexibility of typenum-based expressions while also
