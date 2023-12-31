@@ -1,7 +1,10 @@
-use hybrid_array::Array;
+use hybrid_array::{Array, ArrayN};
 use typenum::{U0, U2, U3, U4, U6, U7};
 
 const EXAMPLE_SLICE: &[u8] = &[1, 2, 3, 4, 5, 6];
+
+/// Ensure `ArrayN` works as expected.
+const _FOO: ArrayN<u8, 4> = Array([1, 2, 3, 4]);
 
 #[test]
 fn clone_from_slice() {
