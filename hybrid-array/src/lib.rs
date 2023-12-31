@@ -23,6 +23,8 @@
     unused_qualifications
 )]
 
+mod impls;
+
 pub use typenum;
 pub use typenum::consts;
 
@@ -39,7 +41,8 @@ use core::{
 };
 use typenum::{Diff, Sum, Unsigned};
 
-mod impls;
+#[cfg(feature = "zeroize")]
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// Hybrid typenum-based and const generic array type.
 ///
@@ -532,6 +535,25 @@ where
     }
 }
 
+#[cfg(feature = "zeroize")]
+impl<T, U> Zeroize for Array<T, U>
+where
+    T: Zeroize,
+    U: ArraySize,
+{
+    fn zeroize(&mut self) {
+        self.0.as_mut().iter_mut().zeroize()
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl<T, U> ZeroizeOnDrop for Array<T, U>
+where
+    T: ZeroizeOnDrop,
+    U: ArraySize,
+{
+}
+
 /// Generate a [`TryFromSliceError`] if the slice doesn't match the given length.
 #[cfg_attr(debug_assertions, allow(clippy::panic_in_result_fn))]
 fn check_slice_length<T, U: ArraySize>(slice: &[T]) -> Result<(), TryFromSliceError> {
@@ -585,6 +607,46 @@ pub trait ArrayOps<T, const N: usize>:
     fn map_to_core_array<F, U>(self, f: F) -> [U; N]
     where
         F: FnMut(T) -> U;
+}
+
+impl<T, const N: usize> ArrayOps<T, N> for [T; N]
+where
+    Self: AssociatedArraySize,
+{
+    const SIZE: usize = N;
+
+    #[inline]
+    fn as_core_array(&self) -> &[T; N] {
+        self
+    }
+
+    #[inline]
+    fn as_mut_core_array(&mut self) -> &mut [T; N] {
+        self
+    }
+
+    #[inline]
+    fn from_core_array(arr: [T; N]) -> Self {
+        arr
+    }
+
+    #[inline]
+    fn ref_from_core_array(array_ref: &[T; N]) -> &Self {
+        array_ref
+    }
+
+    #[inline]
+    fn ref_from_mut_core_array(array_ref: &mut [T; N]) -> &mut Self {
+        array_ref
+    }
+
+    #[inline]
+    fn map_to_core_array<F, U>(self, f: F) -> [U; N]
+    where
+        F: FnMut(T) -> U,
+    {
+        self.map(f)
+    }
 }
 
 /// Slice operations which don't have access to a const generic array size.
