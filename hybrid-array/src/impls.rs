@@ -75,12 +75,6 @@ macro_rules! impl_array_size {
             impl<T> AssociatedArraySize for Array<T, typenum::$ty> {
                 type Size = typenum::$ty;
             }
-
-            impl<T> From<Array<T, typenum::$ty>> for [T; $len] {
-                fn from(arr: Array<T, typenum::$ty>) -> [T; $len] {
-                    arr.0
-                }
-            }
         )+
      };
 }

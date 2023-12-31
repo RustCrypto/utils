@@ -348,6 +348,18 @@ where
     }
 }
 
+impl<T, U, const N: usize> From<Array<T, U>> for [T; N]
+where
+    Array<T, U>: ArrayOps<T, N>,
+    U: ArraySize,
+{
+    #[inline]
+    fn from(arr: Array<T, U>) -> [T; N] {
+        let mut items = arr.0.into_iter();
+        core::array::from_fn(|_| items.next().expect("should always have item"))
+    }
+}
+
 impl<'a, T, U, const N: usize> From<&'a [T; N]> for &'a Array<T, U>
 where
     Array<T, U>: ArrayOps<T, N>,
@@ -543,6 +555,7 @@ pub trait ArrayOps<T, const N: usize>:
     + Borrow<[T; N]>
     + BorrowMut<[T; N]>
     + From<[T; N]>
+    + FromFn<T>
     + Into<[T; N]>
     + IntoIterator<Item = T>
     + Sized
@@ -616,8 +629,8 @@ impl<T, U: ArraySize> SliceOps<T> for Array<T, U> {}
 pub unsafe trait ArraySize: Unsigned {
     /// Array type which corresponds to this size.
     type ArrayType<T>: AssociatedArraySize<Size = Self>
-        + FromFn<T>
         + From<Array<T, Self>>
+        + FromFn<T>
         + Into<Array<T, Self>>
         + IntoIterator<Item = T>
         + SliceOps<T>;
