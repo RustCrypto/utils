@@ -130,7 +130,7 @@ where
     where
         Self: Clone,
     {
-        Self::ref_from_slice(slice).clone()
+        slice.try_into().expect("slice length mismatch")
     }
 
     /// Concatenates `self` with `other`.
@@ -484,14 +484,14 @@ where
 
 impl<'a, T, U> TryFrom<&'a [T]> for Array<T, U>
 where
-    Self: Copy,
+    Self: Clone,
     U: ArraySize,
 {
     type Error = TryFromSliceError;
 
     #[inline]
     fn try_from(slice: &'a [T]) -> Result<Array<T, U>, TryFromSliceError> {
-        <&'a Self>::try_from(slice).map(|ret| *ret)
+        <&'a Self>::try_from(slice).map(Clone::clone)
     }
 }
 
