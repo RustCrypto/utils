@@ -572,8 +572,7 @@ fn check_slice_length<T, U: ArraySize>(slice: &[T]) -> Result<(), TryFromSliceEr
 
 /// Array operations which are const generic over a given array size.
 pub trait ArrayOps<T, const N: usize>:
-    AssociatedArraySize
-    + Borrow<[T; N]>
+    Borrow<[T; N]>
     + BorrowMut<[T; N]>
     + From<[T; N]>
     + FromFn<T>
@@ -609,10 +608,7 @@ pub trait ArrayOps<T, const N: usize>:
         F: FnMut(T) -> U;
 }
 
-impl<T, const N: usize> ArrayOps<T, N> for [T; N]
-where
-    Self: AssociatedArraySize,
-{
+impl<T, const N: usize> ArrayOps<T, N> for [T; N] {
     const SIZE: usize = N;
 
     #[inline]
@@ -701,6 +697,13 @@ pub unsafe trait ArraySize: Unsigned {
 pub trait AssociatedArraySize: Sized {
     /// Size of an array type, expressed as a [`typenum`]-based [`ArraySize`].
     type Size: ArraySize;
+}
+
+impl<T, U> AssociatedArraySize for Array<T, U>
+where
+    U: ArraySize,
+{
+    type Size = U;
 }
 
 /// Construct an array type from the given function.
