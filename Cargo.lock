@@ -11,7 +11,7 @@ dependencies = [
 
 [[package]]
 name = "block-buffer"
-version = "0.11.0-pre.1"
+version = "0.11.0-pre.2"
 dependencies = [
  "crypto-common",
  "hex-literal 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -20,7 +20,7 @@ dependencies = [
 
 [[package]]
 name = "block-padding"
-version = "0.4.0-pre.1"
+version = "0.4.0-pre.2"
 dependencies = [
  "hybrid-array 0.2.0-pre.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -51,7 +51,7 @@ dependencies = [
 
 [[package]]
 name = "dbl"
-version = "0.4.0-pre.1"
+version = "0.4.0-pre.2"
 dependencies = [
  "hybrid-array 0.2.0-pre.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -101,7 +101,7 @@ dependencies = [
 
 [[package]]
 name = "inout"
-version = "0.2.0-pre.1"
+version = "0.2.0-pre.2"
 dependencies = [
  "block-padding",
  "hybrid-array 0.2.0-pre.7 (registry+https://github.com/rust-lang/crates.io-index)",
