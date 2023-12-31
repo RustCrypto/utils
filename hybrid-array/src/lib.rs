@@ -23,7 +23,7 @@
     unused_qualifications
 )]
 
-mod impls;
+mod sizes;
 
 pub use typenum;
 pub use typenum::consts;
