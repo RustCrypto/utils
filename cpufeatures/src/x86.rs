@@ -144,4 +144,9 @@ __expand_check_macro! {
     ("avx512vl", "zmm", 1, ebx, 31),
     ("avx512vbmi", "zmm", 1, ecx, 1),
     ("avx512vbmi2", "zmm", 1, ecx, 6),
+    ("gfni", "zmm", 1, ecx, 8),
+    ("vaes", "zmm", 1, ecx, 9),
+    ("vpclmulqdq", "zmm", 1, ecx, 10),
+    ("avx512bitalg", "zmm", 1, ecx, 12),
+    ("avx512vpopcntdq", "zmm", 1, ecx, 14),
 }
