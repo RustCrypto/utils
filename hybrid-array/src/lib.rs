@@ -291,6 +291,7 @@ where
     T: Clone,
     U: ArraySize,
 {
+    #[inline]
     fn clone(&self) -> Self {
         Self::from_fn(|n| self.0.as_ref()[n].clone())
     }
@@ -319,6 +320,7 @@ where
     T: Default,
     U: ArraySize,
 {
+    #[inline]
     fn default() -> Self {
         Self::from_fn(|_| Default::default())
     }
@@ -464,6 +466,7 @@ where
     /// Creates a consuming iterator, that is, one that moves each value out of
     /// the array (from start to end). The array cannot be used after calling
     /// this unless `T` implements `Copy`, so the whole array is copied.
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
     }
@@ -476,6 +479,7 @@ where
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
 
+    #[inline]
     fn into_iter(self) -> Iter<'a, T> {
         self.iter()
     }
@@ -499,6 +503,7 @@ where
     T: PartialEq,
     U: ArraySize,
 {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.0.as_ref().eq(other.0.as_ref())
     }
@@ -509,6 +514,7 @@ where
     T: PartialEq,
     U: ArraySize<ArrayType<T> = [T; N]>,
 {
+    #[inline]
     fn eq(&self, other: &[T; N]) -> bool {
         self.0.eq(other)
     }
@@ -519,6 +525,7 @@ where
     T: PartialEq,
     U: ArraySize<ArrayType<T> = [T; N]>,
 {
+    #[inline]
     fn eq(&self, other: &Array<T, U>) -> bool {
         self.eq(&other.0)
     }
@@ -529,6 +536,7 @@ where
     T: PartialOrd,
     U: ArraySize,
 {
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.0.as_ref().partial_cmp(other.0.as_ref())
     }
@@ -539,6 +547,7 @@ where
     T: Ord,
     U: ArraySize,
 {
+    #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         self.0.as_ref().cmp(other.0.as_ref())
     }
@@ -595,6 +604,7 @@ where
     T: Zeroize,
     U: ArraySize,
 {
+    #[inline]
     fn zeroize(&mut self) {
         self.0.as_mut().iter_mut().zeroize()
     }
@@ -710,18 +720,22 @@ impl<T, const N: usize> ArrayOps<T, N> for [T; N] {
         self.map(f)
     }
 
+    #[inline]
     fn cast_slice_to_core(slice: &[Self]) -> &[[T; N]] {
         slice
     }
 
+    #[inline]
     fn cast_slice_to_core_mut(slice: &mut [Self]) -> &mut [[T; N]] {
         slice
     }
 
+    #[inline]
     fn cast_slice_from_core(slice: &[[T; N]]) -> &[Self] {
         slice
     }
 
+    #[inline]
     fn cast_slice_from_core_mut(slice: &mut [[T; N]]) -> &mut [Self] {
         slice
     }
@@ -741,6 +755,7 @@ pub trait SliceOps<T>:
     /// Splits the shared slice into a slice of `N`-element arrays.
     ///
     /// See [`slice_as_chunks`] for more information.
+    #[inline]
     fn as_array_chunks<N: ArraySize>(&self) -> (&[Array<T, N>], &[T]) {
         slice_as_chunks(self.as_ref())
     }
@@ -748,6 +763,7 @@ pub trait SliceOps<T>:
     /// Splits the exclusive slice into a slice of `N`-element arrays.
     ///
     /// See [`slice_as_chunks_mut`] for more information.
+    #[inline]
     fn as_array_chunks_mut<N: ArraySize>(&mut self) -> (&mut [Array<T, N>], &mut [T]) {
         slice_as_chunks_mut(self.as_mut())
     }
@@ -802,6 +818,7 @@ impl<T, U> FromFn<T> for Array<T, U>
 where
     U: ArraySize,
 {
+    #[inline]
     fn from_fn<F>(cb: F) -> Self
     where
         F: FnMut(usize) -> T,
@@ -811,6 +828,7 @@ where
 }
 
 impl<T, const N: usize> FromFn<T> for [T; N] {
+    #[inline]
     fn from_fn<F>(cb: F) -> Self
     where
         F: FnMut(usize) -> T,
@@ -825,6 +843,7 @@ impl<T, const N: usize> FromFn<T> for [T; N] {
 /// # Panics
 /// Panics if `N` is 0.
 #[allow(clippy::arithmetic_side_effects)]
+#[inline]
 pub fn slice_as_chunks<T, N: ArraySize>(buf: &[T]) -> (&[Array<T, N>], &[T]) {
     assert_ne!(N::USIZE, 0, "chunk size must be non-zero");
     // Arithmetic safety: we have checked that `N::USIZE` is not zero, thus
@@ -847,6 +866,7 @@ pub fn slice_as_chunks<T, N: ArraySize>(buf: &[T]) -> (&[Array<T, N>], &[T]) {
 /// # Panics
 /// Panics if `N` is 0.
 #[allow(clippy::arithmetic_side_effects)]
+#[inline]
 pub fn slice_as_chunks_mut<T, N: ArraySize>(buf: &mut [T]) -> (&mut [Array<T, N>], &mut [T]) {
     assert_ne!(N::USIZE, 0, "chunk size must be non-zero");
     // Arithmetic safety: we have checked that `N::USIZE` is not zero, thus
