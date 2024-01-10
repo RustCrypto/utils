@@ -22,7 +22,7 @@ dependencies = [
 name = "block-padding"
 version = "0.4.0-pre.3"
 dependencies = [
- "hybrid-array 0.2.0-pre.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hybrid-array 0.2.0-pre.8",
 ]
 
 [[package]]
@@ -46,14 +46,14 @@ version = "0.2.0-pre.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cc17eb697364b18256ec92675ebe6b7b153d2f1041e568d74533c5d0fc1ca162"
 dependencies = [
- "hybrid-array 0.2.0-pre.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hybrid-array 0.2.0-pre.8",
 ]
 
 [[package]]
 name = "dbl"
 version = "0.4.0-pre.3"
 dependencies = [
- "hybrid-array 0.2.0-pre.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hybrid-array 0.2.0-pre.8",
 ]
 
 [[package]]
@@ -85,14 +85,6 @@ checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 [[package]]
 name = "hybrid-array"
 version = "0.2.0-pre.8"
-dependencies = [
- "typenum",
- "zeroize 1.7.0",
-]
-
-[[package]]
-name = "hybrid-array"
-version = "0.2.0-pre.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27fbaf242418fe980caf09ed348d5a6aeabe71fc1bd8bebad641f4591ae0a46d"
 dependencies = [
@@ -100,11 +92,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "hybrid-array"
+version = "0.2.0-pre.9"
+dependencies = [
+ "typenum",
+ "zeroize 1.7.0",
+]
+
+[[package]]
 name = "inout"
 version = "0.2.0-pre.3"
 dependencies = [
  "block-padding",
- "hybrid-array 0.2.0-pre.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hybrid-array 0.2.0-pre.8",
 ]
 
 [[package]]
@@ -115,9 +115,9 @@ checksum = "b1a46d1a171d865aa5f83f92695765caa047a9b4cbae2cbf37dbd613a793fd4c"
 
 [[package]]
 name = "libc"
-version = "0.2.151"
+version = "0.2.152"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "302d7ab3130588088d277783b1e2d2e10c9e9e4a16dd9050e6ec93fb3e7048f4"
+checksum = "13e3bf6590cbc649f4d1a3eefc9d5d6eb746f5200ffb04e5e142700b8faa56e7"
 
 [[package]]
 name = "opaque-debug"
@@ -135,9 +135,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.75"
+version = "1.0.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "907a61bd0f64c2f29cd1cf1dc34d05176426a3f504a78010f08416ddb7b13708"
+checksum = "95fc56cda0b5c3325f5fbbd7ff9fda9e02bb00bb3dac51252d2f1bfa1cb8cc8c"
 dependencies = [
  "unicode-ident",
 ]
@@ -159,18 +159,18 @@ checksum = "f98d2aa92eebf49b69786be48e4477826b256916e84a57ff2a4f21923b48eb4c"
 
 [[package]]
 name = "serde"
-version = "1.0.194"
+version = "1.0.195"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b114498256798c94a0689e1a15fec6005dee8ac1f41de56404b67afc2a4b773"
+checksum = "63261df402c67811e9ac6def069e4786148c4563f4b50fd4bf30aa370d626b02"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.194"
+version = "1.0.195"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3385e45322e8f9931410f01b3031ec534c3947d0e94c18049af4d9f9907d4e0"
+checksum = "46fe8f8603d81ba86327b23a2e9cdf49e1255fb94a4c5f297f6ee0547178ea2c"
 dependencies = [
  "proc-macro2",
  "quote",
