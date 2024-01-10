@@ -102,7 +102,7 @@ where
     // TODO(tarcieri): deprecate this before the v0.2 release
     // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
     #[inline]
-    pub fn ref_from_slice(slice: &[T]) -> &Self {
+    pub fn from_slice(slice: &[T]) -> &Self {
         slice.try_into().expect("slice length mismatch")
     }
 
@@ -114,7 +114,7 @@ where
     // TODO(tarcieri): deprecate this before the v0.2 release
     // #[deprecated(since = "0.2.0", note = "use TryFrom instead")]
     #[inline]
-    pub fn ref_from_mut_slice(slice: &mut [T]) -> &mut Self {
+    pub fn from_mut_slice(slice: &mut [T]) -> &mut Self {
         slice.try_into().expect("slice length mismatch")
     }
 
