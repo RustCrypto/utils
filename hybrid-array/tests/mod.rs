@@ -1,5 +1,5 @@
 use hybrid_array::{Array, ArrayN};
-use typenum::{U0, U2, U3, U4, U6, U7};
+use typenum::{U0, U2, U3, U4, U5, U6, U7};
 
 const EXAMPLE_SLICE: &[u8] = &[1, 2, 3, 4, 5, 6];
 
@@ -71,4 +71,22 @@ fn split_ref_mut() {
 
     assert_eq!(prefix.as_slice(), &EXAMPLE_SLICE[..4]);
     assert_eq!(suffix.as_slice(), &EXAMPLE_SLICE[4..]);
+}
+
+#[test]
+fn from_iterator_correct_size() {
+    let array: Array<u8, U6> = EXAMPLE_SLICE.iter().copied().collect();
+    assert_eq!(array.as_slice(), EXAMPLE_SLICE);
+}
+
+#[test]
+#[should_panic]
+fn from_iterator_too_short() {
+    let _array: Array<u8, U7> = EXAMPLE_SLICE.iter().copied().collect();
+}
+
+#[test]
+#[should_panic]
+fn from_iterator_too_long() {
+    let _array: Array<u8, U5> = EXAMPLE_SLICE.iter().copied().collect();
 }

@@ -419,6 +419,25 @@ where
     }
 }
 
+impl<T, U> FromIterator<T> for Array<T, U>
+where
+    U: ArraySize,
+{
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut iter = iter.into_iter();
+        let ret = Self::from_fn(|_| {
+            iter.next()
+                .expect("iterator should have enough items to fill array")
+        });
+
+        assert!(
+            iter.next().is_none(),
+            "too many items in iterator to fit in array"
+        );
+        ret
+    }
+}
+
 impl<T, U> Hash for Array<T, U>
 where
     T: Hash,
