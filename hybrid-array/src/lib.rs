@@ -660,6 +660,18 @@ pub trait ArrayOps<T, const N: usize>:
     fn map_to_core_array<F, U>(self, f: F) -> [U; N]
     where
         F: FnMut(T) -> U;
+
+    /// Transform slice to slice of core array type
+    fn cast_slice_to_core(slice: &[Self]) -> &[[T; N]];
+
+    /// Transform mutable slice to mutable slice of core array type
+    fn cast_slice_to_core_mut(slice: &mut [Self]) -> &mut [[T; N]];
+
+    /// Transform slice to slice of core array type
+    fn cast_slice_from_core(slice: &[[T; N]]) -> &[Self];
+
+    /// Transform mutable slice to mutable slice of core array type
+    fn cast_slice_from_core_mut(slice: &mut [[T; N]]) -> &mut [Self];
 }
 
 impl<T, const N: usize> ArrayOps<T, N> for [T; N] {
@@ -696,6 +708,22 @@ impl<T, const N: usize> ArrayOps<T, N> for [T; N] {
         F: FnMut(T) -> U,
     {
         self.map(f)
+    }
+
+    fn cast_slice_to_core(slice: &[Self]) -> &[[T; N]] {
+        slice
+    }
+
+    fn cast_slice_to_core_mut(slice: &mut [Self]) -> &mut [[T; N]] {
+        slice
+    }
+
+    fn cast_slice_from_core(slice: &[[T; N]]) -> &[Self] {
+        slice
+    }
+
+    fn cast_slice_from_core_mut(slice: &mut [[T; N]]) -> &mut [Self] {
+        slice
     }
 }
 

@@ -50,6 +50,26 @@ macro_rules! impl_array_size {
                 {
                     self.0.map(f)
                 }
+
+                fn cast_slice_to_core(slice: &[Self]) -> &[[T; $len]] {
+                    // SAFETY: `Self` is a `repr(transparent)` newtype for `[T; $len]`
+                    unsafe { core::slice::from_raw_parts(slice.as_ptr().cast(), slice.len()) }
+                }
+
+                fn cast_slice_to_core_mut(slice: &mut [Self]) -> &mut [[T; $len]] {
+                    // SAFETY: `Self` is a `repr(transparent)` newtype for `[T; $len]`
+                    unsafe { core::slice::from_raw_parts_mut(slice.as_mut_ptr().cast(), slice.len()) }
+                }
+
+                fn cast_slice_from_core(slice: &[[T; $len]]) -> &[Self] {
+                    // SAFETY: `Self` is a `repr(transparent)` newtype for `[T; $len]`
+                    unsafe { core::slice::from_raw_parts(slice.as_ptr().cast(), slice.len()) }
+                }
+
+                fn cast_slice_from_core_mut(slice: &mut [[T; $len]]) -> &mut [Self] {
+                    // SAFETY: `Self` is a `repr(transparent)` newtype for `[T; $len]`
+                    unsafe { core::slice::from_raw_parts_mut(slice.as_mut_ptr().cast(), slice.len()) }
+                }
             }
         )+
      };
