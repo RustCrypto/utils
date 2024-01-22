@@ -797,11 +797,11 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
 
 /// Zeroizes a flat type/struct. Only zeroizes the values that it owns, and it does not work on
 /// dynamically sized values or trait objects.
-/// 
+///
 /// ## Safety:
 /// - The type must not contain references to outside data or dynamically sized data
-/// - This function can invalidate the type if it is used after this function is called on it. It is 
-///   advisable to call this method in `drop()`.
+/// - This function can invalidate the type if it is used after this function is called on it. It is
+///   advisable to call this method in `impl Drop`.
 #[inline(always)]
 pub unsafe fn zeroize_flat_type<T: Sized>(data: *mut T) {
     let size = mem::size_of::<T>();
