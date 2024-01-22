@@ -798,12 +798,13 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
 /// Zeroizes a flat type/struct. Only zeroizes the values that it owns, and it does not work on 
 /// dynamically sized values or trait objects.
 #[inline(always)]
-pub fn zeroize_flat_type<T>(data: &mut T) {
+pub fn zeroize_flat_type<T: Sized>(data: &mut T) {
     let size = mem::size_of::<T>();
     let data_ptr = (data as *mut T).cast::<u8>();
     // Safety:
     //
-    // This is safe because `mem::size_of<T>()` returns the exact size of the object in memory.
+    // This is safe because `mem::size_of<T>()` returns the exact size of the object in memory, and
+    // `data_ptr` points directly to the first byte of the data.
     unsafe {
         volatile_set(data_ptr, 0, size)
     }
