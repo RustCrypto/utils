@@ -805,10 +805,6 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
 #[inline(always)]
 pub unsafe fn zeroize_flat_type<T: Sized>(data: *mut T) {
     let size = mem::size_of::<T>();
-    // Safety:
-    //
-    // This is safe because `mem::size_of<T>()` returns the exact size of the object in memory, and
-    // `data_ptr` points directly to the first byte of the data.
     volatile_set(data as *mut u8, 0, size);
     atomic_fence()
 }
