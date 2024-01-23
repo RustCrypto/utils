@@ -799,7 +799,7 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
 /// dynamically sized values or trait objects. Do not use this function on a type that already
 /// implements `ZeroizeOnDrop`.
 ///
-/// # Safety:
+/// # Safety
 /// - The type must not contain references to outside data or dynamically sized data
 /// - This function can invalidate the type if it is used after this function is called on it. It is
 ///   advisable to call this method in `impl Drop`.
