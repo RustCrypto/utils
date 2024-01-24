@@ -843,9 +843,9 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
 ///         unsafe { zeroize_flat_type(self as *mut Self) }
 ///     }
 /// }
-/// impl ZeroizeOnDrop for DatatoZeroize {}
+/// impl ZeroizeOnDrop for DataToZeroize {}
 ///
-/// let mut data = DataToZerioze {
+/// let mut data = DataToZeroize {
 ///     flat_data_1: [3u8; 32],
 ///     flat_data_2: SomeMoreFlatData(123u64)
 /// };
