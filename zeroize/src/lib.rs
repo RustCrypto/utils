@@ -800,9 +800,93 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
 /// implements `ZeroizeOnDrop`.
 ///
 /// # Safety
-/// - The type must not contain references to outside data or dynamically sized data
+/// - The type must not contain references to outside data or dynamically sized data, such as Vec<X>
+///   or String<X>.
 /// - This function can invalidate the type if it is used after this function is called on it. It is
-///   advisable to call this method in `impl Drop`.
+///   advisable to call this function in `impl Drop`.
+/// - The bit pattern of all zeroes must be valid for the data being zeroized. This may not be true for
+///   enums and pointers.
+///
+/// # Examples
+/// Safe usage for a simple struct:
+/// ```
+/// use zeroize::{ZeroizeOnDrop, zeroize_flat_type};
+///
+/// struct DataToZeroize(u64);
+///
+/// struct MoreDataToZeroize {
+///     flat_data_1: [u8; 32],
+///     flat_data_2: DataToZeroize,
+/// }
+///
+/// impl Drop for MoreDataToZeroize {
+///     fn drop(&mut self) {
+///         unsafe { zeroize_flat_type(self as *mut Self) }
+///     }
+/// }
+/// impl ZeroizeOnDrop for MoreDataToZeroize {}
+///
+/// let mut data = MoreDataToZeroize {
+///     flat_data_1: [3u8; 32],
+///     flat_data_2: DataToZeroize(123u64)
+/// };
+///
+/// // data gets zeroized when dropped
+/// ```
+/// ## Unsafe examples
+/// Below is an unsafe example. It is not comprehensive, but if the data you want to zeroize
+/// contains any of the following types, consider using `Zeroize` instead of `zeroize_flat_type`.
+/// ```
+/// use std::boxed::Box;
+/// use std::collections::HashMap;
+/// use std::sync::Arc;
+/// use std::vec::Vec;
+///
+/// struct UnsafeExample<'a> {
+///     // zeroizing pointers will create a null pointer, which could lead to dereferencing
+///     // null pointers
+///     ptr: *const u8,
+///     ptr_mut: *mut u8,
+///
+///     // references are non-nullable and should point to valid data
+///     reference: &'a u8,
+///     reference_mut: &'a mut u8,
+///
+///     // smart pointers are designed to manage ownership and deallocation of heap memory.
+///     // zeroizing them can mess up this management and result in memory leaks or double frees.
+///     smart_ptr_1: Vec<u8>,
+///     smart_ptr_2: Box<u8>,
+///     smart_ptr_3: Arc<u8>,
+///     hashmap: HashMap<u32, u32>,
+///     string: String
+/// }
+///
+/// // calling `zeroize_flat_type()` on this struct could be unsafe
+/// ```
+///
+/// The below example shows what happens when `zeroize_flat_type` is ran on a type containing a
+/// smart pointer.
+/// ```
+/// use zeroize::zeroize_flat_type;
+///
+/// struct UnsafeExample(String);
+///
+/// let mut data = UnsafeExample(String::from("take care when zeroizing with zeroize_flat_type()"));
+///
+/// // save the original pointer to determine if the data is still in memory after zeroizing
+/// let original_ptr = data.0.as_ptr();
+///
+/// unsafe { zeroize_flat_type(&mut data as *mut UnsafeExample) }
+///
+/// // the String's metadata was overwritten (such as the pointer to the heap, length, capacity)
+/// assert_eq!(data.0.as_ptr().is_null(), true);
+/// assert_eq!(data.0.len(), 0);
+/// assert_eq!(data.0.capacity(), 0);
+///
+/// // the original data still lives on the heap, possibly resulting in a little memory leak
+/// let memory_inspection = unsafe { core::slice::from_raw_parts(original_ptr, 49) };
+/// assert_eq!(memory_inspection, b"take care when zeroizing with zeroize_flat_type()");
+/// ```
 #[inline(always)]
 pub unsafe fn zeroize_flat_type<T: Sized>(data: *mut T) {
     let size = mem::size_of::<T>();
