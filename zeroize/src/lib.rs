@@ -866,7 +866,7 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
 ///
 /// The below example shows what happens when `zeroize_flat_type` is ran on a type containing a
 /// smart pointer.
-/// ```
+/// ```no_run
 /// use zeroize::zeroize_flat_type;
 ///
 /// struct UnsafeExample(String);
