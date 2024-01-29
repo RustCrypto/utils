@@ -84,9 +84,9 @@ checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
 name = "hybrid-array"
-version = "0.2.0-rc.1"
+version = "0.2.0-rc.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b700a69c9d992339e82b6cda619873ee17768be06e80ed5ef07c50c50d499ab"
+checksum = "d8856b3db5eb76328f03589feb25c7a3166bfa0ae3b38b1408d546b097fa7947"
 dependencies = [
  "typenum",
 ]
