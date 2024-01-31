@@ -795,6 +795,74 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
     }
 }
 
+/// Zeroizes a flat type/struct. Only zeroizes the values that it owns, and it does not work on
+/// dynamically sized values or trait objects. It would be inefficient to use this function on a
+/// type that already implements `ZeroizeOnDrop`.
+///
+/// # Safety
+/// - The type must not contain references to outside data or dynamically sized data, such as Vec<X>
+///   or String<X>.
+/// - This function can invalidate the type if it is used after this function is called on it. It is
+///   advisable to call this function in `impl Drop`.
+/// - The bit pattern of all zeroes must be valid for the data being zeroized. This may not be true for
+///   enums and pointers.
+///
+/// # Incompatible data types
+/// Some data types that cannot be safely zeroized using `zeroize_flat_type` include, but are not
+/// limited to:
+/// - pointers such as
+///   - *const u8
+///   - *mut u8
+/// - references such as
+///   - &T
+///   - &mut T
+/// - smart pointers and collections
+///   - Arc<T>
+///   - Box<T>
+///   - Vec<T>
+///   - HashMap<T1, T2>
+///   - String
+///
+/// Some data types that may be invalid after calling `zeroize_flat_type`:
+/// - enums
+///
+/// # Examples
+/// Safe usage for a struct containing strictly flat data:
+/// ```
+/// use zeroize::{ZeroizeOnDrop, zeroize_flat_type};
+///
+/// struct DataToZeroize {
+///     flat_data_1: [u8; 32],
+///     flat_data_2: SomeMoreFlatData,
+/// }
+///
+/// struct SomeMoreFlatData(u64);
+///
+/// impl Drop for DataToZeroize {
+///     fn drop(&mut self) {
+///         unsafe { zeroize_flat_type(self as *mut Self) }
+///     }
+/// }
+/// impl ZeroizeOnDrop for DataToZeroize {}
+///
+/// let mut data = DataToZeroize {
+///     flat_data_1: [3u8; 32],
+///     flat_data_2: SomeMoreFlatData(123u64)
+/// };
+///
+/// // data gets zeroized when dropped
+/// ```
+#[inline(always)]
+pub unsafe fn zeroize_flat_type<F: Sized>(data: *mut F) {
+    let size = mem::size_of::<F>();
+    // Safety:
+    //
+    // This is safe because `mem::size_of<T>()` returns the exact size of the object in memory, and
+    // `data_ptr` points directly to the first byte of the data.
+    volatile_set(data as *mut u8, 0, size);
+    atomic_fence()
+}
+
 /// Internal module used as support for `AssertZeroizeOnDrop`.
 #[doc(hidden)]
 pub mod __internal {
