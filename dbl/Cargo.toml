@@ -12,5 +12,5 @@ rust-version = "1.65"
 readme = "README.md"
 
 [dependencies]
-hybrid-array = "0.2.0-rc.4"
+hybrid-array = "0.2.0-rc.5"
 
