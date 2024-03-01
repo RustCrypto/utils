@@ -345,6 +345,7 @@ fn derive_zeroize_with_marker() {
         field: Option<A>,
     }
 
+    #[allow(dead_code)]
     trait Secret: ZeroizeOnDrop + Zeroize {}
 
     impl<A: Marker> Secret for Test<A> {}
