@@ -1,4 +1,36 @@
-//! Macro for opaque `Debug` trait implementation.
+//! Macro for opaque [`Debug`] trait implementation.
+//!
+//! In many cases it's convenient to have `Debug` implementation for all crate types,
+//! e.g. to allow deriving of `Debug` in user-defined structs. But at the same time, using
+//! the default derive macro can be a security hazard since it cause leaking of sensitive
+//! information, for example, through uncareful logging.
+//!
+//! This crate introduces the [`implement!`] macro which creates an opaque [`Debug`]
+//! implementation, which does not expose any internal type data.
+//!
+//! # Examples
+//! ```
+//! pub struct CryptoStuff {
+//!     key: [u8; 16],
+//! }
+//!
+//! opaque_debug::implement!(CryptoStuff);
+//!
+//! let val = CryptoStuff { key: [42; 16] };
+//! assert_eq!(format!("{:?}", val), "CryptoStuff { ... }")
+//! ```
+//!
+//! The macro also support generic paramters:
+//! ```
+//! pub struct GenricCryptoStuff<K> {
+//!     key: K,
+//! }
+//!
+//! opaque_debug::implement!(GenricCryptoStuff<K>);
+//!
+//! let val = GenricCryptoStuff { key: [42u8; 16] };
+//! assert_eq!(format!("{:?}", val), "GenricCryptoStuff<[u8; 16]> { ... }")
+//! ```
 #![no_std]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
@@ -19,12 +51,7 @@ macro_rules! format_params {
     };
 }
 
-/// Macro for defining opaque `Debug` implementation.
-///
-/// It will use the following format: "StructName { ... }". While it's
-/// convenient to have it (e.g. for including into other structs), it could be
-/// undesirable to leak internal state, which can happen for example through
-/// uncareful logging.
+/// Macro for implementing an opaque `Debug` implementation.
 #[macro_export]
 macro_rules! implement {
     ($struct:ident <$($params:ident),+>) => {
