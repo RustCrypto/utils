@@ -66,6 +66,7 @@
 //! memory is zeroed by converting it to a `Vec<u8>` and back into a `CString`.
 //! (NOTE: see "Stack/Heap Zeroing Notes" for important `Vec`/`String`/`CString` details)
 //!
+//! [`CString`]: https://doc.rust-lang.org/std/ffi/struct.CString.html
 //!
 //! The [`DefaultIsZeroes`] marker trait can be impl'd on types which also
 //! impl [`Default`], which implements [`Zeroize`] by overwriting a value with
@@ -800,31 +801,21 @@ unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
 /// type that already implements `ZeroizeOnDrop`.
 ///
 /// # Safety
-/// - The type must not contain references to outside data or dynamically sized data, such as Vec<X>
-///   or String<X>.
-/// - This function can invalidate the type if it is used after this function is called on it. It is
-///   advisable to call this function in `impl Drop`.
-/// - The bit pattern of all zeroes must be valid for the data being zeroized. This may not be true for
-///   enums and pointers.
+/// - The type must not contain references to outside data or dynamically sized data, such as
+///   `Vec<T>` or `String`.
+/// - Values stored in the type must not have `Drop` impls.
+/// - This function can invalidate the type if it is used after this function is called on it.
+///   It is advisable to call this function only in `impl Drop`.
+/// - The bit pattern of all zeroes must be valid for the data being zeroized. This may not be
+///   true for enums and pointers.
 ///
 /// # Incompatible data types
-/// Some data types that cannot be safely zeroized using `zeroize_flat_type` include, but are not
-/// limited to:
-/// - pointers such as
-///   - *const u8
-///   - *mut u8
-/// - references such as
-///   - &T
-///   - &mut T
-/// - smart pointers and collections
-///   - Arc<T>
-///   - Box<T>
-///   - Vec<T>
-///   - HashMap<T1, T2>
-///   - String
-///
-/// Some data types that may be invalid after calling `zeroize_flat_type`:
-/// - enums
+/// Some data types that cannot be safely zeroized using `zeroize_flat_type` include,
+/// but are not limited to:
+/// - References: `&T` and `&mut T`
+/// - Non-nullable types: `NonNull<T>`, `NonZeroU32`, etc.
+/// - Enums with explicit non-zero tags.
+/// - Smart pointers and collections: `Arc<T>`, `Box<T>`, `Vec<T>`, `HashMap<K, V>`, `String`, etc.
 ///
 /// # Examples
 /// Safe usage for a struct containing strictly flat data:
