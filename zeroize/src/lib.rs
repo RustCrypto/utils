@@ -151,6 +151,8 @@
 //!
 //!     // The contents of `secret` will be automatically zeroized on drop
 //! }
+//!
+//! # use_secret()
 //! ```
 //!
 //! ## What guarantees does this crate provide?
