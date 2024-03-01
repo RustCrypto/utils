@@ -8,6 +8,17 @@
 #[doc(hidden)]
 pub extern crate core as __core;
 
+#[macro_export]
+#[doc(hidden)]
+macro_rules! format_params {
+    ($single:ident) => {
+        "{}"
+    };
+    ($first:ident, $($rest:ident),+) => {
+        concat!("{}", ", ", $crate::format_params!($($rest),+))
+    };
+}
+
 /// Macro for defining opaque `Debug` implementation.
 ///
 /// It will use the following format: "StructName { ... }". While it's
@@ -16,6 +27,20 @@ pub extern crate core as __core;
 /// uncareful logging.
 #[macro_export]
 macro_rules! implement {
+    ($struct:ident <$($params:ident),+>) => {
+        impl <$($params),+> $crate::__core::fmt::Debug for $struct <$($params),+> {
+            fn fmt(
+                &self,
+                f: &mut $crate::__core::fmt::Formatter,
+            ) -> Result<(), $crate::__core::fmt::Error> {
+                write!(
+                    f,
+                    concat!(stringify!($struct), "<", $crate::format_params!($($params),+), "> {{ ... }}"),
+                    $($crate::__core::any::type_name::<$params>()),+
+                )
+            }
+        }
+    };
     ($struct:ty) => {
         impl $crate::__core::fmt::Debug for $struct {
             fn fmt(
