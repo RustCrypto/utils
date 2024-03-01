@@ -9,8 +9,6 @@
 use hybrid_array::typenum::{U16, U32, U8};
 use hybrid_array::Array;
 
-use core::convert::TryInto;
-
 const C64: u64 = 0b1_1011;
 const C128: u64 = 0b1000_0111;
 const C256: u64 = 0b100_0010_0101;

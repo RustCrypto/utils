@@ -51,7 +51,6 @@
 extern crate alloc;
 
 use alloc::{boxed::Box, collections::BTreeMap, vec, vec::Vec};
-use core::iter::Iterator;
 
 /// Iterator over binary blobs
 pub struct BlobIterator<'a> {
