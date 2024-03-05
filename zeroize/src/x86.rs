@@ -23,4 +23,6 @@ macro_rules! impl_zeroize_for_simd_register {
     };
 }
 
-impl_zeroize_for_simd_register!(__m128, __m128d, __m128i, __m256, __m256d, __m256i);
+impl_zeroize_for_simd_register!(
+    __m128, __m128d, __m128i, __m256, __m256d, __m256i, __m512, __m512d, __m512i
+);
