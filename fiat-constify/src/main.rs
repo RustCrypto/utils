@@ -169,7 +169,7 @@ fn rewrite_fn_body(stmts: &[Stmt], outputs: &Outputs) -> Vec<Stmt> {
     let mut rewritten = Vec::new();
 
     for stmt in stmts {
-        if let Stmt::Expr(Expr::Assign(assignment), Some(_)) = stmt {
+                if let Stmt::Expr(Expr::Assign(assignment), Some(_)) = stmt {
             let lhs_path = match assignment.left.as_ref() {
                 Expr::Unary(lhs) => {
                     if let Expr::Path(exprpath) = lhs.expr.as_ref() {
@@ -199,6 +199,13 @@ fn rewrite_fn_body(stmts: &[Stmt], outputs: &Outputs) -> Vec<Stmt> {
             }
         } else if let Stmt::Expr(Expr::Call(expr), Some(_)) = stmt {
             rewritten.push(Stmt::Local(rewrite_fn_call(expr.clone())));
+        } else if let Stmt::Local(Local{pat: Pat::Type(pat), ..}) = stmt {
+            let unboxed = pat.pat.as_ref();
+            if let Pat::Ident(PatIdent{mutability: Some(_), ..}) = unboxed {
+                // This is a mut var, in the case of fiat-crypto transformation dead code
+            } else {
+                rewritten.push(stmt.clone());
+            }
         } else {
             rewritten.push(stmt.clone());
         }
