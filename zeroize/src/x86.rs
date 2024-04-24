@@ -11,7 +11,6 @@ use core::arch::x86_64::*;
 macro_rules! impl_zeroize_for_simd_register {
     ($($type:ty),* $(,)?) => {
         $(
-            #[cfg_attr(docsrs, doc(cfg(any(target_arch = "x86", target_arch = "x86_64"))))]
             impl Zeroize for $type {
                 #[inline]
                 fn zeroize(&mut self) {

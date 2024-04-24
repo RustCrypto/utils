@@ -1,7 +1,4 @@
 //! [`Zeroize`] impls for ARM64 SIMD registers.
-//!
-//! Gated behind the `aarch64` feature: MSRV 1.59
-//! (the overall crate is MSRV 1.60)
 
 use crate::{atomic_fence, volatile_write, Zeroize};
 
@@ -10,7 +7,6 @@ use core::arch::aarch64::*;
 macro_rules! impl_zeroize_for_simd_register {
     ($($type:ty),* $(,)?) => {
         $(
-            #[cfg_attr(docsrs, doc(cfg(target_arch = "aarch64")))]
             impl Zeroize for $type {
                 #[inline]
                 fn zeroize(&mut self) {
