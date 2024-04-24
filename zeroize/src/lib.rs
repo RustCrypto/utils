@@ -1,5 +1,5 @@
 #![no_std]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
@@ -243,7 +243,6 @@ extern crate alloc;
 extern crate std;
 
 #[cfg(feature = "zeroize_derive")]
-#[cfg_attr(docsrs, doc(cfg(feature = "zeroize_derive")))]
 pub use zeroize_derive::{Zeroize, ZeroizeOnDrop};
 
 #[cfg(all(feature = "aarch64", target_arch = "aarch64"))]
@@ -541,7 +540,6 @@ impl_zeroize_tuple!(A, B, C, D, E, F, G, H, I);
 impl_zeroize_tuple!(A, B, C, D, E, F, G, H, I, J);
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<Z> Zeroize for Vec<Z>
 where
     Z: Zeroize,
@@ -563,11 +561,9 @@ where
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<Z> ZeroizeOnDrop for Vec<Z> where Z: ZeroizeOnDrop {}
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<Z> Zeroize for Box<[Z]>
 where
     Z: Zeroize,
@@ -580,11 +576,9 @@ where
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl<Z> ZeroizeOnDrop for Box<[Z]> where Z: ZeroizeOnDrop {}
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl Zeroize for Box<str> {
     fn zeroize(&mut self) {
         self.as_mut().zeroize();
@@ -592,7 +586,6 @@ impl Zeroize for Box<str> {
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl Zeroize for String {
     fn zeroize(&mut self) {
         unsafe { self.as_mut_vec() }.zeroize();
@@ -600,7 +593,6 @@ impl Zeroize for String {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl Zeroize for CString {
     fn zeroize(&mut self) {
         // mem::take uses replace internally to swap the pointer
