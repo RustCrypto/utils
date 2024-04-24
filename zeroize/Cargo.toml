@@ -23,10 +23,11 @@ zeroize_derive = { version = "1.3", path = "derive", optional = true }
 
 [features]
 default = ["alloc"]
-aarch64 = []
 alloc = []
-derive = ["zeroize_derive"]
 std = ["alloc"]
+
+aarch64 = [] # NOTE: vestigial no-op feature; AArch64 support is always enabled now
+derive = ["zeroize_derive"]
 
 [package.metadata.docs.rs]
 all-features = true
