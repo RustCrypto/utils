@@ -15,7 +15,7 @@ version = "0.11.0-pre.5"
 dependencies = [
  "crypto-common",
  "hex-literal 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "zeroize 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "zeroize 1.7.0",
 ]
 
 [[package]]
@@ -216,16 +216,16 @@ dependencies = [
 [[package]]
 name = "zeroize"
 version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "525b4ec142c6b68a2d10f01f7bbf6755599ca3f81ea53b8431b7dd348f5fdb2d"
+
+[[package]]
+name = "zeroize"
+version = "1.8.0"
 dependencies = [
  "serde",
  "zeroize_derive",
 ]
-
-[[package]]
-name = "zeroize"
-version = "1.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "525b4ec142c6b68a2d10f01f7bbf6755599ca3f81ea53b8431b7dd348f5fdb2d"
 
 [[package]]
 name = "zeroize_derive"
