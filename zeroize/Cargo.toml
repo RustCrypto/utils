@@ -10,7 +10,8 @@ even WASM!
 """
 authors = ["The RustCrypto Project Developers"]
 license = "Apache-2.0 OR MIT"
-repository = "https://github.com/RustCrypto/utils/tree/master/zeroize"
+homepage = "https://github.com/RustCrypto/utils/tree/master/zeroize"
+repository = "https://github.com/RustCrypto/utils"
 readme = "README.md"
 categories = ["cryptography", "memory-management", "no-std", "os"]
 keywords = ["memory", "memset", "secure", "volatile", "zero"]
