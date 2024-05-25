@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.8.0 (2024-04-24)
+## 1.8.0 (2024-04-24) [YANKED]
+
+NOTE: yanked due concerns over the MSRV bump. See [#1067].
+
 ### Added
 - Unsafe `zeroize_flat_type` function ([#1045])
 - `Zeroize` impls for `__m512` types on `x86`/`x86_64` targets ([#1052])
@@ -20,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#1052]: https://github.com/RustCrypto/utils/pull/1052
 [#1055]: https://github.com/RustCrypto/utils/pull/1055
 [#1064]: https://github.com/RustCrypto/utils/pull/1064
+[#1067]: https://github.com/RustCrypto/utils/pull/1067
 
 ## 1.7.0 (2023-11-16)
 ### Changed
