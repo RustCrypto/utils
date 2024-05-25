@@ -15,7 +15,7 @@ readme = "README.md"
 categories = ["cryptography", "memory-management", "no-std", "os"]
 keywords = ["memory", "memset", "secure", "volatile", "zero"]
 edition = "2021"
-rust-version = "1.72"
+rust-version = "1.60"
 
 [dependencies]
 serde = { version = "1.0", default-features = false, optional = true }
@@ -28,6 +28,7 @@ std = ["alloc"]
 
 aarch64 = [] # NOTE: vestigial no-op feature; AArch64 support is always enabled now
 derive = ["zeroize_derive"]
+simd = [] # NOTE: MSRV 1.72
 
 [package.metadata.docs.rs]
 all-features = true

@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.72.0 # MSRV
+          - 1.60.0 # MSRV
           - stable
         target:
           - armv7a-none-eabi
@@ -53,7 +53,7 @@ jobs:
           # 32-bit Linux
           - target: i686-unknown-linux-gnu
             platform: ubuntu-latest
-            rust: 1.72.0 # MSRV
+            rust: 1.60.0 # MSRV
             deps: sudo apt update && sudo apt install gcc-multilib
           - target: i686-unknown-linux-gnu
             platform: ubuntu-latest
@@ -63,7 +63,7 @@ jobs:
           # 64-bit Linux
           - target: x86_64-unknown-linux-gnu
             platform: ubuntu-latest
-            rust: 1.72.0 # MSRV
+            rust: 1.60.0 # MSRV
           - target: x86_64-unknown-linux-gnu
             platform: ubuntu-latest
             rust: stable
@@ -71,7 +71,7 @@ jobs:
           # 64-bit macOS x86_64
           - target: x86_64-apple-darwin
             platform: macos-latest
-            rust: 1.72.0 # MSRV
+            rust: 1.60.0 # MSRV
           - target: x86_64-apple-darwin
             platform: macos-latest
             rust: stable
@@ -79,7 +79,7 @@ jobs:
           # 64-bit Windows
           - target: x86_64-pc-windows-msvc
             platform: windows-latest
-            rust: 1.72.0 # MSRV
+            rust: 1.60.0 # MSRV
           - target: x86_64-pc-windows-msvc
             platform: windows-latest
             rust: stable
@@ -93,16 +93,21 @@ jobs:
           targets: ${{ matrix.target }}
       - run: ${{ matrix.deps }}
       - run: cargo test --target ${{ matrix.target }}
-      - run: cargo test --target ${{ matrix.target }} --all-features
 
   # Cross-compiled tests
   cross:
     strategy:
       matrix:
         include:
+          # AArch64
+          - target: aarch64-unknown-linux-gnu
+            rust: 1.60.0
+          - target: aarch64-unknown-linux-gnu
+            rust: stable
+
           # PPC32
           - target: powerpc-unknown-linux-gnu
-            rust: 1.72.0 # MSRV
+            rust: 1.60.0 # MSRV
           - target: powerpc-unknown-linux-gnu
             rust: stable
     runs-on: ubuntu-latest
@@ -115,25 +120,25 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: RustCrypto/actions/cross-install@master
       - run: cross test --target ${{ matrix.target }}
+      - run: cross test --target ${{ matrix.target }} --all-features
 
-  # Feature-gated ARM64 SIMD register support (MSRV 1.59)
-  aarch64:
+  # Tests for x86-64 `simd` support (AVX-512 registers; MSRV 1.72)
+  x86:
     strategy:
       matrix:
         include:
-          - target: aarch64-unknown-linux-gnu
+          - target: x86_64-unknown-linux-gnu
             rust: 1.72.0
-          - target: aarch64-unknown-linux-gnu
+          - target: x86_64-unknown-linux-gnu
             rust: stable
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: RustCrypto/actions/cargo-cache@master
-      - run: ${{ matrix.deps }}
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - uses: RustCrypto/actions/cross-install@master
-      - run: cross test --target ${{ matrix.target }} --features aarch64
-      - run: cross test --target ${{ matrix.target }} --all-features
+      - run: cargo test --target ${{ matrix.target }} --features simd
+      - run: cargo test --target ${{ matrix.target }} --all-features

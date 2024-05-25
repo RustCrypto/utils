@@ -36,7 +36,7 @@ thereof, implemented in pure Rust with no usage of FFI or assembly.
 
 ## Minimum Supported Rust Version
 
-Rust **1.72** or newer.
+Rust **1.60** or newer.
 
 In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope
 for this crate's SemVer guarantees), however when we do it will be accompanied by
@@ -60,35 +60,21 @@ dual licensed as above, without any additional terms or conditions.
 [//]: # (badges)
 
 [crate-image]: https://img.shields.io/crates/v/zeroize.svg
-
 [crate-link]: https://crates.io/crates/zeroize
-
 [docs-image]: https://docs.rs/zeroize/badge.svg
-
 [docs-link]: https://docs.rs/zeroize/
-
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-
-[rustc-image]: https://img.shields.io/badge/rustc-1.72+-blue.svg
-
+[rustc-image]: https://img.shields.io/badge/rustc-1.60+-blue.svg
 [build-image]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml/badge.svg
-
 [build-link]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml
 
 [//]: # (general links)
 
 [RustCrypto]: https://github.com/RustCrypto
-
 [zeroize]: https://en.wikipedia.org/wiki/Zeroisation
-
 [`Zeroize` trait]: https://docs.rs/zeroize/latest/zeroize/trait.Zeroize.html
-
 [Documentation]: https://docs.rs/zeroize/
-
 [Zeroing memory securely is hard]: http://www.daemonology.net/blog/2014-09-04-how-to-zero-a-buffer.html
-
 [core::ptr::write_volatile]: https://doc.rust-lang.org/core/ptr/fn.write_volatile.html
-
 [core::sync::atomic]: https://doc.rust-lang.org/stable/core/sync/atomic/index.html
-
 [good cryptographic hygiene]: https://github.com/veorq/cryptocoding#clean-memory-of-secret-data
