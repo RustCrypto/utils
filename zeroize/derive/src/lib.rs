@@ -176,7 +176,7 @@ impl ZeroizeAttrs {
         }
 
         match &input.data {
-            syn::Data::Enum(enum_) => {
+            Data::Enum(enum_) => {
                 for variant in &enum_.variants {
                     for attr in &variant.attrs {
                         result.parse_attr(attr, Some(variant), None);
@@ -191,7 +191,7 @@ impl ZeroizeAttrs {
                     }
                 }
             }
-            syn::Data::Struct(struct_) => {
+            Data::Struct(struct_) => {
                 for field in &struct_.fields {
                     for attr in &field.attrs {
                         result.parse_attr(attr, None, Some(field));
@@ -201,7 +201,7 @@ impl ZeroizeAttrs {
                     }
                 }
             }
-            syn::Data::Union(union_) => panic!("Unsupported untagged union {:?}", union_),
+            Data::Union(union_) => panic!("Unsupported untagged union {:?}", union_),
         }
 
         result.auto_params = bound_accumulator.params;
