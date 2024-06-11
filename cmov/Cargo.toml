@@ -9,7 +9,8 @@ and CSEL on AArch64.
 version = "0.3.1"
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
-repository = "https://github.com/RustCrypto/utils/tree/master/cmov"
+homepage = "https://github.com/RustCrypto/utils/tree/master/cmov"
+repository = "https://github.com/RustCrypto/utils"
 categories = ["cryptography", "hardware-support", "no-std"]
 keywords = ["crypto", "intrinsics"]
 readme = "README.md"

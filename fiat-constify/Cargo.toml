@@ -8,7 +8,8 @@ them as `const fn`
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/fiat-constify"
-repository = "https://github.com/RustCrypto/utils/tree/master/fiat-constify"
+homepage = "https://github.com/RustCrypto/utils/tree/master/fiat-constify"
+repository = "https://github.com/RustCrypto/utils"
 categories = ["cryptography"]
 keywords = ["fiat-crypto", "field"]
 readme = "README.md"
