@@ -10,7 +10,7 @@ pub trait Sealed {
     #[cfg(feature = "zeroize")]
     type Pos: Default + Clone + zeroize::Zeroize;
 
-    const NAME: &str;
+    const NAME: &'static str;
 
     fn get_pos<N: ArraySize>(buf: &Block<N>, pos: &Self::Pos) -> usize;
 
@@ -26,7 +26,7 @@ pub trait Sealed {
 
 impl Sealed for super::Eager {
     type Pos = ();
-    const NAME: &str = "BlockBuffer<Eager>";
+    const NAME: &'static str = "BlockBuffer<Eager>";
 
     fn get_pos<N: ArraySize>(buf: &Block<N>, _pos: &Self::Pos) -> usize {
         // SAFETY: last byte in `buf` for eager hashes is always properly initialized
@@ -72,7 +72,7 @@ impl Sealed for super::Eager {
 
 impl Sealed for super::Lazy {
     type Pos = u8;
-    const NAME: &str = "BlockBuffer<Lazy>";
+    const NAME: &'static str = "BlockBuffer<Lazy>";
 
     fn get_pos<N: ArraySize>(_buf_val: &Block<N>, pos: &Self::Pos) -> usize {
         *pos as usize
