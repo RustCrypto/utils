@@ -252,7 +252,7 @@ mod x86;
 
 use core::{
     marker::{PhantomData, PhantomPinned},
-    mem::{self, size_of, MaybeUninit},
+    mem::{size_of, MaybeUninit},
     num::{
         self, NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize,
         NonZeroU128, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
@@ -595,6 +595,8 @@ impl Zeroize for String {
 #[cfg(feature = "std")]
 impl Zeroize for CString {
     fn zeroize(&mut self) {
+        use core::mem;
+
         // mem::take uses replace internally to swap the pointer
         // Unfortunately this results in an allocation for a Box::new(&[0]) as CString must
         // contain a trailing zero byte
