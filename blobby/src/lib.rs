@@ -151,10 +151,10 @@ fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
 ///         - (J << 1) & 0x01: indicates this blob is index entry J
 ///         - (L << 1) & 0x00: indicates an explicit blob of len L
 ///      - (in the latter case) explicit blob contents (L bytes)
-pub fn encode_blobs<'a, I, T: 'a>(blobs: &'a I) -> (Vec<u8>, usize)
+pub fn encode_blobs<'a, I, T>(blobs: &'a I) -> (Vec<u8>, usize)
 where
     &'a I: IntoIterator<Item = &'a T>,
-    T: AsRef<[u8]>,
+    T: AsRef<[u8]> + 'a,
 {
     let mut idx_map = BTreeMap::new();
     blobs
