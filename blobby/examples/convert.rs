@@ -6,7 +6,7 @@ use std::{env, error::Error, fs::File};
 fn encode(reader: impl BufRead, mut writer: impl Write) -> io::Result<usize> {
     let mut blobs = Vec::new();
     for line in reader.lines() {
-        let blob = hex::decode(line?.as_str())
+        let blob = base16ct::mixed::decode_vec(line?.as_str())
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
         blobs.push(blob);
     }
@@ -34,7 +34,7 @@ fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W) -> io::Result<usiz
                 format!("invalid blobby data: {:?}", e),
             )
         })?;
-        writer.write_all(hex::encode(blob).as_bytes())?;
+        writer.write_all(base16ct::lower::encode_string(blob).as_bytes())?;
         writer.write_all(b"\n")?;
     }
     Ok(res.len())

@@ -10,4 +10,4 @@ categories = ["no-std"]
 edition = "2018"
 
 [dev-dependencies]
-hex = "0.4"
+base16ct = { version = "0.2", features = ["std"] }
