@@ -44,19 +44,19 @@ impl<'inp, 'out, T> InOut<'inp, 'out, T> {
     /// # Safety
     /// Behavior is undefined if any of the following conditions are violated:
     /// - `in_ptr` must point to a properly initialized value of type `T` and
-    /// must be valid for reads.
+    ///   must be valid for reads.
     /// - `out_ptr` must point to a properly initialized value of type `T` and
-    /// must be valid for both reads and writes.
+    ///   must be valid for both reads and writes.
     /// - `in_ptr` and `out_ptr` must be either equal or non-overlapping.
     /// - If `in_ptr` and `out_ptr` are equal, then the memory referenced by
-    /// them must not be accessed through any other pointer (not derived from
-    /// the return value) for the duration of lifetime 'a. Both read and write
-    /// accesses are forbidden.
+    ///   them must not be accessed through any other pointer (not derived from
+    ///   the return value) for the duration of lifetime 'a. Both read and write
+    ///   accesses are forbidden.
     /// - If `in_ptr` and `out_ptr` are not equal, then the memory referenced by
-    /// `out_ptr` must not be accessed through any other pointer (not derived from
-    /// the return value) for the duration of lifetime `'a`. Both read and write
-    /// accesses are forbidden. The memory referenced by `in_ptr` must not be
-    /// mutated for the duration of lifetime `'a`, except inside an `UnsafeCell`.
+    ///   `out_ptr` must not be accessed through any other pointer (not derived from
+    ///   the return value) for the duration of lifetime `'a`. Both read and write
+    ///   accesses are forbidden. The memory referenced by `in_ptr` must not be
+    ///   mutated for the duration of lifetime `'a`, except inside an `UnsafeCell`.
     #[inline(always)]
     pub unsafe fn from_raw(in_ptr: *const T, out_ptr: *mut T) -> InOut<'inp, 'out, T> {
         Self {

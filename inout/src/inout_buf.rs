@@ -149,20 +149,20 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
     /// # Safety
     /// Behavior is undefined if any of the following conditions are violated:
     /// - `in_ptr` must point to a properly initialized value of type `T` and
-    /// must be valid for reads for `len * mem::size_of::<T>()` many bytes.
+    ///   must be valid for reads for `len * mem::size_of::<T>()` many bytes.
     /// - `out_ptr` must point to a properly initialized value of type `T` and
-    /// must be valid for both reads and writes for `len * mem::size_of::<T>()`
-    /// many bytes.
+    ///   must be valid for both reads and writes for `len * mem::size_of::<T>()`
+    ///   many bytes.
     /// - `in_ptr` and `out_ptr` must be either equal or non-overlapping.
     /// - If `in_ptr` and `out_ptr` are equal, then the memory referenced by
-    /// them must not be accessed through any other pointer (not derived from
-    /// the return value) for the duration of lifetime 'a. Both read and write
-    /// accesses are forbidden.
+    ///   them must not be accessed through any other pointer (not derived from
+    ///   the return value) for the duration of lifetime 'a. Both read and write
+    ///   accesses are forbidden.
     /// - If `in_ptr` and `out_ptr` are not equal, then the memory referenced by
-    /// `out_ptr` must not be accessed through any other pointer (not derived from
-    /// the return value) for the duration of lifetime 'a. Both read and write
-    /// accesses are forbidden. The memory referenced by `in_ptr` must not be
-    /// mutated for the duration of lifetime `'a`, except inside an `UnsafeCell`.
+    ///   `out_ptr` must not be accessed through any other pointer (not derived from
+    ///   the return value) for the duration of lifetime 'a. Both read and write
+    ///   accesses are forbidden. The memory referenced by `in_ptr` must not be
+    ///   mutated for the duration of lifetime `'a`, except inside an `UnsafeCell`.
     /// - The total size `len * mem::size_of::<T>()`  must be no larger than `isize::MAX`.
     #[inline(always)]
     pub unsafe fn from_raw(

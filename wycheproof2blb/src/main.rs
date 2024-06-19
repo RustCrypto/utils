@@ -5,12 +5,13 @@
 )]
 use std::io::Write;
 
-mod aead;
+// We use `pub mod` to silence "field is never read" warnings
+pub mod aead;
 mod aes_siv;
 mod ecdsa;
 mod ed25519;
 mod hkdf;
-mod mac;
+pub mod mac;
 mod wycheproof;
 
 /// Test information
@@ -22,10 +23,10 @@ pub struct TestInfo {
 }
 
 /// Generator function which takes input parameters:
-///  - contents of Wycheproof test data file
-///  - algorithm name
-///  - key size (in bits) to include
-/// and returns the raw contents, together  with a list of test identifiers (one per entry).
+/// - contents of Wycheproof test data file
+/// - algorithm name
+/// - key size (in bits) to include
+///   and returns the raw contents, together  with a list of test identifiers (one per entry).
 type BlbGenerator = fn(&[u8], &str, u32) -> Vec<TestInfo>;
 
 struct Algorithm {
