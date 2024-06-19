@@ -5,7 +5,7 @@
 )]
 use std::io::Write;
 
-// We use `pub mod` to silence "field is never read" warnings
+// `pub mod` is used to silence "field is never read" warnings
 pub mod aead;
 mod aes_siv;
 mod ecdsa;
