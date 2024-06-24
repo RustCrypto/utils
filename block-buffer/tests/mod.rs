@@ -109,7 +109,6 @@ fn test_read() {
 }
 
 #[test]
-#[rustfmt::skip]
 fn test_eager_paddings() {
     let mut buf_be = EagerBuffer::<U8>::new(&[0x42]);
     let mut buf_le = buf_be.clone();
@@ -119,8 +118,8 @@ fn test_eager_paddings() {
     buf_be.len64_padding_be(len, |block| out_be.extend(block));
     buf_le.len64_padding_le(len, |block| out_le.extend(block));
 
-    assert_eq!(out_be, hex!("42800000000000000001020304050607"));
-    assert_eq!(out_le, hex!("42800000000000000706050403020100"));
+    assert_eq!(out_be, hex!("4280000000000000 0001020304050607"));
+    assert_eq!(out_le, hex!("4280000000000000 0706050403020100"));
 
     let mut buf_be = EagerBuffer::<U10>::new(&[0x42]);
     let mut buf_le = buf_be.clone();
@@ -138,14 +137,20 @@ fn test_eager_paddings() {
     buf.len128_padding_be(len, |block| out.extend(block));
     assert_eq!(
         out,
-        hex!("42800000000000000000000000000000000102030405060708090a0b0c0d0e0f"),
+        hex!(
+            "42800000000000000000000000000000"
+            "000102030405060708090a0b0c0d0e0f"
+        ),
     );
 
     let mut buf = EagerBuffer::<U24>::new(&[0x42]);
     let mut out = Vec::<u8>::new();
     let len = 0x0001_0203_0405_0607_0809_0a0b_0c0d_0e0f;
     buf.len128_padding_be(len, |block| out.extend(block));
-    assert_eq!(out, hex!("4280000000000000000102030405060708090a0b0c0d0e0f"));
+    assert_eq!(
+        out,
+        hex!("4280000000000000 0001020304050607 08090a0b0c0d0e0f")
+    );
 
     let mut buf = EagerBuffer::<U4>::new(&[0x42]);
     let mut out = Vec::<u8>::new();
