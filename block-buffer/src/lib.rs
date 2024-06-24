@@ -377,7 +377,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Lazy> {
         if buffer[1..][pos as usize..].iter().any(|&b| b != 0) {
             return Err(Error);
         }
-        let buf = Array::clone_from_slice(&buffer[1..]);
+        let buf = Array::try_from(&buffer[1..]).expect("slice has correct length");
         Ok(Self {
             buffer: MaybeUninit::new(buf),
             pos,
