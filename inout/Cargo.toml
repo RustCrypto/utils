@@ -13,7 +13,7 @@ readme = "README.md"
 
 [dependencies]
 block-padding = { version = "=0.4.0-pre.4", path = "../block-padding", optional = true }
-hybrid-array = "0.2.0-rc.8"
+hybrid-array = "0.2.0-rc.9"
 
 [features]
 std = ["block-padding/std"]
