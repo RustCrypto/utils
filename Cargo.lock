@@ -11,7 +11,7 @@ dependencies = [
 
 [[package]]
 name = "block-buffer"
-version = "0.11.0-pre.5"
+version = "0.11.0-rc.0"
 dependencies = [
  "crypto-common",
  "hex-literal 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
