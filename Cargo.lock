@@ -93,7 +93,7 @@ dependencies = [
 
 [[package]]
 name = "inout"
-version = "0.2.0-pre.4"
+version = "0.2.0-rc.0"
 dependencies = [
  "block-padding",
  "hybrid-array",
