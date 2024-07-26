@@ -121,9 +121,12 @@ fn main() {
             file: "ecdsa_secp256r1_sha256_test.json",
             generator: ecdsa::generator,
         },
-        // There's also "ecdsa_secp256r1_sha256_p1363_test.json" with a different signature encoding.
         "secp256k1" => Algorithm {
             file: "ecdsa_secp256k1_sha256_test.json",
+            generator: ecdsa::generator,
+        },
+        "secp256k1-p1316" => Algorithm {
+            file: "ecdsa_secp256k1_sha256_p1363_test.json",
             generator: ecdsa::generator,
         },
         "secp384r1" => Algorithm {

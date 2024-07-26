@@ -54,7 +54,7 @@ pub fn generator(data: &[u8], algorithm: &str, _key_size: u32) -> Vec<TestInfo> 
 
     let mut infos = vec![];
     for g in &suite.test_groups {
-        assert_eq!(g.key.curve, algorithm);
+        assert!(algorithm.starts_with(&g.key.curve));
         assert!(matches!(
             g.sha.as_str(),
             "SHA-224" | "SHA-256" | "SHA-384" | "SHA-512"
