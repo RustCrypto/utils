@@ -1,6 +1,6 @@
 [package]
 name = "block-buffer"
-version = "0.11.0-pre.5"
+version = "0.11.0-rc.0"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Buffer type for block processing of data"
