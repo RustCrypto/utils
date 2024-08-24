@@ -107,6 +107,12 @@ macro_rules! check {
     ("aes") => {
         true
     };
+    ("dit") => {
+        // https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms#Enable-DIT-for-constant-time-cryptographic-operations
+        unsafe {
+            $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_DIT\0")
+        }
+    };
     ("sha2") => {
         true
     };
