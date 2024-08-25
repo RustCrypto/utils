@@ -3,6 +3,13 @@
 version = 3
 
 [[package]]
+name = "aarch64-dit"
+version = "0.0.0"
+dependencies = [
+ "cpufeatures",
+]
+
+[[package]]
 name = "blobby"
 version = "0.3.1"
 dependencies = [
