@@ -38,7 +38,7 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://buildstats.info/crate/fiat-constify
+[crate-image]: https://img.shields.io/crates/v/fiat-constify
 [crate-link]: https://crates.io/crates/fiat-constify
 [docs-image]: https://docs.rs/fiat-constify/badge.svg
 [docs-link]: https://docs.rs/fiat-constify/
