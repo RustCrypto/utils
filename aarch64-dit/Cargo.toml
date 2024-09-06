@@ -3,7 +3,7 @@ name = "aarch64-dit"
 description = """
 Wrappers for enabling/disabling the Data Independent Timing (DIT) feature on AArch64 CPUs
 """
-version = "0.0.1-alpha"
+version = "0.1.0"
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 homepage = "https://github.com/RustCrypto/utils/tree/master/aarch64-dit"
