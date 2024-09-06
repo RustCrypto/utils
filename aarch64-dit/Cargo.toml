@@ -16,3 +16,6 @@ rust-version = "1.61"
 
 [dev-dependencies]
 cpufeatures = { version = "0.2.14", path = "../cpufeatures" }
+
+[package.metadata.docs.rs]
+default-target = "aarch64-unknown-linux-gnu"
