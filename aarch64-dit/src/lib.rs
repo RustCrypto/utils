@@ -44,9 +44,7 @@ impl Dit {
     #[must_use]
     pub fn enable(&self) -> Guard<'_> {
         let was_enabled = if self.is_supported() {
-            let was_enabled = unsafe { get_dit_enabled() };
-            unsafe { set_dit_enabled() };
-            was_enabled
+            unsafe { set_dit_enabled() }
         } else {
             false
         };
@@ -102,9 +100,13 @@ unsafe fn get_dit_enabled() -> bool {
 }
 
 /// Enable DIT for the current thread.
+///
+/// Returns the previous DIT state prior to enabling DIT.
 #[target_feature(enable = "dit")]
-unsafe fn set_dit_enabled() {
+unsafe fn set_dit_enabled() -> bool {
+    let was_enabled = get_dit_enabled();
     asm!("msr DIT, #1", options(nomem, nostack, preserves_flags));
+    was_enabled
 }
 
 /// Restore DIT state depending on the enabled bit.
@@ -153,7 +155,8 @@ mod tests {
         let dit_enabled = unsafe { get_dit_enabled() };
         assert!(!dit_enabled);
 
-        unsafe { set_dit_enabled() };
+        let was_enabled = unsafe { set_dit_enabled() };
+        assert!(!was_enabled);
         let dit_enabled = unsafe { get_dit_enabled() };
         assert!(dit_enabled);
 
