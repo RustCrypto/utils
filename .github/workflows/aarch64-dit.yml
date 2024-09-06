@@ -1,0 +1,37 @@
+name: aarch64-dit
+
+on:
+  pull_request:
+    paths:
+      - "aarch64-dit/**"
+      - "Cargo.*"
+  push:
+    branches: master
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: aarch64-dit
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  macos:
+    strategy:
+      matrix:
+        toolchain:
+          - 1.61.0 # MSRV
+          - stable
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          targets: aarch64-apple-darwin
+      - run: cargo test

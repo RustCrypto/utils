@@ -1,0 +1,19 @@
+[package]
+name = "aarch64-dit"
+description = """
+Wrappers for enabling/disabling the Data Independent Timing (DIT) feature on AArch64 CPUs
+"""
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+homepage = "https://github.com/RustCrypto/utils/tree/master/aarch64-dit"
+repository = "https://github.com/RustCrypto/utils"
+categories = ["cryptography", "hardware-support", "no-std"]
+keywords = ["crypto", "intrinsics"]
+readme = "README.md"
+edition = "2021"
+rust-version = "1.61"
+
+[dev-dependencies]
+# TODO: release `cpufeatures` with `dit` support
+cpufeatures = { path = "../cpufeatures" }
