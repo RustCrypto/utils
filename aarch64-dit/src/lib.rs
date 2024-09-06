@@ -15,14 +15,18 @@ use core::arch::asm;
 #[target_feature(enable = "dit")]
 pub unsafe fn get_dit_enabled() -> bool {
     let mut dit: u64;
-    asm!("mrs {dit}, DIT", dit = out(reg) dit);
+    asm!(
+        "mrs {dit}, DIT",
+        dit = out(reg) dit,
+        options(nomem, nostack, preserves_flags)
+    );
     (dit >> 24) & 1 != 0
 }
 
 /// Enable DIT for the current thread.
 #[target_feature(enable = "dit")]
 pub unsafe fn set_dit_enabled() {
-    asm!("msr DIT, #1");
+    asm!("msr DIT, #1", options(nomem, nostack, preserves_flags));
 }
 
 /// Restore DIT state depending on the enabled bit.
@@ -30,7 +34,7 @@ pub unsafe fn set_dit_enabled() {
 pub unsafe fn restore_dit(enabled: bool) {
     if !enabled {
         // Disable DIT
-        asm!("msr DIT, #0");
+        asm!("msr DIT, #0", options(nomem, nostack, preserves_flags));
     }
 }
 
