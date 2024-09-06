@@ -14,7 +14,7 @@ readme = "README.md"
 edition = "2021"
 rust-version = "1.61"
 
-[dev-dependencies]
+[dependencies]
 cpufeatures = { version = "0.2.14", path = "../cpufeatures" }
 
 [package.metadata.docs.rs]
