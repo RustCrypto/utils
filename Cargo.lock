@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "aarch64-dit"
-version = "0.0.0"
+version = "0.0.1-alpha"
 dependencies = [
  "cpufeatures",
 ]
