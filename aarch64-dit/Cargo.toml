@@ -15,5 +15,4 @@ edition = "2021"
 rust-version = "1.61"
 
 [dev-dependencies]
-# TODO: release `cpufeatures` with `dit` support
-cpufeatures = { path = "../cpufeatures" }
+cpufeatures = { version = "0.2.14", path = "../cpufeatures" }
