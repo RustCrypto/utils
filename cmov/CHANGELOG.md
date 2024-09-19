@@ -29,8 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [#863]: https://github.com/RustCrypto/utils/pull/863
 [#864]: https://github.com/RustCrypto/utils/pull/864
-[#871]: https://github.com/RustCrypto/utils/pull/881
-[#873]: https://github.com/RustCrypto/utils/pull/883
+[#871]: https://github.com/RustCrypto/utils/pull/871
+[#873]: https://github.com/RustCrypto/utils/pull/873
 
 ## 0.2.0 (2023-02-26)
 ### Added
