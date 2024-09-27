@@ -8,9 +8,9 @@ documentation = "https://docs.rs/dbl"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["crypto", "dbl", "gf", "galois"]
 edition = "2021"
-rust-version = "1.65"
+rust-version = "1.81"
 readme = "README.md"
 
 [dependencies]
-hybrid-array = "0.2.0-rc.9"
+hybrid-array = "0.2.0-rc.10"
 
