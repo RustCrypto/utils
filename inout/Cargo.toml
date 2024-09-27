@@ -5,7 +5,7 @@ description = "Custom reference types for code generic over in-place and buffer-
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.81"
 documentation = "https://docs.rs/inout"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["custom-reference"]
@@ -13,7 +13,7 @@ readme = "README.md"
 
 [dependencies]
 block-padding = { version = "0.4.0-rc.0", path = "../block-padding", optional = true }
-hybrid-array = "0.2.0-rc.9"
+hybrid-array = "0.2.0-rc.10"
 
 [features]
 std = ["block-padding/std"]

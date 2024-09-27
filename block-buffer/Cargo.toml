@@ -10,7 +10,7 @@ keywords = ["block", "buffer"]
 categories = ["cryptography", "no-std"]
 edition = "2021"
 readme = "README.md"
-rust-version = "1.65"
+rust-version = "1.81"
 
 [dependencies]
 crypto-common = "0.2.0-rc.1"
