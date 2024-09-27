@@ -11,17 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional implementation of the `Zeroize` trait ([#963])
 
 ### Changed
-- Supported block sizes are now bounded by the `crypto_common::BlockSizes` trait,
-  which is implemented for types from `U1` to `U255` ([#823])
+- Block sizes must be bigger than 0 and smaller than 256.
+  This is enforced using compile-time monomorphization errors. ([#1115])
 - Size of `EagerBuffer` is equal to buffer size, while previously it was equal
   to buffer size plus one byte ([#823])
-- Edition changed to 2021 and MSRV bumped to 1.56 ([#823])
+- Edition changed to 2021 and MSRV bumped to 1.81 ([#823], [#1116])
 
 ### Removed
 - `EagerBuffer::set_data` method. Use the `ReadBuffer` type instead. ([#823])
 
 [#823]: https://github.com/RustCrypto/utils/pull/823
 [#963]: https://github.com/RustCrypto/utils/pull/963
+[#1115]: https://github.com/RustCrypto/utils/pull/1115
+[#1115]: https://github.com/RustCrypto/utils/pull/1116
 
 ## 0.10.3 (2022-09-04)
 ### Added

@@ -3,7 +3,7 @@ use block_buffer::{
         typenum::{U10, U16, U24, U4, U8},
         Array,
     },
-    Block, EagerBuffer, LazyBuffer, ReadBuffer,
+    EagerBuffer, LazyBuffer, ReadBuffer,
 };
 use hex_literal::hex;
 
@@ -82,7 +82,7 @@ fn test_read() {
     let mut buf = Buf::default();
 
     let mut n = 0u8;
-    let mut gen = |block: &mut Block<Buf>| {
+    let mut gen = |block: &mut Array<u8, U4>| {
         block.iter_mut().for_each(|b| *b = n);
         n += 1;
     };
@@ -288,7 +288,7 @@ fn test_read_serialize() {
     type Buf = ReadBuffer<U4>;
 
     let mut n = 42u8;
-    let mut gen = |block: &mut Block<Buf>| {
+    let mut gen = |block: &mut Array<u8, U4>| {
         block.iter_mut().for_each(|b| {
             *b = n;
             n += 1;

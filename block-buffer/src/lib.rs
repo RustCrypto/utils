@@ -1,4 +1,38 @@
 //! Fixed size buffer for block processing of data.
+//!
+//! # Examples
+//! ```
+//! use block_buffer::{EagerBuffer, array::typenum::U4};
+//!
+//! let mut buf = EagerBuffer::<U4>::default();
+//!
+//! let mut accum = Vec::new();
+//! let msg1: &[u8] = &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+//! let msg2: &[u8] = &[10, 11, 12];
+//!
+//! buf.digest_blocks(msg1, |blocks| accum.extend_from_slice(blocks));
+//! buf.digest_blocks(msg2, |blocks| accum.extend_from_slice(blocks));
+//!
+//! assert_eq!(accum.len(), 3);
+//! assert_eq!(accum[0], [0, 1, 2, 3]);
+//! assert_eq!(accum[1], [4, 5, 6, 7]);
+//! assert_eq!(accum[2], [8, 9, 10, 11]);
+//!
+//! let padded_block = buf.pad_with_zeros();
+//! assert_eq!(padded_block, [12, 0, 0, 0]);
+//! ```
+//!
+//! Note that block size used with buffers MUST be bigger than zero and smaller than 256.
+//! You will get a compilation error with an invalid block size:
+//!
+//! ```compile_fail
+//! use block_buffer::{EagerBuffer, array::typenum::U0};
+//! let buf = EagerBuffer::<U0>::default();
+//! ```
+//! ```compile_fail
+//! use block_buffer::{EagerBuffer, array::typenum::U256};
+//! let buf = EagerBuffer::<U256>::default();
+//! ```
 #![no_std]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
@@ -6,14 +40,13 @@
 )]
 #![warn(missing_docs, rust_2018_idioms)]
 
-pub use crypto_common::{array, Block};
+pub use hybrid_array as array;
 
 use array::{
     typenum::{Add1, B1},
     Array, ArraySize,
 };
 use core::{fmt, mem::MaybeUninit, ops::Add, ptr, slice};
-use crypto_common::{BlockSizeUser, BlockSizes};
 
 #[cfg(feature = "zeroize")]
 use zeroize::Zeroize;
@@ -22,9 +55,6 @@ mod read;
 mod sealed;
 
 pub use read::ReadBuffer;
-
-/// Block with additional one byte
-type BlockP1<BlockSize> = Array<u8, Add1<BlockSize>>;
 
 /// Trait for buffer kinds.
 pub trait BufferKind: sealed::Sealed {}
@@ -59,18 +89,28 @@ impl fmt::Display for Error {
 }
 
 /// Buffer for block processing of data.
-pub struct BlockBuffer<BS: BlockSizes, K: BufferKind> {
-    buffer: MaybeUninit<Block<Self>>,
+pub struct BlockBuffer<BS: ArraySize, K: BufferKind> {
+    buffer: MaybeUninit<Array<u8, BS>>,
     pos: K::Pos,
 }
 
-impl<BS: BlockSizes, K: BufferKind> BlockSizeUser for BlockBuffer<BS, K> {
-    type BlockSize = BS;
+impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
+    /// This associated constant is used to assert block size correctness at compile time.
+    const BLOCK_SIZE_ASSERT: bool = {
+        if BS::USIZE == 0 {
+            panic!("Block size can not be equal to zero!");
+        }
+        if BS::USIZE > 255 {
+            panic!("Block size can not be bigger than 255!");
+        }
+        true
+    };
 }
 
-impl<BS: BlockSizes, K: BufferKind> Default for BlockBuffer<BS, K> {
+impl<BS: ArraySize, K: BufferKind> Default for BlockBuffer<BS, K> {
     #[inline]
     fn default() -> Self {
+        assert!(Self::BLOCK_SIZE_ASSERT);
         let mut buffer = MaybeUninit::uninit();
         let mut pos = Default::default();
         K::set_pos(&mut buffer, &mut pos, 0);
@@ -78,7 +118,7 @@ impl<BS: BlockSizes, K: BufferKind> Default for BlockBuffer<BS, K> {
     }
 }
 
-impl<BS: BlockSizes, K: BufferKind> Clone for BlockBuffer<BS, K> {
+impl<BS: ArraySize, K: BufferKind> Clone for BlockBuffer<BS, K> {
     #[inline]
     fn clone(&self) -> Self {
         // SAFETY: `BlockBuffer` does not implement `Drop` (i.e. it could be a `Copy` type),
@@ -87,7 +127,7 @@ impl<BS: BlockSizes, K: BufferKind> Clone for BlockBuffer<BS, K> {
     }
 }
 
-impl<BS: BlockSizes, K: BufferKind> fmt::Debug for BlockBuffer<BS, K> {
+impl<BS: ArraySize, K: BufferKind> fmt::Debug for BlockBuffer<BS, K> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         f.debug_struct(K::NAME)
             .field("pos", &self.get_pos())
@@ -97,7 +137,7 @@ impl<BS: BlockSizes, K: BufferKind> fmt::Debug for BlockBuffer<BS, K> {
     }
 }
 
-impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
+impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
     /// Create new buffer from slice.
     ///
     /// # Panics
@@ -112,6 +152,7 @@ impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
     /// Returns an error if slice length is not valid for used buffer kind.
     #[inline(always)]
     pub fn try_new(buf: &[u8]) -> Result<Self, Error> {
+        assert!(Self::BLOCK_SIZE_ASSERT);
         if !K::invariant(buf.len(), BS::USIZE) {
             return Err(Error);
         }
@@ -126,7 +167,7 @@ impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
     /// Digest data in `input` in blocks of size `BlockSize` using
     /// the `compress` function, which accepts slice of blocks.
     #[inline]
-    pub fn digest_blocks(&mut self, mut input: &[u8], mut compress: impl FnMut(&[Block<Self>])) {
+    pub fn digest_blocks(&mut self, mut input: &[u8], mut compress: impl FnMut(&[Array<u8, BS>])) {
         let pos = self.get_pos();
         // using `self.remaining()` for some reason
         // prevents panic elimination
@@ -186,8 +227,8 @@ impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
 
     /// Pad remaining data with zeros and return resulting block.
     #[inline(always)]
-    pub fn pad_with_zeros(&mut self) -> Block<Self> {
-        let mut res = Block::<Self>::default();
+    pub fn pad_with_zeros(&mut self) -> Array<u8, BS> {
+        let mut res = Array::<u8, BS>::default();
         let data = self.get_data();
         res[..data.len()].copy_from_slice(data);
         self.reset();
@@ -221,7 +262,7 @@ impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
     /// # Panics
     /// If `pos` is bigger or equal to block size.
     #[inline]
-    pub fn set(&mut self, buf: Block<Self>, pos: usize) {
+    pub fn set(&mut self, buf: Array<u8, BS>, pos: usize) {
         assert!(K::invariant(pos, BS::USIZE));
         self.buffer = MaybeUninit::new(buf);
         // SAFETY: we have asserted that `pos` satisfies the invariant and
@@ -271,7 +312,7 @@ impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
     }
 }
 
-impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
+impl<BS: ArraySize> BlockBuffer<BS, Eager> {
     /// Compress remaining data after padding it with `delim`, zeros and
     /// the `suffix` bytes. If there is not enough unused space, `compress`
     /// will be called twice.
@@ -279,7 +320,12 @@ impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
     /// # Panics
     /// If suffix length is bigger than block size.
     #[inline(always)]
-    pub fn digest_pad(&mut self, delim: u8, suffix: &[u8], mut compress: impl FnMut(&Block<Self>)) {
+    pub fn digest_pad(
+        &mut self,
+        delim: u8,
+        suffix: &[u8],
+        mut compress: impl FnMut(&Array<u8, BS>),
+    ) {
         if suffix.len() > BS::USIZE {
             panic!("suffix is too long");
         }
@@ -303,28 +349,28 @@ impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
     /// Pad message with 0x80, zeros and 64-bit message length using
     /// big-endian byte order.
     #[inline]
-    pub fn len64_padding_be(&mut self, data_len: u64, compress: impl FnMut(&Block<Self>)) {
+    pub fn len64_padding_be(&mut self, data_len: u64, compress: impl FnMut(&Array<u8, BS>)) {
         self.digest_pad(0x80, &data_len.to_be_bytes(), compress);
     }
 
     /// Pad message with 0x80, zeros and 64-bit message length using
     /// little-endian byte order.
     #[inline]
-    pub fn len64_padding_le(&mut self, data_len: u64, compress: impl FnMut(&Block<Self>)) {
+    pub fn len64_padding_le(&mut self, data_len: u64, compress: impl FnMut(&Array<u8, BS>)) {
         self.digest_pad(0x80, &data_len.to_le_bytes(), compress);
     }
 
     /// Pad message with 0x80, zeros and 128-bit message length using
     /// big-endian byte order.
     #[inline]
-    pub fn len128_padding_be(&mut self, data_len: u128, compress: impl FnMut(&Block<Self>)) {
+    pub fn len128_padding_be(&mut self, data_len: u128, compress: impl FnMut(&Array<u8, BS>)) {
         self.digest_pad(0x80, &data_len.to_be_bytes(), compress);
     }
 
     /// Serialize buffer into a byte array.
     #[inline]
-    pub fn serialize(&self) -> Block<Self> {
-        let mut res = Block::<Self>::default();
+    pub fn serialize(&self) -> Array<u8, BS> {
+        let mut res = Array::<u8, BS>::default();
         let data = self.get_data();
         res[..data.len()].copy_from_slice(data);
         res[BS::USIZE - 1] = data.len() as u8;
@@ -333,7 +379,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
 
     /// Deserialize buffer from a byte array.
     #[inline]
-    pub fn deserialize(buffer: &Block<Self>) -> Result<Self, Error> {
+    pub fn deserialize(buffer: &Array<u8, BS>) -> Result<Self, Error> {
         let pos = buffer[BS::USIZE - 1] as usize;
         if !<Eager as sealed::Sealed>::invariant(pos, BS::USIZE) {
             return Err(Error);
@@ -348,15 +394,15 @@ impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
     }
 }
 
-impl<BS: BlockSizes> BlockBuffer<BS, Lazy> {
+impl<BS: ArraySize> BlockBuffer<BS, Lazy> {
     /// Serialize buffer into a byte array.
     #[inline]
-    pub fn serialize(&self) -> BlockP1<BS>
+    pub fn serialize(&self) -> Array<u8, Add1<BS>>
     where
         BS: Add<B1>,
         Add1<BS>: ArraySize,
     {
-        let mut res = BlockP1::<BS>::default();
+        let mut res = Array::<u8, Add1<BS>>::default();
         res[0] = self.pos;
         let data = self.get_data();
         res[1..][..data.len()].copy_from_slice(data);
@@ -365,7 +411,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Lazy> {
 
     /// Deserialize buffer from a byte array.
     #[inline]
-    pub fn deserialize(buffer: &BlockP1<BS>) -> Result<Self, Error>
+    pub fn deserialize(buffer: &Array<u8, Add1<BS>>) -> Result<Self, Error>
     where
         BS: Add<B1>,
         Add1<BS>: ArraySize,
@@ -386,7 +432,7 @@ impl<BS: BlockSizes> BlockBuffer<BS, Lazy> {
 }
 
 #[cfg(feature = "zeroize")]
-impl<BS: BlockSizes, K: BufferKind> Zeroize for BlockBuffer<BS, K> {
+impl<BS: ArraySize, K: BufferKind> Zeroize for BlockBuffer<BS, K> {
     #[inline]
     fn zeroize(&mut self) {
         self.buffer.zeroize();
