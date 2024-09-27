@@ -1,4 +1,4 @@
-use crate::array::{Array, ArraySize};
+use super::{Array, ArraySize};
 use core::{mem::MaybeUninit, ptr, slice};
 
 type Block<N> = MaybeUninit<Array<u8, N>>;
