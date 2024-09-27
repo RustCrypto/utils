@@ -22,17 +22,15 @@
 //! assert_eq!(padded_block, [12, 0, 0, 0]);
 //! ```
 //!
-//! Note that block size used with buffers MUST be bigger than zero and smaller than 255.
+//! Note that block size used with buffers MUST be bigger than zero and smaller than 256.
 //! You will get a compilation error with an invalid block size:
 //!
 //! ```compile_fail
 //! use block_buffer::{EagerBuffer, array::typenum::U0};
-//!
 //! let buf = EagerBuffer::<U0>::default();
 //! ```
 //! ```compile_fail
 //! use block_buffer::{EagerBuffer, array::typenum::U256};
-//!
 //! let buf = EagerBuffer::<U256>::default();
 //! ```
 #![no_std]
