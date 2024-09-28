@@ -129,7 +129,6 @@ impl<'inp, 'out, T> InOutBufReserved<'inp, 'out, T> {
 impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
     /// Transform buffer into [`PaddedInOutBuf`] using padding algorithm `P`.
     #[cfg(feature = "block-padding")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "block-padding")))]
     #[inline(always)]
     pub fn into_padded_blocks<P, BS>(self) -> Result<PaddedInOutBuf<'inp, 'out, BS>, PadError>
     where
@@ -183,7 +182,6 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
 
 /// Variant of [`InOutBuf`] with optional padded tail block.
 #[cfg(feature = "block-padding")]
-#[cfg_attr(docsrs, doc(cfg(feature = "block-padding")))]
 pub struct PaddedInOutBuf<'inp, 'out, BS: ArraySize> {
     blocks: InOutBuf<'inp, 'out, Array<u8, BS>>,
     tail_in: Array<u8, BS>,
