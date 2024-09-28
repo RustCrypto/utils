@@ -27,7 +27,6 @@ impl core::error::Error for NotEqualError {}
 
 /// Padding error. Usually emitted when size of output buffer is insufficient.
 #[cfg(feature = "block-padding")]
-#[cfg_attr(docsrs, doc(cfg(feature = "block-padding")))]
 #[derive(Clone, Copy, Debug)]
 pub struct PadError;
 
