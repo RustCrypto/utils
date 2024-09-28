@@ -10,9 +10,7 @@ impl fmt::Display for IntoArrayError {
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl std::error::Error for IntoArrayError {}
+impl core::error::Error for IntoArrayError {}
 
 /// The error returned when input and output slices have different length
 /// and thus can not be converted to `InOutBuf`.
@@ -25,9 +23,7 @@ impl fmt::Display for NotEqualError {
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl std::error::Error for NotEqualError {}
+impl core::error::Error for NotEqualError {}
 
 /// Padding error. Usually emitted when size of output buffer is insufficient.
 #[cfg(feature = "block-padding")]
@@ -43,9 +39,7 @@ impl fmt::Display for PadError {
 }
 
 #[cfg(feature = "block-padding")]
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl std::error::Error for PadError {}
+impl core::error::Error for PadError {}
 
 /// Output buffer is smaller than input buffer.
 #[derive(Clone, Copy, Debug)]
@@ -57,6 +51,4 @@ impl fmt::Display for OutIsTooSmallError {
     }
 }
 
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
-impl std::error::Error for OutIsTooSmallError {}
+impl core::error::Error for OutIsTooSmallError {}
