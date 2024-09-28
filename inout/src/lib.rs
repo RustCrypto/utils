@@ -10,9 +10,6 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs, rust_2018_idioms)]
 
-#[cfg(feature = "std")]
-extern crate std;
-
 #[cfg(feature = "block-padding")]
 #[cfg_attr(docsrs, doc(cfg(feature = "block-padding")))]
 pub use block_padding;
