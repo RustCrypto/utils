@@ -13,4 +13,4 @@ categories = ["cryptography", "no-std"]
 readme = "README.md"
 
 [dependencies]
-hybrid-array = "0.2.0-rc.10"
+hybrid-array = "0.2.0-rc.11"

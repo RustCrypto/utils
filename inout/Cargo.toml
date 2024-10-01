@@ -13,7 +13,7 @@ readme = "README.md"
 
 [dependencies]
 block-padding = { version = "0.4.0-rc.1", path = "../block-padding", optional = true }
-hybrid-array = "0.2.0-rc.10"
+hybrid-array = "0.2.0-rc.11"
 
 [package.metadata.docs.rs]
 all-features = true
