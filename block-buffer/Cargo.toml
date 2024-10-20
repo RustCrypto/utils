@@ -13,7 +13,7 @@ readme = "README.md"
 rust-version = "1.81"
 
 [dependencies]
-hybrid-array = "0.2.0-rc.11"
+hybrid-array = "0.2"
 zeroize = { version = "1.4", optional = true, default-features = false }
 
 [dev-dependencies]
