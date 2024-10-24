@@ -16,7 +16,7 @@ readme = "README.md"
 edition = "2021"
 
 [dependencies]
-prettyplease = "0.2.19"
+prettyplease = "0.2.25"
 proc-macro2 = "1"
 quote = "1"
 syn = { version = "2", features = ["extra-traits", "full"] }
