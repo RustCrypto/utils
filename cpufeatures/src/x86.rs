@@ -112,20 +112,20 @@ macro_rules! __expand_check_macro {
 }
 
 __expand_check_macro! {
-    ("sse3", "xmm", 0, ecx, 0),
-    ("pclmulqdq", "xmm", 0, ecx, 1),
-    ("ssse3", "xmm", 0, ecx, 9),
-    ("fma", "xmm", 0, ecx, 12, 0, ecx, 28),
-    ("sse4.1", "xmm", 0, ecx, 19),
-    ("sse4.2", "xmm", 0, ecx, 20),
+    ("sse3", "", 0, ecx, 0),
+    ("pclmulqdq", "", 0, ecx, 1),
+    ("ssse3", "", 0, ecx, 9),
+    ("fma", "ymm", 0, ecx, 12, 0, ecx, 28),
+    ("sse4.1", "", 0, ecx, 19),
+    ("sse4.2", "", 0, ecx, 20),
     ("popcnt", "", 0, ecx, 23),
-    ("aes", "xmm", 0, ecx, 25),
+    ("aes", "", 0, ecx, 25),
     ("avx", "xmm", 0, ecx, 28),
     ("rdrand", "", 0, ecx, 30),
 
     ("mmx", "", 0, edx, 23),
-    ("sse", "xmm", 0, edx, 25),
-    ("sse2", "xmm", 0, edx, 26),
+    ("sse", "", 0, edx, 25),
+    ("sse2", "", 0, edx, 26),
 
     ("sgx", "", 1, ebx, 2),
     ("bmi1", "", 1, ebx, 3),
@@ -139,7 +139,7 @@ __expand_check_macro! {
     ("avx512pf", "zmm", 1, ebx, 26),
     ("avx512er", "zmm", 1, ebx, 27),
     ("avx512cd", "zmm", 1, ebx, 28),
-    ("sha", "xmm", 1, ebx, 29),
+    ("sha", "", 1, ebx, 29),
     ("avx512bw", "zmm", 1, ebx, 30),
     ("avx512vl", "zmm", 1, ebx, 31),
     ("avx512vbmi", "zmm", 1, ecx, 1),
