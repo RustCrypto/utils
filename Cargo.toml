@@ -1,7 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-    "aarch64-dit",
     "blobby",
     "block-buffer",
     "block-padding",
@@ -17,6 +16,7 @@ members = [
     "zeroize",
     "zeroize_derive"
 ]
+exclude = ["aarch64-dit"]
 
 [profile.dev]
 opt-level = 2
