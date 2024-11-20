@@ -38,7 +38,9 @@ impl<'a, T> InOutBufReserved<'a, 'a, T> {
             _pd: PhantomData,
         })
     }
+}
 
+impl<T> InOutBufReserved<'_, '_, T> {
     /// Create [`InOutBufReserved`] from raw input and output pointers.
     ///
     /// # Safety
@@ -92,6 +94,23 @@ impl<'a, T> InOutBufReserved<'a, 'a, T> {
     #[inline(always)]
     pub fn get_out_len(&self) -> usize {
         self.in_len
+    }
+
+    /// Split buffer into `InOutBuf` with input length and mutable slice pointing to
+    /// the reamining reserved suffix.
+    pub fn split_reserved<'a>(&'a mut self) -> (InOutBuf<'a, 'a, T>, &'a mut [T]) {
+        let in_len = self.get_in_len();
+        let out_len = self.get_out_len();
+        let in_ptr = self.get_in().as_ptr();
+        let out_ptr = self.get_out().as_mut_ptr();
+        // This never underflows because the type ensures that `out_len` is
+        // bigger or equal to `in_len`.
+        let tail_len = out_len - in_len;
+        unsafe {
+            let body = InOutBuf::from_raw(in_ptr, out_ptr, in_len);
+            let tail = slice::from_raw_parts_mut(out_ptr.add(in_len), tail_len);
+            (body, tail)
+        }
     }
 }
 
