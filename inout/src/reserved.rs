@@ -1,14 +1,12 @@
-use crate::errors::OutIsTooSmallError;
+use crate::{errors::OutIsTooSmallError, InOutBuf};
 use core::{marker::PhantomData, slice};
 
 #[cfg(feature = "block-padding")]
-use crate::errors::PadError;
-#[cfg(feature = "block-padding")]
-use crate::{InOut, InOutBuf};
-#[cfg(feature = "block-padding")]
-use block_padding::{PadType, Padding};
-#[cfg(feature = "block-padding")]
-use hybrid_array::{Array, ArraySize};
+use {
+    crate::{errors::PadError, InOut},
+    block_padding::{PadType, Padding},
+    hybrid_array::{Array, ArraySize},
+};
 
 /// Custom slice type which references one immutable (input) slice and one
 /// mutable (output) slice. Input and output slices are either the same or
