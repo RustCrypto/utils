@@ -124,6 +124,12 @@ impl<'inp, 'out, T> InOutBufReserved<'inp, 'out, T> {
     pub fn get_out<'a>(&'a mut self) -> &'a mut [T] {
         unsafe { slice::from_raw_parts_mut(self.out_ptr, self.out_len) }
     }
+
+    /// Consume `self` and get output slice with lifetime `'out`.
+    #[inline(always)]
+    pub fn into_out(self) -> &'out mut [T] {
+        unsafe { slice::from_raw_parts_mut(self.out_ptr, self.out_len) }
+    }
 }
 
 impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {

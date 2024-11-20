@@ -33,6 +33,12 @@ impl<'inp, 'out, T> InOut<'inp, 'out, T> {
         unsafe { &mut *self.out_ptr }
     }
 
+    /// Consume `self` and get mutable reference to the output value with lifetime `'out`.
+    #[inline(always)]
+    pub fn into_out(self) -> &'out mut T {
+        unsafe { &mut *self.out_ptr }
+    }
+
     /// Convert `self` to a pair of raw input and output pointers.
     #[inline(always)]
     pub fn into_raw(self) -> (*const T, *mut T) {
