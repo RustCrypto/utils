@@ -14,12 +14,12 @@ macro_rules! __unless_target_features {
     ($($tf:tt),+ => $body:expr ) => {{
         #[cfg(not(all($(target_feature=$tf,)*)))]
         {
-            #[cfg(not(any(target_env = "sgx", target_os = "", target_os = "uefi")))]
+            #[cfg(not(any(target_env = "sgx", target_os = "none", target_os = "uefi")))]
             $body
 
             // CPUID is not available on SGX. Freestanding and UEFI targets
             // do not support SIMD features with default compilation flags.
-            #[cfg(any(target_env = "sgx", target_os = "", target_os = "uefi"))]
+            #[cfg(any(target_env = "sgx", target_os = "none", target_os = "uefi"))]
             false
         }
 
