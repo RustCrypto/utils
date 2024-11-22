@@ -35,7 +35,7 @@ version = "0.0.2"
 
 [[package]]
 name = "cpufeatures"
-version = "0.2.15"
+version = "0.2.16"
 dependencies = [
  "libc",
 ]
