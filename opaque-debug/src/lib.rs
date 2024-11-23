@@ -22,14 +22,14 @@
 //!
 //! The macro also support generic paramters:
 //! ```
-//! pub struct GenricCryptoStuff<K> {
+//! pub struct GenericCryptoStuff<K> {
 //!     key: K,
 //! }
 //!
-//! opaque_debug::implement!(GenricCryptoStuff<K>);
+//! opaque_debug::implement!(GenericCryptoStuff<K>);
 //!
-//! let val = GenricCryptoStuff { key: [42u8; 16] };
-//! assert_eq!(format!("{:?}", val), "GenricCryptoStuff<[u8; 16]> { ... }")
+//! let val = GenericCryptoStuff { key: [42u8; 16] };
+//! assert_eq!(format!("{:?}", val), "GenericCryptoStuff<[u8; 16]> { ... }")
 //! ```
 #![no_std]
 #![doc(
