@@ -15,13 +15,13 @@ edition = "2018"
 readme = "README.md"
 
 [target.'cfg(all(target_arch = "aarch64", target_vendor = "apple"))'.dependencies]
-libc = "0.2.155"
+libc = { version = "0.2.155", default-features = false }
 
 [target.'cfg(all(target_arch = "aarch64", target_os = "linux"))'.dependencies]
-libc = "0.2.155"
+libc = { version = "0.2.155", default-features = false }
 
 [target.'cfg(all(target_arch = "loongarch64", target_os = "linux"))'.dependencies]
-libc = "0.2.155"
+libc = { version = "0.2.155", default-features = false }
 
 [target.aarch64-linux-android.dependencies]
-libc = "0.2.155"
+libc = { version = "0.2.155", default-features = false }
