@@ -91,7 +91,7 @@ impl<T> InOutBufReserved<'_, '_, T> {
     /// Get output buffer length.
     #[inline(always)]
     pub fn get_out_len(&self) -> usize {
-        self.in_len
+        self.out_len
     }
 
     /// Split buffer into `InOutBuf` with input length and mutable slice pointing to
