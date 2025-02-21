@@ -1,8 +1,8 @@
 use crate::type_registry::TypeRegistry;
 use syn::{
+    Ident, ReturnType, Type, TypeTuple,
     punctuated::Punctuated,
     token::{Paren, RArrow},
-    Ident, ReturnType, Type, TypeTuple,
 };
 
 /// Output values, which in regular `fiat-crypto` are passed as mutable references, e.g.:

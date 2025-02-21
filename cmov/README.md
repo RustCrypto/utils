@@ -51,7 +51,7 @@ Please open an issue with your desired CPU architecture if this interests you.
 
 ## Minimum Supported Rust Version
 
-Rust **1.60** or newer.
+Rust **1.85** or newer.
 
 In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope
 for this crate's SemVer guarantees), however when we do it will be accompanied by
@@ -79,7 +79,7 @@ dual licensed as above, without any additional terms or conditions.
 [docs-image]: https://docs.rs/cmov/badge.svg
 [docs-link]: https://docs.rs/cmov/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[msrv-image]: https://img.shields.io/badge/rustc-1.60+-blue.svg
+[msrv-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [build-image]: https://github.com/RustCrypto/utils/actions/workflows/cmov.yml/badge.svg
 [build-link]: https://github.com/RustCrypto/utils/actions/workflows/cmov.yml
 

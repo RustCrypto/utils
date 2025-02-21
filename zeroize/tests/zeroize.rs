@@ -2,7 +2,7 @@
 
 use std::{
     marker::{PhantomData, PhantomPinned},
-    mem::{size_of, MaybeUninit},
+    mem::{MaybeUninit, size_of},
     num::*,
 };
 use zeroize::*;

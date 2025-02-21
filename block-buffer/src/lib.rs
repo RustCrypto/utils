@@ -43,8 +43,8 @@
 pub use hybrid_array as array;
 
 use array::{
-    typenum::{Add1, B1},
     Array, ArraySize,
+    typenum::{Add1, B1},
 };
 use core::{fmt, mem::MaybeUninit, ops::Add, ptr, slice};
 
@@ -306,9 +306,11 @@ impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
     /// to block size.
     #[inline(always)]
     unsafe fn set_data_unchecked(&mut self, buf: &[u8]) {
-        self.set_pos_unchecked(buf.len());
-        let dst_ptr: *mut u8 = self.buffer.as_mut_ptr().cast();
-        ptr::copy_nonoverlapping(buf.as_ptr(), dst_ptr, buf.len());
+        unsafe {
+            self.set_pos_unchecked(buf.len());
+            let dst_ptr: *mut u8 = self.buffer.as_mut_ptr().cast();
+            ptr::copy_nonoverlapping(buf.as_ptr(), dst_ptr, buf.len());
+        }
     }
 }
 

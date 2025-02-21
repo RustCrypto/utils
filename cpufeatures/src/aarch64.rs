@@ -143,13 +143,15 @@ pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
     let mut value: u32 = 0;
     let mut size = core::mem::size_of::<u32>();
 
-    let rc = libc::sysctlbyname(
-        name.as_ptr() as *const i8,
-        &mut value as *mut _ as *mut libc::c_void,
-        &mut size,
-        core::ptr::null_mut(),
-        0,
-    );
+    let rc = unsafe {
+        libc::sysctlbyname(
+            name.as_ptr() as *const i8,
+            &mut value as *mut _ as *mut libc::c_void,
+            &mut size,
+            core::ptr::null_mut(),
+            0,
+        )
+    };
 
     assert_eq!(size, 4, "unexpected sysctlbyname(3) result size");
     assert_eq!(rc, 0, "sysctlbyname returned error code: {}", rc);

@@ -1,5 +1,5 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
     "blobby",
     "block-buffer",
@@ -17,6 +17,9 @@ members = [
     "zeroize_derive"
 ]
 exclude = ["aarch64-dit"]
+
+[resolver]
+incompatible-rust-versions = "allow"
 
 [profile.dev]
 opt-level = 2

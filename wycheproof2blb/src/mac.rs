@@ -1,6 +1,6 @@
-use crate::wycheproof;
-use crate::wycheproof::{description, hex_string, CaseResult};
 use crate::TestInfo;
+use crate::wycheproof;
+use crate::wycheproof::{CaseResult, description, hex_string};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]

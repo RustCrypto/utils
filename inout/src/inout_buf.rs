@@ -1,6 +1,6 @@
 use crate::{
-    errors::{IntoArrayError, NotEqualError},
     InOut,
+    errors::{IntoArrayError, NotEqualError},
 };
 use core::{marker::PhantomData, slice};
 use hybrid_array::{Array, ArraySize};

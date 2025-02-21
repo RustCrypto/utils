@@ -6,8 +6,8 @@
 )]
 #![forbid(unsafe_code)]
 
-use hybrid_array::typenum::{U16, U32, U8};
 use hybrid_array::Array;
+use hybrid_array::typenum::{U8, U16, U32};
 
 const C64: u64 = 0b1_1011;
 const C128: u64 = 0b1000_0111;

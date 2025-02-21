@@ -91,11 +91,13 @@ impl Drop for Guard<'_> {
 #[target_feature(enable = "dit")]
 unsafe fn get_dit_enabled() -> bool {
     let mut dit: u64;
-    asm!(
-        "mrs {dit}, DIT",
-        dit = out(reg) dit,
-        options(nomem, nostack, preserves_flags)
-    );
+    unsafe {
+        asm!(
+            "mrs {dit}, DIT",
+            dit = out(reg) dit,
+            options(nomem, nostack, preserves_flags)
+        );
+    }
     (dit >> 24) & 1 != 0
 }
 
@@ -104,9 +106,11 @@ unsafe fn get_dit_enabled() -> bool {
 /// Returns the previous DIT state prior to enabling DIT.
 #[target_feature(enable = "dit")]
 unsafe fn set_dit_enabled() -> bool {
-    let was_enabled = get_dit_enabled();
-    asm!("msr DIT, #1", options(nomem, nostack, preserves_flags));
-    was_enabled
+    unsafe {
+        let was_enabled = get_dit_enabled();
+        asm!("msr DIT, #1", options(nomem, nostack, preserves_flags));
+        was_enabled
+    }
 }
 
 /// Restore DIT state depending on the enabled bit.
@@ -114,7 +118,7 @@ unsafe fn set_dit_enabled() -> bool {
 unsafe fn restore_dit(enabled: bool) {
     if !enabled {
         // Disable DIT
-        asm!("msr DIT, #0", options(nomem, nostack, preserves_flags));
+        unsafe { asm!("msr DIT, #0", options(nomem, nostack, preserves_flags)) };
     }
 }
 

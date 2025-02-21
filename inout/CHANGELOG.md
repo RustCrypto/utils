@@ -4,19 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## UNRELEASED
+## 0.2.0 (unreleased)
 ### Changed
 - Migrated from `generic-array` to `hybrid-array` ([#944])
-- MSRV is bumped to 1.81 ([#1116])
+- Edition changed to 2024 and MSRV bumped to 1.85 ([#1149])
 
 ### Added
 - `InOut::into_out` and `InOutBufReserved::into_out` methods ([#1132])
 - `InOutBufReserved::split_reserved` method ([#1133])
 
 [#944]: https://github.com/RustCrypto/utils/pull/944
-[#1116]: https://github.com/RustCrypto/utils/pull/1116
 [#1132]: https://github.com/RustCrypto/utils/pull/1132
 [#1132]: https://github.com/RustCrypto/utils/pull/1132
+[#1149]: https://github.com/RustCrypto/utils/pull/1149
 
 ## 0.1.3 (2022-03-31)
 ### Fixed

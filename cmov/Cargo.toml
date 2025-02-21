@@ -6,7 +6,7 @@ constant-time and not be rewritten as branches by the compiler.
 Provides wrappers for the CMOV family of instructions on x86/x86_64
 and CSEL on AArch64.
 """
-version = "0.3.1"
+version = "0.4.0-pre"
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 homepage = "https://github.com/RustCrypto/utils/tree/master/cmov"
@@ -14,5 +14,5 @@ repository = "https://github.com/RustCrypto/utils"
 categories = ["cryptography", "hardware-support", "no-std"]
 keywords = ["crypto", "intrinsics"]
 readme = "README.md"
-edition = "2021"
-rust-version = "1.60"
+edition = "2024"
+rust-version = "1.85"

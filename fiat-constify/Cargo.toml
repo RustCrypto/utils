@@ -13,7 +13,8 @@ repository = "https://github.com/RustCrypto/utils"
 categories = ["cryptography"]
 keywords = ["fiat-crypto", "field"]
 readme = "README.md"
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 
 [dependencies]
 prettyplease = "0.2.19"

@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This is enforced using compile-time monomorphization errors. ([#1115])
 - Size of `EagerBuffer` is equal to buffer size, while previously it was equal
   to buffer size plus one byte ([#823])
-- Edition changed to 2021 and MSRV bumped to 1.81 ([#823], [#1116])
+- Edition changed to 2024 and MSRV bumped to 1.85 ([#1149])
 
 ### Removed
 - `EagerBuffer::set_data` method. Use the `ReadBuffer` type instead. ([#823])
@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#963]: https://github.com/RustCrypto/utils/pull/963
 [#1115]: https://github.com/RustCrypto/utils/pull/1115
 [#1115]: https://github.com/RustCrypto/utils/pull/1116
+[#1149]: https://github.com/RustCrypto/utils/pull/1149
 
 ## 0.10.3 (2022-09-04)
 ### Added
