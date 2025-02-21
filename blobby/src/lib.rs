@@ -168,7 +168,7 @@ where
 
     let mut idx: Vec<&[u8]> = idx_map
         .iter()
-        .filter(|(_, &v)| v > 1)
+        .filter(|&(_, &v)| v > 1)
         .map(|(&k, _)| k)
         .collect();
     idx.sort_by_key(|e| {
@@ -308,7 +308,7 @@ new_iter!(Blob6Iterator, 6);
 
 #[cfg(test)]
 mod tests {
-    use super::{read_vlq, Error, NEXT_MASK, VAL_MASK};
+    use super::{Error, NEXT_MASK, VAL_MASK, read_vlq};
 
     fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
         macro_rules! step {

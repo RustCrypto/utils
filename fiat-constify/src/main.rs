@@ -10,14 +10,13 @@ mod type_registry;
 
 use outputs::Outputs;
 use proc_macro2::{Punct, Spacing, Span};
-use quote::{quote, TokenStreamExt};
+use quote::{TokenStreamExt, quote};
 use std::{collections::BTreeMap as Map, env, fs, ops::Deref};
 use syn::{
-    parse_quote,
+    Expr, ExprCall, ExprPath, ExprReference, Fields, FnArg, Ident, Item, ItemFn, Local, LocalInit,
+    Meta, Pat, PatIdent, PatTuple, Path, Stmt, TypeReference, parse_quote,
     punctuated::Punctuated,
     token::{Const, Eq, Let, Paren, Semi},
-    Expr, ExprCall, ExprPath, ExprReference, Fields, FnArg, Ident, Item, ItemFn, Local, LocalInit,
-    Meta, Pat, PatIdent, PatTuple, Path, Stmt, TypeReference,
 };
 use type_registry::TypeRegistry;
 
@@ -95,7 +94,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     ast.items.extend_from_slice(&const_deref);
 
-    println!("//! fiat-crypto output postprocessed by fiat-constify: <https://github.com/rustcrypto/utils>");
+    println!(
+        "//! fiat-crypto output postprocessed by fiat-constify: <https://github.com/rustcrypto/utils>"
+    );
     println!("{}", prettyplease::unparse(&ast));
     Ok(())
 }

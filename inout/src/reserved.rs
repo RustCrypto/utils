@@ -1,9 +1,9 @@
-use crate::{errors::OutIsTooSmallError, InOutBuf};
+use crate::{InOutBuf, errors::OutIsTooSmallError};
 use core::{marker::PhantomData, slice};
 
 #[cfg(feature = "block-padding")]
 use {
-    crate::{errors::PadError, InOut},
+    crate::{InOut, errors::PadError},
     block_padding::{PadType, Padding},
     hybrid_array::{Array, ArraySize},
 };

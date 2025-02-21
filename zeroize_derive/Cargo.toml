@@ -1,7 +1,7 @@
 [package]
 name = "zeroize_derive"
 description = "Custom derive support for zeroize"
-version = "1.4.2"
+version = "1.5.0"
 authors = ["The RustCrypto Project Developers"]
 license = "Apache-2.0 OR MIT"
 homepage = "https://github.com/RustCrypto/utils/tree/master/zeroize_derive"
@@ -9,8 +9,8 @@ repository = "https://github.com/RustCrypto/utils"
 readme = "README.md"
 categories = ["cryptography", "memory-management", "no-std", "os"]
 keywords = ["memory", "memset", "secure", "volatile", "zero"]
-edition = "2021"
-rust-version = "1.56"
+edition = "2024"
+rust-version = "1.85"
 
 [lib]
 proc-macro = true

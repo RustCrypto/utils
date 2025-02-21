@@ -256,7 +256,7 @@ fn derive_inherit_zeroize_on_drop() {
     unsafe {
         std::ptr::drop_in_place(&mut value);
     }
-    assert_eq!(&value.0 .0, &[0, 0, 0])
+    assert_eq!(&value.0.0, &[0, 0, 0])
 }
 
 #[test]
@@ -271,7 +271,7 @@ fn derive_inherit_from_both() {
     unsafe {
         std::ptr::drop_in_place(&mut value);
     }
-    assert_eq!(&value.0 .0, &[0, 0, 0])
+    assert_eq!(&value.0.0, &[0, 0, 0])
 }
 
 #[test]
@@ -286,7 +286,7 @@ fn derive_inherit_both() {
     unsafe {
         std::ptr::drop_in_place(&mut value);
     }
-    assert_eq!(&value.0 .0, &[0, 0, 0])
+    assert_eq!(&value.0.0, &[0, 0, 0])
 }
 
 #[test]
@@ -314,7 +314,7 @@ fn derive_deref() {
     unsafe {
         std::ptr::drop_in_place(&mut value);
     }
-    assert_eq!(&value.0 .0, &[0, 0, 0])
+    assert_eq!(&value.0.0, &[0, 0, 0])
 }
 
 #[test]

@@ -1,5 +1,5 @@
 //! Convert utility
-use blobby::{encode_blobs, BlobIterator};
+use blobby::{BlobIterator, encode_blobs};
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use std::{env, error::Error, fs::File};
 

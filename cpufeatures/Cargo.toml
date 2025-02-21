@@ -1,6 +1,6 @@
 [package]
 name = "cpufeatures"
-version = "0.2.17"
+version = "0.3.0-pre"
 description = """
 Lightweight runtime CPU feature detection for aarch64, loongarch64, and x86/x86_64 targets, 
 with no_std support and support for mobile targets including Android and iOS
@@ -11,8 +11,9 @@ documentation = "https://docs.rs/cpufeatures"
 repository = "https://github.com/RustCrypto/utils"
 keywords = ["cpuid", "target-feature"]
 categories = ["hardware-support", "no-std"]
-edition = "2018"
 readme = "README.md"
+edition = "2024"
+rust-version = "1.85"
 
 [target.'cfg(all(target_arch = "aarch64", target_vendor = "apple"))'.dependencies]
 libc = { version = "0.2.155", default-features = false }

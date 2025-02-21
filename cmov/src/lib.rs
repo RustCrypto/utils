@@ -96,7 +96,7 @@ impl Cmov for u128 {
         lo.cmovnz(&((*value & u64::MAX as u128) as u64), condition);
         hi.cmovnz(&((*value >> 64) as u64), condition);
 
-        *self = (lo as u128) | (hi as u128) << 64;
+        *self = (lo as u128) | ((hi as u128) << 64);
     }
 
     #[inline]
@@ -107,7 +107,7 @@ impl Cmov for u128 {
         lo.cmovz(&((*value & u64::MAX as u128) as u64), condition);
         hi.cmovz(&((*value >> 64) as u64), condition);
 
-        *self = (lo as u128) | (hi as u128) << 64;
+        *self = (lo as u128) | ((hi as u128) << 64);
     }
 }
 

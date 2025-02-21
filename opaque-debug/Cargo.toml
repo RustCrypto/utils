@@ -1,10 +1,11 @@
 [package]
 name = "opaque-debug"
-version = "0.3.1"
+version = "0.4.0-pre"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 description = "Macro for opaque Debug trait implementation"
 documentation = "https://docs.rs/opaque-debug"
 repository = "https://github.com/RustCrypto/utils"
-edition = "2018"
 readme = "README.md"
+edition = "2024"
+rust-version = "1.85"

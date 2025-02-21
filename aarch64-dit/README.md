@@ -14,7 +14,7 @@ data, thus preventing potential information leaks via timing sidechannels.
 
 ## Minimum Supported Rust Version
 
-Rust **1.61** or newer.
+Rust **1.85** or newer.
 
 In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope for this crate's
 SemVer guarantees), however when we do it will be accompanied by a minor version bump.
@@ -41,7 +41,7 @@ additional terms or conditions.
 [docs-image]: https://docs.rs/aarch64-dit/badge.svg
 [docs-link]: https://docs.rs/aarch64-dit/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[msrv-image]: https://img.shields.io/badge/rustc-1.61+-blue.svg
+[msrv-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [build-image]: https://github.com/RustCrypto/utils/actions/workflows/aarch64-dit.yml/badge.svg
 [build-link]: https://github.com/RustCrypto/utils/actions/workflows/aarch64-dit.yml
 

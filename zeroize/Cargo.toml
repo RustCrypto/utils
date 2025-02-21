@@ -1,6 +1,6 @@
 [package]
 name = "zeroize"
-version = "1.8.1"
+version = "1.9.0"
 description = """
 Securely clear secrets from memory with a simple trait built on
 stable Rust primitives which guarantee memory is zeroed using an
@@ -15,8 +15,8 @@ repository = "https://github.com/RustCrypto/utils"
 readme = "README.md"
 categories = ["cryptography", "memory-management", "no-std", "os"]
 keywords = ["memory", "memset", "secure", "volatile", "zero"]
-edition = "2021"
-rust-version = "1.60"
+edition = "2024"
+rust-version = "1.85"
 
 [dependencies]
 serde = { version = "1.0", default-features = false, optional = true }

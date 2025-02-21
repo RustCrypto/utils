@@ -64,12 +64,6 @@ hex_literal::hex!(
 );
 ```
 
-## Minimum Supported Rust Version
-
-Rust **1.57** or newer.
-
-In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope for this crate's SemVer guarantees), however when we do it will be accompanied by a minor version bump.
-
 ## License
 
 Licensed under either of:
@@ -90,7 +84,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [docs-image]: https://docs.rs/hex-literal/badge.svg
 [docs-link]: https://docs.rs/hex-literal/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[rustc-image]: https://img.shields.io/badge/rustc-1.57+-blue.svg
+[rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [build-image]: https://github.com/RustCrypto/utils/actions/workflows/hex-literal.yml/badge.svg
 [build-link]: https://github.com/RustCrypto/utils/actions/workflows/hex-literal.yml
 

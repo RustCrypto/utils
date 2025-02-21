@@ -7,13 +7,13 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use syn::{
+    Attribute, Data, DeriveInput, Expr, ExprLit, Field, Fields, Lit, Meta, Result, Variant,
+    WherePredicate,
     parse::{Parse, ParseStream},
     parse_quote,
     punctuated::Punctuated,
     token::Comma,
     visit::Visit,
-    Attribute, Data, DeriveInput, Expr, ExprLit, Field, Fields, Lit, Meta, Result, Variant,
-    WherePredicate,
 };
 
 /// Name of zeroize-related attributes

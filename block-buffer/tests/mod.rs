@@ -1,9 +1,9 @@
 use block_buffer::{
-    array::{
-        typenum::{U10, U16, U24, U4, U8},
-        Array,
-    },
     EagerBuffer, LazyBuffer, ReadBuffer,
+    array::{
+        Array,
+        typenum::{U4, U8, U10, U16, U24},
+    },
 };
 use hex_literal::hex;
 
@@ -82,25 +82,25 @@ fn test_read() {
     let mut buf = Buf::default();
 
     let mut n = 0u8;
-    let mut gen = |block: &mut Array<u8, U4>| {
+    let mut g = |block: &mut Array<u8, U4>| {
         block.iter_mut().for_each(|b| *b = n);
         n += 1;
     };
 
     let mut out = [0u8; 6];
-    buf.read(&mut out, &mut gen);
+    buf.read(&mut out, &mut g);
     assert_eq!(out, [0, 0, 0, 0, 1, 1]);
     assert_eq!(buf.get_pos(), 2);
     assert_eq!(buf.remaining(), 2);
 
     let mut out = [0u8; 3];
-    buf.read(&mut out, &mut gen);
+    buf.read(&mut out, &mut g);
     assert_eq!(out, [1, 1, 2]);
     assert_eq!(buf.get_pos(), 1);
     assert_eq!(buf.remaining(), 3);
 
     let mut out = [0u8; 3];
-    buf.read(&mut out, &mut gen);
+    buf.read(&mut out, &mut g);
     assert_eq!(out, [2, 2, 2]);
     assert_eq!(buf.get_pos(), 4);
     assert_eq!(buf.remaining(), 0);
@@ -288,7 +288,7 @@ fn test_read_serialize() {
     type Buf = ReadBuffer<U4>;
 
     let mut n = 42u8;
-    let mut gen = |block: &mut Array<u8, U4>| {
+    let mut g = |block: &mut Array<u8, U4>| {
         block.iter_mut().for_each(|b| {
             *b = n;
             n += 1;
@@ -300,7 +300,7 @@ fn test_read_serialize() {
     assert_eq!(&ser0[..], &[4, 0, 0, 0]);
     assert_eq!(Buf::deserialize(&ser0).unwrap().serialize(), ser0);
 
-    buf1.read(&mut [0; 2], &mut gen);
+    buf1.read(&mut [0; 2], &mut g);
 
     let ser1 = buf1.serialize();
     assert_eq!(&ser1[..], &[2, 0, 44, 45]);
@@ -308,8 +308,8 @@ fn test_read_serialize() {
     let mut buf2 = Buf::deserialize(&ser1).unwrap();
     assert_eq!(buf1.serialize(), ser1);
 
-    buf1.read(&mut [0; 1], &mut gen);
-    buf2.read(&mut [0; 1], &mut gen);
+    buf1.read(&mut [0; 1], &mut g);
+    buf2.read(&mut [0; 1], &mut g);
 
     let ser2 = buf1.serialize();
     assert_eq!(&ser2[..], &[3, 0, 0, 45]);
@@ -318,18 +318,18 @@ fn test_read_serialize() {
     let mut buf3 = Buf::deserialize(&ser2).unwrap();
     assert_eq!(buf3.serialize(), ser2);
 
-    buf1.read(&mut [0; 1], &mut gen);
-    buf2.read(&mut [0; 1], &mut gen);
-    buf3.read(&mut [0; 1], &mut gen);
+    buf1.read(&mut [0; 1], &mut g);
+    buf2.read(&mut [0; 1], &mut g);
+    buf3.read(&mut [0; 1], &mut g);
 
     let ser3 = buf1.serialize();
     assert_eq!(&ser3[..], &[4, 0, 0, 0]);
     assert_eq!(buf2.serialize(), ser3);
     assert_eq!(buf3.serialize(), ser3);
 
-    buf1.read(&mut [0; 1], &mut gen);
-    buf2.read(&mut [0; 1], &mut gen);
-    buf3.read(&mut [0; 1], &mut gen);
+    buf1.read(&mut [0; 1], &mut g);
+    buf2.read(&mut [0; 1], &mut g);
+    buf3.read(&mut [0; 1], &mut g);
 
     // note that each buffer calls `gen`, so they get filled
     // with different data

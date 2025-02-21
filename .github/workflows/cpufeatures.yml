@@ -32,7 +32,7 @@ jobs:
         include:
           # 32-bit Linux/x86
           - target: i686-unknown-linux-gnu
-            rust: 1.40.0 # MSRV
+            rust: 1.85.0 # MSRV
             deps: sudo apt update && sudo apt install gcc-multilib
           - target: i686-unknown-linux-gnu
             rust: stable
@@ -40,7 +40,7 @@ jobs:
 
           # 64-bit Linux/x86_64
           - target: x86_64-unknown-linux-gnu
-            rust: 1.40.0 # MSRV
+            rust: 1.85.0 # MSRV
           - target: x86_64-unknown-linux-gnu
             rust: stable
     runs-on: ubuntu-latest
@@ -61,8 +61,7 @@ jobs:
     strategy:
       matrix:
         toolchain:
-          # TODO(tarcieri): try re-enabling this when we bump MSRV
-          # - 1.40.0 # MSRV
+          - 1.85.0 # MSRV
           - stable
     runs-on: macos-latest
     steps:
@@ -82,9 +81,8 @@ jobs:
       matrix:
         include:
           # 64-bit Windows (GNU)
-          # TODO(tarcieri): try re-enabling this when we bump MSRV
-          #- target: x86_64-pc-windows-gnu
-          #  toolchain: 1.40.0 # MSRV
+          - target: x86_64-pc-windows-gnu
+            toolchain: 1.85.0 # MSRV
           - target: x86_64-pc-windows-gnu
             toolchain: stable
     runs-on: windows-latest
@@ -105,9 +103,8 @@ jobs:
       matrix:
         include:
           # ARM64
-          # TODO(tarcieri): try re-enabling this when we bump MSRV
-          #- target: aarch64-unknown-linux-gnu
-          #  rust: 1.40.0 # MSRV
+          - target: aarch64-unknown-linux-gnu
+            rust: 1.85.0 # MSRV
           - target: aarch64-unknown-linux-gnu
             rust: stable
     runs-on: ubuntu-latest
