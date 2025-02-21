@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "block-padding"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "generic-array",
 ]
@@ -21,7 +21,7 @@ dependencies = [
 
 [[package]]
 name = "inout"
-version = "0.1.2"
+version = "0.1.4"
 dependencies = [
  "block-padding",
  "generic-array",
