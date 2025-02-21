@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#1132]: https://github.com/RustCrypto/utils/pull/1132
 [#1132]: https://github.com/RustCrypto/utils/pull/1132
 
+## 0.1.4 (2025-02-21)
+### Fixed
+- Return output length from `InOutBufReserved::get_out_len` instead of input length ([#1150])
+
+[#1150]: https://github.com/RustCrypto/utils/pull/1150
+
 ## 0.1.3 (2022-03-31)
 ### Fixed
 - MIRI error in `From` impl for `InOutBuf` ([#755])
