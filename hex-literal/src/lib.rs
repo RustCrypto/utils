@@ -57,17 +57,19 @@ pub const fn len(strings: &[&[u8]]) -> usize {
 /// This function is an implementation detail and SHOULD NOT be called directly!
 #[doc(hidden)]
 pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> [u8; LEN] {
-    let mut i = 0;
+    let mut string_pos = 0;
     let mut buf = [0u8; LEN];
     let mut buf_pos = 0;
-    while i < strings.len() {
+    while string_pos < strings.len() {
         let mut pos = 0;
-        while let Some((byte, new_pos)) = next_byte(strings[i], pos) {
+        let string = &strings[string_pos];
+        string_pos += 1;
+        
+        while let Some((byte, new_pos)) = next_byte(string, pos) {
             buf[buf_pos] = byte;
             buf_pos += 1;
             pos = new_pos;
         }
-        i += 1;
     }
     if LEN != buf_pos {
         panic!("Length mismatch. Please report this bug.");
