@@ -6,9 +6,9 @@
 ![MSRV][rustc-image]
 [![Build Status][build-image]][build-link]
 
-This crate provides the `hex!` macro for converting hexadecimal string literals to a byte array at compile time.
+This crate provides the `hex!` macro for converting a sequence of hexadecimal string literals to a byte array at compile time.
 
-It accepts the following characters in the input string:
+The macro accepts the following characters in input string literals:
 
 - `'0'...'9'`, `'a'...'f'`, `'A'...'F'` — hex characters which will be used in construction of the output byte array
 - `' '`, `'\r'`, `'\n'`, `'\t'` — formatting characters which will be ignored

@@ -74,8 +74,9 @@ pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> Option<[u8; LEN]> {
     if LEN == buf_pos { Some(buf) } else { None }
 }
 
-/// Macro for converting sequence of string literals containing hex-encoded data
-/// into an array of bytes.
+/// Converts a sequence of hexadecimal string literals to a byte array at compile time.
+///
+/// See the crate-level docs for more information.
 #[macro_export]
 macro_rules! hex {
     ($($s:literal)*) => {{
