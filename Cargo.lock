@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "blobby"
-version = "0.4.0-pre"
+version = "0.4.0-pre.0"
 dependencies = [
  "hex",
 ]
