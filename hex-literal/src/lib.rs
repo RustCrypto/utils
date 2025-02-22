@@ -56,7 +56,7 @@ pub const fn len(strings: &[&[u8]]) -> usize {
 ///
 /// This function is an implementation detail and SHOULD NOT be called directly!
 #[doc(hidden)]
-pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> [u8; LEN] {
+pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> Option<[u8; LEN]> {
     let mut string_pos = 0;
     let mut buf = [0u8; LEN];
     let mut buf_pos = 0;
@@ -64,17 +64,14 @@ pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> [u8; LEN] {
         let mut pos = 0;
         let string = &strings[string_pos];
         string_pos += 1;
-        
+
         while let Some((byte, new_pos)) = next_byte(string, pos) {
             buf[buf_pos] = byte;
             buf_pos += 1;
             pos = new_pos;
         }
     }
-    if LEN != buf_pos {
-        panic!("Length mismatch. Please report this bug.");
-    }
-    buf
+    if LEN == buf_pos { Some(buf) } else { None }
 }
 
 /// Macro for converting sequence of string literals containing hex-encoded data
@@ -83,6 +80,9 @@ pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> [u8; LEN] {
 macro_rules! hex {
     ($($s:literal)*) => {{
         const STRINGS: &[&'static [u8]] = &[$($s.as_bytes(),)*];
-        const { $crate::decode::<{ $crate::len(STRINGS) }>(STRINGS) }
+        const {
+            $crate::decode::<{ $crate::len(STRINGS) }>(STRINGS)
+                .expect("Output array length should be correct")
+        }
     }};
 }
