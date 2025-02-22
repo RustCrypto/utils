@@ -1,5 +1,5 @@
-#![doc = include_str!("../README.md")]
 #![no_std]
+#![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
@@ -56,23 +56,22 @@ pub const fn len(strings: &[&[u8]]) -> usize {
 ///
 /// This function is an implementation detail and SHOULD NOT be called directly!
 #[doc(hidden)]
-pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> [u8; LEN] {
-    let mut i = 0;
+pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> Option<[u8; LEN]> {
+    let mut string_pos = 0;
     let mut buf = [0u8; LEN];
     let mut buf_pos = 0;
-    while i < strings.len() {
+    while string_pos < strings.len() {
         let mut pos = 0;
-        while let Some((byte, new_pos)) = next_byte(strings[i], pos) {
+        let string = &strings[string_pos];
+        string_pos += 1;
+
+        while let Some((byte, new_pos)) = next_byte(string, pos) {
             buf[buf_pos] = byte;
             buf_pos += 1;
             pos = new_pos;
         }
-        i += 1;
     }
-    if LEN != buf_pos {
-        panic!("Length mismatch. Please report this bug.");
-    }
-    buf
+    if LEN == buf_pos { Some(buf) } else { None }
 }
 
 /// Macro for converting sequence of string literals containing hex-encoded data
@@ -81,8 +80,9 @@ pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> [u8; LEN] {
 macro_rules! hex {
     ($($s:literal)*) => {{
         const STRINGS: &[&'static [u8]] = &[$($s.as_bytes(),)*];
-        const LEN: usize = $crate::len(STRINGS);
-        const RES: [u8; LEN] = $crate::decode(STRINGS);
-        RES
+        const {
+            $crate::decode::<{ $crate::len(STRINGS) }>(STRINGS)
+                .expect("Output array length should be correct")
+        }
     }};
 }
