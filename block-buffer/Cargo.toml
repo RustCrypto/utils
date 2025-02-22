@@ -17,4 +17,4 @@ hybrid-array = "0.3"
 zeroize = { version = "1.4", optional = true, default-features = false }
 
 [dev-dependencies]
-hex-literal = "0.4"
+hex-literal = "1"
