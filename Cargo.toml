@@ -18,8 +18,5 @@ members = [
 ]
 exclude = ["aarch64-dit"]
 
-[resolver]
-incompatible-rust-versions = "allow"
-
 [profile.dev]
 opt-level = 2
