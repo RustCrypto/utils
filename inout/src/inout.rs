@@ -13,7 +13,7 @@ pub struct InOut<'inp, 'out, T> {
 impl<'inp, 'out, T> InOut<'inp, 'out, T> {
     /// Reborrow `self`.
     #[inline(always)]
-    pub fn reborrow<'a>(&'a mut self) -> InOut<'a, 'a, T> {
+    pub fn reborrow(&mut self) -> InOut<'_, '_, T> {
         Self {
             in_ptr: self.in_ptr,
             out_ptr: self.out_ptr,
@@ -23,13 +23,13 @@ impl<'inp, 'out, T> InOut<'inp, 'out, T> {
 
     /// Get immutable reference to the input value.
     #[inline(always)]
-    pub fn get_in<'a>(&'a self) -> &'a T {
+    pub fn get_in(&self) -> &T {
         unsafe { &*self.in_ptr }
     }
 
     /// Get mutable reference to the output value.
     #[inline(always)]
-    pub fn get_out<'a>(&'a mut self) -> &'a mut T {
+    pub fn get_out(&mut self) -> &mut T {
         unsafe { &mut *self.out_ptr }
     }
 
@@ -73,7 +73,7 @@ impl<'inp, 'out, T> InOut<'inp, 'out, T> {
     }
 }
 
-impl<'inp, 'out, T: Clone> InOut<'inp, 'out, T> {
+impl<T: Clone> InOut<'_, '_, T> {
     /// Clone input value and return it.
     #[inline(always)]
     pub fn clone_in(&self) -> T {
@@ -110,7 +110,7 @@ impl<'inp, 'out, T, N: ArraySize> InOut<'inp, 'out, Array<T, N>> {
     /// # Panics
     /// If `pos` greater or equal to array length.
     #[inline(always)]
-    pub fn get<'a>(&'a mut self, pos: usize) -> InOut<'a, 'a, T> {
+    pub fn get(&mut self, pos: usize) -> InOut<'_, '_, T> {
         assert!(pos < N::USIZE);
         unsafe {
             InOut {
@@ -133,7 +133,7 @@ impl<'inp, 'out, T, N: ArraySize> InOut<'inp, 'out, Array<T, N>> {
     }
 }
 
-impl<'inp, 'out, N: ArraySize> InOut<'inp, 'out, Array<u8, N>> {
+impl<N: ArraySize> InOut<'_, '_, Array<u8, N>> {
     /// XOR `data` with values behind the input slice and write
     /// result to the output slice.
     ///
@@ -153,7 +153,7 @@ impl<'inp, 'out, N: ArraySize> InOut<'inp, 'out, Array<u8, N>> {
     }
 }
 
-impl<'inp, 'out, N, M> InOut<'inp, 'out, Array<Array<u8, N>, M>>
+impl<N, M> InOut<'_, '_, Array<Array<u8, N>, M>>
 where
     N: ArraySize,
     M: ArraySize,

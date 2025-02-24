@@ -96,7 +96,7 @@ impl<T> InOutBufReserved<'_, '_, T> {
 
     /// Split buffer into `InOutBuf` with input length and mutable slice pointing to
     /// the reamining reserved suffix.
-    pub fn split_reserved<'a>(&'a mut self) -> (InOutBuf<'a, 'a, T>, &'a mut [T]) {
+    pub fn split_reserved(&mut self) -> (InOutBuf<'_, '_, T>, &mut [T]) {
         let in_len = self.get_in_len();
         let out_len = self.get_out_len();
         let in_ptr = self.get_in().as_ptr();
@@ -132,13 +132,13 @@ impl<'inp, 'out, T> InOutBufReserved<'inp, 'out, T> {
 
     /// Get input slice.
     #[inline(always)]
-    pub fn get_in<'a>(&'a self) -> &'a [T] {
+    pub fn get_in(&self) -> &[T] {
         unsafe { slice::from_raw_parts(self.in_ptr, self.in_len) }
     }
 
     /// Get output slice.
     #[inline(always)]
-    pub fn get_out<'a>(&'a mut self) -> &'a mut [T] {
+    pub fn get_out(&mut self) -> &mut [T] {
         unsafe { slice::from_raw_parts_mut(self.out_ptr, self.out_len) }
     }
 
@@ -212,10 +212,10 @@ pub struct PaddedInOutBuf<'inp, 'out, BS: ArraySize> {
 }
 
 #[cfg(feature = "block-padding")]
-impl<'inp, 'out, BS: ArraySize> PaddedInOutBuf<'inp, 'out, BS> {
+impl<'out, BS: ArraySize> PaddedInOutBuf<'_, 'out, BS> {
     /// Get full blocks.
     #[inline(always)]
-    pub fn get_blocks<'a>(&'a mut self) -> InOutBuf<'a, 'a, Array<u8, BS>> {
+    pub fn get_blocks(&mut self) -> InOutBuf<'_, '_, Array<u8, BS>> {
         self.blocks.reborrow()
     }
 
@@ -224,7 +224,7 @@ impl<'inp, 'out, BS: ArraySize> PaddedInOutBuf<'inp, 'out, BS> {
     /// For paddings with `P::TYPE = PadType::Reversible` it always returns `Some`.
     #[inline(always)]
     #[allow(clippy::needless_option_as_deref)]
-    pub fn get_tail_block<'a>(&'a mut self) -> Option<InOut<'a, 'a, Array<u8, BS>>> {
+    pub fn get_tail_block(&mut self) -> Option<InOut<'_, '_, Array<u8, BS>>> {
         match self.tail_out.as_deref_mut() {
             Some(out_block) => Some((&self.tail_in, out_block).into()),
             None => None,
