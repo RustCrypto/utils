@@ -98,7 +98,7 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
     /// # Panics
     /// If `pos` greater or equal to buffer length.
     #[inline(always)]
-    pub fn get<'a>(&'a mut self, pos: usize) -> InOut<'a, 'a, T> {
+    pub fn get(&mut self, pos: usize) -> InOut<'_, '_, T> {
         assert!(pos < self.len);
         unsafe {
             InOut {
@@ -111,13 +111,13 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
 
     /// Get input slice.
     #[inline(always)]
-    pub fn get_in<'a>(&'a self) -> &'a [T] {
+    pub fn get_in(&self) -> &[T] {
         unsafe { slice::from_raw_parts(self.in_ptr, self.len) }
     }
 
     /// Get output slice.
     #[inline(always)]
-    pub fn get_out<'a>(&'a mut self) -> &'a mut [T] {
+    pub fn get_out(&mut self) -> &mut [T] {
         unsafe { slice::from_raw_parts_mut(self.out_ptr, self.len) }
     }
 
@@ -135,7 +135,7 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
 
     /// Reborrow `self`.
     #[inline(always)]
-    pub fn reborrow<'a>(&'a mut self) -> InOutBuf<'a, 'a, T> {
+    pub fn reborrow(&mut self) -> InOutBuf<'_, '_, T> {
         Self {
             in_ptr: self.in_ptr,
             out_ptr: self.out_ptr,
@@ -233,7 +233,7 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
     }
 }
 
-impl<'inp, 'out> InOutBuf<'inp, 'out, u8> {
+impl InOutBuf<'_, '_, u8> {
     /// XORs `data` with values behind the input slice and write
     /// result to the output slice.
     ///
