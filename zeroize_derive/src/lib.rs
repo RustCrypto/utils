@@ -2,7 +2,7 @@
 
 #![crate_type = "proc-macro"]
 #![forbid(unsafe_code)]
-#![warn(rust_2018_idioms, trivial_casts, unused_qualifications)]
+#![warn(trivial_casts, unused_qualifications)]
 
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
