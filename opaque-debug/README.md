@@ -32,8 +32,8 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
-[build-image]: https://github.com/RustCrypto/utils/workflows/opaque-debug/badge.svg?branch=master&event=push
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/opaque-debug.yml
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/opaque-debug.yml/badge.svg?branch=master
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/opaque-debug.yml?query=branch:master
 
 [//]: # (general links)
 

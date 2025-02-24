@@ -57,8 +57,8 @@ dual licensed as above, without any additional terms or conditions.
 [docs-link]: https://docs.rs/zeroize/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
-[build-image]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml/badge.svg
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml/badge.svg?branch=master
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml?query=branch:master
 
 [//]: # (general links)
 

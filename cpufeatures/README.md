@@ -108,7 +108,7 @@ dual licensed as above, without any additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/cpufeatures.svg?logo=rust
+[crate-image]: https://img.shields.io/crates/v/cpufeatures.svg
 [crate-link]: https://crates.io/crates/cpufeatures
 [docs-image]: https://docs.rs/cpufeatures/badge.svg
 [docs-link]: https://docs.rs/cpufeatures/
@@ -116,8 +116,8 @@ dual licensed as above, without any additional terms or conditions.
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
-[build-image]: https://github.com/RustCrypto/utils/actions/workflows/cpufeatures.yml/badge.svg
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/cpufeatures.yml
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/cpufeatures.yml/badge.svg?branch=master
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/cpufeatures.yml?query=branch:master
 
 [//]: # (general links)
 
