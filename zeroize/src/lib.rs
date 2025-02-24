@@ -4,7 +4,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
-#![warn(missing_docs, rust_2018_idioms, unused_qualifications)]
+#![warn(missing_docs, unused_qualifications)]
 
 //! Securely zero memory with a simple trait ([`Zeroize`]) built on stable Rust
 //! primitives which guarantee the operation will not be "optimized away".
