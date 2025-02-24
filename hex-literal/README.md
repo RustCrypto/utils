@@ -85,8 +85,8 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [docs-link]: https://docs.rs/hex-literal/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
-[build-image]: https://github.com/RustCrypto/utils/actions/workflows/hex-literal.yml/badge.svg
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/hex-literal.yml
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/hex-literal.yml/badge.svg?branch=master
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/hex-literal.yml?query=branch:master
 
 [//]: # (general links)
 

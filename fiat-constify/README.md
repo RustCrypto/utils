@@ -42,13 +42,13 @@ dual licensed as above, without any additional terms or conditions.
 [crate-link]: https://crates.io/crates/fiat-constify
 [docs-image]: https://docs.rs/fiat-constify/badge.svg
 [docs-link]: https://docs.rs/fiat-constify/
-[build-image]: https://github.com/RustCrypto/utils/workflows/fiat-constify/badge.svg
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/fiat-constify.yml
 [safety-image]: https://img.shields.io/badge/unsafe-forbidden-success.svg
 [safety-link]: https://github.com/rust-secure-code/safety-dance/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/fiat-constify.yml/badge.svg?branch=master
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/fiat-constify.yml?query=branch:master
 
 [//]: # (links)
 

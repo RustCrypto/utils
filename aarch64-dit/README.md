@@ -42,8 +42,8 @@ additional terms or conditions.
 [docs-link]: https://docs.rs/aarch64-dit/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [msrv-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
-[build-image]: https://github.com/RustCrypto/utils/actions/workflows/aarch64-dit.yml/badge.svg
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/aarch64-dit.yml
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/aarch64-dit.yml/badge.svg?branch=master
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/aarch64-dit.yml?query=branch:master
 
 [//]: # (links)
 
