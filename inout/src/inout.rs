@@ -33,6 +33,24 @@ impl<'inp, 'out, T> InOut<'inp, 'out, T> {
         unsafe { &mut *self.out_ptr }
     }
 
+    /// Consume `self` and get mutable reference to the output value with lifetime `'out`
+    /// and output value equal to the input value.
+    ///
+    /// In the case if the input and output references are the same, simply returns
+    /// the output reference. Otherwise, copies data from the former to the latter
+    /// before returning the output reference.
+    pub fn into_out_with_copied_in(self) -> &'out mut T
+    where
+        T: Copy,
+    {
+        if self.in_ptr != self.out_ptr {
+            unsafe {
+                ptr::copy(self.in_ptr, self.out_ptr, 1);
+            }
+        }
+        unsafe { &mut *self.out_ptr }
+    }
+
     /// Consume `self` and get mutable reference to the output value with lifetime `'out`.
     #[inline(always)]
     pub fn into_out(self) -> &'out mut T {
