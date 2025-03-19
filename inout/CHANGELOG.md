@@ -12,11 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `InOut::into_out` and `InOutBufReserved::into_out` methods ([#1132])
 - `InOutBufReserved::split_reserved` method ([#1133])
+- `InOut::into_out_with_copied_in` and `InOutBuf::into_out_with_copied_in` methods ([#1169])
 
 [#944]: https://github.com/RustCrypto/utils/pull/944
 [#1132]: https://github.com/RustCrypto/utils/pull/1132
 [#1132]: https://github.com/RustCrypto/utils/pull/1132
 [#1149]: https://github.com/RustCrypto/utils/pull/1149
+[#1169]: https://github.com/RustCrypto/utils/pull/1169
 
 ## 0.1.4 (2025-02-21)
 ### Fixed
