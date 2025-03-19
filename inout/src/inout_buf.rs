@@ -121,6 +121,24 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
         unsafe { slice::from_raw_parts_mut(self.out_ptr, self.len) }
     }
 
+    /// Consume `self` and get the output slice with lifetime `'out` filled with data from
+    /// the input slice.
+    ///
+    /// In the case if the input and output slices point to the same memory, simply returns
+    /// the output slice. Otherwise, copies data from the former to the latter
+    /// before returning the output slice.
+    pub fn into_out_with_copied_in(self) -> &'out mut [T]
+    where
+        T: Copy,
+    {
+        if self.in_ptr != self.out_ptr {
+            unsafe {
+                core::ptr::copy(self.in_ptr, self.out_ptr, self.len);
+            }
+        }
+        unsafe { slice::from_raw_parts_mut(self.out_ptr, self.len) }
+    }
+
     /// Consume `self` and get output slice with lifetime `'out`.
     #[inline(always)]
     pub fn into_out(self) -> &'out mut [T] {
