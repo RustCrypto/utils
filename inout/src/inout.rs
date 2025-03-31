@@ -1,6 +1,6 @@
 use crate::InOutBuf;
-use core::{marker::PhantomData, ptr};
-use hybrid_array::{Array, ArraySize};
+use core::{marker::PhantomData, ops::Mul, ptr};
+use hybrid_array::{Array, ArraySize, typenum::Prod};
 
 /// Custom pointer type which contains one immutable (input) and one mutable
 /// (output) pointer, which are either equal or non-overlapping.
@@ -148,6 +148,28 @@ impl<'inp, 'out, T, N: ArraySize> InOut<'inp, 'out, Array<T, N>> {
             len: N::USIZE,
             _pd: PhantomData,
         }
+    }
+}
+
+impl<'inp, 'out, T, N, M> From<InOut<'inp, 'out, Array<T, Prod<N, M>>>>
+    for Array<InOut<'inp, 'out, Array<T, N>>, M>
+where
+    N: ArraySize,
+    M: ArraySize,
+    N: Mul<M>,
+    Prod<N, M>: ArraySize,
+{
+    fn from(buf: InOut<'inp, 'out, Array<T, Prod<N, M>>>) -> Self {
+        let in_ptr: *const Array<T, N> = buf.in_ptr.cast();
+        let out_ptr: *mut Array<T, N> = buf.out_ptr.cast();
+
+        Array::from_fn(|i| unsafe {
+            InOut {
+                in_ptr: in_ptr.add(i),
+                out_ptr: out_ptr.add(i),
+                _pd: PhantomData,
+            }
+        })
     }
 }
 
