@@ -149,9 +149,9 @@ impl<'inp, 'out, T> InOutBufReserved<'inp, 'out, T> {
     }
 }
 
+#[cfg(feature = "block-padding")]
 impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
     /// Transform buffer into [`PaddedInOutBuf`] using padding algorithm `P`.
-    #[cfg(feature = "block-padding")]
     #[inline(always)]
     pub fn into_padded_blocks<P, BS>(self) -> Result<PaddedInOutBuf<'inp, 'out, BS>, PadError>
     where
