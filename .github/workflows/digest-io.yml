@@ -1,0 +1,43 @@
+name: digest-io
+
+on:
+  pull_request:
+      paths:
+        - "digest-io/**"
+        - "Cargo.*"
+  push:
+    branches: master
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: digest-io
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  minimal-versions:
+    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
+    with:
+        working-directory: ${{ github.workflow }}
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.85.0 # MSRV
+          - stable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - run: cargo test --no-default-features
+      - run: cargo test
+      - run: cargo test --all-features
