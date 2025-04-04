@@ -8,6 +8,7 @@ members = [
     "cmov",
     "cpufeatures",
     "dbl",
+    "digest-io",
     "fiat-constify",
     "hex-literal",
     "inout",
