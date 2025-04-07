@@ -132,16 +132,16 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/inout.svg
-[crate-link]: https://crates.io/crates/inout
-[docs-image]: https://docs.rs/inout/badge.svg
-[docs-link]: https://docs.rs/inout/
+[crate-image]: https://img.shields.io/crates/v/digest-io.svg
+[crate-link]: https://crates.io/crates/digest-io
+[docs-image]: https://docs.rs/digest-io/badge.svg
+[docs-link]: https://docs.rs/digest-io/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
 [chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
-[build-image]: https://github.com/RustCrypto/utils/actions/workflows/inout.yml/badge.svg?branch=master
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/inout.yml?query=branch:master
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/digest-io.yml/badge.svg?branch=master
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/digest-io.yml?query=branch:master
 
 [//]: # (general links)
 
