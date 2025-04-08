@@ -33,4 +33,3 @@ simd = [] # NOTE: MSRV 1.72
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
