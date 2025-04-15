@@ -43,7 +43,7 @@ impl<'inp, 'out, T> InOut<'inp, 'out, T> {
     where
         T: Copy,
     {
-        if self.in_ptr != self.out_ptr {
+        if !core::ptr::eq(self.in_ptr, self.out_ptr) {
             unsafe {
                 ptr::copy(self.in_ptr, self.out_ptr, 1);
             }
