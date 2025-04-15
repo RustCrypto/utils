@@ -131,7 +131,7 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
     where
         T: Copy,
     {
-        if self.in_ptr != self.out_ptr {
+        if !core::ptr::eq(self.in_ptr, self.out_ptr) {
             unsafe {
                 core::ptr::copy(self.in_ptr, self.out_ptr, self.len);
             }
