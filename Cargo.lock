@@ -55,6 +55,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1cb3c4a0d3776f7535c32793be81d6d5fec0d48ac70955d9834e643aa249a52f"
 
 [[package]]
+name = "cpubits"
+version = "0.0.0"
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
