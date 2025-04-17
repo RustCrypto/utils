@@ -9,6 +9,4 @@ repository = "https://github.com/RustCrypto/utils"
 categories = ["no-std"]
 edition = "2024"
 rust-version = "1.85"
-
-[dev-dependencies]
-hex = "0.4"
+readme = "README.md"
