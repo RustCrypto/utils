@@ -43,6 +43,24 @@ the blobby format and text file with hex-encoded strings.
 
 Let's say we have the following test vectors for a 64-bit hash function:
 ```text
+COUNT = 0
+INPUT = 0123456789ABCDEF0123456789ABCDEF
+OUTPUT = 217777950848CECD
+
+COUNT = 1
+INPUT = 
+OUTPUT = F7CD1446C9161C0A
+
+COUNT = 2
+INPUT = FFFEFD
+OUTPUT = 80081C35AA43F640
+
+```
+
+To transform it into the Blobby format you first have to modify it
+to the following format:
+
+```text
 0123456789ABCDEF0123456789ABCDEF
 217777950848CECD
 
@@ -56,14 +74,14 @@ fourth, and sixth lines are hex-encoded hash outputs for input on the previous l
 Note that the file should contain a trailing empty line (i.e. every data line should end
 with `\n`).
 
-We can encode this file into the Blobby format by running the following command:
+This file can be converted to the Blobby format by running the following command:
 ```sh
 cargo run --releae --bin encode -- /path/to/input.txt /path/to/output.blb
 ```
 
-This will create a file which then can be read using `blobby::Blob2Iterator`.
+This will create a file which can be read using `blobby::Blob2Iterator`.
 
-To see contents of a Blobby file you can use the following command:
+To see contents of an existing Blobby file you can use the following command:
 ```sh
 cargo run --releae --bin decode -- /path/to/input.blb /path/to/output.txt
 ```
