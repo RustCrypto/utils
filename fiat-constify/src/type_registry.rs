@@ -19,7 +19,7 @@ impl TypeRegistry {
     }
 
     /// Add a type which is a new type to the type registry.
-    pub fn add_new_type(&mut self, item_struct: &ItemStruct) {
+    pub fn add_newtype(&mut self, item_struct: &ItemStruct) {
         if self
             .0
             .insert(item_struct.ident.clone(), Type::NewType)
@@ -48,7 +48,7 @@ impl TypeRegistry {
     }
 
     #[inline]
-    pub fn is_new_type(&self, ident: &syn::Ident) -> bool {
+    pub fn is_newtype(&self, ident: &syn::Ident) -> bool {
         matches!(self.get(ident), Some(Type::NewType))
     }
 }
