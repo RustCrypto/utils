@@ -2,9 +2,10 @@ name: dbl
 
 on:
   pull_request:
-      paths:
-        - "dbl/**"
-        - "Cargo.*"
+    paths:
+      - ".github/workflows/dbl.yml"
+      - "dbl/**"
+      - "Cargo.*"
   push:
     branches: master
 
@@ -40,8 +41,9 @@ jobs:
       - run: cargo build --target ${{ matrix.target }}
 
   minimal-versions:
+    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
-        working-directory: ${{ github.workflow }}
+      working-directory: ${{ github.workflow }}
 
   test:
     runs-on: ubuntu-latest
