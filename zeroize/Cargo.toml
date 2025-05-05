@@ -27,9 +27,11 @@ default = ["alloc"]
 alloc = []
 std = ["alloc"]
 
-aarch64 = [] # NOTE: vestigial no-op feature; AArch64 support is always enabled now
+aarch64 = []                # NOTE: vestigial no-op feature; AArch64 support is always enabled now
 derive = ["zeroize_derive"]
-simd = [] # NOTE: MSRV 1.72
+simd = []                   # NOTE: MSRV 1.72
+
+test-allocator = ["std"]
 
 [package.metadata.docs.rs]
 all-features = true
