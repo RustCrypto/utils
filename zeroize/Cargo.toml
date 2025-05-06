@@ -31,7 +31,5 @@ aarch64 = []                # NOTE: vestigial no-op feature; AArch64 support is 
 derive = ["zeroize_derive"]
 simd = []                   # NOTE: MSRV 1.72
 
-test-allocator = ["std"]
-
 [package.metadata.docs.rs]
 all-features = true
