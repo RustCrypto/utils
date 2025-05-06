@@ -145,5 +145,5 @@ __expand_check_macro! {
 
     ("sha512", "ymm", 2, eax, 0),
     ("sm3", "xmm", 2, eax, 1),
-    ("sm4", "xmm", 2, eax, 2),
+    ("sm4", "ymm", 2, eax, 2),
 }
