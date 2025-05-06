@@ -47,7 +47,7 @@ macro_rules! __detect_target_features {
         }
 
         let cr = unsafe {
-            [cpuid(1), cpuid_count(7, 0)]
+            [cpuid(1), cpuid_count(7, 0), cpuid_count(7, 1)]
         };
 
         $($crate::check!(cr, $tf) & )+ true
@@ -142,4 +142,8 @@ __expand_check_macro! {
     ("vpclmulqdq", "zmm", 1, ecx, 10),
     ("avx512bitalg", "zmm", 1, ecx, 12),
     ("avx512vpopcntdq", "zmm", 1, ecx, 14),
+
+    ("sha512", "ymm", 2, eax, 0),
+    ("sm3", "xmm", 2, eax, 1),
+    ("sm4", "xmm", 2, eax, 2),
 }

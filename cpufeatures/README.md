@@ -87,6 +87,9 @@ Target features:
 - `sse4.1`
 - `sse4.2`
 - `ssse3`
+- `sha512`
+- `sm3`
+- `sm4`
 
 If you would like detection support for a target feature which is not on
 this list, please [open a GitHub issue].
