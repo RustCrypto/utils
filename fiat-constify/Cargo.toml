@@ -1,6 +1,6 @@
 [package]
 name = "fiat-constify"
-version = "0.0.0" # Also update html_root_url in lib.rs when bumping this
+version = "0.1.0"
 description = """
 Postprocessor for fiat-crypto generated field implementations which rewrites
 them as `const fn`
@@ -15,6 +15,7 @@ keywords = ["fiat-crypto", "field"]
 readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
+publish = false
 
 [dependencies]
 prettyplease = "0.2.19"
