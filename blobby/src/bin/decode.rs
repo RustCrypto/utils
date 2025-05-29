@@ -18,7 +18,7 @@ fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W) -> io::Result<usiz
         .map_err(|e| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("invalid blobby data: {:?}", e),
+                format!("invalid blobby data: {e:?}"),
             )
         })?
         .collect::<Vec<_>>();
@@ -26,7 +26,7 @@ fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W) -> io::Result<usiz
         let blob = blob.map_err(|e| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("invalid blobby data: {:?}", e),
+                format!("invalid blobby data: {e:?}"),
             )
         })?;
         writer.write_all(encode_hex(blob).as_bytes())?;
