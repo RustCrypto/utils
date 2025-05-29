@@ -38,7 +38,7 @@ fn encode(reader: impl BufRead, mut writer: impl Write) -> io::Result<usize> {
         blobs.push(blob);
     }
     let (data, idx_len) = encode_blobs(&blobs);
-    println!("Index len: {:?}", idx_len);
+    println!("Index len: {idx_len:?}");
     writer.write_all(&data)?;
     Ok(blobs.len())
 }
