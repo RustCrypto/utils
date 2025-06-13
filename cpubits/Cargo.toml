@@ -1,0 +1,11 @@
+[package]
+name = "cpubits"
+version = "0.0.0"
+description = "Configurable build-time selection of 32-bit or 64-bit backends"
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/cpubits"
+repository = "https://github.com/RustCrypto/utils/tree/master/cpubits"
+categories = []
+edition = "2018"
+readme = "README.md"
