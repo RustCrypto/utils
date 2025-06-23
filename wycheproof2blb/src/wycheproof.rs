@@ -111,7 +111,7 @@ pub fn data(wycheproof_dir: &str, filename: &str) -> Vec<u8> {
         .join("testvectors")
         .join(filename);
     std::fs::read(&path)
-        .unwrap_or_else(|_| panic!("Test vector file {} not found at {:?}", filename, path))
+        .unwrap_or_else(|_| panic!("Test vector file {filename} not found at {path:?}"))
 }
 
 /// Build a description for a test case in a suite

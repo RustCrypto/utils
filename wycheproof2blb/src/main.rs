@@ -137,7 +137,7 @@ fn main() {
             file: "ecdsa_secp521r1_sha512_test.json",
             generator: ecdsa::generator,
         },
-        _ => panic!("Unrecognized algorithm '{}'", algorithm),
+        _ => panic!("Unrecognized algorithm '{algorithm}'"),
     };
 
     let data = wycheproof::data(wycheproof_dir, algo.file);
