@@ -11,29 +11,47 @@ Iterators over a simple binary blob storage.
 
 ## Examples
 ```
-let buf = b"\x02\x05hello\x06world!\x01\x02 \x00\x03\x06:::\x03\x01\x00";
-let mut v = blobby::BlobIterator::new(buf).unwrap();
-assert_eq!(v.next(), Some(Ok(&b"hello"[..])));
-assert_eq!(v.next(), Some(Ok(&b" "[..])));
-assert_eq!(v.next(), Some(Ok(&b""[..])));
-assert_eq!(v.next(), Some(Ok(&b"world!"[..])));
-assert_eq!(v.next(), Some(Ok(&b":::"[..])));
-assert_eq!(v.next(), Some(Ok(&b"world!"[..])));
-assert_eq!(v.next(), Some(Ok(&b"hello"[..])));
-assert_eq!(v.next(), Some(Ok(&b""[..])));
-assert_eq!(v.next(), None);
+// We recommend to save blobby data into separate files and
+// use the `include_bytes!` macro
+static BLOBBY_DATA: &[u8] = b"\x02\x05hello\x06world!\x01\x02 \x00\x03\x06:::\x03\x01\x00";
 
-let mut v = blobby::Blob2Iterator::new(buf).unwrap();
-assert_eq!(v.next(), Some(Ok([&b"hello"[..], b" "])));
-assert_eq!(v.next(), Some(Ok([&b""[..], b"world!"])));
-assert_eq!(v.next(), Some(Ok([&b":::"[..], b"world!"])));
-assert_eq!(v.next(), Some(Ok([&b"hello"[..], b""])));
-assert_eq!(v.next(), None);
+static SLICE: &[&[u8]] = blobby::parse_into_slice!(BLOBBY_DATA);
 
-let mut v = blobby::Blob4Iterator::new(buf).unwrap();
-assert_eq!(v.next(), Some(Ok([&b"hello"[..], b" ", b"", b"world!"])));
-assert_eq!(v.next(), Some(Ok([&b":::"[..], b"world!", b"hello", b""])));
-assert_eq!(v.next(), None);
+assert_eq!(SLICE[0], b"hello".as_slice());
+assert_eq!(SLICE[1], b" ".as_slice());
+assert_eq!(SLICE[2], b"".as_slice());
+assert_eq!(SLICE[3], b"world!".as_slice());
+assert_eq!(SLICE[4], b":::".as_slice());
+assert_eq!(SLICE[5], b"world!".as_slice());
+assert_eq!(SLICE[6], b"hello".as_slice());
+assert_eq!(SLICE[7], b"".as_slice());
+assert_eq!(SLICE.len(), 8);
+
+blobby::parse_into_structs!(
+    BLOBBY_DATA;
+    static ITEMS;
+    struct Foo { a, b, c, d }
+);
+
+assert_eq!(
+    ITEMS[0],
+    Foo {
+        a: b"hello",
+        b: b" ",
+        c: b"",
+        d: b"world!",
+    },
+);
+assert_eq!(
+    ITEMS[1],
+    Foo {
+        a: b":::",
+        b: b"world!",
+        c: b"hello",
+        d: b"",
+    },
+);
+assert_eq!(ITEMS.len(), 2);
 ```
 
 ## Encoding and decoding
@@ -76,14 +94,14 @@ with `\n`).
 
 This file can be converted to the Blobby format by running the following command:
 ```sh
-cargo run --releae --bin encode -- /path/to/input.txt /path/to/output.blb
+cargo run --release --features alloc --bin encode -- /path/to/input.txt /path/to/output.blb
 ```
 
 This will create a file which can be read using `blobby::Blob2Iterator`.
 
 To see contents of an existing Blobby file you can use the following command:
 ```sh
-cargo run --releae --bin decode -- /path/to/input.blb /path/to/output.txt
+cargo run --release --features alloc --bin decode -- /path/to/input.blb /path/to/output.txt
 ```
 The output file will contain a sequence of hex-encoded byte strings stored
 in the input file. 

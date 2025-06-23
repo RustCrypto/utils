@@ -10,3 +10,6 @@ categories = ["no-std"]
 edition = "2024"
 rust-version = "1.85"
 readme = "README.md"
+
+[features]
+alloc = []
