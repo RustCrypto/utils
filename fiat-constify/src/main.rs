@@ -73,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn get_ident_from_pat(pat: &Pat) -> Ident {
     match pat {
         Pat::Ident(pat_ident) => pat_ident.ident.clone(),
-        other => panic!("unexpected `Pat`: {:?} (expecting `Pat::Ident`)", other),
+        other => panic!("unexpected `Pat`: {other:?} (expecting `Pat::Ident`)"),
     }
 }
 
