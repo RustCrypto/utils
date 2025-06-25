@@ -225,6 +225,22 @@ macro_rules! parse_into_structs {
             pub $($field : &'static [u8]),*
         }
 
+        $crate::parse_into_structs!(
+            $data;
+            $static_vis static $items_name;
+            existing struct $item {
+                $($field),*
+            }
+        );
+    };
+
+    (
+        $data:expr;
+        $static_vis:vis static $items_name:ident;
+        existing struct $item:ident {
+            $($field:ident),* $(,)?
+        }
+    ) => {
         $static_vis static $items_name: &[$item] = {
             const RAW_ITEMS: &[&[u8]] = $crate::parse_into_slice!($data);
 
