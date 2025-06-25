@@ -215,10 +215,10 @@ macro_rules! parse_into_slice {
 macro_rules! parse_into_structs {
     (
         $data:expr;
-        $static_vis:vis static $items_name:ident;
-        $ty_vis:vis struct $item:ident {
-            $($field:ident),* $(,)?
-        }
+        #[define_struct]
+        $static_vis:vis static $items_name:ident: &[
+            $ty_vis:vis $item:ident { $($field:ident),* $(,)? }
+        ];
     ) => {
         #[derive(Debug, Clone, Copy, Eq, PartialEq)]
         $ty_vis struct $item {
@@ -227,19 +227,17 @@ macro_rules! parse_into_structs {
 
         $crate::parse_into_structs!(
             $data;
-            $static_vis static $items_name;
-            existing struct $item {
-                $($field),*
-            }
+            $static_vis static $items_name: &[
+                $item { $($field),* }
+            ];
         );
     };
 
     (
         $data:expr;
-        $static_vis:vis static $items_name:ident;
-        existing struct $item:ident {
-            $($field:ident),* $(,)?
-        }
+        $static_vis:vis static $items_name:ident: &[
+            $item:ident { $($field:ident),* $(,)? }
+        ];
     ) => {
         $static_vis static $items_name: &[$item] = {
             const RAW_ITEMS: &[&[u8]] = $crate::parse_into_slice!($data);

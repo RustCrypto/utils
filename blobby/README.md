@@ -29,13 +29,13 @@ assert_eq!(SLICE.len(), 8);
 
 blobby::parse_into_structs!(
     BLOBBY_DATA;
-    static ITEMS;
-    struct Foo { a, b, c, d }
+    #[define_struct]
+    static ITEMS: &[Item { a, b, c, d }];
 );
 
 assert_eq!(
     ITEMS[0],
-    Foo {
+    Item {
         a: b"hello",
         b: b" ",
         c: b"",
@@ -44,7 +44,7 @@ assert_eq!(
 );
 assert_eq!(
     ITEMS[1],
-    Foo {
+    Item {
         a: b":::",
         b: b"world!",
         c: b"hello",
