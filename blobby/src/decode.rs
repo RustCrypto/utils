@@ -216,21 +216,21 @@ macro_rules! parse_into_structs {
     (
         $data:expr;
         $static_vis:vis static $items_name:ident;
-        $ty_vis:vis struct $name:ident {
-            $($field_name:ident),* $(,)?
+        $ty_vis:vis struct $item:ident {
+            $($field:ident),* $(,)?
         }
     ) => {
         #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-        $ty_vis struct $name {
-            pub $($field_name : &'static [u8]),*
+        $ty_vis struct $item {
+            pub $($field : &'static [u8]),*
         }
 
-        $static_vis static $items_name: &[$name] = {
+        $static_vis static $items_name: &[$item] = {
             const RAW_ITEMS: &[&[u8]] = $crate::parse_into_slice!($data);
 
-            const fn get_struct(items: &mut &[&'static [u8]]) -> $name {
-                $name {
-                    $($field_name: {
+            const fn get_struct(items: &mut &[&'static [u8]]) -> $item {
+                $item {
+                    $($field: {
                         match items.split_first() {
                             Some((first, rest)) => {
                                 *items = rest;
@@ -242,19 +242,19 @@ macro_rules! parse_into_structs {
                 }
             }
 
-            const STRUCT_FIELDS: usize = 0 $( + {
-                let $field_name: (); let _ = $field_name;
+            const ITEM_FIELDS: usize = 0 $( + {
+                let $field: (); let _ = $field;
                 1
             })*;
 
-            const STRUCTS_LEN: usize = if RAW_ITEMS.len() % STRUCT_FIELDS == 0 {
-                RAW_ITEMS.len() / STRUCT_FIELDS
+            const ITEMS_LEN: usize = if RAW_ITEMS.len() % ITEM_FIELDS == 0 {
+                RAW_ITEMS.len() / ITEM_FIELDS
             } else {
                 panic!("Number of raw items is not multiple of number of fields in the struct");
             };
 
-            const STRUCTS: [$name; STRUCTS_LEN] = {
-                let mut res = [$name { $($field_name : &[]),* }; STRUCTS_LEN];
+            const ITEMS: [$item; ITEMS_LEN] = {
+                let mut res = [$item { $($field : &[]),* }; ITEMS_LEN];
 
                 let mut raw_items = RAW_ITEMS;
                 let mut i = 0;
@@ -265,7 +265,7 @@ macro_rules! parse_into_structs {
                 res
             };
 
-            STRUCTS.as_slice()
+            ITEMS.as_slice()
         };
     };
 }
