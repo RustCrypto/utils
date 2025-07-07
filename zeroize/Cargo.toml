@@ -20,7 +20,7 @@ rust-version = "1.85"
 
 [dependencies]
 serde = { version = "1.0", default-features = false, optional = true }
-zeroize_derive = { version = "1.3", path = "../zeroize_derive", optional = true }
+zeroize_derive = { version = "1.4", path = "../zeroize_derive", optional = true }
 
 [features]
 default = ["alloc"]
