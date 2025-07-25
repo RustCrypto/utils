@@ -1,41 +1,41 @@
 //! Encoding utility
-use blobby::BlobIterator;
-use std::io::{self, BufRead, BufReader, BufWriter, Write};
-use std::{env, error::Error, fs::File};
+use std::error::Error;
 
-fn encode_hex(data: &[u8]) -> String {
-    let mut res = String::with_capacity(2 * data.len());
-    for &byte in data {
-        res.push_str(&format!("{byte:02X}"));
-    }
-    res
+#[cfg(not(feature = "alloc"))]
+fn main() -> Result<(), Box<dyn Error>> {
+    Err("The decode binary should be compiled with enabled `alloc` feature!".into())
 }
 
-fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W) -> io::Result<usize> {
-    let mut data = Vec::new();
-    reader.read_to_end(&mut data)?;
-    let res = BlobIterator::new(&data)
-        .map_err(|e| {
-            io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("invalid blobby data: {e:?}"),
-            )
-        })?
-        .collect::<Vec<_>>();
-    for blob in res.iter() {
-        let blob = blob.map_err(|e| {
+#[cfg(feature = "alloc")]
+fn main() -> Result<(), Box<dyn Error>> {
+    use std::io::{self, BufRead, BufReader, BufWriter, Write};
+    use std::{env, fs::File};
+
+    fn encode_hex(data: &[u8]) -> String {
+        let mut res = String::with_capacity(2 * data.len());
+        for &byte in data {
+            res.push_str(&format!("{byte:02X}"));
+        }
+        res
+    }
+
+    fn decode<R: BufRead, W: Write>(mut reader: R, mut writer: W) -> io::Result<usize> {
+        let mut data = Vec::new();
+        reader.read_to_end(&mut data)?;
+        let res = blobby::parse_into_vec(&data).map_err(|e| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
                 format!("invalid blobby data: {e:?}"),
             )
         })?;
-        writer.write_all(encode_hex(blob).as_bytes())?;
-        writer.write_all(b"\n")?;
+        let len = res.len();
+        for blob in res {
+            writer.write_all(encode_hex(blob).as_bytes())?;
+            writer.write_all(b"\n")?;
+        }
+        Ok(len)
     }
-    Ok(res.len())
-}
 
-fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().skip(1).collect();
 
     if args.is_empty() {
