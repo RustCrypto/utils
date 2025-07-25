@@ -49,7 +49,7 @@ use array::{
 use core::{fmt, mem::MaybeUninit, ops::Add, ptr, slice};
 
 #[cfg(feature = "zeroize")]
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 mod read;
 mod sealed;
@@ -441,3 +441,14 @@ impl<BS: ArraySize, K: BufferKind> Zeroize for BlockBuffer<BS, K> {
         self.pos.zeroize();
     }
 }
+
+impl<BS: ArraySize, K: BufferKind> Drop for BlockBuffer<BS, K> {
+    #[inline]
+    fn drop(&mut self) {
+        #[cfg(feature = "zeroize")]
+        self.zeroize();
+    }
+}
+
+#[cfg(feature = "zeroize")]
+impl<BS: ArraySize, K: BufferKind> ZeroizeOnDrop for BlockBuffer<BS, K> {}
