@@ -26,7 +26,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/dbl.svg
+[crate-image]: https://img.shields.io/crates/v/dbl.svg?logo=rust
 [crate-link]: https://crates.io/crates/dbl
 [docs-image]: https://docs.rs/dbl/badge.svg
 [docs-link]: https://docs.rs/dbl/
