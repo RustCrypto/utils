@@ -113,7 +113,7 @@ git-flavored [variable-length quantity][0] (VLQ) for encoding unsigned
 numbers.
 
 File starts with a number of de-duplicated blobs `d`. It followed by `d`
-entries. Each entry starts with an integer `m`, immediately folowed by `m`
+entries. Each entry starts with an integer `m`, immediately followed by `m`
 bytes representing de-duplicated binary blob.
 
 Next follows unspecified number of entries representing sequence of stored
