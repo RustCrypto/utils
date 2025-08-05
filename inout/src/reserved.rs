@@ -95,7 +95,7 @@ impl<T> InOutBufReserved<'_, '_, T> {
     }
 
     /// Split buffer into `InOutBuf` with input length and mutable slice pointing to
-    /// the reamining reserved suffix.
+    /// the remaining reserved suffix.
     pub fn split_reserved(&mut self) -> (InOutBuf<'_, '_, T>, &mut [T]) {
         let in_len = self.get_in_len();
         let out_len = self.get_out_len();

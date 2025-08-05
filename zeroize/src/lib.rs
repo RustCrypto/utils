@@ -400,7 +400,7 @@ where
             // Ensures self is None and that the value was dropped. Without the take, the drop
             // of the (zeroized) value isn't called, which might lead to a leak or other
             // unexpected behavior. For example, if this were Option<Vec<T>>, the above call to
-            // zeroize would not free the allocated memory, but the the `take` call will.
+            // zeroize would not free the allocated memory, but the `take` call will.
             self.take();
         }
 
@@ -617,7 +617,7 @@ impl Zeroize for CString {
     }
 }
 
-/// `Zeroizing` is a a wrapper for any `Z: Zeroize` type which implements a
+/// `Zeroizing` is a wrapper for any `Z: Zeroize` type which implements a
 /// `Drop` handler which zeroizes dropped values.
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct Zeroizing<Z: Zeroize>(Z);
