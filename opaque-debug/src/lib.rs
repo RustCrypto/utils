@@ -20,7 +20,7 @@
 //! assert_eq!(format!("{:?}", val), "CryptoStuff { ... }")
 //! ```
 //!
-//! The macro also support generic paramters:
+//! The macro also support generic parameters:
 //! ```
 //! pub struct GenericCryptoStuff<K> {
 //!     key: K,
