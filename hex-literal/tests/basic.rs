@@ -17,7 +17,7 @@ fn empty() {
 #[test]
 fn upper_case() {
     assert_eq!(hex!("AE DF 04 B2"), [0xae, 0xdf, 0x04, 0xb2]);
-    assert_eq!(hex!("FF BA 8C 00 01"), [0xff, 0xba, 0x8c, 0x00, 0x01]);
+    assert_eq!(hex!("FF BE 8C 00 01"), [0xff, 0xbe, 0x8c, 0x00, 0x01]);
 }
 
 #[test]

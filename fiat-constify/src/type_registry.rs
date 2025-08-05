@@ -42,7 +42,7 @@ impl TypeRegistry {
 
     /// Get the [`Type`] which the identifier is.
     ///
-    /// Returns `None` whe ident can't be found.
+    /// Returns `None` when ident can't be found.
     pub fn get(&self, ident: &Ident) -> Option<Type> {
         self.0.get(ident).copied()
     }
