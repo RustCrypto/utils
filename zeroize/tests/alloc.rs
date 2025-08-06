@@ -43,6 +43,8 @@ impl<S: Zeroize> Drop for SecretBox<S> {
 
 #[test]
 fn proxy_alloc_test() {
-    let _b1 = SecretBox::new([u128::MAX; 10]);
-    let _b2 = SecretBox::new([u8::MAX; 160]);
+    let b1 = SecretBox::new([u128::MAX; 10]);
+    core::hint::black_box(&b1);
+    let b2 = SecretBox::new([u8::MAX; 160]);
+    core::hint::black_box(&b2);
 }
