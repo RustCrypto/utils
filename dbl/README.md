@@ -1,4 +1,4 @@
-# [RustCrypto]: GF(2^128) "dbl" operation
+# [RustCrypto]: Double operation in `GF(2^n)`
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -7,10 +7,9 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Double operation in Galois Field GF(2^128) as used by e.g. CMAC/PMAC.
-
-Also known as "multiply-by-x", the operation is performed in the finite field
-represented using the primitive polynomial x^128 + x^7 + x^2 + x + 1.
+Double operation (a.k.a. "multiply-by-x") in Galois Field `GF(2^n)` using
+the lexicographically first polynomial among the irreducible degree `n` polynomials
+having a minimum number of coefficients.
 
 ## License
 

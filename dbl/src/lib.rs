@@ -13,11 +13,15 @@ const C64: u64 = 0b1_1011;
 const C128: u64 = 0b1000_0111;
 const C256: u64 = 0b100_0010_0101;
 
-/// Double and inverse double over GF(2^n).
+mod sealed {
+    pub trait Sealed {}
+}
+
+/// Double and inverse double over `GF(2^n)` with the lexicographically first polynomial
+/// among the irreducible degree `n` polynomials having a minimum number of coefficients.
 ///
-/// This trait is implemented for 64, 128 and 256 bit block sizes. Big-endian
-/// order is used.
-pub trait Dbl {
+/// This trait is implemented using big-endian byte order for 64, 128 and 256 bit block sizes.
+pub trait Dbl: sealed::Sealed {
     /// Double block. (alternatively: multiply block by x)
     ///
     /// If most significant bit of the block equals to zero will return
@@ -58,6 +62,8 @@ impl Dbl for Array<u8, U8> {
         val.to_be_bytes().into()
     }
 }
+
+impl sealed::Sealed for Array<u8, U8> {}
 
 impl Dbl for Array<u8, U16> {
     #[inline]
@@ -103,6 +109,8 @@ impl Dbl for Array<u8, U16> {
         res
     }
 }
+
+impl sealed::Sealed for Array<u8, U16> {}
 
 impl Dbl for Array<u8, U32> {
     #[inline]
@@ -169,3 +177,5 @@ impl Dbl for Array<u8, U32> {
         res
     }
 }
+
+impl sealed::Sealed for Array<u8, U32> {}
