@@ -7,7 +7,7 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Double operation (a.k.a. "multiply-by-x") in Galois Field `GF(2^128)` using
+Double operation (a.k.a. "multiply-by-x") in Galois Field `GF(2^n)` using
 the lexicographically first polynomial among the irreducible degree `n` polynomials
 having a minimum number of coefficients.
 
