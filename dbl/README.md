@@ -1,4 +1,4 @@
-# [RustCrypto]: GF(2^128) "dbl" operation
+# [RustCrypto]: Double operation in `GF(2^n)`
 
 [![crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
