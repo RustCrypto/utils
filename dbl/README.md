@@ -7,10 +7,9 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Double operation in Galois Field GF(2^128) as used by e.g. CMAC/PMAC.
-
-Also known as "multiply-by-x", the operation is performed in the finite field
-represented using the primitive polynomial x^128 + x^7 + x^2 + x + 1.
+Double operation (a.k.a. "multiply-by-x") in Galois Field `GF(2^128)` using
+the lexicographically first polynomial among the irreducible degree `n` polynomials
+having a minimum number of coefficients.
 
 ## License
 
