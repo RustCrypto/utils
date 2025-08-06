@@ -1,6 +1,6 @@
 [package]
 name = "dbl"
-version = "0.4.0-rc.2"
+version = "0.4.0"
 authors = ["RustCrypto Developers"]
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/dbl"
