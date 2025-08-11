@@ -41,10 +41,9 @@
 #![warn(missing_docs)]
 
 pub use hybrid_array as array;
-use hybrid_array::typenum::Sum;
 
-use array::{Array, ArraySize};
-use core::{fmt, mem::MaybeUninit, ops::Add, ptr, slice};
+use array::{Array, ArraySize, typenum::Sum};
+use core::{fmt, mem::MaybeUninit, ptr, slice};
 
 #[cfg(feature = "zeroize")]
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -319,7 +318,7 @@ pub type SerializedBuffer<BS, K> = Array<u8, SerializedBufferSize<BS, K>>;
 
 impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K>
 where
-    BS: Add<K::Overhead>,
+    BS: core::ops::Add<K::Overhead>,
     Sum<BS, K::Overhead>: ArraySize,
 {
     /// Serialize buffer into a byte array.
