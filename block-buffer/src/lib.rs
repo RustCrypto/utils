@@ -41,11 +41,9 @@
 #![warn(missing_docs)]
 
 pub use hybrid_array as array;
+use hybrid_array::typenum::Sum;
 
-use array::{
-    Array, ArraySize,
-    typenum::{Add1, B1},
-};
+use array::{Array, ArraySize};
 use core::{fmt, mem::MaybeUninit, ops::Add, ptr, slice};
 
 #[cfg(feature = "zeroize")]
@@ -314,6 +312,47 @@ impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
     }
 }
 
+/// Size of serialized `BlockBuffer` in bytes.
+pub type SerializedBufferSize<BS, K> = Sum<BS, <K as sealed::Sealed>::Overhead>;
+/// `BlockBuffer` serialized as a byte array.
+pub type SerializedBuffer<BS, K> = Array<u8, SerializedBufferSize<BS, K>>;
+
+impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K>
+where
+    BS: Add<K::Overhead>,
+    Sum<BS, K::Overhead>: ArraySize,
+{
+    /// Serialize buffer into a byte array.
+    pub fn serialize(&self) -> SerializedBuffer<BS, K> {
+        let mut buf = SerializedBuffer::<BS, K>::default();
+        let data = self.get_data();
+        let (pos, block) = buf.split_at_mut(1);
+        pos[0] = u8::try_from(data.len()).expect("buffer size is smaller than 256");
+        block[..data.len()].copy_from_slice(data);
+        buf
+    }
+
+    /// Deserialize buffer from a byte array.
+    pub fn deserialize(buf: &SerializedBuffer<BS, K>) -> Result<Self, Error> {
+        let (pos, block) = buf.split_at(1);
+        let pos = usize::from(pos[0]);
+
+        if !<K as sealed::Sealed>::invariant(pos, BS::USIZE) {
+            return Err(Error);
+        }
+
+        let (data, tail) = block.split_at(pos);
+
+        if tail.iter().any(|&b| b != 0) {
+            return Err(Error);
+        }
+
+        let mut res = Self::default();
+        unsafe { res.set_data_unchecked(data) };
+        Ok(res)
+    }
+}
+
 impl<BS: ArraySize> BlockBuffer<BS, Eager> {
     /// Compress remaining data after padding it with `delim`, zeros and
     /// the `suffix` bytes. If there is not enough unused space, `compress`
@@ -367,69 +406,6 @@ impl<BS: ArraySize> BlockBuffer<BS, Eager> {
     #[inline]
     pub fn len128_padding_be(&mut self, data_len: u128, compress: impl FnMut(&Array<u8, BS>)) {
         self.digest_pad(0x80, &data_len.to_be_bytes(), compress);
-    }
-
-    /// Serialize buffer into a byte array.
-    #[inline]
-    pub fn serialize(&self) -> Array<u8, BS> {
-        let mut res = Array::<u8, BS>::default();
-        let data = self.get_data();
-        res[..data.len()].copy_from_slice(data);
-        res[BS::USIZE - 1] = data.len() as u8;
-        res
-    }
-
-    /// Deserialize buffer from a byte array.
-    #[inline]
-    pub fn deserialize(buffer: &Array<u8, BS>) -> Result<Self, Error> {
-        let pos = buffer[BS::USIZE - 1] as usize;
-        if !<Eager as sealed::Sealed>::invariant(pos, BS::USIZE) {
-            return Err(Error);
-        }
-        if buffer[pos..BS::USIZE - 1].iter().any(|&b| b != 0) {
-            return Err(Error);
-        }
-        Ok(Self {
-            buffer: MaybeUninit::new(buffer.clone()),
-            pos: Default::default(),
-        })
-    }
-}
-
-impl<BS: ArraySize> BlockBuffer<BS, Lazy> {
-    /// Serialize buffer into a byte array.
-    #[inline]
-    pub fn serialize(&self) -> Array<u8, Add1<BS>>
-    where
-        BS: Add<B1>,
-        Add1<BS>: ArraySize,
-    {
-        let mut res = Array::<u8, Add1<BS>>::default();
-        res[0] = self.pos;
-        let data = self.get_data();
-        res[1..][..data.len()].copy_from_slice(data);
-        res
-    }
-
-    /// Deserialize buffer from a byte array.
-    #[inline]
-    pub fn deserialize(buffer: &Array<u8, Add1<BS>>) -> Result<Self, Error>
-    where
-        BS: Add<B1>,
-        Add1<BS>: ArraySize,
-    {
-        let pos = buffer[0];
-        if !<Lazy as sealed::Sealed>::invariant(pos as usize, BS::USIZE) {
-            return Err(Error);
-        }
-        if buffer[1..][pos as usize..].iter().any(|&b| b != 0) {
-            return Err(Error);
-        }
-        let buf = Array::try_from(&buffer[1..]).expect("slice has correct length");
-        Ok(Self {
-            buffer: MaybeUninit::new(buf),
-            pos,
-        })
     }
 }
 
