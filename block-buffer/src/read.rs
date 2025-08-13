@@ -95,8 +95,7 @@ impl<BS: ArraySize> ReadBuffer<BS> {
 
     /// Write new block and consume `read_len` bytes from it.
     ///
-    /// If `read_len` is equal to zero, sets buffer to the exhausted state (i.e. it sets the cursor
-    /// position to block size) and immediately returns without calling the closures.
+    /// If `read_len` is equal to zero, immediately returns without calling the closures.
     /// Otherwise, the method calls `gen_block` to fill the internal buffer,
     /// passes to `read_fn` slice with first `read_len` bytes of the block,
     /// and sets the cursor position to `read_len`.
@@ -111,7 +110,6 @@ impl<BS: ArraySize> ReadBuffer<BS> {
         read_fn: impl FnOnce(&[u8]),
     ) {
         if read_len == 0 {
-            unsafe { self.set_pos_unchecked(BS::USIZE) };
             return;
         }
         assert!(read_len < BS::USIZE);
