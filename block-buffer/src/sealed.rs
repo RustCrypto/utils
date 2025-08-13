@@ -1,3 +1,5 @@
+use hybrid_array::sizes::{U0, U1};
+
 use super::{Array, ArraySize};
 use core::{mem::MaybeUninit, ptr, slice};
 
@@ -9,6 +11,8 @@ pub trait Sealed {
     type Pos: Default + Clone;
     #[cfg(feature = "zeroize")]
     type Pos: Default + Clone + zeroize::Zeroize;
+
+    type Overhead: ArraySize;
 
     const NAME: &'static str;
 
@@ -26,6 +30,7 @@ pub trait Sealed {
 
 impl Sealed for super::Eager {
     type Pos = ();
+    type Overhead = U0;
     const NAME: &'static str = "BlockBuffer<Eager>";
 
     fn get_pos<N: ArraySize>(buf: &Block<N>, _pos: &Self::Pos) -> usize {
@@ -72,6 +77,7 @@ impl Sealed for super::Eager {
 
 impl Sealed for super::Lazy {
     type Pos = u8;
+    type Overhead = U1;
     const NAME: &'static str = "BlockBuffer<Lazy>";
 
     fn get_pos<N: ArraySize>(_buf_val: &Block<N>, pos: &Self::Pos) -> usize {

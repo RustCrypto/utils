@@ -183,7 +183,7 @@ fn test_eager_serialize() {
     buf1.digest_blocks(&[41, 42], |_| {});
 
     let ser1 = buf1.serialize();
-    assert_eq!(&ser1[..], &[41, 42, 0, 2]);
+    assert_eq!(&ser1[..], &[2, 41, 42, 0]);
 
     let mut buf2 = Buf::deserialize(&ser1).unwrap();
     assert_eq!(buf1.serialize(), ser1);
@@ -192,7 +192,7 @@ fn test_eager_serialize() {
     buf2.digest_blocks(&[43], |_| {});
 
     let ser2 = buf1.serialize();
-    assert_eq!(&ser2[..], &[41, 42, 43, 3]);
+    assert_eq!(&ser2[..], &[3, 41, 42, 43]);
     assert_eq!(buf1.serialize(), ser2);
 
     let mut buf3 = Buf::deserialize(&ser2).unwrap();
@@ -213,11 +213,11 @@ fn test_eager_serialize() {
     let buf = Array([0, 0, 0, 10]);
     assert!(Buf::deserialize(&buf).is_err());
     // "Garbage" bytes are not zeroized
-    let buf = Array([1, 0, 0, 0]);
+    let buf = Array([0, 1, 0, 0]);
     assert!(Buf::deserialize(&buf).is_err());
-    let buf = Array([0, 1, 0, 1]);
+    let buf = Array([1, 0, 1, 0]);
     assert!(Buf::deserialize(&buf).is_err());
-    let buf = Array([0, 0, 1, 2]);
+    let buf = Array([2, 0, 0, 1]);
     assert!(Buf::deserialize(&buf).is_err());
 }
 
