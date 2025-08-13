@@ -83,29 +83,41 @@ fn test_read() {
 
     let mut n = 0u8;
     let mut g = |block: &mut Array<u8, U4>| {
-        block.iter_mut().for_each(|b| *b = n);
-        n += 1;
+        block.iter_mut().for_each(|b| {
+            *b = n;
+            n += 1;
+        });
     };
 
-    let mut out = [0u8; 6];
-    buf.read(&mut out, &mut g);
-    assert_eq!(out, [0, 0, 0, 0, 1, 1]);
-    assert_eq!(buf.get_pos(), 2);
+    let res = buf.read_cached(0);
+    assert!(res.is_empty());
+    let res = buf.read_cached(10);
+    assert!(res.is_empty());
+
+    buf.write_block(2, &mut g, |buf| assert_eq!(buf, [0, 1]));
     assert_eq!(buf.remaining(), 2);
 
-    let mut out = [0u8; 3];
-    buf.read(&mut out, &mut g);
-    assert_eq!(out, [1, 1, 2]);
-    assert_eq!(buf.get_pos(), 1);
-    assert_eq!(buf.remaining(), 3);
-
-    let mut out = [0u8; 3];
-    buf.read(&mut out, &mut g);
-    assert_eq!(out, [2, 2, 2]);
-    assert_eq!(buf.get_pos(), 4);
+    let res = buf.read_cached(1);
+    assert_eq!(res, [2]);
+    let res = buf.read_cached(10);
+    assert_eq!(res, [3]);
     assert_eq!(buf.remaining(), 0);
 
-    assert_eq!(n, 3);
+    buf.write_block(0, |_| unreachable!(), |_| unreachable!());
+    buf.write_block(3, &mut g, |buf| assert_eq!(buf, [4, 5, 6]));
+    assert_eq!(buf.remaining(), 1);
+
+    buf.write_block(0, |_| unreachable!(), |_| unreachable!());
+    assert_eq!(buf.remaining(), 0);
+    let res = buf.read_cached(10);
+    assert!(res.is_empty());
+
+    buf.write_block(1, &mut g, |buf| assert_eq!(buf, [8]));
+    assert_eq!(buf.remaining(), 3);
+
+    let res = buf.read_cached(10);
+    assert_eq!(res, [9, 10, 11]);
+    assert_eq!(buf.remaining(), 0);
 }
 
 #[test]
@@ -287,7 +299,7 @@ fn test_lazy_serialize() {
 fn test_read_serialize() {
     type Buf = ReadBuffer<U4>;
 
-    let mut n = 42u8;
+    let mut n = 0u8;
     let mut g = |block: &mut Array<u8, U4>| {
         block.iter_mut().for_each(|b| {
             *b = n;
@@ -295,47 +307,25 @@ fn test_read_serialize() {
         });
     };
 
-    let mut buf1 = Buf::default();
-    let ser0 = buf1.serialize();
-    assert_eq!(&ser0[..], &[4, 0, 0, 0]);
-    assert_eq!(Buf::deserialize(&ser0).unwrap().serialize(), ser0);
+    let mut buf = Buf::default();
+    let ser1 = buf.serialize();
+    assert_eq!(&ser1[..], &[4, 0, 0, 0]);
+    assert_eq!(Buf::deserialize(&ser1).unwrap().serialize(), ser1);
 
-    buf1.read(&mut [0; 2], &mut g);
-
-    let ser1 = buf1.serialize();
-    assert_eq!(&ser1[..], &[2, 0, 44, 45]);
-
-    let mut buf2 = Buf::deserialize(&ser1).unwrap();
+    let mut buf1 = Buf::deserialize(&ser1).unwrap();
     assert_eq!(buf1.serialize(), ser1);
+    assert_eq!(buf1.remaining(), 0);
+    assert_eq!(buf1.read_cached(10), []);
 
-    buf1.read(&mut [0; 1], &mut g);
-    buf2.read(&mut [0; 1], &mut g);
+    buf.write_block(2, &mut g, |buf| assert_eq!(buf, [0, 1]));
 
-    let ser2 = buf1.serialize();
-    assert_eq!(&ser2[..], &[3, 0, 0, 45]);
-    assert_eq!(buf1.serialize(), ser2);
+    let ser2 = buf.serialize();
+    assert_eq!(&ser2[..], &[2, 0, 2, 3]);
 
-    let mut buf3 = Buf::deserialize(&ser2).unwrap();
-    assert_eq!(buf3.serialize(), ser2);
-
-    buf1.read(&mut [0; 1], &mut g);
-    buf2.read(&mut [0; 1], &mut g);
-    buf3.read(&mut [0; 1], &mut g);
-
-    let ser3 = buf1.serialize();
-    assert_eq!(&ser3[..], &[4, 0, 0, 0]);
-    assert_eq!(buf2.serialize(), ser3);
-    assert_eq!(buf3.serialize(), ser3);
-
-    buf1.read(&mut [0; 1], &mut g);
-    buf2.read(&mut [0; 1], &mut g);
-    buf3.read(&mut [0; 1], &mut g);
-
-    // note that each buffer calls `gen`, so they get filled
-    // with different data
-    assert_eq!(&buf1.serialize()[..], &[1, 47, 48, 49]);
-    assert_eq!(&buf2.serialize()[..], &[1, 51, 52, 53]);
-    assert_eq!(&buf3.serialize()[..], &[1, 55, 56, 57]);
+    let mut buf2 = Buf::deserialize(&ser2).unwrap();
+    assert_eq!(buf2.serialize(), ser2);
+    assert_eq!(buf2.remaining(), 2);
+    assert_eq!(buf2.read_cached(10), [2, 3]);
 
     // Invalid position
     let buf = Array([0, 0, 0, 0]);
