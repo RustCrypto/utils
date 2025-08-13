@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ReadBuffer` type ([#823])
 - Optional implementation of the `Zeroize` trait ([#963])
 - Generic `serialize` and `deserialize` methods ([#1200])
-- `ReadBuffer::{read_cached, write_block}` methods ([#1201])
+- `ReadBuffer::{read_cached, write_block, reset}` methods ([#1201])
 
 ### Changed
 - Block sizes must be bigger than 0 and smaller than 256.

@@ -108,9 +108,9 @@ fn test_read() {
     assert_eq!(buf.remaining(), 1);
 
     buf.write_block(0, |_| unreachable!(), |_| unreachable!());
-    assert_eq!(buf.remaining(), 0);
+    assert_eq!(buf.remaining(), 1);
     let res = buf.read_cached(10);
-    assert!(res.is_empty());
+    assert_eq!(res, [7]);
 
     buf.write_block(1, &mut g, |buf| assert_eq!(buf, [8]));
     assert_eq!(buf.remaining(), 3);
