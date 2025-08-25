@@ -42,6 +42,15 @@ macro_rules! new {
             const UNINIT: u8 = u8::MAX;
             static STORAGE: AtomicU8 = AtomicU8::new(UNINIT);
 
+            /// Performs run-time detection of the `$tf` target features,
+            /// stores result in `STORAGE` and returns it to the caller.
+            #[cold]
+            fn init_storage() -> bool {
+                let res = $crate::__detect!($($tf),+);
+                STORAGE.store(res as u8, Relaxed);
+                res
+            }
+
             /// Initialization token
             #[derive(Copy, Clone, Debug)]
             pub struct InitToken(());
@@ -67,20 +76,10 @@ macro_rules! new {
                 let res = if cfg!(all($(target_feature=$tf,)*)) {
                     true
                 } else if $crate::__can_detect!($($tf),+) {
-                    #[cold]
-                    fn init_inner() -> bool {
-                        let res = $crate::__detect!($($tf),+);
-                        STORAGE.store(res as u8, Relaxed);
-                        res
-                    }
-
                     // Relaxed ordering is fine, as we only have a single atomic variable.
-                    let storage_val = STORAGE.load(Relaxed);
-
-                    if storage_val == UNINIT {
-                        init_inner()
-                    } else {
-                        storage_val == 1
+                    match STORAGE.load(Relaxed) {
+                        UNINIT => init_storage(),
+                        val => val == 1,
                     }
                 } else {
                     false
