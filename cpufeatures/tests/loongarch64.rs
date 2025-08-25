@@ -3,8 +3,21 @@
 #![cfg(target_arch = "loongarch64")]
 
 cpufeatures::new!(
-    lacaps, "cpucfg", "lam", "ual", "fpu", "lsx", "lasx", "crc32", "complex", "crypto", "lvz",
-    "lbt.x86", "lbt.arm", "lbt.mips", "ptw"
+    lacaps,
+    "32s",
+    "f",
+    "d",
+    "frecipe",
+    "div32",
+    "lsx",
+    "lasx",
+    "lam-bh",
+    "lamcas",
+    "ld-seq-sa",
+    "scq",
+    "lbt",
+    "lvz",
+    "ual"
 );
 
 #[test]
