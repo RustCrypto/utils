@@ -33,9 +33,9 @@ dependencies = [
 
 [[package]]
 name = "cfg-if"
-version = "1.0.0"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+checksum = "2fd1289c04a9ea8cb22300a459a72a385d7c73d3259e2ed7dcb2af674838cfa9"
 
 [[package]]
 name = "cmov"
@@ -64,14 +64,15 @@ dependencies = [
 name = "cpufeatures"
 version = "0.3.0-pre"
 dependencies = [
+ "cfg-if",
  "libc",
 ]
 
 [[package]]
 name = "crypto-common"
-version = "0.2.0-rc.2"
+version = "0.2.0-rc.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "170d71b5b14dec99db7739f6fc7d6ec2db80b78c3acb77db48392ccc3d8a9ea0"
+checksum = "8a23fa214dea9efd4dacee5a5614646b30216ae0f05d4bb51bafb50e9da1c5be"
 dependencies = [
  "hybrid-array",
 ]
@@ -85,9 +86,9 @@ dependencies = [
 
 [[package]]
 name = "digest"
-version = "0.11.0-pre.10"
+version = "0.11.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c478574b20020306f98d61c8ca3322d762e1ff08117422ac6106438605ea516"
+checksum = "460dd7f37e4950526b54a5a6b1f41b6c8e763c58eb9a8fc8fc05ba5c2f44ca7b"
 dependencies = [
  "block-buffer 0.11.0-rc.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "const-oid",
@@ -163,15 +164,15 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.172"
+version = "0.2.175"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d750af042f7ef4f724306de029d18836c26c1765a54a6a3f094cbd23a7267ffa"
+checksum = "6a82ae493e598baaea5209805c49bbf2ea7de956d50d7da0da1164f9c6d28543"
 
 [[package]]
 name = "memchr"
-version = "2.7.4"
+version = "2.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
+checksum = "32a282da65faaf38286cf3be983213fcf1d2e2a58700e808f83f4ea9a4804bc0"
 
 [[package]]
 name = "opaque-debug"
@@ -179,9 +180,9 @@ version = "0.4.0-pre"
 
 [[package]]
 name = "prettyplease"
-version = "0.2.32"
+version = "0.2.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "664ec5419c51e34154eec046ebcba56312d5a2fc3b09a06da188e1ad21afadf6"
+checksum = "479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b"
 dependencies = [
  "proc-macro2",
  "syn",
@@ -189,9 +190,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.95"
+version = "1.0.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02b3e5e68a3a1a02aad3ec490a98007cbc13c37cbe84a3cd7b8e406d76e7f778"
+checksum = "89ae43fd86e4158d6db51ad8e2b80f313af9cc74f5c0e03ccb87de09998732de"
 dependencies = [
  "unicode-ident",
 ]
@@ -233,9 +234,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.140"
+version = "1.0.143"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20068b6e96dc6c9bd23e01df8827e6c7e1f2fddd43c21810382803c136b99373"
+checksum = "d401abef1d108fbd9cbaebc3e46611f4b1021f714a0597a71f41ee463f5f4a5a"
 dependencies = [
  "itoa",
  "memchr",
@@ -245,9 +246,9 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.11.0-pre.5"
+version = "0.11.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19b4241d1a56954dce82cecda5c8e9c794eef6f53abe5e5216bac0a0ea71ffa7"
+checksum = "aa1d2e6b3cc4e43a8258a9a3b17aa5dfd2cc5186c7024bba8a64aa65b2c71a59"
 dependencies = [
  "cfg-if",
  "cpufeatures 0.2.17",
@@ -256,9 +257,9 @@ dependencies = [
 
 [[package]]
 name = "sha3"
-version = "0.11.0-pre.5"
+version = "0.11.0-rc.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1bc997d7a5fa67cc1e352b2001124d28edb948b4e7a16567f9b3c1e51952524"
+checksum = "b9e6a92fd180fd205defdc0b78288ce847c7309d329fd6647a814567e67db50e"
 dependencies = [
  "digest",
  "keccak",
@@ -266,9 +267,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.100"
+version = "2.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b09a44accad81e1ba1cd74a32461ba89dee89095ba17b32f5d03683b1b1fc2a0"
+checksum = "ede7c438028d4436d71104916910f5bb611972c5cfd7f89b8300a8186e6fada6"
 dependencies = [
  "proc-macro2",
  "quote",

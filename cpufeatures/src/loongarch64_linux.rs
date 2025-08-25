@@ -6,37 +6,26 @@
 // are not enabled. Otherwise returns true.
 #[macro_export]
 #[doc(hidden)]
-macro_rules! __unless_target_features {
-    ($($tf:tt),+ => $body:expr ) => {
-        {
-            #[cfg(not(all($(target_feature=$tf,)*)))]
-            $body
-
-            #[cfg(all($(target_feature=$tf,)*))]
-            true
-        }
-    };
+macro_rules! __can_detect {
+    ($($tf:tt),+) => { true };
 }
 
 // Linux runtime detection of target CPU features using `getauxval`.
-#[cfg(target_os = "linux")]
 #[macro_export]
 #[doc(hidden)]
-macro_rules! __detect_target_features {
+macro_rules! __detect {
     ($($tf:tt),+) => {{
-        let hwcaps = $crate::loongarch64::getauxval_hwcap();
+        let hwcaps = $crate::loongarch64_linux::getauxval_hwcap();
         $($crate::check!(hwcaps, $tf) & )+ true
     }};
 }
 
 /// Linux helper function for calling `getauxval` to get `AT_HWCAP`.
-#[cfg(target_os = "linux")]
 pub fn getauxval_hwcap() -> u64 {
     unsafe { libc::getauxval(libc::AT_HWCAP) }
 }
 
 // Linux `expand_check_macro`
-#[cfg(target_os = "linux")]
 macro_rules! __expand_check_macro {
     ($(($name:tt, $hwcap:ident)),* $(,)?) => {
         #[macro_export]
@@ -44,7 +33,7 @@ macro_rules! __expand_check_macro {
         macro_rules! check {
             $(
                 ($hwcaps:expr, $name) => {
-                    (($hwcaps & $crate::loongarch64::hwcaps::$hwcap) != 0)
+                    (($hwcaps & $crate::loongarch64_linux::hwcaps::$hwcap) != 0)
                 };
             )*
         }
@@ -52,7 +41,6 @@ macro_rules! __expand_check_macro {
 }
 
 // Linux `expand_check_macro`
-#[cfg(target_os = "linux")]
 __expand_check_macro! {
     ("cpucfg",   CPUCFG),   // Enable CPUCFG support.
     ("lam",      LAM),      // Enable LAM support.
@@ -75,7 +63,6 @@ __expand_check_macro! {
 /// Note that LLVM target features are coarser grained than what Linux supports
 /// and imply more capabilities under each feature. This module attempts to
 /// provide that mapping accordingly.
-#[cfg(target_os = "linux")]
 pub mod hwcaps {
     use libc::c_ulong;
 
@@ -93,14 +80,4 @@ pub mod hwcaps {
     pub const LBT_ARM: c_ulong = libc::HWCAP_LOONGARCH_LBT_ARM;
     pub const LBT_MIPS: c_ulong = libc::HWCAP_LOONGARCH_LBT_MIPS;
     pub const PTW: c_ulong = libc::HWCAP_LOONGARCH_PTW;
-}
-
-// On other targets, runtime CPU feature detection is unavailable
-#[cfg(not(target_os = "linux"))]
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __detect_target_features {
-    ($($tf:tt),+) => {
-        false
-    };
 }
