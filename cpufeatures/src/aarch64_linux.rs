@@ -9,7 +9,9 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __can_detect {
-    ($($tf:tt),+) => { true };
+    ($($tf:tt),+) => {
+        true
+    };
 }
 
 // Linux runtime detection of target CPU features using `getauxval`.

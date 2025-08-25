@@ -9,7 +9,9 @@
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __can_detect {
-    ($($tf:tt),+) => { true };
+    ($($tf:tt),+) => {
+        true
+    };
 }
 
 // Apple platform's runtime detection of target CPU features using `sysctlbyname`.
