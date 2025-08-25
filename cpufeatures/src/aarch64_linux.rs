@@ -19,7 +19,7 @@ macro_rules! __can_detect {
 #[doc(hidden)]
 macro_rules! __detect {
     ($($tf:tt),+) => {{
-        let hwcaps = $crate::aarch64::getauxval_hwcap();
+        let hwcaps = $crate::aarch64_linux::getauxval_hwcap();
         $($crate::check!(hwcaps, $tf) & )+ true
     }};
 }
@@ -37,7 +37,7 @@ macro_rules! __expand_check_macro {
         macro_rules! check {
             $(
                 ($hwcaps:expr, $name) => {
-                    (($hwcaps & $crate::aarch64::hwcaps::$hwcap) != 0)
+                    (($hwcaps & $crate::aarch64_linux::hwcaps::$hwcap) != 0)
                 };
             )*
         }
