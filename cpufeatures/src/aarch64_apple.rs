@@ -53,7 +53,7 @@ macro_rules! check {
         unsafe {
             // `sha3` target feature implies SHA-512 as well
             $crate::aarch64_apple::sysctlbyname(b"hw.optional.armv8_2_sha512\0")
-                && $crate::aarch64_appleaarch64::sysctlbyname(b"hw.optional.armv8_2_sha3\0")
+                && $crate::aarch64_apple::sysctlbyname(b"hw.optional.armv8_2_sha3\0")
         }
     };
     ("sm4") => {
