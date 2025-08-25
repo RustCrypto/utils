@@ -77,19 +77,20 @@ Linux only (LoongArch64 does not support OS-independent feature detection)
 
 Target features:
 
-- `lam`*
-- `ual`*
-- `fpu`*
+- `32s`*
+- `f`*
+- `d`*
+- `frecipe`*
+- `div32`*
 - `lsx`*
 - `lasx`*
-- `crc32`*
-- `complex`*
-- `crypto`*
+- `lam-bh`*
+- `lamcas`*
+- `ld-seq-sa`*
+- `scq`*
+- `lbt`*
 - `lvz`*
-- `lbt.x86`*
-- `lbt.arm`*
-- `lbt.mips`*
-- `ptw`*
+- `ual`*
 
 ### `x86`/`x86_64`
 
