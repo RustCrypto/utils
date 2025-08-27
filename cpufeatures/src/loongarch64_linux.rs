@@ -31,14 +31,9 @@ macro_rules! __detect {
                 options(pure, nomem, preserves_flags, nostack)
             );
         }
-        let hwcaps = $crate::loongarch64::getauxval_hwcap();
+        let hwcaps = unsafe { libc::getauxval(libc::AT_HWCAP) };
         $($crate::check!(cpucfg1, cpucfg2, cpucfg3, hwcaps, $tf) & )+ true
     }};
-}
-
-/// Linux helper function for calling `getauxval` to get `AT_HWCAP`.
-pub fn getauxval_hwcap() -> u64 {
-    unsafe { libc::getauxval(libc::AT_HWCAP) }
 }
 
 #[macro_export]

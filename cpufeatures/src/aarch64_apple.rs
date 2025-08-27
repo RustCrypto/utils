@@ -4,6 +4,8 @@
 //! unprivileged userspace code, so this implementation relies on OS-specific
 //! APIs for feature detection.
 
+use core::ffi::CStr;
+
 // Evaluate the given `$body` expression any of the supplied target features
 // are not enabled. Otherwise returns true.
 #[macro_export]
@@ -43,7 +45,7 @@ macro_rules! check {
     ("dit") => {
         // https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms#Enable-DIT-for-constant-time-cryptographic-operations
         unsafe {
-            $crate::aarch64_apple::sysctlbyname(b"hw.optional.arm.FEAT_DIT\0")
+            $crate::aarch64_apple::sysctlbyname(c"hw.optional.arm.FEAT_DIT")
         }
     };
     ("sha2") => {
@@ -52,8 +54,8 @@ macro_rules! check {
     ("sha3") => {
         unsafe {
             // `sha3` target feature implies SHA-512 as well
-            $crate::aarch64_apple::sysctlbyname(b"hw.optional.armv8_2_sha512\0")
-                && $crate::aarch64_apple::sysctlbyname(b"hw.optional.armv8_2_sha3\0")
+            $crate::aarch64_apple::sysctlbyname(c"hw.optional.armv8_2_sha512")
+                && $crate::aarch64_apple::sysctlbyname(c"hw.optional.armv8_2_sha3")
         }
     };
     ("sm4") => {
@@ -62,20 +64,13 @@ macro_rules! check {
 }
 
 /// Apple helper function for calling `sysctlbyname`.
-pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
-    assert_eq!(
-        name.last().cloned(),
-        Some(0),
-        "name is not NUL terminated: {:?}",
-        name
-    );
-
+pub unsafe fn sysctlbyname(name: &CStr) -> bool {
     let mut value: u32 = 0;
     let mut size = core::mem::size_of::<u32>();
 
     let rc = unsafe {
         libc::sysctlbyname(
-            name.as_ptr() as *const i8,
+            name.as_ptr(),
             &mut value as *mut _ as *mut libc::c_void,
             &mut size,
             core::ptr::null_mut(),
