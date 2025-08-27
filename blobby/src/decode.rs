@@ -186,7 +186,7 @@ macro_rules! parse_into_slice {
             }
         };
         const ITEMS: [&[u8]; { HEADER.items_len }] = {
-            match $crate::parse_into_array::<_, { HEADER.dedup_len }>($data) {
+            match $crate::parse_into_array::<{ HEADER.items_len }, { HEADER.dedup_len }>($data) {
                 Ok(v) => v,
                 Err(_) => panic!("Failed to parse items"),
             }
