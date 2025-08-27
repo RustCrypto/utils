@@ -7,13 +7,14 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Iterators over a simple binary blob storage.
+An encoding and decoding library for the Blobby (`blb`) file format, which serves as a simple,
+deduplicated storage format for a sequence of binary blobs.
 
 ## Examples
 ```
 // We recommend to save blobby data into separate files and
 // use the `include_bytes!` macro
-static BLOBBY_DATA: &[u8] = b"\x02\x05hello\x06world!\x01\x02 \x00\x03\x06:::\x03\x01\x00";
+static BLOBBY_DATA: &[u8] = b"\x08\x02\x05hello\x06world!\x01\x02 \x00\x03\x06:::\x03\x01\x00";
 
 static SLICE: &[&[u8]] = blobby::parse_into_slice!(BLOBBY_DATA);
 
@@ -54,7 +55,7 @@ assert_eq!(
 assert_eq!(ITEMS.len(), 2);
 ```
 
-## Encoding and decoding
+## Encoding and decoding utilities
 
 This crate provides encoding and decoding utilities for converting between
 the blobby format and text file with hex-encoded strings. 
@@ -97,9 +98,7 @@ This file can be converted to the Blobby format by running the following command
 cargo run --release --features alloc --bin encode -- /path/to/input.txt /path/to/output.blb
 ```
 
-This will create a file which can be read using `blobby::Blob2Iterator`.
-
-To see contents of an existing Blobby file you can use the following command:
+To inspect contents of an existing Blobby file you can use the following command:
 ```sh
 cargo run --release --features alloc --bin decode -- /path/to/input.blb /path/to/output.txt
 ```
@@ -109,20 +108,22 @@ in the input file.
 ## Storage format
 
 Storage format represents a sequence of binary blobs. The format uses
-git-flavored [variable-length quantity][0] (VLQ) for encoding unsigned
+git-flavored [variable-length quantity][VLQ] (VLQ) for encoding unsigned
 numbers.
 
-File starts with a number of de-duplicated blobs `d`. It followed by `d`
-entries. Each entry starts with an integer `m`, immediately followed by `m`
+Blobby files start with two numbers: total number of blobs in the file `n` and
+number of de-duplicated blobs `d`. The numbers are followed by `d` entries.
+Each entry starts with an integer `m`, immediately followed by `m`
 bytes representing de-duplicated binary blob.
 
-Next follows unspecified number of entries representing sequence of stored
-blobs. Each entry starts with an unsigned integer `n`. The least significant
+Next, follows `n` entries representing sequence of stored blobs.
+Each entry starts with an unsigned integer `l`. The least significant
 bit of this integer is used as a flag. If the flag is equal to 0, then the
 number is followed by `n >> 1` bytes, representing a stored binary blob.
-Otherwise the entry references a de-duplicated entry number `n >> 1`.
+Otherwise the entry references a de-duplicated entry number `n >> 1`
+which should be smaller than `d`.
 
-[0]: https://en.wikipedia.org/wiki/Variable-length_quantity
+[VLQ]: https://en.wikipedia.org/wiki/Variable-length_quantity
 
 ## License
 

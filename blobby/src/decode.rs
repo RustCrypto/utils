@@ -50,51 +50,38 @@ macro_rules! try_read_vlq {
     };
 }
 
-pub const fn parse_dedup_len(mut data: &[u8]) -> Result<usize, Error> {
-    read_vlq(&mut data)
+/// Blobby file header
+pub struct Header {
+    /// Number of blobs stored in the file
+    pub items_len: usize,
+    /// Number of deduplicated blobs
+    pub dedup_len: usize,
 }
 
-pub const fn parse_items_len(mut data: &[u8]) -> Result<usize, Error> {
-    let dedup_index_len = try_read_vlq!(data);
-
-    let mut i = 0;
-    while i < dedup_index_len {
-        let m = try_read_vlq!(data);
-        let split = data.split_at(m);
-        data = split.1;
-        i += 1;
-    }
-
-    let mut i = 0;
-    loop {
-        if data.is_empty() {
-            return Ok(i);
+impl Header {
+    /// Parse blobby header
+    pub const fn parse(data: &mut &[u8]) -> Result<Self, Error> {
+        match (read_vlq(data), read_vlq(data)) {
+            (Ok(items_len), Ok(dedup_len)) => Ok(Header {
+                items_len,
+                dedup_len,
+            }),
+            (Err(err), _) | (Ok(_), Err(err)) => Err(err),
         }
-        let val = try_read_vlq!(data);
-        // the least significant bit is used as a flag
-        let is_ref = (val & 1) != 0;
-        let val = val >> 1;
-        if is_ref {
-            if val >= dedup_index_len {
-                return Err(Error::InvalidIndex);
-            }
-        } else {
-            if val > data.len() {
-                return Err(Error::UnexpectedEnd);
-            }
-            let split = data.split_at(val);
-            data = split.1;
-        };
-        i += 1;
     }
 }
 
 /// Parse blobby data into an array.
-pub const fn parse_into_array<const ITEMS: usize, const DEDUP_LEN: usize>(
+pub const fn parse_into_array<const ITEMS_LEN: usize, const DEDUP_LEN: usize>(
     mut data: &[u8],
-) -> Result<[&[u8]; ITEMS], Error> {
-    if try_read_vlq!(data) != DEDUP_LEN {
-        return Err(Error::BadArrayLen);
+) -> Result<[&[u8]; ITEMS_LEN], Error> {
+    match Header::parse(&mut data) {
+        Ok(header) => {
+            if header.items_len != ITEMS_LEN || header.dedup_len != DEDUP_LEN {
+                return Err(Error::BadArrayLen);
+            }
+        }
+        Err(err) => return Err(err),
     }
 
     let mut dedup_index: [&[u8]; DEDUP_LEN] = [&[]; DEDUP_LEN];
@@ -108,7 +95,7 @@ pub const fn parse_into_array<const ITEMS: usize, const DEDUP_LEN: usize>(
         i += 1;
     }
 
-    let mut res: [&[u8]; ITEMS] = [&[]; ITEMS];
+    let mut res: [&[u8]; ITEMS_LEN] = [&[]; ITEMS_LEN];
 
     let mut i = 0;
     while i < res.len() {
@@ -144,7 +131,10 @@ pub const fn parse_into_array<const ITEMS: usize, const DEDUP_LEN: usize>(
 pub fn parse_into_vec(mut data: &[u8]) -> Result<alloc::vec::Vec<&[u8]>, Error> {
     use alloc::{vec, vec::Vec};
 
-    let dedup_len = try_read_vlq!(data);
+    let Header {
+        items_len,
+        dedup_len,
+    } = Header::parse(&mut data)?;
 
     let mut dedup_index: Vec<&[u8]> = vec![&[]; dedup_len];
 
@@ -157,7 +147,6 @@ pub fn parse_into_vec(mut data: &[u8]) -> Result<alloc::vec::Vec<&[u8]>, Error> 
         i += 1;
     }
 
-    let items_len = parse_items_len(data)?;
     let mut res: Vec<&[u8]> = vec![&[]; items_len];
 
     let mut i = 0;
@@ -189,20 +178,15 @@ pub fn parse_into_vec(mut data: &[u8]) -> Result<alloc::vec::Vec<&[u8]>, Error> 
 #[macro_export]
 macro_rules! parse_into_slice {
     ($data:expr) => {{
-        const ITEMS_LEN: usize = {
-            match $crate::parse_items_len($data) {
+        const HEADER: $crate::Header = {
+            let mut data = $data;
+            match $crate::Header::parse(&mut data) {
                 Ok(v) => v,
                 Err(_) => panic!("Failed to parse items len"),
             }
         };
-        const DEDUP_LEN: usize = {
-            match $crate::parse_dedup_len($data) {
-                Ok(v) => v,
-                Err(_) => panic!("Failed to parse dedup len"),
-            }
-        };
-        const ITEMS: [&[u8]; ITEMS_LEN] = {
-            match $crate::parse_into_array::<ITEMS_LEN, DEDUP_LEN>($data) {
+        const ITEMS: [&[u8]; { HEADER.items_len }] = {
+            match $crate::parse_into_array::<_, { HEADER.dedup_len }>($data) {
                 Ok(v) => v,
                 Err(_) => panic!("Failed to parse items"),
             }
