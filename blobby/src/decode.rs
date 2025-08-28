@@ -179,7 +179,7 @@ pub fn parse_into_vec(mut data: &[u8]) -> Result<alloc::vec::Vec<&[u8]>, Error> 
 macro_rules! parse_into_slice {
     ($data:expr) => {{
         const HEADER: $crate::Header = {
-            let mut data = $data;
+            let mut data: &[u8] = $data;
             match $crate::Header::parse(&mut data) {
                 Ok(v) => v,
                 Err(_) => panic!("Failed to parse items len"),
