@@ -13,7 +13,7 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-hybrid-array = "0.3"
+hybrid-array = "0.4"
 zeroize = { version = "1.4", optional = true, default-features = false }
 
 [dev-dependencies]
