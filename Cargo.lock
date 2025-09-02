@@ -9,15 +9,6 @@ version = "0.4.0-pre.0"
 [[package]]
 name = "block-buffer"
 version = "0.11.0-rc.4"
-dependencies = [
- "hex-literal 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "hybrid-array 0.4.0",
- "zeroize 1.8.1",
-]
-
-[[package]]
-name = "block-buffer"
-version = "0.11.0-rc.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a229bfd78e4827c91b9b95784f69492c1b77c1ab75a45a8a037b139215086f94"
 dependencies = [
@@ -25,8 +16,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "block-buffer"
+version = "0.11.0-rc.5"
+dependencies = [
+ "hex-literal 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hybrid-array 0.4.0",
+ "zeroize 1.8.1",
+]
+
+[[package]]
 name = "block-padding"
-version = "0.4.0-rc.3"
+version = "0.4.0-rc.4"
 dependencies = [
  "hybrid-array 0.4.0",
 ]
@@ -89,7 +89,7 @@ version = "0.11.0-pre.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c478574b20020306f98d61c8ca3322d762e1ff08117422ac6106438605ea516"
 dependencies = [
- "block-buffer 0.11.0-rc.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "block-buffer 0.11.0-rc.4",
  "const-oid",
  "crypto-common",
 ]
@@ -149,7 +149,7 @@ dependencies = [
 
 [[package]]
 name = "inout"
-version = "0.2.0-rc.5"
+version = "0.2.0-rc.6"
 dependencies = [
  "block-padding",
  "hybrid-array 0.4.0",
