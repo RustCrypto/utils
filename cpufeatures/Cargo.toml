@@ -15,6 +15,9 @@ readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
 
+[dependencies]
+cfg-if = "1"
+
 [target.'cfg(all(target_arch = "aarch64", target_vendor = "apple"))'.dependencies]
 libc = { version = "0.2.155", default-features = false }
 
