@@ -30,59 +30,66 @@ fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
 /// Returns the encoded data together with a count of the number of blobs included in the index.
 ///
 /// The encoded file format is:
-///  - count of index entries=N
-///  - N x index entries, each encoded as:
+///  - number of blobs in the file = N
+///  - number of deduplicated index entries = M
+///  - M x index entries encoded as:
 ///      - size L of index entry (VLQ)
 ///      - index blob contents (L bytes)
-///  - repeating encoded blobs, each encoded as:
+///  - N x blobs encoded as:
 ///      - VLQ value that is either:
 ///         - (J << 1) & 0x01: indicates this blob is index entry J
 ///         - (L << 1) & 0x00: indicates an explicit blob of len L
 ///      - (in the latter case) explicit blob contents (L bytes)
-pub fn encode_blobs<'a, I, T>(blobs: &'a I) -> (alloc::vec::Vec<u8>, usize)
+pub fn encode_blobs<T>(blobs: &[T]) -> (alloc::vec::Vec<u8>, usize)
 where
-    &'a I: IntoIterator<Item = &'a T>,
-    T: AsRef<[u8]> + 'a,
+    T: AsRef<[u8]>,
 {
     use alloc::{collections::BTreeMap, vec::Vec};
 
-    let mut idx_map = BTreeMap::new();
+    let mut dedup_map = BTreeMap::new();
     blobs
-        .into_iter()
+        .iter()
         .map(|v| v.as_ref())
         .filter(|blob| !blob.is_empty())
         .for_each(|blob| {
-            let v = idx_map.entry(blob.as_ref()).or_insert(0);
+            let v = dedup_map.entry(blob.as_ref()).or_insert(0);
             *v += 1;
         });
 
-    let mut idx: Vec<&[u8]> = idx_map
+    let mut dedup_list: Vec<&[u8]> = dedup_map
         .iter()
         .filter(|&(_, &v)| v > 1)
         .map(|(&k, _)| k)
         .collect();
-    idx.sort_by_key(|e| {
+    dedup_list.sort_by_key(|e| {
         let k = match e {
             [0] => 2,
             [1] => 1,
             _ => 0,
         };
-        (k, idx_map.get(e).unwrap())
+        (k, dedup_map.get(e).unwrap())
     });
-    idx.reverse();
-    let idx_len = idx.len();
+    dedup_list.reverse();
+    let idx_len = dedup_list.len();
 
-    let rev_idx: BTreeMap<&[u8], usize> = idx.iter().enumerate().map(|(i, &e)| (e, i)).collect();
+    let rev_idx: BTreeMap<&[u8], usize> = dedup_list
+        .iter()
+        .enumerate()
+        .map(|(i, &e)| (e, i))
+        .collect();
 
     let mut out_buf = Vec::new();
     let mut buf = [0u8; 4];
-    out_buf.extend_from_slice(encode_vlq(idx.len(), &mut buf));
-    for e in idx {
+
+    out_buf.extend_from_slice(encode_vlq(blobs.len(), &mut buf));
+    out_buf.extend_from_slice(encode_vlq(dedup_list.len(), &mut buf));
+
+    for e in dedup_list {
         out_buf.extend_from_slice(encode_vlq(e.len(), &mut buf));
         out_buf.extend_from_slice(e);
     }
 
-    for blob in blobs.into_iter().map(|v| v.as_ref()) {
+    for blob in blobs.iter().map(|v| v.as_ref()) {
         if let Some(dup_pos) = rev_idx.get(blob) {
             let n = (dup_pos << 1) + 1usize;
             out_buf.extend_from_slice(encode_vlq(n, &mut buf));

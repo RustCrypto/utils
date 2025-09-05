@@ -13,7 +13,7 @@ extern crate alloc;
 pub(crate) mod decode;
 #[cfg(feature = "alloc")]
 pub use decode::parse_into_vec;
-pub use decode::{parse_dedup_len, parse_into_array, parse_items_len};
+pub use decode::{Header, parse_into_array};
 
 #[cfg(feature = "alloc")]
 mod encode;

@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.4.0 (unreleased)
 ### Changed
 - Edition changed to 2024 and MSRV bumped to 1.85 ([#1149])
+- Replaced iterators with `const fn` parsing ([#1187])
+- Format of the file. File header now contains total number of stored blobs. ([#1207])
 
 [#1149]: https://github.com/RustCrypto/utils/pull/1149
+[#1187]: https://github.com/RustCrypto/utils/pull/1187
+[#1207]: https://github.com/RustCrypto/utils/pull/1207
 
 ## 0.3.1 (2021-12-07)
 ### Added
