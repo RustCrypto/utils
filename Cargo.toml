@@ -6,6 +6,7 @@ members = [
     "block-padding",
     "collectable",
     "cmov",
+    "ctutils",
     "cpufeatures",
     "dbl",
     "digest-io",
@@ -21,3 +22,6 @@ exclude = ["aarch64-dit"]
 
 [profile.dev]
 opt-level = 2
+
+[patch.crates-io]
+cmov = { path = "cmov" }
