@@ -49,13 +49,13 @@ this implementation generates branch-free code.
 It's possible to extend constant-time guarantees to other CPU  architectures.
 Please open an issue with your desired CPU architecture if this interests you.
 
-## Minimum Supported Rust Version
+## Minimum Supported Rust Version (MSRV) Policy
 
-Rust **1.85** or newer.
+MSRV increases are not considered breaking changes and can happen in patch
+releases.
 
-In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope
-for this crate's SemVer guarantees), however when we do it will be accompanied by
-a minor version bump.
+The crate MSRV accounts for all supported targets and crate feature
+combinations, excluding explicitly unstable features.
 
 ## License
 
