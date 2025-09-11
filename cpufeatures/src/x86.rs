@@ -10,44 +10,22 @@
 /// on these targets unless *all* supplied target features are enabled.
 #[macro_export]
 #[doc(hidden)]
-macro_rules! __unless_target_features {
-    ($($tf:tt),+ => $body:expr ) => {{
-        #[cfg(not(all($(target_feature=$tf,)*)))]
-        {
-            #[cfg(not(any(target_env = "sgx", target_os = "none", target_os = "uefi")))]
-            $body
-
-            // CPUID is not available on SGX. Freestanding and UEFI targets
-            // do not support SIMD features with default compilation flags.
-            #[cfg(any(target_env = "sgx", target_os = "none", target_os = "uefi"))]
-            false
-        }
-
-        #[cfg(all($(target_feature=$tf,)*))]
-        true
-    }};
+macro_rules! __can_detect {
+    ($($tf:tt),+) => { true };
 }
 
 /// Use CPUID to detect the presence of all supplied target features.
 #[macro_export]
 #[doc(hidden)]
-macro_rules! __detect_target_features {
+macro_rules! __detect {
     ($($tf:tt),+) => {{
         #[cfg(target_arch = "x86")]
         use core::arch::x86::{__cpuid, __cpuid_count, CpuidResult};
         #[cfg(target_arch = "x86_64")]
         use core::arch::x86_64::{__cpuid, __cpuid_count, CpuidResult};
 
-        unsafe fn cpuid(leaf: u32) -> CpuidResult {
-            __cpuid(leaf)
-        }
-
-        unsafe fn cpuid_count(leaf: u32, sub_leaf: u32) -> CpuidResult {
-            __cpuid_count(leaf, sub_leaf)
-        }
-
         let cr = unsafe {
-            [cpuid(1), cpuid_count(7, 0), cpuid_count(7, 1)]
+            [__cpuid(1), __cpuid_count(7, 0), __cpuid_count(7, 1)]
         };
 
         $($crate::check!(cr, $tf) & )+ true

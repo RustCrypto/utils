@@ -6,23 +6,16 @@
 // are not enabled. Otherwise returns true.
 #[macro_export]
 #[doc(hidden)]
-macro_rules! __unless_target_features {
-    ($($tf:tt),+ => $body:expr ) => {
-        {
-            #[cfg(not(all($(target_feature=$tf,)*)))]
-            $body
-
-            #[cfg(all($(target_feature=$tf,)*))]
-            true
-        }
+macro_rules! __can_detect {
+    ($($tf:tt),+) => {
+        true
     };
 }
 
 // Linux runtime detection of target CPU features using `getauxval`.
-#[cfg(target_os = "linux")]
 #[macro_export]
 #[doc(hidden)]
-macro_rules! __detect_target_features {
+macro_rules! __detect {
     ($($tf:tt),+) => {{
         let cpucfg1: usize;
         let cpucfg2: usize;
@@ -38,15 +31,9 @@ macro_rules! __detect_target_features {
                 options(pure, nomem, preserves_flags, nostack)
             );
         }
-        let hwcaps = $crate::loongarch64::getauxval_hwcap();
+        let hwcaps = unsafe { libc::getauxval(libc::AT_HWCAP) };
         $($crate::check!(cpucfg1, cpucfg2, cpucfg3, hwcaps, $tf) & )+ true
     }};
-}
-
-/// Linux helper function for calling `getauxval` to get `AT_HWCAP`.
-#[cfg(target_os = "linux")]
-pub fn getauxval_hwcap() -> u64 {
-    unsafe { libc::getauxval(libc::AT_HWCAP) }
 }
 
 #[macro_export]
@@ -103,7 +90,6 @@ macro_rules! check {
 /// Note that LLVM target features are coarser grained than what Linux supports
 /// and imply more capabilities under each feature. This module attempts to
 /// provide that mapping accordingly.
-#[cfg(target_os = "linux")]
 pub mod hwcaps {
     use libc::c_ulong;
 
@@ -115,14 +101,4 @@ pub mod hwcaps {
     pub const LBT_X86: c_ulong = libc::HWCAP_LOONGARCH_LBT_X86;
     pub const LBT_ARM: c_ulong = libc::HWCAP_LOONGARCH_LBT_ARM;
     pub const LBT_MIPS: c_ulong = libc::HWCAP_LOONGARCH_LBT_MIPS;
-}
-
-// On other targets, runtime CPU feature detection is unavailable
-#[cfg(not(target_os = "linux"))]
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __detect_target_features {
-    ($($tf:tt),+) => {
-        false
-    };
 }
