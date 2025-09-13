@@ -1,0 +1,25 @@
+[package]
+name = "stack_sanitizer"
+version = "0.1.0"
+description = """
+Securely sanitize the stack with a simple function built on
+the Portable Stack Manipulation (psm) crate.
+"""
+authors = ["The RustCrypto Project Developers"]
+license = "Apache-2.0 OR MIT"
+homepage = "https://github.com/RustCrypto/utils/tree/master/stack_sanitizer"
+repository = "https://github.com/RustCrypto/utils"
+readme = "README.md"
+categories = ["cryptography", "memory-management", "no-std", "os"]
+keywords = ["memory", "memset", "secure", "volatile", "zero", "stack"]
+edition = "2024"
+rust-version = "1.85"
+
+[dependencies]
+psm = { version = "0.1.26", optional = true }
+zeroize = { version = "1.0" }
+
+[features]
+
+[package.metadata.docs.rs]
+all-features = true
