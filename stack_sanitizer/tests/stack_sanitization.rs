@@ -11,7 +11,7 @@ mod stack_sanitization_tests {
 
     #[test]
     fn stack_sanitization_v2() {
-        let result = unsafe { exec_on_sanitized_stack(4, || dummy_fn())};
+        let result = unsafe { exec_on_sanitized_stack(4, || dummy_fn()) };
         assert_eq!(result.1, 12345);
         // results in segmentation fault
         // assert_eq!(unsafe {*result.0}, 42);
