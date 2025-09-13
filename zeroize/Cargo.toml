@@ -19,12 +19,14 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
+psm = { version = "0.1.26", optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
 zeroize_derive = { version = "1.4", path = "../zeroize_derive", optional = true }
 
 [features]
 default = ["alloc"]
 alloc = []
+stack_sanitization = ["psm"]
 std = ["alloc"]
 
 aarch64 = [] # NOTE: vestigial no-op feature; AArch64 support is always enabled now
