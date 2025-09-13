@@ -254,7 +254,7 @@ mod x86;
 mod stack_sanitization;
 
 #[cfg(feature = "stack_sanitization")]
-pub use stack_sanitization::{secure_crypto_call, secure_crypto_call_heap};
+pub use stack_sanitization::secure_crypto_call_heap;
 
 #[cfg(all(feature = "stack_sanitization", feature = "alloc"))]
 pub use stack_sanitization::create_aligned_vec;
