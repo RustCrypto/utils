@@ -31,7 +31,7 @@
 //! caller must ensure:
 //! - The stack size provided is large enough for the closure to run with.
 //! - The closure does not unwind or return control flow by any means other than
-//! directly returning.
+//!   directly returning.
 //!
 //! ## Use Cases
 //!
@@ -39,52 +39,61 @@
 //! - Secure enclave transitions
 //! - Sanitizing temporary buffers in high-assurance systems
 
-use psm::on_stack;
-
 use zeroize::Zeroize;
 
 extern crate alloc;
 
 use alloc::{vec, vec::Vec};
 
-/// Executes a function/closure and clears the function's stack by using
-/// preallocated space on the heap as the function's stack, and then zeroing
-/// that allocated space once the code has ran.
-///
-/// This function does not clear the CPU registers.
-///
-/// # Arguments
-///
-/// * `stack_size_kb` - how large the stack will be. `psm` recommends at least
-/// `4 KB` of stack size, but the total size cannot overflow an `isize`. Also,
-/// some architectures might consume more memory in the stack, such as SPARC.
-/// * `crypto_fn` - the code to run while on the separate stack.
-///
-/// # Safety
-///
-/// * `crypto_fn` should be marked as `#[inline(never)]`, preventing register
-/// reuse and stack layout changes.
-/// * The stack needs to be large enough for `crypto_fn()` to execute without
-/// overflow.
-/// * `crypto_fn()` must not unwind or return control flow by any other means
-/// than by directly returning.
-pub unsafe fn exec_on_sanitized_stack<F, R>(stack_size_kb: isize, crypto_fn: F) -> R
-where
-    F: FnOnce() -> R,
-{
-    assert!(
-        stack_size_kb * 1024 > 0,
-        "Stack size must be greater than 0 kb and `* 1024` must not overflow `isize`"
-    );
-    let mut stack = create_aligned_vec(stack_size_kb as usize, core::mem::align_of::<u128>());
-    let res = unsafe {
-        on_stack(stack.as_mut_ptr(), stack.len(), || {
-            let res = crypto_fn();
+psm::psm_stack_manipulation! {
+    yes {
+        /// Executes a function/closure and clears the function's stack by using
+        /// preallocated space on the heap as the function's stack, and then zeroing
+        /// that allocated space once the code has ran.
+        ///
+        /// This function does not clear the CPU registers.
+        ///
+        /// # Arguments
+        ///
+        /// * `stack_size_kb` - how large the stack will be. `psm` recommends at least
+        ///   `4 KB` of stack size, but the total size cannot overflow an `isize`. Also,
+        ///   some architectures might consume more memory in the stack, such as SPARC.
+        /// * `crypto_fn` - the code to run while on the separate stack.
+        ///
+        /// # Safety
+        ///
+        /// * `crypto_fn` should be marked as `#[inline(never)]`, preventing register
+        ///   reuse and stack layout changes.
+        /// * The stack needs to be large enough for `crypto_fn()` to execute without
+        ///   overflow.
+        /// * `crypto_fn()` must not unwind or return control flow by any other means
+        ///   than by directly returning.
+        pub unsafe fn exec_on_sanitized_stack<F, R>(stack_size_kb: isize, crypto_fn: F) -> R
+        where
+            F: FnOnce() -> R,
+        {
+            assert!(
+                stack_size_kb * 1024 > 0,
+                "Stack size must be greater than 0 kb and `* 1024` must not overflow `isize`"
+            );
+            let mut stack = create_aligned_vec(stack_size_kb as usize, core::mem::align_of::<u128>());
+            let res = unsafe {
+                psm::on_stack(stack.as_mut_ptr(), stack.len(), || {
+                    crypto_fn()
+                })
+            };
+            stack.zeroize();
             res
-        })
-    };
-    stack.zeroize();
-    res
+        }
+    }
+    no {
+        pub unsafe fn exec_on_sanitized_stack<F, R>(_stack_size_kb: isize, _crypto_fn: F) -> R
+        where
+            F: FnOnce() -> R,
+        {
+            panic!("Stack manipulation not possible on this platform")
+        }
+    }
 }
 
 /// Round up to the nearest multiple of alignment
