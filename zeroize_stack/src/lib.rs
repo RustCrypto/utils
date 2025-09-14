@@ -1,4 +1,4 @@
-//! # stack_bleach
+//! # zeroize_stack
 //!
 //! A crate for sanitizing stack memory after sensitive operations—sometimes referred to as _Stack Bleaching_.
 //!
@@ -47,9 +47,9 @@ extern crate alloc;
 
 use alloc::{vec, vec::Vec};
 
-/// Executes a function/closure and clears the function's stack frames by using
+/// Executes a function/closure and clears the function's stack by using
 /// preallocated space on the heap as the function's stack, and then zeroing
-/// that allocated data once the code has ran.
+/// that allocated space once the code has ran.
 ///
 /// This function does not clear the CPU registers.
 ///
@@ -58,7 +58,7 @@ use alloc::{vec, vec::Vec};
 /// * `stack_size_kb` - how large the stack will be. `psm` recommends at least
 /// `4 KB` of stack size, but the total size cannot overflow an `isize`. Also,
 /// some architectures might consume more memory in the stack, such as SPARC.
-/// * `crypto_fn` - the code to run while on separate stack.
+/// * `crypto_fn` - the code to run while on the separate stack.
 ///
 /// # Safety
 ///

@@ -14,7 +14,8 @@ members = [
     "opaque-debug",
     "wycheproof2blb",
     "zeroize",
-    "zeroize_derive"
+    "zeroize_derive",
+    "zeroize_stack"
 ]
 exclude = ["aarch64-dit"]
 

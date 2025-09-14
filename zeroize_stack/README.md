@@ -1,4 +1,4 @@
-# [RustCrypto]: stack_sanitizer
+# [RustCrypto]: zeroize_stack
 
 [![Crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -21,9 +21,9 @@ as make extra copies of data on the stack that cannot be easily zeroed. That's
 what this crate is for.
 
 This crate isn't about tricks: it uses [psm::on_stack] to run a function on 
-a portable stack, and then uses [zeroize] to zero the stack. `psm` implements
-all of the assembly for several different architectures, whereas the [zeroize]
-segment was implemented in pure Rust.
+a portable stack, and then uses [zeroize] to zero that stack. `psm` implements
+all of the assembly for several different architectures, and the [zeroize]
+portion of the task was implemented in pure Rust.
 
 - `#![no_std]` i.e. **embedded-friendly**! (`alloc` is required)
 - No functionality besides securely zeroing the a function's stack usage!

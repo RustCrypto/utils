@@ -1,9 +1,9 @@
 [package]
-name = "stack_sanitizer"
+name = "zeroize_stack"
 version = "0.1.0"
 description = """
-Securely sanitize the stack with a simple function built on
-the Portable Stack Manipulation (psm) crate.
+Securely zeroize the stack with a simple function built on
+the Portable Stack Manipulation (psm) crate and zeroize crate.
 """
 authors = ["The RustCrypto Project Developers"]
 license = "Apache-2.0 OR MIT"
@@ -16,7 +16,7 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-psm = { version = "0.1.26", optional = true }
+psm = "0.1.26"
 zeroize = { version = "1.0" }
 
 [features]

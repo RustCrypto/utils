@@ -250,15 +250,6 @@ mod aarch64;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
 
-#[cfg(feature = "stack_sanitization")]
-mod stack_sanitization;
-
-#[cfg(feature = "stack_sanitization")]
-pub use stack_sanitization::secure_crypto_call_heap;
-
-#[cfg(all(feature = "stack_sanitization", feature = "alloc"))]
-pub use stack_sanitization::create_aligned_vec;
-
 use core::{
     marker::{PhantomData, PhantomPinned},
     mem::{MaybeUninit, size_of},
