@@ -74,11 +74,6 @@ type StackSwitchResult<T> = T;
 
 use core::panic::{AssertUnwindSafe, UnwindSafe};
 
-#[derive(Debug)]
-enum Error {
-    StackPanicked,
-}
-
 psm::psm_stack_manipulation! {
     yes {
         /// Executes a function/closure and clears the function's stack by using
@@ -110,6 +105,11 @@ psm::psm_stack_manipulation! {
         /// Using `#[inline(never)]` on the closure's function definition(s) could
         /// make it easier to debug as the function(s) should show up in backtraces.
         ///
+        /// # Returns
+        /// 
+        /// * If `std` is enabled, this returns a `Result<R, Box<dyn Any + Send>>`
+        /// * Otherwise, this returns `R` directly; no panics are caught.
+        /// 
         /// # Safety
         ///
         /// * The stack needs to be large enough for `crypto_fn()` to execute without
