@@ -13,7 +13,7 @@ mod stack_sanitization_tests {
     #[test]
     fn stack_sanitization_v2() {
         let result = unsafe { exec_on_sanitized_stack(4, || dummy_fn()) };
-        assert_eq!(result.1, 12345);
+        assert_eq!(result.unwrap().1, 12345);
         // results in segmentation fault, which is somewhat normal... just wanted
         // to try it
         // assert_eq!(unsafe {*result.0}, 42);

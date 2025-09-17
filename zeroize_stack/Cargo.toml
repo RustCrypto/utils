@@ -20,6 +20,8 @@ psm = "0.1.26"
 zeroize = { version = "1.0" }
 
 [features]
+default = ["std"]
+std = []
 
 [package.metadata.docs.rs]
 all-features = true
