@@ -107,8 +107,8 @@ psm::psm_stack_manipulation! {
         ///
         /// ## Debugging
         ///
-        /// Using `#[inline(never)]` on the closure's function definition could
-        /// make it easier to debug as the function should show up.
+        /// Using `#[inline(never)]` on the closure's function definition(s) could
+        /// make it easier to debug as the function(s) should show up in backtraces.
         ///
         /// # Safety
         ///
