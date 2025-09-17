@@ -39,16 +39,16 @@
 //! caller must ensure:
 //! - The stack size provided is large enough for the closure to run with.
 //! - The closure does not unwind or return control flow by any means other than
-//!   directly returning. `std` users do not need to worry about this due to 
+//!   directly returning. `std` users do not need to worry about this due to
 //!   the existence of `catch_unwind`.
 //!
 //! ## `nostd` Support
-//! 
+//!
 //! This crate is compatible with `nostd` environments, but it is less safe
-//! in the event that your stack-switched stack panics. Panicking on a separate 
-//! stack can cause undefined behavior (UB), but if it can be caught with 
+//! in the event that your stack-switched stack panics. Panicking on a separate
+//! stack can cause undefined behavior (UB), but if it can be caught with
 //! `std::panic::catch_unwind`, that aspect of the safety should be more safe.
-//! 
+//!
 //! ## Use Cases
 //!
 //! - Cryptographic routines
@@ -66,10 +66,7 @@ extern crate std;
 #[cfg(feature = "std")]
 use core::any::Any;
 #[cfg(feature = "std")]
-use std::{
-    boxed::Box,
-    panic::catch_unwind,
-};
+use std::{boxed::Box, panic::catch_unwind};
 #[cfg(feature = "std")]
 type StackSwitchResult<T> = Result<T, Box<dyn Any + Send>>;
 #[cfg(not(feature = "std"))]
@@ -79,7 +76,7 @@ use core::panic::{AssertUnwindSafe, UnwindSafe};
 
 #[derive(Debug)]
 enum Error {
-    StackPanicked
+    StackPanicked,
 }
 
 psm::psm_stack_manipulation! {
@@ -98,23 +95,23 @@ psm::psm_stack_manipulation! {
         /// * `crypto_fn` - the code to run while on the separate stack.
         ///
         /// ## Panicking
-        /// 
+        ///
         /// This function panics when `psm` detects that `on_stack` is unavailable.
-        /// 
+        ///
         /// ## Errors
-        /// 
-        /// With the `std` feature enabled, this function will result in an error when 
-        /// the closure panics. You may want to log these errors securely, privately, 
-        /// as cryptography panics could be a little revealing if displayed to 
+        ///
+        /// With the `std` feature enabled, this function will result in an error when
+        /// the closure panics. You may want to log these errors securely, privately,
+        /// as cryptography panics could be a little revealing if displayed to
         /// the end user.
-        /// 
+        ///
         /// ## Debugging
-        /// 
-        /// Using `#[inline(never)]` on the closure's function definition could 
+        ///
+        /// Using `#[inline(never)]` on the closure's function definition could
         /// make it easier to debug as the function should show up.
-        /// 
+        ///
         /// # Safety
-        /// 
+        ///
         /// * The stack needs to be large enough for `crypto_fn()` to execute without
         ///   overflow.
         /// * `nostd` only: `crypto_fn()` must not unwind or return control flow by any other means
@@ -128,7 +125,7 @@ psm::psm_stack_manipulation! {
                 "Stack size must be greater than 0 kb and `* 1024` must not overflow `isize`"
             );
             let mut stack = create_aligned_vec(stack_size_kb as usize, align_of::<u128>());
-            
+
             let res = unsafe {
                 psm::on_stack(stack.as_mut_ptr(), stack.len(), || {
                     #[cfg(not(feature = "std"))]
