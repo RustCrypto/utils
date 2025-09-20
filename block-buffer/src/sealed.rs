@@ -62,15 +62,12 @@ impl Sealed for super::Eager {
     fn split_blocks<N: ArraySize>(data: &[u8]) -> (&[Array<u8, N>], &[u8]) {
         let nb = data.len() / N::USIZE;
         let blocks_len = nb * N::USIZE;
-        let tail_len = data.len() - blocks_len;
+
         // SAFETY: we guarantee that created slices do not point outside of `data`
         unsafe {
-            let blocks_ptr = data.as_ptr() as *const Array<u8, N>;
-            let tail_ptr = data.as_ptr().add(blocks_len);
-            (
-                slice::from_raw_parts(blocks_ptr, nb),
-                slice::from_raw_parts(tail_ptr, tail_len),
-            )
+            let (blocks_raw, tail) = data.split_at_unchecked(blocks_len);
+            let blocks = slice::from_raw_parts(blocks_raw.as_ptr().cast(), nb);
+            (blocks, tail)
         }
     }
 }
@@ -99,21 +96,18 @@ impl Sealed for super::Lazy {
         if data.is_empty() {
             return (&[], &[]);
         }
-        let (nb, tail_len) = if data.len() % N::USIZE == 0 {
-            (data.len() / N::USIZE - 1, N::USIZE)
+        let nb = if data.len() % N::USIZE == 0 {
+            data.len() / N::USIZE - 1
         } else {
-            let nb = data.len() / N::USIZE;
-            (nb, data.len() - nb * N::USIZE)
+            data.len() / N::USIZE
         };
         let blocks_len = nb * N::USIZE;
+
         // SAFETY: we guarantee that created slices do not point outside of `data`
         unsafe {
-            let blocks_ptr = data.as_ptr() as *const Array<u8, N>;
-            let tail_ptr = data.as_ptr().add(blocks_len);
-            (
-                slice::from_raw_parts(blocks_ptr, nb),
-                slice::from_raw_parts(tail_ptr, tail_len),
-            )
+            let (blocks_raw, tail) = data.split_at_unchecked(blocks_len);
+            let blocks = slice::from_raw_parts(blocks_raw.as_ptr().cast(), nb);
+            (blocks, tail)
         }
     }
 }
