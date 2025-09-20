@@ -44,7 +44,6 @@ pub trait Padding {
     /// Returns `Err(UnpadError)` if the block contains malformed padding.
     fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError>;
 
-
     /// Pads `block` filled with data up to `pos` (i.e length of a message
     /// stored in the block is equal to `pos`).
     ///
@@ -58,14 +57,16 @@ pub trait Padding {
     /// Unpad data in the `block`.
     ///
     /// Returns `Err(UnpadError)` if the block contains malformed padding.
-    fn unpad<BlockSize: ArraySize>(block: &Array<u8, BlockSize>) -> Result<&[u8], UnpadError>{
+    fn unpad<BlockSize: ArraySize>(block: &Array<u8, BlockSize>) -> Result<&[u8], UnpadError> {
         Self::raw_unpad(block.as_slice())
     }
 
     /// Unpad data in the `blocks`.
     ///
     /// Returns `Err(UnpadError)` if the block contains malformed padding.
-    fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], UnpadError> {
+    fn unpad_blocks<BlockSize: ArraySize>(
+        blocks: &[Array<u8, BlockSize>],
+    ) -> Result<&[u8], UnpadError> {
         let bs = BlockSize::USIZE;
         let res_len = match (blocks.last(), Self::TYPE) {
             (_, PadType::NoPadding) => bs * blocks.len(),
