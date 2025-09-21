@@ -8,9 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Migrated from `generic-array` to `hybrid-array` ([#944])
 - Edition changed to 2024 and MSRV bumped to 1.85 ([#1149])
+- Merged `RawPadding` and `Padding` traits ([#1217])
+
+### Removed
+- `Block` type alias ([#1217])
 
 [#944]: https://github.com/RustCrypto/utils/pull/944
 [#1149]: https://github.com/RustCrypto/utils/pull/1149
+[#1217]: https://github.com/RustCrypto/utils/pull/1217
 
 ## 0.3.3 (2023-04-02)
 ### Added

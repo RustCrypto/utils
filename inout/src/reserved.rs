@@ -155,7 +155,7 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
     #[inline(always)]
     pub fn into_padded_blocks<P, BS>(self) -> Result<PaddedInOutBuf<'inp, 'out, BS>, PadError>
     where
-        P: Padding<BS>,
+        P: Padding,
         BS: ArraySize,
     {
         let bs = BS::USIZE;
