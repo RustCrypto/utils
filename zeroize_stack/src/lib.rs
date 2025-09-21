@@ -55,7 +55,7 @@
 //! - Secure enclave transitions
 //! - Sanitizing temporary buffers in high-assurance systems
 
-use zeroize::Zeroize;
+use zeroize::{Zeroize, ZeroizeOnDrop};
 
 extern crate alloc;
 
@@ -74,6 +74,55 @@ type StackSwitchResult<T> = T;
 
 use core::panic::{AssertUnwindSafe, UnwindSafe};
 
+/// An aligned HeapStack. Aligned to the alignment of a `u128`, and aligned using
+/// safe code instead of manual alloc calls. This implements `ZeroizeOnDrop` and
+/// contains a lock flag to prevent the stack from being reused while it is being
+/// used.
+pub struct AlignedHeapStack {
+    locked: bool,
+    stack: Vec<u8>,
+}
+
+impl AlignedHeapStack {
+    /// Creates a new `AlignedHeapStack`. `psm` recommends using at least `4 KB` 
+    /// of stack space.
+    /// 
+    /// # Panics
+    /// 
+    /// This function panics when `size_kb * 1024` overflows `isize`.
+    pub fn new(size_kb: usize) -> Self {
+        assert!(
+            size_kb as isize * 1024 > 0,
+            "size_kb must be positive and must not overflow isize when expanded to number of bytes instead of kb"
+        );
+        let result = Self {
+            locked: false,
+            stack: create_aligned_vec(size_kb, align_of::<u128>()),
+        };
+        // these may be redundant but I just want to be sure that the alignment doesn't 
+        // change somehow
+        debug_assert_eq!(result.stack.as_ptr() as usize % align_of::<u128>(), 0);
+        debug_assert_eq!(result.stack.len() % align_of::<u128>(), 0);
+        result
+    }
+
+    fn is_locked(&self) -> bool {
+        self.locked
+    }
+
+    fn set_lock(&mut self, locked: bool) {
+        self.locked = locked;
+    }
+}
+
+impl Drop for AlignedHeapStack {
+    fn drop(&mut self) {
+        self.stack.zeroize();
+    }
+}
+
+impl ZeroizeOnDrop for AlignedHeapStack {}
+
 psm::psm_stack_manipulation! {
     yes {
         /// Executes a function/closure and clears the function's stack by using
@@ -84,9 +133,11 @@ psm::psm_stack_manipulation! {
         ///
         /// # Arguments
         ///
-        /// * `stack_size_kb` - how large the stack will be. `psm` recommends at least
-        ///   `4 KB` of stack size, but the total size cannot overflow an `isize`. Also,
-        ///   some architectures might consume more memory in the stack, such as SPARC.
+        /// * `aligned_heap_stack` - the heap-based aligned region of memory to 
+        ///   be used as the stack. `psm` recommends at least `4 KB` of stack 
+        ///   space, but the total size cannot overflow an `isize`. Also,
+        ///   some architectures might consume more memory in the stack, such as 
+        ///   SPARC.
         /// * `crypto_fn` - the code to run while on the separate stack.
         ///
         /// ## Panicking
@@ -106,28 +157,24 @@ psm::psm_stack_manipulation! {
         /// make it easier to debug as the function(s) should show up in backtraces.
         ///
         /// # Returns
-        /// 
+        ///
         /// * If `std` is enabled, this returns a `Result<R, Box<dyn Any + Send>>`
         /// * Otherwise, this returns `R` directly; no panics are caught.
-        /// 
+        ///
         /// # Safety
         ///
         /// * The stack needs to be large enough for `crypto_fn()` to execute without
         ///   overflow.
         /// * `nostd` only: `crypto_fn()` must not unwind or return control flow by any other means
         ///   than by directly returning.
-        pub unsafe fn exec_on_sanitized_stack<F, R>(stack_size_kb: isize, crypto_fn: F) -> StackSwitchResult<R>
+        pub unsafe fn exec_on_sanitized_stack<F, R>(aligned_heap_stack: &mut AlignedHeapStack, crypto_fn: F) -> StackSwitchResult<R>
         where
             F: FnOnce() -> R + UnwindSafe,
         {
-            assert!(
-                stack_size_kb * 1024 > 0,
-                "Stack size must be greater than 0 kb and `* 1024` must not overflow `isize`"
-            );
-            let mut stack = create_aligned_vec(stack_size_kb as usize, align_of::<u128>());
-
+            assert!(!aligned_heap_stack.is_locked(), "AlignedHeapStack was locked. You must not use it while it is being used already!");
+            aligned_heap_stack.set_lock(true);
             let res = unsafe {
-                psm::on_stack(stack.as_mut_ptr(), stack.len(), || {
+                psm::on_stack(aligned_heap_stack.stack.as_mut_ptr(), aligned_heap_stack.stack.len(), || {
                     #[cfg(not(feature = "std"))]
                     {
                         crypto_fn()
@@ -138,7 +185,7 @@ psm::psm_stack_manipulation! {
                     }
                 })
             };
-            stack.zeroize();
+            aligned_heap_stack.set_lock(false);
             res
         }
     }

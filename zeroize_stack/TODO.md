@@ -30,8 +30,6 @@ Copilot provided that code, but Gemini says that after the future is awaited, th
 
 ## Safe
 
-* Allow stack reuse. More efficient to zero one stack shared by multiple functions. `impl Drop` and `ZeroizeOnDrop` and make the main public function only accept a mutable `HeapStack` struct, and allow for the stack to get zeroed on drop.
-
 * Panic when the OS is `hermit` or it is running on `wasm32` or `wasm64`, as their stacks don't behave the same as all of the others.
 
 * Handle unwinds better: currently we return a `Result<R, Box<dyn Any + Send>>`. The error case is a little bit tricky to handle, as dropping the error could cause a panic. The program should either panic, or return the panic payload's message.
