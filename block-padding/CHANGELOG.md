@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - `Block` type alias ([#1217])
+- `PadType` enum and associated type on the `Padding` trait ([#1225])
 
 [#944]: https://github.com/RustCrypto/utils/pull/944
 [#1149]: https://github.com/RustCrypto/utils/pull/1149
 [#1217]: https://github.com/RustCrypto/utils/pull/1217
+[#1225]: https://github.com/RustCrypto/utils/pull/1225
 
 ## 0.3.3 (2023-04-02)
 ### Added
