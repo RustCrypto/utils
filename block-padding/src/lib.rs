@@ -65,7 +65,7 @@ pub trait Padding {
     /// Unpad data in the `blocks`.
     ///
     /// Returns `Err(UnpadError)` if the block contains malformed padding.
-    fn unpad_blocks<const N: usize, BlockSize: ArraySize<ArrayType<u8> = [u8; N]>>(
+    fn unpad_blocks<BlockSize: ArraySize>(
         blocks: &[Array<u8, BlockSize>],
     ) -> Result<&[u8], UnpadError> {
         let bs = BlockSize::USIZE;
