@@ -8,6 +8,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
+#![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
 pub use hybrid_array as array;
@@ -78,11 +79,9 @@ pub trait Padding {
             (None, PadType::Ambiguous) => 0,
             (None, PadType::Reversible) => return Err(UnpadError),
         };
-        // SAFETY: `res_len` is always smaller or equal to `bs * blocks.len()`
-        Ok(unsafe {
-            let p = blocks.as_ptr() as *const u8;
-            core::slice::from_raw_parts(p, res_len)
-        })
+
+        // Note: `res_len` is always smaller or equal to `bs * blocks.len()`
+        Ok(&Array::slice_as_flattened(blocks)[..res_len])
     }
 }
 
