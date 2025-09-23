@@ -9,6 +9,9 @@
 
 Padding and unpadding of messages divided into blocks.
 
+This crate provides the `Padding` trait with padding and unpadding methods.
+Additionally, several common padding schemes are available out of the box.
+
 ## License
 
 Licensed under either of:

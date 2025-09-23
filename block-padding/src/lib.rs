@@ -1,9 +1,5 @@
-//! Padding and unpadding of messages divided into blocks.
-//!
-//! This crate provides `Padding` trait which provides padding and unpadding
-//! operations. Additionally several common padding schemes are available out
-//! of the box.
 #![no_std]
+#![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
