@@ -16,37 +16,23 @@ pub use hybrid_array as array;
 use core::fmt;
 use hybrid_array::{Array, ArraySize};
 
-/// Padding types
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum PadType {
-    /// Reversible padding
-    Reversible,
-    /// Ambiguous padding
-    Ambiguous,
-    /// No padding, message must be multiple of block size
-    NoPadding,
-}
-
-/// Trait for messages padding algorithms.
+/// Trait for message padding algorithms.
 pub trait Padding {
-    /// Padding type
-    const TYPE: PadType;
-
-    /// Pads `block` filled with data up to `pos` (i.e length of a message
-    /// stored in the block is equal to `pos`).
+    /// Pads `block` filled with data up to `pos` (i.e the message length
+    /// stored in `block` is equal to `pos`).
     ///
     /// # Panics
     /// If `pos` is bigger than `block.len()`. Most padding algorithms also
     /// panic if they are equal.
     fn raw_pad(block: &mut [u8], pos: usize);
 
-    /// Unpad data in the `block`.
+    /// Unpad data in `block`.
     ///
     /// Returns `Err(UnpadError)` if the block contains malformed padding.
     fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError>;
 
-    /// Pads `block` filled with data up to `pos` (i.e length of a message
-    /// stored in the block is equal to `pos`).
+    /// Pads `block` filled with data up to `pos` (i.e the message length
+    /// stored in `block` is equal to `pos`).
     ///
     /// # Panics
     /// If `pos` is bigger than `BlockSize`. Most padding algorithms also
@@ -55,32 +41,26 @@ pub trait Padding {
         Self::raw_pad(block.as_mut_slice(), pos);
     }
 
-    /// Unpad data in the `block`.
+    /// Unpad data in `block`.
     ///
     /// Returns `Err(UnpadError)` if the block contains malformed padding.
     fn unpad<BlockSize: ArraySize>(block: &Array<u8, BlockSize>) -> Result<&[u8], UnpadError> {
         Self::raw_unpad(block.as_slice())
     }
 
-    /// Unpad data in the `blocks`.
+    /// Unpad data in `blocks` and return unpadded byte slice.
     ///
     /// Returns `Err(UnpadError)` if the block contains malformed padding.
     fn unpad_blocks<BlockSize: ArraySize>(
         blocks: &[Array<u8, BlockSize>],
     ) -> Result<&[u8], UnpadError> {
         let bs = BlockSize::USIZE;
-        let res_len = match (blocks.last(), Self::TYPE) {
-            (_, PadType::NoPadding) => bs * blocks.len(),
-            (Some(last_block), _) => {
-                let n = Self::unpad(last_block)?.len();
-                assert!(n <= bs);
-                n + bs * (blocks.len() - 1)
-            }
-            (None, PadType::Ambiguous) => 0,
-            (None, PadType::Reversible) => return Err(UnpadError),
-        };
-        let data = Array::slice_as_flattened(blocks);
-        Ok(&data[..res_len])
+        let (last_block, full_blocks) = blocks.split_last().ok_or(UnpadError)?;
+        let unpad_len = Self::unpad(last_block)?.len();
+        assert!(unpad_len <= bs);
+        let buf = Array::slice_as_flattened(blocks);
+        let data_len = full_blocks.len() * bs + unpad_len;
+        Ok(&buf[..data_len])
     }
 }
 
@@ -106,8 +86,6 @@ pub trait Padding {
 pub struct ZeroPadding;
 
 impl Padding for ZeroPadding {
-    const TYPE: PadType = PadType::Ambiguous;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
         if pos > block.len() {
@@ -124,6 +102,21 @@ impl Padding for ZeroPadding {
             }
         }
         Ok(&block[..0])
+    }
+
+    fn unpad_blocks<BlockSize: ArraySize>(
+        blocks: &[Array<u8, BlockSize>],
+    ) -> Result<&[u8], UnpadError> {
+        let buf = Array::slice_as_flattened(blocks);
+        if blocks.is_empty() {
+            return Ok(buf);
+        }
+        let bs = BlockSize::USIZE;
+        let (last_block, full_blocks) = blocks.split_last().unwrap();
+        let unpad_len = Self::unpad(last_block)?.len();
+        assert!(unpad_len <= bs);
+        let data_len = full_blocks.len() * bs + unpad_len;
+        Ok(&buf[..data_len])
     }
 }
 
@@ -168,8 +161,6 @@ impl Pkcs7 {
 }
 
 impl Padding for Pkcs7 {
-    const TYPE: PadType = PadType::Reversible;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
         // TODO: use bounds to check it at compile time for Padding<B>
@@ -210,8 +201,6 @@ impl Padding for Pkcs7 {
 pub struct Iso10126;
 
 impl Padding for Iso10126 {
-    const TYPE: PadType = PadType::Reversible;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
         // Instead of generating random bytes as specified by Iso10126 we
@@ -245,8 +234,6 @@ impl Padding for Iso10126 {
 pub struct AnsiX923;
 
 impl Padding for AnsiX923 {
-    const TYPE: PadType = PadType::Reversible;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
         // TODO: use bounds to check it at compile time
@@ -299,8 +286,6 @@ impl Padding for AnsiX923 {
 pub struct Iso7816;
 
 impl Padding for Iso7816 {
-    const TYPE: PadType = PadType::Reversible;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
         if pos >= block.len() {
@@ -348,8 +333,6 @@ impl Padding for Iso7816 {
 pub struct NoPadding;
 
 impl Padding for NoPadding {
-    const TYPE: PadType = PadType::NoPadding;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
         if pos > block.len() {
@@ -360,6 +343,12 @@ impl Padding for NoPadding {
     #[inline]
     fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
         Ok(block)
+    }
+
+    fn unpad_blocks<BlockSize: ArraySize>(
+        blocks: &[Array<u8, BlockSize>],
+    ) -> Result<&[u8], UnpadError> {
+        Ok(Array::slice_as_flattened(blocks))
     }
 }
 
