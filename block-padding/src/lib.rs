@@ -33,6 +33,7 @@ pub trait Padding {
     /// # Panics
     /// If `pos` is bigger than `BlockSize`. Most padding algorithms also
     /// panic if they are equal.
+    #[inline]
     fn pad<BlockSize: ArraySize>(block: &mut Array<u8, BlockSize>, pos: usize) {
         Self::raw_pad(block.as_mut_slice(), pos);
     }
@@ -40,6 +41,7 @@ pub trait Padding {
     /// Unpad data in `block`.
     ///
     /// Returns error if the block contains malformed padding.
+    #[inline]
     fn unpad<BlockSize: ArraySize>(block: &Array<u8, BlockSize>) -> Result<&[u8], Error> {
         Self::raw_unpad(block.as_slice())
     }
@@ -51,6 +53,7 @@ pub trait Padding {
     /// is multiple of block size. All other padding implementations should always return
     /// `Ok(blocks, Some(tail_block))`.
     #[allow(clippy::type_complexity)]
+    #[inline]
     fn pad_detached<BlockSize: ArraySize>(
         data: &[u8],
     ) -> Result<(&[Array<u8, BlockSize>], Option<Array<u8, BlockSize>>), Error> {
@@ -65,6 +68,7 @@ pub trait Padding {
     /// Unpad data in `blocks` and return unpadded byte slice.
     ///
     /// Returns error if the block contains malformed padding.
+    #[inline]
     fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         let bs = BlockSize::USIZE;
         let (last_block, full_blocks) = blocks.split_last().ok_or(Error)?;
@@ -116,6 +120,7 @@ impl Padding for ZeroPadding {
         Ok(&block[..0])
     }
 
+    #[inline]
     fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         let buf = Array::slice_as_flattened(blocks);
         for i in (0..buf.len()).rev() {
@@ -348,6 +353,7 @@ impl Padding for NoPadding {
         Ok(block)
     }
 
+    #[inline]
     fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         Ok(Array::slice_as_flattened(blocks))
     }
