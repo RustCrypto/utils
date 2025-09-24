@@ -103,12 +103,13 @@ impl Padding for ZeroPadding {
     fn unpad_blocks<BlockSize: ArraySize>(
         blocks: &[Array<u8, BlockSize>],
     ) -> Result<&[u8], UnpadError> {
-        for i in (0..block.len()).rev() {
-            if block[i] != 0 {
-                return Ok(&block[..i + 1]);
+        let buf = Array::slice_as_flattened(blocks);
+        for i in (0..buf.len()).rev() {
+            if buf[i] != 0 {
+                return Ok(&buf[..i + 1]);
             }
         }
-        Ok(&block[..0])
+        Ok(&buf[..0])
     }
 }
 
