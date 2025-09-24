@@ -5,10 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.4.0 (unreleased)
+### Added
+- `Padding::pad_detached` method ([#1225])
+
 ### Changed
 - Migrated from `generic-array` to `hybrid-array` ([#944])
 - Edition changed to 2024 and MSRV bumped to 1.85 ([#1149])
 - Merged `RawPadding` and `Padding` traits ([#1217])
+- Renamed `UnpadError` to `Error` ([#1225])
 
 ### Removed
 - `Block` type alias ([#1217])

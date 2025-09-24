@@ -5,7 +5,7 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
 #![deny(unsafe_code)]
-#![warn(missing_docs)]
+#![warn(missing_docs, missing_debug_implementations)]
 
 pub use hybrid_array as array;
 
@@ -24,8 +24,8 @@ pub trait Padding {
 
     /// Unpad data in `block`.
     ///
-    /// Returns `Err(UnpadError)` if the block contains malformed padding.
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError>;
+    /// Returns error if the block contains malformed padding.
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error>;
 
     /// Pads `block` filled with data up to `pos` (i.e the message length
     /// stored in `block` is equal to `pos`).
@@ -39,8 +39,8 @@ pub trait Padding {
 
     /// Unpad data in `block`.
     ///
-    /// Returns `Err(UnpadError)` if the block contains malformed padding.
-    fn unpad<BlockSize: ArraySize>(block: &Array<u8, BlockSize>) -> Result<&[u8], UnpadError> {
+    /// Returns error if the block contains malformed padding.
+    fn unpad<BlockSize: ArraySize>(block: &Array<u8, BlockSize>) -> Result<&[u8], Error> {
         Self::raw_unpad(block.as_slice())
     }
 
@@ -53,7 +53,7 @@ pub trait Padding {
     #[allow(clippy::type_complexity)]
     fn pad_detached<BlockSize: ArraySize>(
         data: &[u8],
-    ) -> Result<(&[Array<u8, BlockSize>], Option<Array<u8, BlockSize>>), UnpadError> {
+    ) -> Result<(&[Array<u8, BlockSize>], Option<Array<u8, BlockSize>>), Error> {
         let (blocks, tail) = Array::slice_as_chunks(data);
         let mut tail_block = Array::<u8, BlockSize>::default();
         let pos = tail.len();
@@ -64,12 +64,10 @@ pub trait Padding {
 
     /// Unpad data in `blocks` and return unpadded byte slice.
     ///
-    /// Returns `Err(UnpadError)` if the block contains malformed padding.
-    fn unpad_blocks<BlockSize: ArraySize>(
-        blocks: &[Array<u8, BlockSize>],
-    ) -> Result<&[u8], UnpadError> {
+    /// Returns error if the block contains malformed padding.
+    fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         let bs = BlockSize::USIZE;
-        let (last_block, full_blocks) = blocks.split_last().ok_or(UnpadError)?;
+        let (last_block, full_blocks) = blocks.split_last().ok_or(Error)?;
         let unpad_len = Self::unpad(last_block)?.len();
         assert!(unpad_len <= bs);
         let buf = Array::slice_as_flattened(blocks);
@@ -109,7 +107,7 @@ impl Padding for ZeroPadding {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         for i in (0..block.len()).rev() {
             if block[i] != 0 {
                 return Ok(&block[..i + 1]);
@@ -118,9 +116,7 @@ impl Padding for ZeroPadding {
         Ok(&block[..0])
     }
 
-    fn unpad_blocks<BlockSize: ArraySize>(
-        blocks: &[Array<u8, BlockSize>],
-    ) -> Result<&[u8], UnpadError> {
+    fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         let buf = Array::slice_as_flattened(blocks);
         for i in (0..buf.len()).rev() {
             if buf[i] != 0 {
@@ -153,7 +149,7 @@ pub struct Pkcs7;
 
 impl Pkcs7 {
     #[inline]
-    fn unpad(block: &[u8], strict: bool) -> Result<&[u8], UnpadError> {
+    fn unpad(block: &[u8], strict: bool) -> Result<&[u8], Error> {
         // TODO: use bounds to check it at compile time
         if block.len() > 255 {
             panic!("block size is too big for PKCS#7");
@@ -161,11 +157,11 @@ impl Pkcs7 {
         let bs = block.len();
         let n = block[bs - 1];
         if n == 0 || n as usize > bs {
-            return Err(UnpadError);
+            return Err(Error);
         }
         let s = bs - n as usize;
         if strict && block[s..bs - 1].iter().any(|&v| v != n) {
-            return Err(UnpadError);
+            return Err(Error);
         }
         Ok(&block[..s])
     }
@@ -186,7 +182,7 @@ impl Padding for Pkcs7 {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         Pkcs7::unpad(block, true)
     }
 }
@@ -220,7 +216,7 @@ impl Padding for Iso10126 {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         Pkcs7::unpad(block, false)
     }
 }
@@ -260,7 +256,7 @@ impl Padding for AnsiX923 {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         // TODO: use bounds to check it at compile time
         if block.len() > 255 {
             panic!("block size is too big for ANSI X9.23");
@@ -268,11 +264,11 @@ impl Padding for AnsiX923 {
         let bs = block.len();
         let n = block[bs - 1] as usize;
         if n == 0 || n > bs {
-            return Err(UnpadError);
+            return Err(Error);
         }
         let s = bs - n;
         if block[s..bs - 1].iter().any(|&v| v != 0) {
-            return Err(UnpadError);
+            return Err(Error);
         }
         Ok(&block[..s])
     }
@@ -307,15 +303,15 @@ impl Padding for Iso7816 {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         for i in (0..block.len()).rev() {
             match block[i] {
                 0x80 => return Ok(&block[..i]),
                 0x00 => continue,
-                _ => return Err(UnpadError),
+                _ => return Err(Error),
             }
         }
-        Err(UnpadError)
+        Err(Error)
     }
 }
 
@@ -352,25 +348,23 @@ impl Padding for NoPadding {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         Ok(block)
     }
 
-    fn unpad_blocks<BlockSize: ArraySize>(
-        blocks: &[Array<u8, BlockSize>],
-    ) -> Result<&[u8], UnpadError> {
+    fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         Ok(Array::slice_as_flattened(blocks))
     }
 }
 
-/// Failed unpadding operation error.
+/// Error returned by the [`Padding`] trait methods.
 #[derive(Clone, Copy, Debug)]
-pub struct UnpadError;
+pub struct Error;
 
-impl fmt::Display for UnpadError {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        f.write_str("Unpad Error")
+        f.write_str("Padding error")
     }
 }
 
-impl core::error::Error for UnpadError {}
+impl core::error::Error for Error {}

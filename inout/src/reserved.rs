@@ -215,7 +215,7 @@ impl<'out, BS: ArraySize> PaddedInOutBuf<'_, 'out, BS> {
 
     /// Get padded tail block.
     ///
-    /// For paddings with `P::TYPE = PadType::Reversible` it always returns `Some`.
+    /// Most padding implementations always return `Some`.
     #[inline(always)]
     pub fn get_tail_block(&mut self) -> Option<InOut<'_, '_, Array<u8, BS>>> {
         self.tail_inout.as_mut().map(|(in_block, out_block)| {
