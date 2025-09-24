@@ -40,7 +40,13 @@ mod stack_sanitization_tests {
     fn non_returning_function_test() {
         let mut heap_stack = AlignedHeapStack::new(4);
         let mut v = 0;
-        unsafe { exec_on_sanitized_stack(&mut heap_stack, AssertUnwindSafe(|| non_returning_function(&mut v)))}.unwrap();
+        unsafe {
+            exec_on_sanitized_stack(
+                &mut heap_stack,
+                AssertUnwindSafe(|| non_returning_function(&mut v)),
+            )
+        }
+        .unwrap();
         assert_eq!(v, 5);
     }
 }

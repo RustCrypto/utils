@@ -30,9 +30,12 @@ Copilot provided that code, but Gemini says that after the future is awaited, th
 
 ## Safe
 
-* Panic when the OS is `hermit` or it is running on `wasm32` or `wasm64`, as their stacks don't behave the same as all of the others.
-
 * Handle unwinds better: currently we return a `Result<R, Box<dyn Any + Send>>`. The error case is a little bit tricky to handle, as dropping the error could cause a panic. The program should either panic, or return the panic payload's message.
+
+* Either:
+  * Panic when the OS is `hermit` or it is running on `wasm32` or `wasm64`, as their stacks don't behave the same as all of the others.
+  * Run the closure without `psm::on_stack` and generate a compiler warning stating that the target's stack layout is not supported with basic stack switching.
+  * Implement different types of `AlignedHeapStack` to cover `wasm32` and `hermit` as performed in the `stacker` crate.
 
 ## Would require a PR to `stacker` to zero the allocated stack on drop
 

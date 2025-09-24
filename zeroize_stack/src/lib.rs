@@ -84,11 +84,11 @@ pub struct AlignedHeapStack {
 }
 
 impl AlignedHeapStack {
-    /// Creates a new `AlignedHeapStack`. `psm` recommends using at least `4 KB` 
+    /// Creates a new `AlignedHeapStack`. `psm` recommends using at least `4 KB`
     /// of stack space.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// This function panics when `size_kb * 1024` overflows `isize`.
     pub fn new(size_kb: usize) -> Self {
         assert!(
@@ -99,7 +99,7 @@ impl AlignedHeapStack {
             locked: false,
             stack: create_aligned_vec(size_kb, align_of::<u128>()),
         };
-        // these may be redundant but I just want to be sure that the alignment doesn't 
+        // these may be redundant but I just want to be sure that the alignment doesn't
         // change somehow
         debug_assert_eq!(result.stack.as_ptr() as usize % align_of::<u128>(), 0);
         debug_assert_eq!(result.stack.len() % align_of::<u128>(), 0);
@@ -133,10 +133,10 @@ psm::psm_stack_manipulation! {
         ///
         /// # Arguments
         ///
-        /// * `aligned_heap_stack` - the heap-based aligned region of memory to 
-        ///   be used as the stack. `psm` recommends at least `4 KB` of stack 
+        /// * `aligned_heap_stack` - the heap-based aligned region of memory to
+        ///   be used as the stack. `psm` recommends at least `4 KB` of stack
         ///   space, but the total size cannot overflow an `isize`. Also,
-        ///   some architectures might consume more memory in the stack, such as 
+        ///   some architectures might consume more memory in the stack, such as
         ///   SPARC.
         /// * `crypto_fn` - the code to run while on the separate stack.
         ///
