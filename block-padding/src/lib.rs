@@ -150,7 +150,6 @@ pub struct Pkcs7;
 impl Pkcs7 {
     #[inline]
     fn unpad(block: &[u8], strict: bool) -> Result<&[u8], Error> {
-        // TODO: use bounds to check it at compile time
         if block.len() > 255 {
             panic!("block size is too big for PKCS#7");
         }
@@ -170,7 +169,6 @@ impl Pkcs7 {
 impl Padding for Pkcs7 {
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
-        // TODO: use bounds to check it at compile time for Padding<B>
         if block.len() > 255 {
             panic!("block size is too big for PKCS#7");
         }
@@ -243,7 +241,6 @@ pub struct AnsiX923;
 impl Padding for AnsiX923 {
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
-        // TODO: use bounds to check it at compile time
         if block.len() > 255 {
             panic!("block size is too big for ANSI X9.23");
         }
@@ -257,7 +254,6 @@ impl Padding for AnsiX923 {
 
     #[inline]
     fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
-        // TODO: use bounds to check it at compile time
         if block.len() > 255 {
             panic!("block size is too big for ANSI X9.23");
         }
