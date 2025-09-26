@@ -160,7 +160,13 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
     {
         let bs = BS::USIZE;
         let blocks_len = self.in_len / bs;
-        let (blocks, tail_block) = P::pad_detached(self.get_in()).map_err(|_| PadError)?;
+
+        use block_padding::PaddedData;
+        let (blocks, tail_block) = match P::pad_detached(self.get_in()) {
+            PaddedData::Pad { blocks, tail_block } => (blocks, Some(tail_block)),
+            PaddedData::NoPad { blocks } => (blocks, None),
+            PaddedData::Error => return Err(PadError),
+        };
 
         assert_eq!(blocks.len(), blocks_len);
 
