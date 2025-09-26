@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.4.0 (unreleased)
 ### Added
-- `Padding::pad_detached` method ([#1225])
+- `Padding::pad_detached` method ([#1225], [#1227])
+- `PaddedData` enum ([#1227])
 
 ### Changed
 - Migrated from `generic-array` to `hybrid-array` ([#944])
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#1149]: https://github.com/RustCrypto/utils/pull/1149
 [#1217]: https://github.com/RustCrypto/utils/pull/1217
 [#1225]: https://github.com/RustCrypto/utils/pull/1225
+[#1227]: https://github.com/RustCrypto/utils/pull/1227
 
 ## 0.3.3 (2023-04-02)
 ### Added
