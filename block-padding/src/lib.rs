@@ -1,86 +1,82 @@
-//! Padding and unpadding of messages divided into blocks.
-//!
-//! This crate provides `Padding` trait which provides padding and unpadding
-//! operations. Additionally several common padding schemes are available out
-//! of the box.
 #![no_std]
+#![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
 #![deny(unsafe_code)]
-#![warn(missing_docs)]
+#![warn(missing_docs, missing_debug_implementations)]
 
 pub use hybrid_array as array;
 
 use core::fmt;
 use hybrid_array::{Array, ArraySize};
 
-/// Padding types
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum PadType {
-    /// Reversible padding
-    Reversible,
-    /// Ambiguous padding
-    Ambiguous,
-    /// No padding, message must be multiple of block size
-    NoPadding,
-}
-
-/// Trait for messages padding algorithms.
+/// Trait for message padding algorithms.
 pub trait Padding {
-    /// Padding type
-    const TYPE: PadType;
-
-    /// Pads `block` filled with data up to `pos` (i.e length of a message
-    /// stored in the block is equal to `pos`).
+    /// Pads `block` filled with data up to `pos` (i.e the message length
+    /// stored in `block` is equal to `pos`).
     ///
     /// # Panics
     /// If `pos` is bigger than `block.len()`. Most padding algorithms also
     /// panic if they are equal.
     fn raw_pad(block: &mut [u8], pos: usize);
 
-    /// Unpad data in the `block`.
+    /// Unpad data in `block`.
     ///
-    /// Returns `Err(UnpadError)` if the block contains malformed padding.
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError>;
+    /// Returns error if the block contains malformed padding.
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error>;
 
-    /// Pads `block` filled with data up to `pos` (i.e length of a message
-    /// stored in the block is equal to `pos`).
+    /// Pads `block` filled with data up to `pos` (i.e the message length
+    /// stored in `block` is equal to `pos`).
     ///
     /// # Panics
     /// If `pos` is bigger than `BlockSize`. Most padding algorithms also
     /// panic if they are equal.
+    #[inline]
     fn pad<BlockSize: ArraySize>(block: &mut Array<u8, BlockSize>, pos: usize) {
         Self::raw_pad(block.as_mut_slice(), pos);
     }
 
-    /// Unpad data in the `block`.
+    /// Unpad data in `block`.
     ///
-    /// Returns `Err(UnpadError)` if the block contains malformed padding.
-    fn unpad<BlockSize: ArraySize>(block: &Array<u8, BlockSize>) -> Result<&[u8], UnpadError> {
+    /// Returns error if the block contains malformed padding.
+    #[inline]
+    fn unpad<BlockSize: ArraySize>(block: &Array<u8, BlockSize>) -> Result<&[u8], Error> {
         Self::raw_unpad(block.as_slice())
     }
 
-    /// Unpad data in the `blocks`.
+    /// Pad message and return padded tail block.
     ///
-    /// Returns `Err(UnpadError)` if the block contains malformed padding.
-    fn unpad_blocks<BlockSize: ArraySize>(
-        blocks: &[Array<u8, BlockSize>],
-    ) -> Result<&[u8], UnpadError> {
+    /// `Err` is returned only by [`NoPadding`] if `data` length is not multiple of the block size.
+    /// [`NoPadding`] and [`ZeroPadding`] return `Ok((blocks, None))` if `data` length
+    /// is multiple of block size. All other padding implementations should always return
+    /// `Ok((blocks, Some(tail_block)))`.
+    #[allow(clippy::type_complexity)]
+    #[inline]
+    fn pad_detached<BlockSize: ArraySize>(
+        data: &[u8],
+    ) -> Result<(&[Array<u8, BlockSize>], Option<Array<u8, BlockSize>>), Error> {
+        let (blocks, tail) = Array::slice_as_chunks(data);
+        let mut tail_block = Array::default();
+        let pos = tail.len();
+        tail_block[..pos].copy_from_slice(tail);
+        Self::pad(&mut tail_block, pos);
+        Ok((blocks, Some(tail_block)))
+    }
+
+    /// Unpad data in `blocks` and return unpadded byte slice.
+    ///
+    /// Returns error if `blocks` contain malformed padding.
+    #[inline]
+    fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         let bs = BlockSize::USIZE;
-        let res_len = match (blocks.last(), Self::TYPE) {
-            (_, PadType::NoPadding) => bs * blocks.len(),
-            (Some(last_block), _) => {
-                let n = Self::unpad(last_block)?.len();
-                assert!(n <= bs);
-                n + bs * (blocks.len() - 1)
-            }
-            (None, PadType::Ambiguous) => 0,
-            (None, PadType::Reversible) => return Err(UnpadError),
-        };
-        let data = Array::slice_as_flattened(blocks);
-        Ok(&data[..res_len])
+        let (last_block, full_blocks) = blocks.split_last().ok_or(Error)?;
+        let unpad_len = Self::unpad(last_block)?.len();
+        assert!(unpad_len <= bs);
+        let buf = Array::slice_as_flattened(blocks);
+        let data_len = full_blocks.len() * bs + unpad_len;
+        Ok(&buf[..data_len])
     }
 }
 
@@ -106,8 +102,6 @@ pub trait Padding {
 pub struct ZeroPadding;
 
 impl Padding for ZeroPadding {
-    const TYPE: PadType = PadType::Ambiguous;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
         if pos > block.len() {
@@ -117,13 +111,24 @@ impl Padding for ZeroPadding {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         for i in (0..block.len()).rev() {
             if block[i] != 0 {
                 return Ok(&block[..i + 1]);
             }
         }
         Ok(&block[..0])
+    }
+
+    #[inline]
+    fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
+        let buf = Array::slice_as_flattened(blocks);
+        for i in (0..buf.len()).rev() {
+            if buf[i] != 0 {
+                return Ok(&buf[..i + 1]);
+            }
+        }
+        Ok(&buf[..0])
     }
 }
 
@@ -149,30 +154,26 @@ pub struct Pkcs7;
 
 impl Pkcs7 {
     #[inline]
-    fn unpad(block: &[u8], strict: bool) -> Result<&[u8], UnpadError> {
-        // TODO: use bounds to check it at compile time
+    fn unpad(block: &[u8], strict: bool) -> Result<&[u8], Error> {
         if block.len() > 255 {
             panic!("block size is too big for PKCS#7");
         }
         let bs = block.len();
         let n = block[bs - 1];
         if n == 0 || n as usize > bs {
-            return Err(UnpadError);
+            return Err(Error);
         }
         let s = bs - n as usize;
         if strict && block[s..bs - 1].iter().any(|&v| v != n) {
-            return Err(UnpadError);
+            return Err(Error);
         }
         Ok(&block[..s])
     }
 }
 
 impl Padding for Pkcs7 {
-    const TYPE: PadType = PadType::Reversible;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
-        // TODO: use bounds to check it at compile time for Padding<B>
         if block.len() > 255 {
             panic!("block size is too big for PKCS#7");
         }
@@ -184,7 +185,7 @@ impl Padding for Pkcs7 {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         Pkcs7::unpad(block, true)
     }
 }
@@ -210,8 +211,6 @@ impl Padding for Pkcs7 {
 pub struct Iso10126;
 
 impl Padding for Iso10126 {
-    const TYPE: PadType = PadType::Reversible;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
         // Instead of generating random bytes as specified by Iso10126 we
@@ -220,7 +219,7 @@ impl Padding for Iso10126 {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         Pkcs7::unpad(block, false)
     }
 }
@@ -245,11 +244,8 @@ impl Padding for Iso10126 {
 pub struct AnsiX923;
 
 impl Padding for AnsiX923 {
-    const TYPE: PadType = PadType::Reversible;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
-        // TODO: use bounds to check it at compile time
         if block.len() > 255 {
             panic!("block size is too big for ANSI X9.23");
         }
@@ -262,19 +258,18 @@ impl Padding for AnsiX923 {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
-        // TODO: use bounds to check it at compile time
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         if block.len() > 255 {
             panic!("block size is too big for ANSI X9.23");
         }
         let bs = block.len();
         let n = block[bs - 1] as usize;
         if n == 0 || n > bs {
-            return Err(UnpadError);
+            return Err(Error);
         }
         let s = bs - n;
         if block[s..bs - 1].iter().any(|&v| v != 0) {
-            return Err(UnpadError);
+            return Err(Error);
         }
         Ok(&block[..s])
     }
@@ -299,8 +294,6 @@ impl Padding for AnsiX923 {
 pub struct Iso7816;
 
 impl Padding for Iso7816 {
-    const TYPE: PadType = PadType::Reversible;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
         if pos >= block.len() {
@@ -311,15 +304,15 @@ impl Padding for Iso7816 {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         for i in (0..block.len()).rev() {
             match block[i] {
                 0x80 => return Ok(&block[..i]),
                 0x00 => continue,
-                _ => return Err(UnpadError),
+                _ => return Err(Error),
             }
         }
-        Err(UnpadError)
+        Err(Error)
     }
 }
 
@@ -348,8 +341,6 @@ impl Padding for Iso7816 {
 pub struct NoPadding;
 
 impl Padding for NoPadding {
-    const TYPE: PadType = PadType::NoPadding;
-
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
         if pos > block.len() {
@@ -358,19 +349,24 @@ impl Padding for NoPadding {
     }
 
     #[inline]
-    fn raw_unpad(block: &[u8]) -> Result<&[u8], UnpadError> {
+    fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         Ok(block)
     }
-}
 
-/// Failed unpadding operation error.
-#[derive(Clone, Copy, Debug)]
-pub struct UnpadError;
-
-impl fmt::Display for UnpadError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        f.write_str("Unpad Error")
+    #[inline]
+    fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
+        Ok(Array::slice_as_flattened(blocks))
     }
 }
 
-impl core::error::Error for UnpadError {}
+/// Error returned by the [`Padding`] trait methods.
+#[derive(Clone, Copy, Debug)]
+pub struct Error;
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        f.write_str("Padding error")
+    }
+}
+
+impl core::error::Error for Error {}
