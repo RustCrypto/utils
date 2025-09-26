@@ -49,16 +49,16 @@ pub trait Padding {
     /// Pad message and return padded tail block.
     ///
     /// `Err` is returned only by [`NoPadding`] if `data` length is not multiple of the block size.
-    /// [`NoPadding`] and [`ZeroPadding`] return `None` instead of the tail block if `data`
+    /// [`NoPadding`] and [`ZeroPadding`] return `Ok((blocks, None))` if `data` length
     /// is multiple of block size. All other padding implementations should always return
-    /// `Ok(blocks, Some(tail_block))`.
+    /// `Ok((blocks, Some(tail_block)))`.
     #[allow(clippy::type_complexity)]
     #[inline]
     fn pad_detached<BlockSize: ArraySize>(
         data: &[u8],
     ) -> Result<(&[Array<u8, BlockSize>], Option<Array<u8, BlockSize>>), Error> {
         let (blocks, tail) = Array::slice_as_chunks(data);
-        let mut tail_block = Array::<u8, BlockSize>::default();
+        let mut tail_block = Array::default();
         let pos = tail.len();
         tail_block[..pos].copy_from_slice(tail);
         Self::pad(&mut tail_block, pos);
@@ -67,7 +67,7 @@ pub trait Padding {
 
     /// Unpad data in `blocks` and return unpadded byte slice.
     ///
-    /// Returns error if the block contains malformed padding.
+    /// Returns error if `blocks` contain malformed padding.
     #[inline]
     fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         let bs = BlockSize::USIZE;
