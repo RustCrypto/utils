@@ -48,21 +48,18 @@ pub trait Padding {
 
     /// Pad message and return padded tail block.
     ///
-    /// `Err` is returned only by [`NoPadding`] if `data` length is not multiple of the block size.
-    /// [`NoPadding`] and [`ZeroPadding`] return `Ok((blocks, None))` if `data` length
-    /// is multiple of block size. All other padding implementations should always return
-    /// `Ok((blocks, Some(tail_block)))`.
-    #[allow(clippy::type_complexity)]
+    /// [`PaddedData::Error`] is returned only by [`NoPadding`] if `data` length is not multiple
+    /// of the block size. [`NoPadding`] and [`ZeroPadding`] return [`PaddedData::NoPad`]
+    /// if `data` length is multiple of block size. All other padding implementations
+    /// should always return [`PaddedData::Pad`].
     #[inline]
-    fn pad_detached<BlockSize: ArraySize>(
-        data: &[u8],
-    ) -> Result<(&[Array<u8, BlockSize>], Option<Array<u8, BlockSize>>), Error> {
+    fn pad_detached<BlockSize: ArraySize>(data: &[u8]) -> PaddedData<'_, BlockSize> {
         let (blocks, tail) = Array::slice_as_chunks(data);
         let mut tail_block = Array::default();
         let pos = tail.len();
         tail_block[..pos].copy_from_slice(tail);
         Self::pad(&mut tail_block, pos);
-        Ok((blocks, Some(tail_block)))
+        PaddedData::Pad { blocks, tail_block }
     }
 
     /// Unpad data in `blocks` and return unpadded byte slice.
@@ -118,6 +115,19 @@ impl Padding for ZeroPadding {
             }
         }
         Ok(&block[..0])
+    }
+
+    #[inline]
+    fn pad_detached<BlockSize: ArraySize>(data: &[u8]) -> PaddedData<'_, BlockSize> {
+        let (blocks, tail) = Array::slice_as_chunks(data);
+        if tail.is_empty() {
+            return PaddedData::NoPad { blocks };
+        }
+        let mut tail_block = Array::default();
+        let pos = tail.len();
+        tail_block[..pos].copy_from_slice(tail);
+        Self::pad(&mut tail_block, pos);
+        PaddedData::Pad { blocks, tail_block }
     }
 
     #[inline]
@@ -354,6 +364,16 @@ impl Padding for NoPadding {
     }
 
     #[inline]
+    fn pad_detached<BlockSize: ArraySize>(data: &[u8]) -> PaddedData<'_, BlockSize> {
+        let (blocks, tail) = Array::slice_as_chunks(data);
+        if tail.is_empty() {
+            PaddedData::NoPad { blocks }
+        } else {
+            PaddedData::Error
+        }
+    }
+
+    #[inline]
     fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         Ok(Array::slice_as_flattened(blocks))
     }
@@ -370,3 +390,37 @@ impl fmt::Display for Error {
 }
 
 impl core::error::Error for Error {}
+
+/// Padded data split into blocks with detached last block returned by [`Padding::pad_detached`].
+#[derive(Debug)]
+pub enum PaddedData<'a, BlockSize: ArraySize> {
+    /// Message split into blocks with detached and padded `tail_block`.
+    Pad {
+        /// Message blocks.
+        blocks: &'a [Array<u8, BlockSize>],
+        /// Last message block with padding.
+        tail_block: Array<u8, BlockSize>,
+    },
+    /// [`NoPadding`] or [`ZeroPadding`] were used on a message which does not require any padding.
+    NoPad {
+        /// Message blocks.
+        blocks: &'a [Array<u8, BlockSize>],
+    },
+    /// [`NoPadding`] was used on a message with size not multiple of the block size.
+    Error,
+}
+
+impl<'a, BlockSize: ArraySize> PaddedData<'a, BlockSize> {
+    /// Unwrap the `Pad` variant.
+    pub fn unwrap(self) -> (&'a [Array<u8, BlockSize>], Array<u8, BlockSize>) {
+        match self {
+            PaddedData::Pad { blocks, tail_block } => (blocks, tail_block),
+            PaddedData::NoPad { .. } => {
+                panic!("Expected `PaddedData::Pad`, but got `PaddedData::NoPad`");
+            }
+            PaddedData::Error => {
+                panic!("Expected `PaddedData::Pad`, but got `PaddedData::Error`");
+            }
+        }
+    }
+}
