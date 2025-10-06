@@ -4,7 +4,7 @@ use core::fmt;
 /// Buffer for reading block-generated data.
 pub struct ReadBuffer<BS: ArraySize> {
     /// The first byte of the block is used as cursor position.
-    /// `&buffer[usize::from(buffer[0])..]` is iterpreted as unread bytes.
+    /// `&buffer[usize::from(buffer[0])..]` is interpreted as unread bytes.
     /// The cursor position is always bigger than zero and smaller than or equal to block size.
     buffer: Array<u8, BS>,
 }
