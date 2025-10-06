@@ -4,14 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.4.1 (unreleased)
-### Fixed
-- Implementation of the `Padding::pad_detached` method for `NoPadding` and `ZeroPadding` ([#1227])
+## 0.4.1 (2025-10-06)
+### Changed
+- `Padding::pad_detached` method returns `PaddedData` enum ([#1227])
 
-## 0.4.0 (2025-10-06)
+### Fixed
+- `Padding::pad_detached` method for `NoPadding` and `ZeroPadding` ([#1227])
+
+[#1227]: https://github.com/RustCrypto/utils/pull/1227
+
+## 0.4.0 (2025-10-06) [YANKED]
 ### Added
 - `Padding::pad_detached` method ([#1225])
-- `PaddedData` enum ([#1227])
 
 ### Changed
 - Migrated from `generic-array` to `hybrid-array` ([#944])
@@ -27,7 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#1149]: https://github.com/RustCrypto/utils/pull/1149
 [#1217]: https://github.com/RustCrypto/utils/pull/1217
 [#1225]: https://github.com/RustCrypto/utils/pull/1225
-[#1227]: https://github.com/RustCrypto/utils/pull/1227
 
 ## 0.3.3 (2023-04-02)
 ### Added
