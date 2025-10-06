@@ -2,14 +2,14 @@
 name = "blobby"
 version = "0.4.0-pre.1"
 authors = ["RustCrypto Developers"]
-license = "MIT OR Apache-2.0"
-description = "Iterator over simple binary blob storage"
-documentation = "https://docs.rs/blobby"
-repository = "https://github.com/RustCrypto/utils"
-categories = ["no-std"]
 edition = "2024"
 rust-version = "1.85"
+documentation = "https://docs.rs/blobby"
 readme = "README.md"
+repository = "https://github.com/RustCrypto/utils"
+license = "MIT OR Apache-2.0"
+categories = ["no-std"]
+description = "Iterator over simple binary blob storage"
 
 [features]
 alloc = []

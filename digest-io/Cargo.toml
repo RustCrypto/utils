@@ -1,15 +1,16 @@
 [package]
 name = "digest-io"
 version = "0.1.0"
-description = "std::io-compatibility wrappers for traits defined in the digest crate"
 authors = ["RustCrypto Developers"]
-license = "MIT OR Apache-2.0"
 edition = "2024"
 rust-version = "1.85"
 documentation = "https://docs.rs/digest-io"
-repository = "https://github.com/RustCrypto/utils"
-categories = ["cryptography"]
 readme = "README.md"
+repository = "https://github.com/RustCrypto/utils"
+license = "MIT OR Apache-2.0"
+keywords = ["crypto", "digest", "wrappers"]
+categories = ["cryptography"]
+description = "std::io-compatibility wrappers for traits defined in the digest crate"
 
 [dependencies]
 digest = "0.11.0-rc.3"
