@@ -1,16 +1,16 @@
 [package]
 name = "block-padding"
-version = "0.4.0-rc.4"
-description = "Padding and unpadding of messages divided into blocks."
+version = "0.4.0"
 authors = ["RustCrypto Developers"]
-license = "MIT OR Apache-2.0"
 edition = "2024"
 rust-version = "1.85"
 documentation = "https://docs.rs/block-padding"
+readme = "README.md"
 repository = "https://github.com/RustCrypto/utils"
+license = "MIT OR Apache-2.0"
 keywords = ["padding", "pkcs7", "ansix923", "iso7816"]
 categories = ["cryptography", "no-std"]
-readme = "README.md"
+description = "Padding and unpadding of messages divided into blocks."
 
 [dependencies]
 hybrid-array = "0.4.3"

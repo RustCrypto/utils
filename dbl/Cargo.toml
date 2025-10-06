@@ -2,15 +2,18 @@
 name = "dbl"
 version = "0.5.0"
 authors = ["RustCrypto Developers"]
-license = "MIT OR Apache-2.0"
-documentation = "https://docs.rs/dbl"
-repository = "https://github.com/RustCrypto/utils"
-keywords = ["crypto", "dbl", "gf", "galois"]
 edition = "2024"
 rust-version = "1.85"
+documentation = "https://docs.rs/dbl"
 readme = "README.md"
-description = """Double operation in Galois Field `GF(2^128)` using the lexicographically first
-polynomial among the irreducible degree `n` polynomials having a minimum number of coefficients."""
+repository = "https://github.com/RustCrypto/utils"
+license = "MIT OR Apache-2.0"
+keywords = ["crypto", "dbl", "gf", "galois"]
+categories = ["cryptography", "no-std"]
+description = """
+Double operation in Galois Field `GF(2^128)` using the lexicographically first
+polynomial among the irreducible degree `n` polynomials having a minimum number of coefficients.
+"""
 
 [dependencies]
 hybrid-array = "0.4"

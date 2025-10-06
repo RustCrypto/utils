@@ -2,13 +2,13 @@
 name = "wycheproof2blb"
 version = "0.2.0-pre"
 authors = ["RustCrypto Developers"]
-license = "MIT OR Apache-2.0"
-description = "A utility for converting Wycheproof test vectors to the blobby format"
-repository = "https://github.com/RustCrypto/utils"
-keywords = ["test", "Wycheproof"]
-categories = ["cryptography", "no-std"]
 edition = "2024"
 rust-version = "1.85"
+repository = "https://github.com/RustCrypto/utils"
+license = "MIT OR Apache-2.0"
+keywords = ["test", "Wycheproof"]
+categories = ["cryptography", "no-std"]
+description = "A utility for converting Wycheproof test vectors to the blobby format"
 
 [dependencies]
 blobby = { version = "0.4.0-pre", path = "../blobby", features = ["alloc"] }
