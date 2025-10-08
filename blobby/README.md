@@ -11,7 +11,7 @@ An encoding and decoding library for the Blobby (`blb`) file format, which serve
 deduplicated storage format for a sequence of binary blobs.
 
 ## Examples
-```
+```rust
 // We recommend to save blobby data into separate files and
 // use the `include_bytes!` macro
 static BLOBBY_DATA: &[u8; 27] = b"\x08\x02\x05hello\x06world!\x01\x02 \x00\x03\x06:::\x03\x01\x00";
