@@ -11,7 +11,7 @@ This crate provides the `hex!` macro for converting a sequence of hexadecimal st
 The macro accepts the following characters in input string literals:
 
 - `'0'...'9'`, `'a'...'f'`, `'A'...'F'` — hex characters which will be used in construction of the output byte array
-- `' '`, `'\r'`, `'\n'`, `'\t'` — formatting characters which will be ignored
+- `' '`, `:`, `'\r'`, `'\n'`, `'\t'` — formatting characters which will be ignored
 
 # Examples
 ```rust
@@ -25,6 +25,9 @@ assert_eq!(DATA, [1, 2, 3, 4]);
 assert_eq!(hex!("a1 b2 c3 d4"), [0xA1, 0xB2, 0xC3, 0xD4]);
 assert_eq!(hex!("E5 E6 90 92"), [0xE5, 0xE6, 0x90, 0x92]);
 assert_eq!(hex!("0a0B 0C0d"), [10, 11, 12, 13]);
+
+// Colon-delimited literals
+assert_eq!(hex!("0A:0B:0C:0D"), [10, 11, 12, 13]);
 
 // Multi-line literals
 let bytes1 = hex!("
