@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 1.1.0 (2025-10-29)
 ### Added
-- Support for colon-delimited literals ([#1244])
+- Colon-delimited literals support ([#1244])
 
 [#1244]: https://github.com/RustCrypto/utils/pull/1244
 
