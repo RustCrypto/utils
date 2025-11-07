@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - `EagerBuffer::set_data` method. Use the `ReadBuffer` type instead. ([#823])
 
+[#823]: https://github.com/RustCrypto/utils/pull/823
 [#963]: https://github.com/RustCrypto/utils/pull/963
 [#1115]: https://github.com/RustCrypto/utils/pull/1115
 [#1115]: https://github.com/RustCrypto/utils/pull/1116
