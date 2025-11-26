@@ -1,6 +1,6 @@
 [package]
 name = "block-padding"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.85"
