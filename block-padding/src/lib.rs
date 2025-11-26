@@ -13,7 +13,7 @@ use core::fmt;
 use hybrid_array::{Array, ArraySize};
 
 /// Trait for message padding algorithms.
-pub trait Padding {
+pub trait Padding: 'static {
     /// Pads `block` filled with data up to `pos` (i.e the message length
     /// stored in `block` is equal to `pos`).
     ///
