@@ -125,6 +125,7 @@ impl Drop for ZeroizeNoDropEnum {
 
 #[test]
 #[cfg(feature = "alloc")]
+#[allow(unused_assignments)]
 fn derive_struct_skip() {
     #[derive(Zeroize, ZeroizeOnDrop)]
     struct Z {
@@ -155,6 +156,7 @@ fn derive_struct_skip() {
 
 #[test]
 #[cfg(feature = "alloc")]
+#[allow(unused_assignments)]
 fn derive_enum_skip() {
     #[derive(Zeroize, ZeroizeOnDrop)]
     enum Z {
@@ -330,6 +332,7 @@ fn derive_zeroize_on_drop_generic() {
 
 #[test]
 #[allow(dead_code)]
+#[allow(unused_assignments)]
 fn derive_zeroize_unused_param() {
     #[derive(Zeroize)]
     struct Z<T> {
@@ -341,7 +344,8 @@ fn derive_zeroize_unused_param() {
 
 #[test]
 #[allow(dead_code)]
-// Issue #878
+#[allow(unused_assignments)]
+// Issue https://github.com/RustCrypto/utils/issues/878
 fn derive_zeroize_with_marker() {
     #[derive(ZeroizeOnDrop, Zeroize)]
     struct Test<A: Marker> {
@@ -359,7 +363,7 @@ fn derive_zeroize_with_marker() {
 
 #[test]
 #[allow(dead_code)]
-// Issue #878
+// Issue https://github.com/RustCrypto/utils/issues/878
 fn derive_zeroize_used_param() {
     #[derive(Zeroize)]
     struct Z<T> {
