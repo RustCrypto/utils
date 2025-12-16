@@ -619,7 +619,11 @@ impl Zeroize for CString {
 
 /// `Zeroizing` is a wrapper for any `Z: Zeroize` type which implements a
 /// `Drop` handler which zeroizes dropped values.
+///
+/// Zeroizing<T> is defined with `repr(transparent)`, which means it is
+/// guaranteed to have the same physical representation as the underlying type.
 #[derive(Debug, Default, Eq, PartialEq)]
+#[repr(transparent)]
 pub struct Zeroizing<Z: Zeroize>(Z);
 
 impl<Z> Zeroizing<Z>
