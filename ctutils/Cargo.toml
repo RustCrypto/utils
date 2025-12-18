@@ -1,0 +1,20 @@
+[package]
+name = "ctutils"
+description = """
+Constant-time utility library with selection and equality testing support targeting cryptographic
+applications. Supports `const fn` where appropriate. Built on the `cmov` crate which provides
+architecture-specific predication intrinsics. Heavily inspired by the `subtle` crate.
+"""
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+homepage = "https://github.com/RustCrypto/utils/tree/master/ctselect"
+repository = "https://github.com/RustCrypto/utils"
+categories = ["cryptography", "no-std"]
+keywords = ["crypto", "intrinsics"]
+readme = "README.md"
+edition = "2024"
+rust-version = "1.87"
+
+[dependencies]
+cmov = "0.4"

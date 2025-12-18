@@ -1,0 +1,574 @@
+use crate::{Choice, CtEq, CtSelect};
+use core::ops::{Deref, DerefMut};
+
+/// Equivalent of [`Option`] but predicated on a [`Choice`] with combinators that allow for
+/// constant-time operations which always perform the same sequence of instructions regardless of
+/// the value of `is_some`.
+///
+/// Unlike [`Option`], [`CtOption`] always contains a value, and will use the contained value when
+/// e.g. evaluating the callbacks of combinator methods, which unlike `core` it does unconditionally
+/// in order to ensure constant-time operation. This approach stands in contrast to the lazy
+/// evaluation similar methods on [`Option`] provide.
+#[derive(Clone, Copy, Debug)]
+pub struct CtOption<T> {
+    value: T,
+    is_some: Choice,
+}
+
+impl<T> CtOption<T> {
+    /// Construct a new [`CtOption`], with a [`Choice`] parameter `is_some` as a stand-in for
+    /// `Some` or `None` enum variants of a typical [`Option`] type.
+    #[inline]
+    pub const fn new(value: T, is_some: Choice) -> CtOption<T> {
+        Self { value, is_some }
+    }
+
+    /// Convert from a `&mut CtOption<T>` to `CtOption<&mut T>`.
+    #[inline]
+    pub const fn as_mut(&mut self) -> CtOption<&mut T> {
+        CtOption {
+            value: &mut self.value,
+            is_some: self.is_some,
+        }
+    }
+
+    /// Convert from a `&CtOption<T>` to `CtOption<&T>`.
+    #[inline]
+    pub const fn as_ref(&self) -> CtOption<&T> {
+        CtOption {
+            value: &self.value,
+            is_some: self.is_some,
+        }
+    }
+
+    /// Convert from `CtOption<T>` (or `&CtOption<T>`) to `CtOption<&T::Target>`, for types which
+    /// impl the [`Deref`] trait.
+    pub fn as_deref(&self) -> CtOption<&T::Target>
+    where
+        T: Deref,
+    {
+        self.as_ref().map(Deref::deref)
+    }
+
+    /// Convert from `CtOption<T>` (or `&mut CtOption<T>`) to `CtOption<&mut T::Target>`, for types
+    /// which impl the [`DerefMut`] trait.
+    pub fn as_deref_mut(&mut self) -> CtOption<&mut T::Target>
+    where
+        T: DerefMut,
+    {
+        self.as_mut().map(DerefMut::deref_mut)
+    }
+
+    /// Return the contained value, consuming the `self` value.
+    ///
+    /// # Panics
+    ///
+    /// In the event `self.is_some()` is [`Choice::FALSE`], panics with a custom panic message
+    /// provided as the `msg` argument.
+    #[inline]
+    pub fn expect(self, msg: &str) -> T {
+        assert!(self.is_some().to_bool(), "{}", msg);
+        self.value
+    }
+
+    /// Convert the [`CtOption`] wrapper into an [`Option`], depending on whether
+    /// [`CtOption::is_some`] is a truthy or falsy [`Choice`].
+    ///
+    /// This function exists to avoid ending up with ugly, verbose and/or bad handled conversions
+    /// from the [`CtOption`] wraps to an [`Option`] or [`Result`].
+    ///
+    /// It's equivalent to the corresponding [`From`] impl, however this version is friendlier for
+    /// type inference.
+    ///
+    /// <div class="warning">
+    /// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
+    /// `T` value since the [`Option`] will do it anyway.
+    /// </div>
+    #[inline]
+    pub fn into_option(self) -> Option<T> {
+        if self.is_some.to_bool() {
+            Some(self.value)
+        } else {
+            None
+        }
+    }
+
+    /// Returns [`Choice::TRUE`] if the option is the equivalent of a `Some`.
+    #[inline]
+    #[must_use]
+    pub const fn is_some(&self) -> Choice {
+        self.is_some
+    }
+
+    /// Returns [`Choice::TRUE`] if the option is the equivalent of a `None`.
+    #[inline]
+    #[must_use]
+    pub const fn is_none(&self) -> Choice {
+        self.is_some.not()
+    }
+
+    /// Returns `optb` if `self.is_some()` is [`Choice::TRUE`], otherwise returns a [`CtOption`]
+    /// where `self.is_some()` is [`Choice::FALSE`].
+    #[inline]
+    pub fn and<U>(self, mut optb: CtOption<U>) -> CtOption<U> {
+        optb.is_some &= self.is_some;
+        optb
+    }
+
+    /// Calls the provided callback with the wrapped inner value, returning the resulting
+    /// [`CtOption`] value in the event that `self.is_some()` is [`Choice::TRUE`], or if not
+    /// returns a [`CtOption`] with `self.is_none()`.
+    ///
+    /// Unlike [`Option`], the provided callback `f` is unconditionally evaluated to ensure
+    /// constant-time operation. This requires evaluating the function with "dummy" value of `T`
+    /// (e.g. if the [`CtOption`] was constructed with a supplied placeholder value and
+    /// [`Choice::FALSE`], the placeholder value will be provided).
+    #[inline]
+    pub fn and_then<U, F>(self, f: F) -> CtOption<U>
+    where
+        F: FnOnce(T) -> CtOption<U>,
+    {
+        let mut ret = f(self.value);
+        ret.is_some &= self.is_some;
+        ret
+    }
+
+    /// Calls the provided callback with the wrapped inner value, which computes a [`Choice`],
+    /// and updates `self.is_some()`.
+    ///
+    /// It updates it to be [`Choice::FALSE`] in the event the returned choice is also false.
+    /// If it was [`Choice::FALSE`] to begin with, it will unconditionally remain that way.
+    #[inline]
+    pub fn filter<P>(mut self, predicate: P) -> Self
+    where
+        P: FnOnce(&T) -> Choice,
+    {
+        self.is_some &= predicate(&self.value);
+        self
+    }
+
+    /// Maps a `CtOption<T>` to a `CtOption<U>` by unconditionally applying a function to the
+    /// contained `value`, but returning a new option value which inherits `self.is_some()`.
+    #[inline]
+    pub fn map<U, F>(self, f: F) -> CtOption<U>
+    where
+        F: FnOnce(T) -> U,
+    {
+        CtOption::new(f(self.value), self.is_some)
+    }
+
+    /// Maps a `CtOption<T>` to a `U` value, eagerly evaluating the provided function, and returning
+    /// the supplied `default` in the event `self.is_some()` is [`Choice::FALSE`].
+    #[inline]
+    #[must_use = "if you don't need the returned value, use `if let` instead"]
+    pub fn map_or<U, F>(self, default: U, f: F) -> U
+    where
+        U: CtSelect,
+        F: FnOnce(T) -> U,
+    {
+        self.map(f).unwrap_or(default)
+    }
+
+    /// Maps a `CtOption<T>` to a `U` value, eagerly evaluating the provided function, precomputing
+    /// `U::default()` using the [`Default`] trait, and returning it in the event `self.is_some()`
+    /// is [`Choice::FALSE`].
+    #[inline]
+    pub fn map_or_default<U, F>(self, f: F) -> U
+    where
+        U: CtSelect + Default,
+        F: FnOnce(T) -> U,
+    {
+        self.map_or(U::default(), f)
+    }
+
+    /// Transforms a `CtOption<T>` into a `Result<T, E>`, mapping to `Ok(T)` if `self.is_some()` is
+    /// [`Choice::TRUE`], or mapping to the provided `err` in the event `self.is_some()` is
+    /// [`Choice::FALSE`].
+    ///
+    /// <div class="warning">
+    /// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
+    /// `T` value since the [`Option`] will do it anyway.
+    /// </div>
+    #[inline]
+    pub fn ok_or<E>(self, err: E) -> Result<T, E> {
+        self.into_option().ok_or(err)
+    }
+
+    /// Transforms a `CtOption<T>` into a `Result<T, E>` by unconditionally calling the provided
+    /// callback value and using its result in the event `self.is_some()` is [`Choice::FALSE`].
+    #[inline]
+    pub fn ok_or_else<E, F>(self, err: F) -> Result<T, E>
+    where
+        F: FnOnce() -> E,
+    {
+        self.ok_or(err())
+    }
+
+    /// Returns `self` if `self.is_some()` is [`Choice::TRUE`], otherwise returns `optb`.
+    #[inline]
+    pub fn or(self, optb: CtOption<T>) -> CtOption<T>
+    where
+        T: CtSelect,
+    {
+        CtOption {
+            value: self.value.ct_select(&optb.value, self.is_none()),
+            is_some: self.is_some | optb.is_some,
+        }
+    }
+
+    /// Return the contained value, consuming the `self` value.
+    ///
+    /// Use of this function is discouraged due to panic potential. Instead, prefer non-panicking
+    /// alternatives such as `unwrap_or` or `unwrap_or_default` which operate in constant-time.
+    ///
+    /// As the final step of a sequence of constant-time operations, or in the event you are dealing
+    /// with a [`CtOption`] in a non-secret context where constant-time does not matter, you can
+    /// also convert to [`Option`] using `into_option` or the [`From`] impl on [`Option`]. Note
+    /// this introduces a branch and with it a small amount of timing variability. If possible try
+    /// to avoid this branch when writing constant-time code (e.g. use implicit rejection instead
+    /// of `Option`/`Result` to handle errors)
+    ///
+    /// # Panics
+    ///
+    /// In the event `self.is_some()` is [`Choice::FALSE`].
+    #[inline]
+    pub fn unwrap(self) -> T {
+        assert!(
+            self.is_some.to_bool(),
+            "called `CtOption::unwrap()` on a value with `is_some` set to `Choice::FALSE`"
+        );
+        self.value
+    }
+
+    /// Return the contained value in the event `self.is_some()` is [`Choice::TRUE`], or if not,
+    /// uses a provided default.
+    #[inline]
+    pub fn unwrap_or(self, default: T) -> T
+    where
+        T: CtSelect,
+    {
+        default.ct_select(&self.value, self.is_some)
+    }
+
+    /// Unconditionally computes `T::default()` using the [`Default`] trait, then returns either
+    /// the contained value if `self.is_some()` is [`Choice::TRUE`], or if it's [`Choice::FALSE`]
+    /// returns the previously computed default.
+    #[inline]
+    pub fn unwrap_or_default(self) -> T
+    where
+        T: CtSelect + Default,
+    {
+        self.unwrap_or(T::default())
+    }
+
+    /// Returns an "is some" [`CtOption`] with the contained value from either `self` or `optb` in
+    /// the event exactly one of them has `self.is_some()` set to [`Choice::TRUE`], or else returns
+    /// a [`CtOption`] with `self.is_some()` set to [`Choice::FALSE`].
+    #[inline]
+    pub fn xor(self, optb: CtOption<T>) -> CtOption<T>
+    where
+        T: CtSelect,
+    {
+        CtOption {
+            value: self.value.ct_select(&optb.value, self.is_none()),
+            is_some: self.is_some ^ optb.is_some,
+        }
+    }
+
+    /// Zips `self` with another [`CtOption`].
+    ///
+    /// If `self.is_some() && other.is_some()`, this method returns a new [`CtOption`] for a 2-tuple
+    /// of their contents where `is_some()` is [`Choice::TRUE`].
+    ///
+    /// Otherwise, a [`CtOption`] where `is_some()` is [`Choice::FALSE`] is returned.
+    pub fn zip<U>(self, other: CtOption<U>) -> CtOption<(T, U)> {
+        CtOption {
+            value: (self.value, other.value),
+            is_some: self.is_some & other.is_some,
+        }
+    }
+
+    /// Zips `self` and another `CtOption` with function `f`.
+    ///
+    /// If `self.is_some() && other.is_some()`, this method returns a new [`CtOption`] for
+    /// the result of `f` applied to their inner values where `is_some()` is [`Choice::TRUE`].
+    ///
+    /// Otherwise, a [`CtOption`] where `is_some()` is [`Choice::FALSE`] is returned.
+    pub fn zip_with<U, F, R>(self, other: CtOption<U>, f: F) -> CtOption<R>
+    where
+        F: FnOnce(T, U) -> R,
+    {
+        self.zip(other).map(|(a, b)| f(a, b))
+    }
+}
+
+impl<T> CtOption<&T> {
+    /// Maps a `CtOption<&T>` to `CtOption<T>` by copying the contents of the option.
+    #[must_use = "`self` will be dropped if the result is not used"]
+    pub const fn copied(self) -> CtOption<T>
+    where
+        T: Copy,
+    {
+        CtOption {
+            value: *self.value,
+            is_some: self.is_some,
+        }
+    }
+
+    /// Maps a `CtOption<&T>` to `CtOption<T>` by cloning the contents of the option.
+    #[must_use = "`self` will be dropped if the result is not used"]
+    pub fn cloned(self) -> CtOption<T>
+    where
+        T: Clone,
+    {
+        CtOption {
+            value: self.value.clone(),
+            is_some: self.is_some,
+        }
+    }
+}
+
+impl<T> CtOption<&mut T> {
+    /// Maps a `CtOption<&mut T>` to `CtOption<T>` by copying the contents of the option.
+    #[must_use = "`self` will be dropped if the result is not used"]
+    pub const fn copied(self) -> CtOption<T>
+    where
+        T: Copy,
+    {
+        CtOption {
+            value: *self.value,
+            is_some: self.is_some,
+        }
+    }
+
+    /// Maps a `CtOption<&mut T>` to `CtOption<T>` by cloning the contents of the option.
+    #[must_use = "`self` will be dropped if the result is not used"]
+    pub fn cloned(self) -> CtOption<T>
+    where
+        T: Clone,
+    {
+        CtOption {
+            value: self.value.clone(),
+            is_some: self.is_some,
+        }
+    }
+}
+
+impl<T: CtEq> CtEq for CtOption<T> {
+    #[inline]
+    fn ct_eq(&self, other: &CtOption<T>) -> Choice {
+        (self.is_some & other.is_some & self.value.ct_eq(&other.value))
+            | (self.is_none() & other.is_none())
+    }
+}
+
+impl<T: CtSelect> CtSelect for CtOption<T> {
+    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        let value = self.value.ct_select(&other.value, choice);
+        let is_some = self.is_some.ct_select(&other.is_some, choice);
+        CtOption::new(value, is_some)
+    }
+}
+
+/// Convert the [`CtOption`] wrapper into an [`Option`], depending on whether
+/// [`CtOption::is_some`] is a truthy or falsy [`Choice`].
+///
+/// <div class="warning">
+///
+/// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
+/// `T` value since the `Option` will do it anyway.
+///
+/// </div>
+impl<T> From<CtOption<T>> for Option<T> {
+    fn from(src: CtOption<T>) -> Option<T> {
+        src.into_option()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Choice, CtEq, CtOption, CtSelect};
+
+    /// Example wrapped value for testing
+    const VALUE: u8 = 42;
+
+    /// Example option which is like `Option::Some`
+    const SOME: CtOption<u8> = CtOption::new(VALUE, Choice::TRUE);
+
+    /// Example option which is like `Option::None`
+    const NONE: CtOption<u8> = CtOption::new(VALUE, Choice::FALSE);
+
+    /// Another option containing a different value
+    const OTHER: CtOption<u8> = CtOption::new(VALUE + 1, Choice::TRUE);
+
+    /// Dummy error type
+    #[derive(Debug, Eq, PartialEq)]
+    struct Error;
+
+    #[test]
+    fn ct_eq() {
+        assert!(NONE.ct_eq(&NONE).to_bool());
+        assert!(NONE.ct_ne(&SOME).to_bool());
+        assert!(SOME.ct_ne(&NONE).to_bool());
+        assert!(SOME.ct_eq(&SOME).to_bool());
+        assert!(SOME.ct_ne(&OTHER).to_bool());
+    }
+
+    #[test]
+    fn ct_select() {
+        assert!(NONE.ct_select(&SOME, Choice::FALSE).is_none().to_bool());
+        assert!(NONE.ct_select(&SOME, Choice::TRUE).ct_eq(&SOME).to_bool());
+        assert!(SOME.ct_select(&NONE, Choice::FALSE).ct_eq(&SOME).to_bool());
+        assert!(SOME.ct_select(&NONE, Choice::TRUE).is_none().to_bool());
+    }
+
+    #[test]
+    fn expect_some() {
+        assert_eq!(SOME.expect("should succeed"), VALUE);
+    }
+
+    #[test]
+    #[should_panic]
+    fn expect_none() {
+        NONE.expect("should panic");
+    }
+
+    #[test]
+    fn into_option() {
+        assert_eq!(SOME.into_option(), Some(VALUE));
+        assert_eq!(NONE.into_option(), None)
+    }
+
+    #[test]
+    fn is_some() {
+        assert!(SOME.is_some().to_bool());
+        assert!(!NONE.is_some().to_bool());
+    }
+
+    #[test]
+    fn is_none() {
+        assert!(!SOME.is_none().to_bool());
+        assert!(NONE.is_none().to_bool());
+    }
+
+    #[test]
+    fn and() {
+        assert!(SOME.and(NONE).is_none().to_bool());
+        assert_eq!(SOME.and(OTHER).unwrap(), OTHER.unwrap());
+    }
+
+    #[test]
+    fn and_then() {
+        assert!(NONE.and_then(|_| NONE).is_none().to_bool());
+        assert!(NONE.and_then(|_| SOME).is_none().to_bool());
+
+        let ret = SOME.and_then(|value| {
+            assert_eq!(VALUE, value);
+            OTHER
+        });
+        assert!(ret.ct_eq(&OTHER).to_bool());
+    }
+
+    #[test]
+    fn filter() {
+        assert!(NONE.filter(|_| Choice::TRUE).ct_eq(&NONE).to_bool());
+        assert!(NONE.filter(|_| Choice::FALSE).ct_eq(&NONE).to_bool());
+        assert!(SOME.filter(|_| Choice::FALSE).ct_eq(&NONE).to_bool());
+
+        let ret = SOME.filter(|&value| {
+            assert_eq!(VALUE, value);
+            Choice::TRUE
+        });
+        assert_eq!(ret.unwrap(), VALUE);
+    }
+
+    #[test]
+    fn map() {
+        assert!(NONE.map(|value| value + 1).ct_eq(&NONE).to_bool());
+        assert!(SOME.map(|value| value + 1).ct_eq(&OTHER).to_bool());
+    }
+
+    #[test]
+    fn map_or() {
+        let example = 52;
+        assert_eq!(NONE.map_or(example, |value| value + 1), example);
+        assert_eq!(SOME.map_or(example, |value| value + 1), VALUE + 1);
+    }
+
+    #[test]
+    fn map_or_default() {
+        assert_eq!(NONE.map_or_default(|value| value + 1), Default::default());
+        assert_eq!(SOME.map_or_default(|value| value + 1), VALUE + 1);
+    }
+
+    #[test]
+    fn ok_or() {
+        assert_eq!(NONE.ok_or(Error), Err(Error));
+        assert_eq!(SOME.ok_or(Error), Ok(VALUE));
+    }
+
+    #[test]
+    fn ok_or_else() {
+        assert_eq!(NONE.ok_or_else(|| Error), Err(Error));
+        assert_eq!(SOME.ok_or_else(|| Error), Ok(VALUE));
+    }
+
+    #[test]
+    fn or() {
+        assert!(NONE.or(NONE).is_none().to_bool());
+        assert!(SOME.or(NONE).ct_eq(&SOME).to_bool());
+        assert!(NONE.or(SOME).ct_eq(&SOME).to_bool());
+        assert!(SOME.or(OTHER).ct_eq(&SOME).to_bool());
+    }
+
+    #[test]
+    fn unwrap_some() {
+        assert_eq!(SOME.unwrap(), VALUE);
+    }
+
+    #[test]
+    #[should_panic]
+    fn unwrap_none() {
+        NONE.unwrap();
+    }
+
+    #[test]
+    fn unwrap_or() {
+        let example = 52;
+        assert_eq!(NONE.unwrap_or(example), example);
+        assert_eq!(SOME.unwrap_or(example), VALUE);
+    }
+
+    #[test]
+    fn unwrap_or_default() {
+        assert_eq!(NONE.unwrap_or_default(), Default::default());
+        assert_eq!(SOME.unwrap_or_default(), VALUE);
+    }
+
+    #[test]
+    fn xor() {
+        assert!(NONE.xor(NONE).is_none().to_bool());
+        assert!(SOME.xor(NONE).ct_eq(&SOME).to_bool());
+        assert!(NONE.xor(SOME).ct_eq(&SOME).to_bool());
+        assert!(SOME.xor(OTHER).is_none().to_bool());
+    }
+
+    #[test]
+    fn zip() {
+        assert!(NONE.zip(NONE).is_none().to_bool());
+        assert!(NONE.zip(SOME).is_none().to_bool());
+        assert!(SOME.zip(NONE).is_none().to_bool());
+        assert_eq!(SOME.zip(OTHER).unwrap(), (SOME.unwrap(), OTHER.unwrap()));
+    }
+
+    #[test]
+    fn zip_with() {
+        assert!(NONE.zip_with(NONE, |a, b| a + b).is_none().to_bool());
+        assert!(NONE.zip_with(SOME, |a, b| a + b).is_none().to_bool());
+        assert!(SOME.zip_with(NONE, |a, b| a + b).is_none().to_bool());
+        assert_eq!(
+            SOME.zip_with(OTHER, |a, b| a + b).unwrap(),
+            SOME.unwrap() + OTHER.unwrap()
+        );
+    }
+}
