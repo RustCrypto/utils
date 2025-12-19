@@ -259,7 +259,6 @@ use core::{
     },
     ops, ptr,
     slice::IterMut,
-    sync::atomic,
 };
 
 #[cfg(feature = "alloc")]
@@ -300,7 +299,7 @@ where
 {
     fn zeroize(&mut self) {
         volatile_write(self, Z::default());
-        atomic_fence();
+        optimization_barrier(self);
     }
 }
 
@@ -334,7 +333,7 @@ macro_rules! impl_zeroize_for_non_zero {
                         None => unreachable!(),
                     };
                     volatile_write(self, ONE);
-                    atomic_fence();
+                    optimization_barrier(self);
                 }
             }
         )+
@@ -425,7 +424,7 @@ where
         // done so by take().
         unsafe { ptr::write_volatile(self, None) }
 
-        atomic_fence();
+        optimization_barrier(self);
     }
 }
 
@@ -441,7 +440,7 @@ impl<Z> Zeroize for MaybeUninit<Z> {
         // Safety:
         // `MaybeUninit` is valid for any byte pattern, including zeros.
         unsafe { ptr::write_volatile(self, MaybeUninit::zeroed()) }
-        atomic_fence();
+        optimization_barrier(self);
     }
 }
 
@@ -467,7 +466,7 @@ impl<Z> Zeroize for [MaybeUninit<Z>] {
         // and 0 is a valid value for `MaybeUninit<Z>`
         // The memory of the slice should not wrap around the address space.
         unsafe { volatile_set(ptr, MaybeUninit::zeroed(), size) }
-        atomic_fence();
+        optimization_barrier(self);
     }
 }
 
@@ -493,7 +492,7 @@ where
         // `self.len()` is also not larger than an `isize`, because of the assertion above.
         // The memory of the slice should not wrap around the address space.
         unsafe { volatile_set(self.as_mut_ptr(), Z::default(), self.len()) };
-        atomic_fence();
+        optimization_barrier(self);
     }
 }
 
@@ -749,14 +748,6 @@ where
     }
 }
 
-/// Use fences to prevent accesses from being reordered before this
-/// point, which should hopefully help ensure that all accessors
-/// see zeroes after this point.
-#[inline(always)]
-fn atomic_fence() {
-    atomic::compiler_fence(atomic::Ordering::SeqCst);
-}
-
 /// Perform a volatile write to the destination
 #[inline(always)]
 fn volatile_write<T: Copy + Sized>(dst: &mut T, src: T) {
@@ -847,7 +838,84 @@ pub unsafe fn zeroize_flat_type<F: Sized>(data: *mut F) {
     unsafe {
         volatile_set(data as *mut u8, 0, size);
     }
-    atomic_fence()
+    optimization_barrier(&data);
+}
+
+/// Observe the referenced data and prevent the compiler from removing previous writes to it.
+///
+/// This function acts like [`core::hint::black_box`] but takes a reference and
+/// does not return the passed value.
+///
+/// It's implemented using the [`core::arch::asm!`] macro on target arches where `asm!` is stable,
+/// i.e. `aarch64`, `arm`, `arm64ec`, `loongarch64`, `riscv32`, `riscv64`, `s390x`, `x86`, and
+/// `x86_64`. On all other targets it's implemented using [`core::hint::black_box`].
+///
+/// # Examples
+/// ```ignore
+/// use core::num::NonZeroU32;
+/// use zeroize::{ZeroizeOnDrop, zeroize_flat_type};
+///
+/// struct DataToZeroize {
+///     buf: [u8; 32],
+///     pos: NonZeroU32,
+/// }
+///
+/// struct SomeMoreFlatData(u64);
+///
+/// impl Drop for DataToZeroize {
+///     fn drop(&mut self) {
+///         self.buf = [0u8; 32];
+///         self.pos = NonZeroU32::new(32).unwrap();
+///         zeroize::optimization_barrier(self);
+///     }
+/// }
+///
+/// impl zeroize::ZeroizeOnDrop for DataToZeroize {}
+///
+/// let mut data = DataToZeroize {
+///     buf: [3u8; 32],
+///     pos: NonZeroU32::new(32).unwrap(),
+/// };
+///
+/// // data gets zeroized when dropped
+/// ```
+fn optimization_barrier<R: ?Sized>(val: &R) {
+    #[cfg(all(
+        not(miri),
+        any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "arm64ec",
+            target_arch = "loongarch64",
+            target_arch = "riscv32",
+            target_arch = "riscv64",
+            target_arch = "s390x",
+            target_arch = "x86",
+            target_arch = "x86_64",
+        )
+    ))]
+    unsafe {
+        core::arch::asm!(
+            "# {}",
+            in(reg) val as *const R as *const (),
+            options(readonly, preserves_flags, nostack),
+        );
+    }
+    #[cfg(not(all(
+        not(miri),
+        any(
+            target_arch = "aarch64",
+            target_arch = "arm",
+            target_arch = "arm64ec",
+            target_arch = "loongarch64",
+            target_arch = "riscv32",
+            target_arch = "riscv64",
+            target_arch = "s390x",
+            target_arch = "x86",
+            target_arch = "x86_64",
+        )
+    )))]
+    core::hint::black_box(val);
 }
 
 /// Internal module used as support for `AssertZeroizeOnDrop`.
