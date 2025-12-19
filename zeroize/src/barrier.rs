@@ -5,7 +5,10 @@
 ///
 /// It's implemented using the [`core::arch::asm!`] macro on target arches where `asm!` is stable,
 /// i.e. `aarch64`, `arm`, `arm64ec`, `loongarch64`, `riscv32`, `riscv64`, `s390x`, `x86`, and
-/// `x86_64`. On all other targets it's implemented using [`core::hint::black_box`].
+/// `x86_64`.
+///
+/// On all other targets it's implemented using [`core::hint::black_box`] and custom `black_box`
+/// implemented using `#[inline(never)]` and `read_volatile`.
 ///
 /// # Examples
 /// ```ignore
@@ -73,12 +76,13 @@ pub fn optimization_barrier<T: ?Sized>(val: &T) {
         )
     )))]
     {
-        /// Custom version of `core::hint::black_box` implemented using `#[inline(never)]`
-        /// and `read_volatile`.
+        /// Custom version of `core::hint::black_box` implemented using
+        /// `#[inline(never)]` and `read_volatile`.
         #[inline(never)]
         fn custom_black_box(p: *const u8) {
             let _ = unsafe { core::ptr::read_volatile(p) };
         }
+
         core::hint::black_box(val);
         if size_of_val(val) > 0 {
             custom_black_box(val as *const T as *const u8);
