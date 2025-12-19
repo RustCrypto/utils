@@ -36,7 +36,7 @@
 ///
 /// // data gets zeroized when dropped
 /// ```
-pub fn optimization_barrier<R: ?Sized>(val: &R) {
+pub fn optimization_barrier<T: ?Sized>(val: &T) {
     #[cfg(all(
         not(miri),
         any(
@@ -54,7 +54,7 @@ pub fn optimization_barrier<R: ?Sized>(val: &R) {
     unsafe {
         core::arch::asm!(
             "# {}",
-            in(reg) val as *const R as *const (),
+            in(reg) val as *const T as *const (),
             options(readonly, preserves_flags, nostack),
         );
     }
@@ -72,5 +72,16 @@ pub fn optimization_barrier<R: ?Sized>(val: &R) {
             target_arch = "x86_64",
         )
     )))]
-    core::hint::black_box(val);
+    {
+        /// Custom version of `core::hint::black_box` implemented using `#[inline(never)]`
+        /// and `read_volatile`.
+        #[inline(never)]
+        fn custom_black_box(p: *const u8) {
+            let _ = unsafe { core::ptr::read_volatile(p) };
+        }
+        core::hint::black_box(val);
+        if size_of_val(val) > 0 {
+            custom_black_box(val as *const T as *const u8);
+        }
+    }
 }
