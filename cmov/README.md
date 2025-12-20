@@ -83,7 +83,7 @@ dual licensed as above, without any additional terms or conditions.
 [build-image]: https://github.com/RustCrypto/utils/actions/workflows/cmov.yml/badge.svg?branch=master
 [build-link]: https://github.com/RustCrypto/utils/actions/workflows/cmov.yml?query=branch:master
 
-[//]: # (general links)
+[//]: # (links)
 
 [RustCrypto]: https://github.com/RustCrypto
 [CMOV family]: https://www.jaist.ac.jp/iscenter-new/mpc/altix/altixdata/opt/intel/vtune/doc/users_guide/mergedProjects/analyzer_ec/mergedProjects/reference_olh/mergedProjects/instructions/instruct32_hh/vc35.htm
