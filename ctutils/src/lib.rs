@@ -63,6 +63,17 @@
 //! *NOTE: for `subtle` users, this is the equivalent of the `ConditionallySelectable` trait*
 //!
 //! [predication]: https://en.wikipedia.org/wiki/Predication_(computer_architecture)
+//!
+//! # [`subtle`] interop
+//!
+//! When the `subtle` feature of this crate is enabled, bidirectional [`From`] impls are available
+//! for the following types:
+//!
+//! - [`Choice`] <=> [`subtle::Choice`]
+//! - [`CtOption`] <=> [`subtle::CtOption`]
+//!
+//! This makes it possible to use `ctutils` in a codebase where other dependencies are using
+//! `subtle`.
 
 mod choice;
 mod ct_option;

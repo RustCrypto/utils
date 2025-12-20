@@ -1,7 +1,7 @@
 use crate::Choice;
 use core::cmp;
 
-/// Constant time greater than operation.
+/// Constant time greater than.
 pub trait CtGt {
     /// Compute whether `self > other` in constant time.
     fn ct_gt(&self, other: &Self) -> Choice;

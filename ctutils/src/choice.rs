@@ -13,10 +13,10 @@ use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, 
 pub struct Choice(u8);
 
 impl Choice {
-    /// The falsy value.
+    /// Equivalent of [`false`].
     pub const FALSE: Self = Self(0);
 
-    /// The truthy value.
+    /// Equivalent of [`true`].
     pub const TRUE: Self = Self(1);
 
     /// Create a new [`Choice`] from the given `u8` value, which should be either `0` or `1`.
