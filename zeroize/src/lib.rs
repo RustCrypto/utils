@@ -251,7 +251,7 @@ mod aarch64;
 mod x86;
 
 mod barrier;
-use barrier::optimization_barrier;
+pub use barrier::optimization_barrier;
 
 use core::{
     marker::{PhantomData, PhantomPinned},
