@@ -8,7 +8,7 @@
 
 Constant-time utility library with selection and equality testing support targeting cryptographic
 applications. Supports `const fn` where appropriate. Built on the [`cmov`] crate which provides
-architecture-specific predication intrinsics. Heavily inspired by the `subtle` crate.
+architecture-specific predication intrinsics. Heavily inspired by the [`subtle`] crate.
 
 ## About
 
@@ -65,3 +65,4 @@ dual licensed as above, without any additional terms or conditions.
 
 [RustCrypto]: https://github.com/RustCrypto
 [`cmov`]: https://docs.rs/cmov
+[`subtle`]: https://docs.rs/subtle
