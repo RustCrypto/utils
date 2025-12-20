@@ -62,13 +62,44 @@ impl<T> CtOption<T> {
     /// Return the contained value, consuming the `self` value.
     ///
     /// # Panics
-    ///
     /// In the event `self.is_some()` is [`Choice::FALSE`], panics with a custom panic message
     /// provided as the `msg` argument.
     #[inline]
+    #[track_caller]
     pub fn expect(self, msg: &str) -> T {
         assert!(self.is_some().to_bool(), "{}", msg);
         self.value
+    }
+
+    /// Return a copy of the contained value without consuming `self`.
+    ///
+    /// # Panics
+    /// In the event `self.is_some()` is [`Choice::FALSE`], panics with a custom panic message
+    /// provided as the `msg` argument.
+    // TODO(tarcieri): get rid of this when we can make `expect` a `const fn`
+    // (needs `const_precise_live_drops`)
+    #[inline]
+    #[track_caller]
+    pub const fn expect_copied(&self, msg: &str) -> T
+    where
+        T: Copy,
+    {
+        *self.expect_ref(msg)
+    }
+
+    /// Borrow the contained value.
+    ///
+    /// # Panics
+    /// In the event `self.is_some()` is [`Choice::FALSE`], panics with a custom panic message
+    /// provided as the `msg` argument.
+    // TODO(tarcieri): get rid of this when we can make `expect` a `const fn`
+    // (needs `const_precise_live_drops`)
+    #[inline]
+    #[track_caller]
+    pub const fn expect_ref(&self, msg: &str) -> &T {
+        // TODO(tarcieri): use `self.is_some().to_bool()` when MSRV is 1.86
+        assert!(self.is_some.to_bool_vartime(), "{}", msg);
+        &self.value
     }
 
     /// Convert the [`CtOption`] wrapper into an [`Option`], depending on whether
@@ -229,7 +260,6 @@ impl<T> CtOption<T> {
     /// of `Option`/`Result` to handle errors)
     ///
     /// # Panics
-    ///
     /// In the event `self.is_some()` is [`Choice::FALSE`].
     #[inline]
     pub fn unwrap(self) -> T {
