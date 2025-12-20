@@ -39,7 +39,7 @@
 ///
 /// // data gets zeroized when dropped
 /// ```
-pub fn optimization_barrier<T: ?Sized>(val: &T) {
+pub(crate) fn optimization_barrier<T: ?Sized>(val: &T) {
     #[cfg(all(
         not(miri),
         any(
