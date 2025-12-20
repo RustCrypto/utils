@@ -385,6 +385,31 @@ impl<T> From<CtOption<T>> for Option<T> {
     }
 }
 
+/// NOTE: in order to be able to unwrap the `subtle::CtOption` we rely on a `Default` bound in
+/// order to have a placeholder value, and `ConditionallySelectable` to be able to use `unwrap_or`.
+#[cfg(feature = "subtle")]
+impl<T> From<subtle::CtOption<T>> for CtOption<T>
+where
+    T: subtle::ConditionallySelectable + Default,
+{
+    #[inline]
+    fn from(src: subtle::CtOption<T>) -> CtOption<T> {
+        let is_some = src.is_some();
+        CtOption {
+            value: src.unwrap_or(Default::default()),
+            is_some: is_some.into(),
+        }
+    }
+}
+
+#[cfg(feature = "subtle")]
+impl<T> From<CtOption<T>> for subtle::CtOption<T> {
+    #[inline]
+    fn from(src: CtOption<T>) -> subtle::CtOption<T> {
+        subtle::CtOption::new(src.value, src.is_some.into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{Choice, CtEq, CtOption, CtSelect};
