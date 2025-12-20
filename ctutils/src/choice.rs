@@ -45,12 +45,14 @@ impl Choice {
     /// the small amount of timing variability it introduces can potentially be exploited. Whenever
     /// possible, prefer fully constant-time approaches instead.
     /// </div>
-    pub const fn to_bool(self) -> bool {
+    // TODO(tarcieri): `const fn` when MSRV 1.86
+    pub fn to_bool(self) -> bool {
         self.to_u8() != 0
     }
 
     /// Convert [`Choice`] to a `u8`, attempting to apply a "best effort" optimization barrier.
-    pub const fn to_u8(self) -> u8 {
+    // TODO(tarcieri): `const fn` when MSRV 1.86
+    pub fn to_u8(self) -> u8 {
         // `black_box` is documented as working on a "best effort" basis. That's fine, this type is
         // likewise documented as only working on a "best effort" basis itself. The only way we
         // rely on `black_box` for correctness is it behaving as the identity function.

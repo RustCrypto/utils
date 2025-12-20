@@ -38,12 +38,12 @@ macro_rules! impl_unsigned_ct_eq_with_cmov {
 // Impl `CtEq` by first casting to unsigned then using the unsigned `CtEq` impls
 // TODO(tarcieri): add signed integer support to `cmov`
 macro_rules! impl_signed_ct_eq_with_cmov {
-    ( $($int:ty),+ ) => {
+    ( $($int:ty => $uint:ty),+ ) => {
         $(
             impl CtEq for $int {
                 #[inline]
                 fn ct_eq(&self, other: &Self) -> Choice {
-                    self.cast_unsigned().ct_eq(&other.cast_unsigned())
+                    (*self as $uint).ct_eq(&(*other as $uint))
                 }
             }
         )+
@@ -51,7 +51,7 @@ macro_rules! impl_signed_ct_eq_with_cmov {
 }
 
 impl_unsigned_ct_eq_with_cmov!(u8, u16, u32, u64, u128);
-impl_signed_ct_eq_with_cmov!(i8, i16, i32, i64, i128);
+impl_signed_ct_eq_with_cmov!(i8 => u8, i16 => u16, i32 => u32, i64 => u64, i128 => u128);
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl CtEq for usize {
