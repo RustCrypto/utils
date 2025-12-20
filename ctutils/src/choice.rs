@@ -198,8 +198,8 @@ mod tests {
 
     #[test]
     fn to_bool() {
-        assert_eq!(Choice::new(0).to_bool(), false);
-        assert_eq!(Choice::new(1).to_bool(), true);
+        assert!(!Choice::new(0).to_bool());
+        assert!(Choice::new(1).to_bool());
     }
 
     #[test]
