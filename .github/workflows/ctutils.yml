@@ -64,6 +64,8 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - run: cargo test
+      - run: cargo test --all-features
+      - run: cargo test --all-features --release
 
   # Test using `cargo careful`
   test-careful:

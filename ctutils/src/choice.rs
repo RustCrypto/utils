@@ -159,6 +159,22 @@ impl From<Choice> for bool {
     }
 }
 
+#[cfg(feature = "subtle")]
+impl From<subtle::Choice> for Choice {
+    #[inline]
+    fn from(choice: subtle::Choice) -> Choice {
+        Choice(choice.unwrap_u8())
+    }
+}
+
+#[cfg(feature = "subtle")]
+impl From<Choice> for subtle::Choice {
+    #[inline]
+    fn from(choice: Choice) -> subtle::Choice {
+        subtle::Choice::from(choice.0)
+    }
+}
+
 impl Not for Choice {
     type Output = Choice;
 
