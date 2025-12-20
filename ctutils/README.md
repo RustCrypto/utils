@@ -57,7 +57,7 @@ dual licensed as above, without any additional terms or conditions.
 [docs-image]: https://docs.rs/ctutils/badge.svg
 [docs-link]: https://docs.rs/ctutils/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
-[msrv-image]: https://img.shields.io/badge/rustc-1.87+-blue.svg
+[msrv-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
 [build-image]: https://github.com/RustCrypto/utils/actions/workflows/ctutils.yml/badge.svg?branch=master
 [build-link]: https://github.com/RustCrypto/utils/actions/workflows/ctutils.yml?query=branch:master
 
