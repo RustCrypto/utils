@@ -25,7 +25,7 @@ jobs:
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.85.0 # Pinned to prevent breakages
+          toolchain: 1.92.0 # Pinned to prevent breakages
           components: clippy
       - run: cargo clippy --all --all-features --exclude aarch64-dit -- -D warnings
 
