@@ -55,6 +55,9 @@
 //! - Secure enclave transitions
 //! - Sanitizing temporary buffers in high-assurance systems
 
+#[cfg(feature = "heap")]
+mod heap;
+
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 extern crate alloc;

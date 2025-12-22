@@ -20,7 +20,9 @@ psm = "0.1.26"
 zeroize = { version = "1.0" }
 
 [features]
-default = ["std"]
+default = ["heap", "stack", "std"]
+heap = []
+stack = []
 std = []
 
 [package.metadata.docs.rs]
