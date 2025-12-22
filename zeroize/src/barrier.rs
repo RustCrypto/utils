@@ -11,12 +11,18 @@
 /// implemented using `#[inline(never)]` and `read_volatile`.
 ///
 /// # Examples
-/// ```ignore
+/// ```
 /// use core::num::NonZeroU32;
 /// use zeroize::{ZeroizeOnDrop, zeroize_flat_type};
 ///
+/// # type ThirdPartyType = u32;
+///
 /// struct DataToZeroize {
 ///     buf: [u8; 32],
+///     // `ThirdPartyType` can be a type with private fields
+///     // defined in a third-party crate and which does not implement
+///     // `Zeroize` or zeroization on drop.
+///     data: ThirdPartyType,
 ///     pos: NonZeroU32,
 /// }
 ///
@@ -25,6 +31,7 @@
 /// impl Drop for DataToZeroize {
 ///     fn drop(&mut self) {
 ///         self.buf = [0u8; 32];
+///         self.data = ThirdPartyType::default();
 ///         self.pos = NonZeroU32::new(32).unwrap();
 ///         zeroize::optimization_barrier(self);
 ///     }
@@ -34,12 +41,16 @@
 ///
 /// let mut data = DataToZeroize {
 ///     buf: [3u8; 32],
+///     data: ThirdPartyType::default(),
 ///     pos: NonZeroU32::new(32).unwrap(),
 /// };
 ///
 /// // data gets zeroized when dropped
 /// ```
-pub(crate) fn optimization_barrier<T: ?Sized>(val: &T) {
+///
+/// Note that erasure of `ThirdPartyType` demonstrated above can be fragile if it contains
+/// `MaybeUninit` or `union` data. It also does not perform erasure of types like `Box` or `Vec`.
+pub fn optimization_barrier<T: ?Sized>(val: &T) {
     #[cfg(all(
         not(miri),
         any(
