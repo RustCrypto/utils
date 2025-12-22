@@ -27,7 +27,7 @@ jobs:
         with:
           toolchain: 1.92.0 # Pinned to prevent breakages
           components: clippy
-      - run: cargo clippy --all --all-features --exclude aarch64-dit -- -D warnings
+      - run: cargo clippy --workspace --all-features --lib --bins --tests -- -D warnings
 
   rustfmt:
     runs-on: ubuntu-latest
