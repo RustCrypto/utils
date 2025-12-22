@@ -42,8 +42,31 @@ impl<S: Zeroize> Drop for SecretBox<S> {
 }
 
 #[test]
-fn proxy_alloc_test() {
+fn secret_box_alloc_test() {
     let b1 = SecretBox::new([u128::MAX; 10]);
+    core::hint::black_box(&b1);
+    let b2 = SecretBox::new([u8::MAX; 160]);
+    core::hint::black_box(&b2);
+}
+
+struct ObserveSecretBox<S: Default>(Box<S>);
+
+impl<S: Default> ObserveSecretBox<S> {
+    fn new(val: S) -> Self {
+        Self(Box::new(val))
+    }
+}
+
+impl<S: Default> Drop for ObserveSecretBox<S> {
+    fn drop(&mut self) {
+        *self.0 = Default::default();
+        zeroize::optimization_barrier(&self);
+    }
+}
+
+#[test]
+fn observe_secret_box_alloc_test() {
+    let b1 = ObserveSecretBox::new([u128::MAX; 10]);
     core::hint::black_box(&b1);
     let b2 = SecretBox::new([u8::MAX; 160]);
     core::hint::black_box(&b2);
