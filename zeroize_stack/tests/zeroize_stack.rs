@@ -15,7 +15,7 @@ mod stack_sanitization_tests {
     #[test]
     fn stack_sanitization_v2() {
         let mut heap_stack = ZeroizingHeapStack::new(4);
-        let result = unsafe { switch_stacks(&mut heap_stack, || dummy_fn()) };
+        let result = unsafe { switch_stacks(&mut heap_stack, dummy_fn) };
         assert_eq!(result.1, 12345);
         // results in segmentation fault, which is somewhat normal... just wanted
         // to try it
@@ -25,9 +25,9 @@ mod stack_sanitization_tests {
     #[test]
     fn allow_stack_reuse_between_calls() {
         let mut heap_stack = ZeroizingHeapStack::new(4);
-        let result_1 = unsafe { switch_stacks(&mut heap_stack, || dummy_fn()) };
+        let result_1 = unsafe { switch_stacks(&mut heap_stack, dummy_fn) };
         assert_eq!(result_1.1, 12345);
-        let result_2 = unsafe { switch_stacks(&mut heap_stack, || dummy_fn()) };
+        let result_2 = unsafe { switch_stacks(&mut heap_stack, dummy_fn) };
         assert_eq!(result_2.1, 12345);
     }
 
