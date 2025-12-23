@@ -145,7 +145,7 @@ mod tests {
             let stack = ZeroizingHeapStack::new(kb);
             assert_eq!(
                 stack.stack_area().1, 
-                ((kb * 1024 + page_size() - 1) / page_size()) * page_size()
+                (kb * 1024).div_ceil(page_size()) * page_size()
             );
         }
     }
