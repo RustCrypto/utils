@@ -125,7 +125,6 @@ impl Drop for ZeroizeNoDropEnum {
 
 #[test]
 #[cfg(feature = "alloc")]
-#[allow(unused_assignments)]
 fn derive_struct_skip() {
     #[derive(Zeroize, ZeroizeOnDrop)]
     struct Z {
@@ -156,7 +155,6 @@ fn derive_struct_skip() {
 
 #[test]
 #[cfg(feature = "alloc")]
-#[allow(unused_assignments)]
 fn derive_enum_skip() {
     #[derive(Zeroize, ZeroizeOnDrop)]
     enum Z {

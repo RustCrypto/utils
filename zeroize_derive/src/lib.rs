@@ -374,7 +374,7 @@ fn generate_fields(input: &DeriveInput, method: TokenStream) -> TokenStream {
         };
 
         quote! {
-            #[allow(unused_variables)]
+            #[allow(unused_variables, unused_assignments)]
             #binding => {
                 #(#method_field);*
             }
