@@ -48,8 +48,8 @@
 //! in the event that your stack-switched stack panics. Panicking on a separate
 //! stack can cause undefined behavior (UB), but if it can be caught with
 //! `std::panic::catch_unwind`, that aspect of the safety should be more safe.
-//! 
-//! When using `nostd`, try to ensure that `panic = "abort"` to avoid the 
+//!
+//! When using `nostd`, try to ensure that `panic = "abort"` to avoid the
 //! unsafety of unwinding across stack boundaries.
 //!
 //! ## Use Cases
