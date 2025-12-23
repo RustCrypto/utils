@@ -1,6 +1,6 @@
 //! [`Zeroize`] impls for x86 SIMD registers
 
-use crate::{Zeroize, atomic_fence, volatile_write};
+use crate::{Zeroize, optimization_barrier, volatile_write};
 
 #[cfg(target_arch = "x86")]
 use core::arch::x86::*;
@@ -15,7 +15,7 @@ macro_rules! impl_zeroize_for_simd_register {
                 #[inline]
                 fn zeroize(&mut self) {
                     volatile_write(self, unsafe { core::mem::zeroed() });
-                    atomic_fence();
+                    optimization_barrier(self);
                 }
             }
         )*

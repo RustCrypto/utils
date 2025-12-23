@@ -21,18 +21,18 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: 1.85.0 # Pinned to prevent breakages
+          toolchain: 1.92.0 # Pinned to prevent breakages
           components: clippy
-      - run: cargo clippy --all --all-features --exclude aarch64-dit -- -D warnings
+      - run: cargo clippy --workspace --all-features --lib --bins --tests -- -D warnings
 
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
@@ -42,5 +42,5 @@ jobs:
   typos:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: crate-ci/typos@v1

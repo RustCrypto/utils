@@ -1,18 +1,16 @@
 [package]
 name = "aarch64-dit"
-description = """
-Wrappers for enabling/disabling the Data Independent Timing (DIT) feature on AArch64 CPUs
-"""
 version = "0.2.0-pre"
 authors = ["RustCrypto Developers"]
-license = "Apache-2.0 OR MIT"
-homepage = "https://github.com/RustCrypto/utils/tree/master/aarch64-dit"
-repository = "https://github.com/RustCrypto/utils"
-categories = ["cryptography", "hardware-support", "no-std"]
-keywords = ["crypto", "intrinsics"]
-readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
+documentation = "https://docs.rs/aarch64-dit"
+readme = "README.md"
+repository = "https://github.com/RustCrypto/utils"
+license = "Apache-2.0 OR MIT"
+keywords = ["crypto", "intrinsics"]
+categories = ["cryptography", "hardware-support", "no-std"]
+description = "Wrappers for enabling/disabling the Data Independent Timing (DIT) feature on AArch64 CPUs"
 
 [dependencies]
 cpufeatures = { version = "0.3.0-pre", path = "../cpufeatures" }

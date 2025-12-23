@@ -1,11 +1,13 @@
 [package]
 name = "hex-literal"
-version = "1.0.0"
+version = "1.1.0"
 authors = ["RustCrypto Developers"]
-license = "MIT OR Apache-2.0"
-description = "A macro for converting hexadecimal string literals to a byte array at compile time"
-documentation = "https://docs.rs/hex-literal"
-repository = "https://github.com/RustCrypto/utils"
-keywords = ["hex", "literals"]
 edition = "2024"
 rust-version = "1.85"
+documentation = "https://docs.rs/hex-literal"
+readme = "README.md"
+repository = "https://github.com/RustCrypto/utils"
+license = "MIT OR Apache-2.0"
+keywords = ["hex", "literals"]
+categories = ["no-std"]
+description = "A macro for converting hexadecimal string literals to a byte array at compile time"
