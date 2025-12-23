@@ -16,12 +16,13 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
+libc = "0.2.156"
 psm = "0.1.26"
 zeroize = { version = "1.0" }
 
 [features]
 default = ["heap", "stack", "std"]
-heap = []
+heap = ["std"]
 stack = []
 std = []
 
