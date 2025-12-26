@@ -1,6 +1,36 @@
 use crate::{Choice, CtEq, CtSelect};
 use core::ops::{Deref, DerefMut};
 
+/// Helper macro for providing behavior like the [`CtOption::map`] combinator that works in
+/// `const fn` contexts.
+///
+/// Requires a provided `$mapper` function to convert from one type to another, e.g.
+///
+/// ```ignore
+/// const fn mapper(value: T) -> U
+/// ```
+#[macro_export]
+macro_rules! map {
+    ($opt:expr, $mapper:path) => {{ $crate::CtOption::new($mapper($opt.to_inner_unchecked()), $opt.is_some()) }};
+}
+
+/// Helper macro for providing behavior like the [`CtOption::unwrap_or`] combinator that works in
+/// `const fn` contexts.
+///
+/// Requires a provided selector function `$select` to perform constant-time selection which takes
+/// two `T` values by reference along with a [`Choice`], returning the first `T` for
+/// [`Choice::FALSE`], and the second for [`Choice::TRUE`], e.g.:
+///
+/// ```ignore
+/// const fn ct_select(a: &T, b: &T, condition: Choice) -> T
+/// ```
+#[macro_export]
+macro_rules! unwrap_or {
+    ($opt:expr, $default:expr, $select:path) => {
+        $select(&$default, $opt.as_inner_unchecked(), $opt.is_some())
+    };
+}
+
 /// Equivalent of [`Option`] but predicated on a [`Choice`] with combinators that allow for
 /// constant-time operations which always perform the same sequence of instructions regardless of
 /// the value of `is_some`.
@@ -21,6 +51,21 @@ impl<T> CtOption<T> {
     #[inline]
     pub const fn new(value: T, is_some: Choice) -> CtOption<T> {
         Self { value, is_some }
+    }
+
+    /// Construct a new [`CtOption`] where `self.is_some()` is [`Choice::TRUE`].
+    #[inline]
+    pub const fn some(value: T) -> CtOption<T> {
+        Self::new(value, Choice::TRUE)
+    }
+
+    /// Construct a new [`CtOption`] with the [`Default`] value, and where `self.is_some()` is
+    /// [`Choice::FALSE`].
+    pub fn none() -> CtOption<T>
+    where
+        T: Default,
+    {
+        Self::new(Default::default(), Choice::FALSE)
     }
 
     /// Convert from a `&mut CtOption<T>` to `CtOption<&mut T>`.
@@ -80,7 +125,7 @@ impl<T> CtOption<T> {
     // (needs `const_precise_live_drops`)
     #[inline]
     #[track_caller]
-    pub const fn expect_copied(&self, msg: &str) -> T
+    pub const fn expect_copied(self, msg: &str) -> T
     where
         T: Copy,
     {
@@ -99,7 +144,7 @@ impl<T> CtOption<T> {
     pub const fn expect_ref(&self, msg: &str) -> &T {
         // TODO(tarcieri): use `self.is_some().to_bool()` when MSRV is 1.86
         assert!(self.is_some.to_bool_vartime(), "{}", msg);
-        &self.value
+        self.as_inner_unchecked()
     }
 
     /// Convert the [`CtOption`] wrapper into an [`Option`], depending on whether
@@ -118,6 +163,29 @@ impl<T> CtOption<T> {
     #[inline]
     pub fn into_option(self) -> Option<T> {
         if self.is_some.to_bool() {
+            Some(self.value)
+        } else {
+            None
+        }
+    }
+
+    /// Convert the [`CtOption`] wrapper into an [`Option`] in a `const fn`-friendly manner.
+    ///
+    /// This is the equivalent of [`CtOption::into_option`] but is `const fn`-friendly by only
+    /// allowing `Copy` types which are implicitly `!Drop` and don't run into problems with
+    /// `const fn` and destructors.
+    ///
+    /// <div class="warning">
+    /// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
+    /// `T` value since the [`Option`] will do it anyway.
+    /// </div>
+    #[inline]
+    pub const fn into_option_copied(self) -> Option<T>
+    where
+        T: Copy,
+    {
+        // TODO(tarcieri): use `self.is_some().to_bool()` when MSRV is 1.86
+        if self.is_some.to_bool_vartime() {
             Some(self.value)
         } else {
             None
@@ -164,6 +232,24 @@ impl<T> CtOption<T> {
         ret
     }
 
+    /// Obtain a reference to the inner value without first checking that `self.is_some()` is
+    /// [`Choice::TRUE`].
+    ///
+    /// This method is primarily intended for use in `const fn` scenarios where it's not yet
+    /// possible to use the safe combinator methods, and returns a reference to avoid issues with
+    /// `const fn` destructors.
+    ///
+    /// <div class="warning">
+    /// <b>Use with care!</b>
+    ///
+    /// This method does not ensure the `value` is actually valid. Callers of this method should
+    /// take great care to ensure that `self.is_some()` is checked elsewhere.
+    /// </div>
+    #[inline]
+    pub const fn as_inner_unchecked(&self) -> &T {
+        &self.value
+    }
+
     /// Calls the provided callback with the wrapped inner value, which computes a [`Choice`],
     /// and updates `self.is_some()`.
     ///
@@ -175,6 +261,13 @@ impl<T> CtOption<T> {
         P: FnOnce(&T) -> Choice,
     {
         self.is_some &= predicate(&self.value);
+        self
+    }
+
+    /// Apply an additional [`Choice`] requirement to `is_some`.
+    #[inline]
+    pub const fn filter_by(mut self, is_some: Choice) -> Self {
+        self.is_some = self.is_some.and(is_some);
         self
     }
 
@@ -245,6 +338,27 @@ impl<T> CtOption<T> {
             value: self.value.ct_select(&optb.value, self.is_none()),
             is_some: self.is_some | optb.is_some,
         }
+    }
+
+    /// Obtain a copy of the inner value without first checking that `self.is_some()` is
+    /// [`Choice::TRUE`].
+    ///
+    /// This method is primarily intended for use in `const fn` scenarios where it's not yet
+    /// possible to use the safe combinator methods, and uses a `Copy` bound to avoid issues with
+    /// `const fn` destructors.
+    ///
+    /// <div class="warning">
+    /// <b>Use with care!</b>
+    ///
+    /// This method does not ensure the `value` is actually valid. Callers of this method should
+    /// take great care to ensure that `self.is_some()` is checked elsewhere.
+    /// </div>
+    #[inline]
+    pub const fn to_inner_unchecked(self) -> T
+    where
+        T: Copy,
+    {
+        self.value
     }
 
     /// Return the contained value, consuming the `self` value.
@@ -400,6 +514,12 @@ impl<T: CtSelect> CtSelect for CtOption<T> {
     }
 }
 
+impl<T: Default> Default for CtOption<T> {
+    fn default() -> Self {
+        Self::none()
+    }
+}
+
 /// Convert the [`CtOption`] wrapper into an [`Option`], depending on whether
 /// [`CtOption::is_some`] is a truthy or falsy [`Choice`].
 ///
@@ -461,6 +581,26 @@ mod tests {
     struct Error;
 
     #[test]
+    fn map_macro() {
+        assert!(map!(NONE, u16::from).is_none().to_bool());
+        assert_eq!(map!(SOME, u16::from).unwrap(), VALUE as u16);
+    }
+
+    #[test]
+    fn unwrap_or_macro() {
+        // Don't actually use this! It's just a test function implemented in variable-time
+        const fn select_vartime(a: &u8, b: &u8, choice: Choice) -> u8 {
+            if choice.to_bool_vartime() { *b } else { *a }
+        }
+
+        assert_eq!(
+            unwrap_or!(NONE, OTHER.unwrap(), select_vartime),
+            OTHER.unwrap()
+        );
+        assert_eq!(unwrap_or!(SOME, OTHER.unwrap(), select_vartime), VALUE);
+    }
+
+    #[test]
     fn ct_eq() {
         assert!(NONE.ct_eq(&NONE).to_bool());
         assert!(NONE.ct_ne(&SOME).to_bool());
@@ -478,6 +618,11 @@ mod tests {
     }
 
     #[test]
+    fn default() {
+        assert!(NONE.ct_eq(&CtOption::default()).to_bool());
+    }
+
+    #[test]
     fn expect_some() {
         assert_eq!(SOME.expect("should succeed"), VALUE);
     }
@@ -492,6 +637,12 @@ mod tests {
     fn into_option() {
         assert_eq!(SOME.into_option(), Some(VALUE));
         assert_eq!(NONE.into_option(), None)
+    }
+
+    #[test]
+    fn into_option_copied() {
+        assert_eq!(SOME.into_option_copied(), Some(VALUE));
+        assert_eq!(NONE.into_option_copied(), None)
     }
 
     #[test]
@@ -538,6 +689,14 @@ mod tests {
     }
 
     #[test]
+    fn filter_by() {
+        assert!(NONE.filter_by(Choice::FALSE).is_none().to_bool());
+        assert!(NONE.filter_by(Choice::TRUE).is_none().to_bool());
+        assert!(SOME.filter_by(Choice::FALSE).ct_eq(&NONE).to_bool());
+        assert_eq!(SOME.filter_by(Choice::TRUE).unwrap(), VALUE);
+    }
+
+    #[test]
     fn map() {
         assert!(NONE.map(|value| value + 1).ct_eq(&NONE).to_bool());
         assert!(SOME.map(|value| value + 1).ct_eq(&OTHER).to_bool());
@@ -574,6 +733,11 @@ mod tests {
         assert!(SOME.or(NONE).ct_eq(&SOME).to_bool());
         assert!(NONE.or(SOME).ct_eq(&SOME).to_bool());
         assert!(SOME.or(OTHER).ct_eq(&SOME).to_bool());
+    }
+
+    #[test]
+    fn some() {
+        assert!(CtOption::some(VALUE).ct_eq(&SOME).to_bool());
     }
 
     #[test]
