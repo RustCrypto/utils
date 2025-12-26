@@ -20,7 +20,10 @@ impl Choice {
     /// Equivalent of [`true`].
     pub const TRUE: Self = Self(1);
 
-    /// Create a new [`Choice`] from the given `u8` value, which should be either `0` or `1`.
+    /// Create a new [`Choice`] from the given `u8` value, which MUST be either `0` or `1`.
+    ///
+    /// # Panics
+    /// - in `debug` builds, panics if the value is anything other than `0` or `1`.
     #[inline]
     pub const fn new(value: u8) -> Self {
         // Compare to what should be the non-secret upper bits of the value, which should always be
@@ -165,10 +168,32 @@ impl Choice {
         Self::from_u32_lsb((value | value.wrapping_neg()) >> (u32::BITS - 1))
     }
 
+    /// Returns the truthy value if `x == y`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u64_eq(x: u64, y: u64) -> Self {
+        Self::from_u64_nonzero(x ^ y).not()
+    }
+
+    /// Returns the truthy value if `x <= y` and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u64_le(x: u64, y: u64) -> Self {
+        // See "Hacker's Delight" 2nd ed, section 2-12 (Comparison predicates)
+        let bit = (((!x) | y) & ((x ^ y) | !y.wrapping_sub(x))) >> (u64::BITS - 1);
+        Self::from_u64_lsb(bit)
+    }
+
     /// Initialize from the least significant bit of a `u64`.
     #[inline]
     pub const fn from_u64_lsb(value: u64) -> Self {
         Self::new((value & 0x1) as u8)
+    }
+
+    /// Returns the truthy value if `x < y`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u64_lt(x: u64, y: u64) -> Self {
+        // See "Hacker's Delight" 2nd ed, section 2-12 (Comparison predicates)
+        let bit = (((!x) & y) | (((!x) | y) & x.wrapping_sub(y))) >> (u64::BITS - 1);
+        Self::from_u64_lsb(bit)
     }
 
     /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
@@ -214,8 +239,7 @@ impl Choice {
     /// - `0` for `Choice::FALSE`
     /// - `u32::MAX` for `Choice::TRUE`
     #[inline]
-    #[allow(trivial_numeric_casts)]
-    pub(crate) const fn to_u32_mask(self) -> u32 {
+    pub const fn to_u32_mask(self) -> u32 {
         (self.0 as u32 & 1).wrapping_neg()
     }
 
@@ -225,8 +249,7 @@ impl Choice {
     /// - `0` for `Choice::FALSE`
     /// - `u64::MAX` for `Choice::TRUE`
     #[inline]
-    #[allow(trivial_numeric_casts)]
-    pub(crate) const fn to_u64_mask(self) -> u64 {
+    pub const fn to_u64_mask(self) -> u64 {
         (self.0 as u64 & 1).wrapping_neg()
     }
 }
@@ -444,9 +467,31 @@ mod tests {
     }
 
     #[test]
+    fn from_u64_eq() {
+        assert_eq!(Choice::from_u64_eq(0, 1), Choice::FALSE);
+        assert_eq!(Choice::from_u64_eq(1, 1), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u64_le() {
+        assert_eq!(Choice::from_u64_le(0, 0), Choice::TRUE);
+        assert_eq!(Choice::from_u64_le(1, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u64_le(1, 1), Choice::TRUE);
+        assert_eq!(Choice::from_u64_le(1, 2), Choice::TRUE);
+    }
+
+    #[test]
     fn from_u64_lsb() {
         assert_eq!(Choice::from_u64_lsb(0), Choice::FALSE);
         assert_eq!(Choice::from_u64_lsb(1), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u64_lt() {
+        assert_eq!(Choice::from_u64_lt(0, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u64_lt(1, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u64_lt(1, 1), Choice::FALSE);
+        assert_eq!(Choice::from_u64_lt(1, 2), Choice::TRUE);
     }
 
     #[test]
