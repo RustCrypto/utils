@@ -116,7 +116,10 @@ impl<T> CtOption<T> {
         self.value
     }
 
-    /// Return a copy of the contained value without consuming `self`.
+    /// Return the contained value, consuming the `self` value, with `const fn` support.
+    ///
+    /// Relies on a `Copy` bound which implies `!Drop` which is needed to be able to move out of
+    /// `self` in a `const fn` without `feature(const_precise_live_drops)`.
     ///
     /// # Panics
     /// In the event `self.is_some()` is [`Choice::FALSE`], panics with a custom panic message
@@ -157,6 +160,8 @@ impl<T> CtOption<T> {
     /// type inference.
     ///
     /// <div class="warning">
+    /// <b>Warning: variable-time!</b>
+    ///
     /// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
     /// `T` value since the [`Option`] will do it anyway.
     /// </div>
@@ -176,6 +181,8 @@ impl<T> CtOption<T> {
     /// `const fn` and destructors.
     ///
     /// <div class="warning">
+    /// <b>Warning: variable-time!</b>
+    ///
     /// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
     /// `T` value since the [`Option`] will do it anyway.
     /// </div>
@@ -310,8 +317,10 @@ impl<T> CtOption<T> {
     /// [`Choice::FALSE`].
     ///
     /// <div class="warning">
+    /// <b>Warning: variable-time!</b>
+    ///
     /// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
-    /// `T` value since the [`Option`] will do it anyway.
+    /// `T` value since the [`Result`] will do it anyway.
     /// </div>
     #[inline]
     pub fn ok_or<E>(self, err: E) -> Result<T, E> {
@@ -320,6 +329,13 @@ impl<T> CtOption<T> {
 
     /// Transforms a `CtOption<T>` into a `Result<T, E>` by unconditionally calling the provided
     /// callback value and using its result in the event `self.is_some()` is [`Choice::FALSE`].
+    ///
+    /// <div class="warning">
+    /// <b>Warning: variable-time!</b>
+    ///
+    /// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
+    /// `T` value since the [`Result`] will do it anyway.
+    /// </div>
     #[inline]
     pub fn ok_or_else<E, F>(self, err: F) -> Result<T, E>
     where
@@ -524,10 +540,10 @@ impl<T: Default> Default for CtOption<T> {
 /// [`CtOption::is_some`] is a truthy or falsy [`Choice`].
 ///
 /// <div class="warning">
+/// <b>Warning: variable-time!</b>
 ///
 /// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
 /// `T` value since the `Option` will do it anyway.
-///
 /// </div>
 impl<T> From<CtOption<T>> for Option<T> {
     fn from(src: CtOption<T>) -> Option<T> {

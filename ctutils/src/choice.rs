@@ -66,6 +66,12 @@ impl Choice {
     /// HACK: workaround to allow `const fn` boolean support on Rust 1.85.
     ///
     /// This does not apply `black_box` to the output.
+    ///
+    /// <div class = "warning">
+    /// <b>Security Warning</b>
+    ///
+    /// See the security warnings for [`Choice::to_bool`].
+    /// </div>
     // TODO(tarcieri): deprecate/remove this in favor of `to_bool` when MSRV is Rust 1.86
     pub const fn to_bool_vartime(self) -> bool {
         self.0 != 0
@@ -355,6 +361,16 @@ impl From<Choice> for u8 {
     }
 }
 
+/// Convert `Choice` into a `bool`.
+///
+/// <div class = "warning">
+/// <b>Security Warning</b>
+///
+/// Using this function will introduce timing variability, since computing this at all currently
+/// requires a branch.
+///
+/// See the security warnings for [`Choice::to_bool`].
+/// </div>
 impl From<Choice> for bool {
     fn from(choice: Choice) -> bool {
         choice.to_bool()
