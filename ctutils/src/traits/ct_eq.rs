@@ -2,6 +2,9 @@ use crate::Choice;
 use cmov::CmovEq;
 use core::cmp;
 
+#[cfg(feature = "subtle")]
+use crate::CtOption;
+
 /// Constant-time equality: like `(Partial)Eq` with [`Choice`] instead of [`bool`].
 ///
 /// Impl'd for: [`u8`], [`u16`], [`u32`], [`u64`], [`u128`], [`usize`], [`cmp::Ordering`],
@@ -86,6 +89,25 @@ impl<T: CtEq, const N: usize> CtEq for [T; N] {
     #[inline]
     fn ct_eq(&self, other: &[T; N]) -> Choice {
         self.as_slice().ct_eq(other.as_slice())
+    }
+}
+
+#[cfg(feature = "subtle")]
+impl CtEq for subtle::Choice {
+    #[inline]
+    fn ct_eq(&self, other: &Self) -> Choice {
+        self.unwrap_u8().ct_eq(&other.unwrap_u8())
+    }
+}
+
+#[cfg(feature = "subtle")]
+impl<T> CtEq for subtle::CtOption<T>
+where
+    T: CtEq + Default + subtle::ConditionallySelectable,
+{
+    #[inline]
+    fn ct_eq(&self, other: &Self) -> Choice {
+        CtOption::from(*self).ct_eq(&CtOption::from(*other))
     }
 }
 
