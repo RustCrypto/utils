@@ -81,4 +81,4 @@ mod traits;
 
 pub use choice::Choice;
 pub use ct_option::CtOption;
-pub use traits::{ct_eq::CtEq, ct_gt::CtGt, ct_lt::CtLt, ct_select::CtSelect};
+pub use traits::{ct_eq::CtEq, ct_gt::CtGt, ct_lt::CtLt, ct_neg::CtNeg, ct_select::CtSelect};
