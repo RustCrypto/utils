@@ -75,3 +75,19 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - run: cargo install cargo-careful
       - run: cargo careful test --all-features
+
+  # Test using `cargo miri`
+  test-miri:
+    runs-on: ubuntu-latest
+    env:
+      MIRIFLAGS: "-Zmiri-symbolic-alignment-check -Zmiri-strict-provenance"
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - s390x-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: rustup component add miri && cargo miri setup
+      - run: cargo miri test --target ${{ matrix.target }} --all-features --lib
