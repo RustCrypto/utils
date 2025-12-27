@@ -48,6 +48,21 @@ macro_rules! impl_ct_select_with_cmov {
 impl_ct_select_with_cmov!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
+impl CtSelect for isize {
+    #[cfg(target_pointer_width = "32")]
+    #[inline]
+    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        (*self as i32).ct_select(&(*other as i32), choice) as isize
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    #[inline]
+    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        (*self as i64).ct_select(&(*other as i64), choice) as isize
+    }
+}
+
+#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl CtSelect for usize {
     #[cfg(target_pointer_width = "32")]
     #[inline]
