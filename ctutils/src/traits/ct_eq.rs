@@ -38,6 +38,19 @@ macro_rules! impl_ct_eq_with_cmov_eq {
 impl_ct_eq_with_cmov_eq!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
+impl CtEq for isize {
+    #[cfg(target_pointer_width = "32")]
+    fn ct_eq(&self, other: &Self) -> Choice {
+        (*self as i32).ct_eq(&(*other as i32))
+    }
+
+    #[cfg(target_pointer_width = "64")]
+    fn ct_eq(&self, other: &Self) -> Choice {
+        (*self as i64).ct_eq(&(*other as i64))
+    }
+}
+
+#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl CtEq for usize {
     #[cfg(target_pointer_width = "32")]
     fn ct_eq(&self, other: &Self) -> Choice {
