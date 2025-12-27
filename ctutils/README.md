@@ -13,7 +13,7 @@ architecture-specific predication intrinsics. Heavily inspired by the [`subtle`]
 ## About
 
 This crate contains constant-time equivalents of the `bool` and `Option` types (`Choice` and
-`CtOption`), along with traits that can be used in combination with them.
+`CtOption` respectively), along with traits that can be used in combination with them.
 
 The `CtOption` type notably provides eagerly evaluated combinator methods (as opposed to the lazily
 evaluated combinators on `Option`) which make it possible to write constant-time code using
