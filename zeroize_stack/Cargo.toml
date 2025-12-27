@@ -1,0 +1,30 @@
+[package]
+name = "zeroize_stack"
+version = "0.1.0"
+description = """
+Securely zeroize the stack with a simple function built on
+the Portable Stack Manipulation (psm) crate and zeroize crate.
+"""
+authors = ["The RustCrypto Project Developers"]
+license = "Apache-2.0 OR MIT"
+homepage = "https://github.com/RustCrypto/utils/tree/master/stack_sanitizer"
+repository = "https://github.com/RustCrypto/utils"
+readme = "README.md"
+categories = ["cryptography", "memory-management", "no-std", "os"]
+keywords = ["memory", "memset", "secure", "volatile", "zero", "stack"]
+edition = "2024"
+rust-version = "1.85"
+
+[dependencies]
+libc = "0.2.156"
+psm = "0.1.26"
+zeroize = { version = "1.0" }
+
+[features]
+default = ["heap", "stack", "std"]
+heap = ["std"]
+stack = []
+std = []
+
+[package.metadata.docs.rs]
+all-features = true
