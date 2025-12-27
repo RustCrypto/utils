@@ -24,6 +24,24 @@ This is an experimental next-generation constant-time library inspired by `subtl
 recommend you continue to stick with `subtle`. We may attempt to get some of the changes in this
 library incorporated into `subtle` for a potential v3.0.
 
+## What makes this crate different from `subtle`?
+
+- Pervasive `const fn` support
+  - Almost all constructors/methods on `Choice` are `const fn`
+  - `Choice` can be constructed using various `const fn` predicates on integer types, enabling
+    writing constant-time `const fn` logic
+  - `CtOption` supports `const fn` constructors and `*_copied` methods to access the inner value
+    when it's a `Copy` type
+  - Macros to act as `CtOption` pseudo-combinators: `map!` and `unwrap_or!`
+  - Expanded selection of `CtOption` combinators that more closely mirrors `std::option::Option`
+- Guaranteed constant-time equality testing and conditional selection on `x86(_64)` and `aarch64`
+  using `asm!` implementations in the `cmov` crate which call special constant-time CPU instructions
+  with a portable "best effort" fallback on other platforms using bitwise arithmetic and `black_box`
+
+Many features of this crate are extractions from the [`crypto-bigint`] crate, where we implement all
+core logic as `const fn` and needed solutions for implementing constant-time code despite the
+unique constraints it imposes.
+
 ## ⚠️ Security Warning
 
 The implementation contained in this crate has never been independently audited!
@@ -69,3 +87,4 @@ dual licensed as above, without any additional terms or conditions.
 [RustCrypto]: https://github.com/RustCrypto
 [`cmov`]: https://docs.rs/cmov
 [`subtle`]: https://docs.rs/subtle
+[`crypto-bigint`]: https://docs.rs/crypto-bigint
