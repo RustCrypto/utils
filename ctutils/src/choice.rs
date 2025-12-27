@@ -162,13 +162,13 @@ impl Choice {
     /// Returns the truthy value if `x == y`, and the falsy value otherwise.
     #[inline]
     pub const fn from_i64_eq(x: i64, y: i64) -> Self {
-        Self::from_u64_nonzero(x as u64 ^ y as u64).not()
+        Self::from_u64_nz(x as u64 ^ y as u64).not()
     }
 
     /// Returns the truthy value if `x == y`, and the falsy value otherwise.
     #[inline]
     pub const fn from_u32_eq(x: u32, y: u32) -> Self {
-        Self::from_u32_nonzero(x ^ y).not()
+        Self::from_u32_nz(x ^ y).not()
     }
 
     /// Returns the truthy value if `x <= y` and the falsy value otherwise.
@@ -191,14 +191,14 @@ impl Choice {
 
     /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
     #[inline]
-    pub const fn from_u32_nonzero(value: u32) -> Self {
+    pub const fn from_u32_nz(value: u32) -> Self {
         Self::from_u32_lsb(bitnz!(value, u32::BITS))
     }
 
     /// Returns the truthy value if `x == y`, and the falsy value otherwise.
     #[inline]
     pub const fn from_u64_eq(x: u64, y: u64) -> Self {
-        Self::from_u64_nonzero(x ^ y).not()
+        Self::from_u64_nz(x ^ y).not()
     }
 
     /// Returns the truthy value if `x <= y` and the falsy value otherwise.
@@ -221,14 +221,14 @@ impl Choice {
 
     /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
     #[inline]
-    pub const fn from_u64_nonzero(value: u64) -> Self {
+    pub const fn from_u64_nz(value: u64) -> Self {
         Self::from_u64_lsb(bitnz!(value, u64::BITS))
     }
 
     /// Returns the truthy value if `x == y`, and the falsy value otherwise.
     #[inline]
     pub const fn from_u128_eq(x: u128, y: u128) -> Self {
-        Self::from_u128_nonzero(x ^ y).not()
+        Self::from_u128_nz(x ^ y).not()
     }
 
     /// Returns the truthy value if `x <= y` and the falsy value otherwise.
@@ -251,7 +251,7 @@ impl Choice {
 
     /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
     #[inline]
-    pub const fn from_u128_nonzero(value: u128) -> Self {
+    pub const fn from_u128_nz(value: u128) -> Self {
         Self::from_u128_lsb(bitnz!(value, u128::BITS))
     }
 
@@ -542,10 +542,10 @@ mod tests {
     }
 
     #[test]
-    fn from_u32_nonzero() {
-        assert_eq!(Choice::from_u32_nonzero(0), Choice::FALSE);
-        assert_eq!(Choice::from_u32_nonzero(1), Choice::TRUE);
-        assert_eq!(Choice::from_u32_nonzero(2), Choice::TRUE);
+    fn from_u32_nz() {
+        assert_eq!(Choice::from_u32_nz(0), Choice::FALSE);
+        assert_eq!(Choice::from_u32_nz(1), Choice::TRUE);
+        assert_eq!(Choice::from_u32_nz(2), Choice::TRUE);
     }
 
     #[test]
@@ -577,10 +577,10 @@ mod tests {
     }
 
     #[test]
-    fn from_u64_nonzero() {
-        assert_eq!(Choice::from_u64_nonzero(0), Choice::FALSE);
-        assert_eq!(Choice::from_u64_nonzero(1), Choice::TRUE);
-        assert_eq!(Choice::from_u64_nonzero(2), Choice::TRUE);
+    fn from_u64_nz() {
+        assert_eq!(Choice::from_u64_nz(0), Choice::FALSE);
+        assert_eq!(Choice::from_u64_nz(1), Choice::TRUE);
+        assert_eq!(Choice::from_u64_nz(2), Choice::TRUE);
     }
 
     #[test]
@@ -612,10 +612,10 @@ mod tests {
     }
 
     #[test]
-    fn from_u128_nonzero() {
-        assert_eq!(Choice::from_u128_nonzero(0), Choice::FALSE);
-        assert_eq!(Choice::from_u128_nonzero(1), Choice::TRUE);
-        assert_eq!(Choice::from_u128_nonzero(2), Choice::TRUE);
+    fn from_u128_nz() {
+        assert_eq!(Choice::from_u128_nz(0), Choice::FALSE);
+        assert_eq!(Choice::from_u128_nz(1), Choice::TRUE);
+        assert_eq!(Choice::from_u128_nz(2), Choice::TRUE);
     }
 
     #[test]
