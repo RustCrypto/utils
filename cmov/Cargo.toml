@@ -1,6 +1,6 @@
 [package]
 name = "cmov"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.85"
@@ -8,11 +8,10 @@ documentation = "https://docs.rs/cmov"
 readme = "README.md"
 repository = "https://github.com/RustCrypto/utils"
 license = "Apache-2.0 OR MIT"
-keywords = ["crypto", "intrinsics"]
+keywords = ["constant-time", "crypto", "intrinsics"]
 categories = ["cryptography", "hardware-support", "no-std"]
 description = """
-Conditional move CPU intrinsics which are guaranteed to execute in
-constant-time and not be rewritten as branches by the compiler.
-Provides wrappers for the CMOV family of instructions on x86/x86_64
-and CSEL on AArch64.
+Conditional move CPU intrinsics which are guaranteed on major platforms to execute in constant-time
+and not be rewritten as branches by the compiler. Provides wrappers for the CMOV family of
+instructions on x86/x86_64 and CSEL on AArch64, along with a portable "best-effort" fallback.
 """
