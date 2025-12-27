@@ -1,3 +1,71 @@
+// TODO(tarcieri): test other `i*` types
+mod i64 {
+    use cmov::{Cmov, CmovEq};
+
+    pub const I64_A: i64 = 0x1111_1111_1111_1111;
+    pub const I64_B: i64 = -0x2222_2222_2222_2222;
+
+    #[test]
+    fn cmovz_works() {
+        let mut n = I64_A;
+
+        for cond in 1..0xFF {
+            n.cmovz(&I64_B, cond);
+            assert_eq!(n, I64_A);
+        }
+
+        n.cmovz(&I64_B, 0);
+        assert_eq!(n, I64_B);
+    }
+
+    #[test]
+    fn cmovnz_works() {
+        let mut n = I64_A;
+        n.cmovnz(&I64_B, 0);
+        assert_eq!(n, I64_A);
+
+        for cond in 1..0xFF {
+            let mut n = I64_A;
+            n.cmovnz(&I64_B, cond);
+            assert_eq!(n, I64_B);
+        }
+    }
+
+    #[test]
+    fn cmoveq_works() {
+        let mut o = 0u8;
+
+        for cond in 1..0xFFi64 {
+            cond.cmoveq(&cond, cond as u8, &mut o);
+            assert_eq!(o, cond as u8);
+            cond.cmoveq(&0, 0, &mut o);
+            assert_eq!(o, cond as u8);
+        }
+
+        I64_A.cmoveq(&I64_A, 43u8, &mut o);
+        assert_eq!(o, 43u8);
+        I64_A.cmoveq(&I64_B, 55u8, &mut o);
+        assert_eq!(o, 43u8);
+    }
+
+    #[test]
+    fn cmovne_works() {
+        let mut o = 0u8;
+
+        for cond in 1..0xFFi64 {
+            cond.cmovne(&0, cond as u8, &mut o);
+            assert_eq!(o, cond as u8);
+            cond.cmovne(&cond, 0, &mut o);
+            assert_eq!(o, cond as u8);
+        }
+
+        I64_A.cmovne(&I64_B, 55u8, &mut o);
+        assert_eq!(o, 55u8);
+        I64_A.cmovne(&I64_A, 12u8, &mut o);
+        assert_eq!(o, 55u8);
+    }
+}
+
 mod u8 {
     use cmov::{Cmov, CmovEq};
 

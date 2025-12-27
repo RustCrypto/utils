@@ -135,6 +135,44 @@ impl CmovEq for u128 {
     }
 }
 
+// Impl `Cmov*` by first casting to unsigned then using the unsigned `Cmov` impls
+// TODO(tarcieri): use `cast_unsigned`/`cast_signed` to get rid of the `=> u*`
+macro_rules! impl_cmov_traits_for_signed_ints {
+    ( $($int:ty => $uint:ty),+ ) => {
+        $(
+            impl Cmov for $int {
+                #[inline]
+                fn cmovnz(&mut self, value: &Self, condition: Condition) {
+                    let mut tmp = *self as $uint;
+                    tmp.cmovnz(&(*value as $uint), condition);
+                    *self = tmp as $int;
+                }
+
+                #[inline]
+                fn cmovz(&mut self, value: &Self, condition: Condition) {
+                    let mut tmp = *self as $uint;
+                    tmp.cmovz(&(*value as $uint), condition);
+                    *self = tmp as $int;
+                }
+            }
+
+            impl CmovEq for $int {
+                #[inline]
+                fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+                    (*self as $uint).cmoveq(&(*rhs as $uint), input, output);
+                }
+
+                #[inline]
+                fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+                    (*self as $uint).cmovne(&(*rhs as $uint), input, output);
+                }
+            }
+        )+
+    };
+}
+
+impl_cmov_traits_for_signed_ints!(i8 => u8, i16 => u16, i32 => u32, i64 => u64, i128 => u128);
+
 impl<T: CmovEq> CmovEq for [T] {
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         let mut tmp = 1u8;
