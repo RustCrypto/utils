@@ -1,6 +1,31 @@
 use crate::{CtEq, CtSelect};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
+/// Bitwise less-than-or equal: returns `1` if `x <= y`, and otherwise returns `0`.
+///
+/// See "Hacker's Delight" 2nd edition, section 2-12 (Comparison predicates)
+macro_rules! bitle {
+    ($x:expr, $y:expr, $bits:expr) => {
+        (((!$x) | $y) & (($x ^ $y) | !($y.wrapping_sub($x)))) >> ($bits - 1)
+    };
+}
+
+/// Bitwise less-than: returns `1` if `x < y`, and otherwise returns `0`.
+///
+/// See "Hacker's Delight" 2nd edition, section 2-12 (Comparison predicates)
+macro_rules! bitlt {
+    ($x:expr, $y:expr, $bits:expr) => {
+        (((!$x) & $y) | (((!$x) | $y) & $x.wrapping_sub($y))) >> ($bits - 1)
+    };
+}
+
+/// Bitwise non-zero: returns `1` if `x != 0`, and otherwise returns `0`.
+macro_rules! bitnz {
+    ($value:expr, $bits:expr) => {
+        ($value | $value.wrapping_neg()) >> ($bits - 1)
+    };
+}
+
 /// Constant-time analogue of `bool` providing a "best effort" optimization barrier.
 ///
 /// Attempts to hint to the compiler and its codegen backends that optimizations should not be
@@ -149,9 +174,7 @@ impl Choice {
     /// Returns the truthy value if `x <= y` and the falsy value otherwise.
     #[inline]
     pub const fn from_u32_le(x: u32, y: u32) -> Self {
-        // See "Hacker's Delight" 2nd ed, section 2-12 (Comparison predicates)
-        let bit = (((!x) | y) & ((x ^ y) | !y.wrapping_sub(x))) >> (u32::BITS - 1);
-        Self::from_u32_lsb(bit)
+        Self::from_u32_lsb(bitle!(x, y, u32::BITS))
     }
 
     /// Initialize from the least significant bit of a `u32`.
@@ -163,15 +186,13 @@ impl Choice {
     /// Returns the truthy value if `x < y`, and the falsy value otherwise.
     #[inline]
     pub const fn from_u32_lt(x: u32, y: u32) -> Self {
-        // See "Hacker's Delight" 2nd ed, section 2-12 (Comparison predicates)
-        let bit = (((!x) & y) | (((!x) | y) & x.wrapping_sub(y))) >> (u32::BITS - 1);
-        Self::from_u32_lsb(bit)
+        Self::from_u32_lsb(bitlt!(x, y, u32::BITS))
     }
 
     /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
     #[inline]
     pub const fn from_u32_nonzero(value: u32) -> Self {
-        Self::from_u32_lsb((value | value.wrapping_neg()) >> (u32::BITS - 1))
+        Self::from_u32_lsb(bitnz!(value, u32::BITS))
     }
 
     /// Returns the truthy value if `x == y`, and the falsy value otherwise.
@@ -183,9 +204,7 @@ impl Choice {
     /// Returns the truthy value if `x <= y` and the falsy value otherwise.
     #[inline]
     pub const fn from_u64_le(x: u64, y: u64) -> Self {
-        // See "Hacker's Delight" 2nd ed, section 2-12 (Comparison predicates)
-        let bit = (((!x) | y) & ((x ^ y) | !y.wrapping_sub(x))) >> (u64::BITS - 1);
-        Self::from_u64_lsb(bit)
+        Self::from_u64_lsb(bitle!(x, y, u64::BITS))
     }
 
     /// Initialize from the least significant bit of a `u64`.
@@ -197,29 +216,43 @@ impl Choice {
     /// Returns the truthy value if `x < y`, and the falsy value otherwise.
     #[inline]
     pub const fn from_u64_lt(x: u64, y: u64) -> Self {
-        // See "Hacker's Delight" 2nd ed, section 2-12 (Comparison predicates)
-        let bit = (((!x) & y) | (((!x) | y) & x.wrapping_sub(y))) >> (u64::BITS - 1);
-        Self::from_u64_lsb(bit)
+        Self::from_u64_lsb(bitlt!(x, y, u64::BITS))
     }
 
     /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
     #[inline]
     pub const fn from_u64_nonzero(value: u64) -> Self {
-        Self::from_u64_lsb((value | value.wrapping_neg()) >> (u64::BITS - 1))
+        Self::from_u64_lsb(bitnz!(value, u64::BITS))
+    }
+
+    /// Returns the truthy value if `x == y`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u128_eq(x: u128, y: u128) -> Self {
+        Self::from_u128_nonzero(x ^ y).not()
     }
 
     /// Returns the truthy value if `x <= y` and the falsy value otherwise.
     #[inline]
     pub const fn from_u128_le(x: u128, y: u128) -> Self {
-        // See "Hacker's Delight" 2nd ed, section 2-12 (Comparison predicates)
-        let bit = (((!x) | y) & ((x ^ y) | !(y.wrapping_sub(x)))) >> (u128::BITS - 1);
-        Self::from_u128_lsb(bit)
+        Self::from_u128_lsb(bitle!(x, y, u128::BITS))
     }
 
     /// Initialize from the least significant bit of a `u128`.
     #[inline]
     pub const fn from_u128_lsb(value: u128) -> Self {
         Self::new((value & 1) as u8)
+    }
+
+    /// Returns the truthy value if `x < y`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u128_lt(x: u128, y: u128) -> Self {
+        Self::from_u128_lsb(bitlt!(x, y, u128::BITS))
+    }
+
+    /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u128_nonzero(value: u128) -> Self {
+        Self::from_u128_lsb(bitnz!(value, u128::BITS))
     }
 
     //
@@ -551,6 +584,12 @@ mod tests {
     }
 
     #[test]
+    fn from_u128_eq() {
+        assert_eq!(Choice::from_u128_eq(0, 1), Choice::FALSE);
+        assert_eq!(Choice::from_u128_eq(1, 1), Choice::TRUE);
+    }
+
+    #[test]
     fn from_u128_le() {
         assert_eq!(Choice::from_u128_le(0, 0), Choice::TRUE);
         assert_eq!(Choice::from_u128_le(1, 0), Choice::FALSE);
@@ -562,6 +601,21 @@ mod tests {
     fn from_u128_lsb() {
         assert_eq!(Choice::from_u128_lsb(0), Choice::FALSE);
         assert_eq!(Choice::from_u128_lsb(1), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u128_lt() {
+        assert_eq!(Choice::from_u128_lt(0, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u128_lt(1, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u128_lt(1, 1), Choice::FALSE);
+        assert_eq!(Choice::from_u128_lt(1, 2), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u128_nonzero() {
+        assert_eq!(Choice::from_u128_nonzero(0), Choice::FALSE);
+        assert_eq!(Choice::from_u128_nonzero(1), Choice::TRUE);
+        assert_eq!(Choice::from_u128_nonzero(2), Choice::TRUE);
     }
 
     #[test]
