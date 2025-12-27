@@ -202,6 +202,20 @@ impl Choice {
         Self::from_u64_lsb((value | value.wrapping_neg()) >> (u64::BITS - 1))
     }
 
+    /// Returns the truthy value if `x <= y` and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u128_le(x: u128, y: u128) -> Self {
+        // See "Hacker's Delight" 2nd ed, section 2-12 (Comparison predicates)
+        let bit = (((!x) | y) & ((x ^ y) | !(y.wrapping_sub(x)))) >> (u128::BITS - 1);
+        Self::from_u128_lsb(bit)
+    }
+
+    /// Initialize from the least significant bit of a `u128`.
+    #[inline]
+    pub const fn from_u128_lsb(value: u128) -> Self {
+        Self::new((value & 1) as u8)
+    }
+
     //
     // `const fn` predication methods
     //
@@ -233,6 +247,15 @@ impl Choice {
         a ^ (self.to_u64_mask() & (a ^ b))
     }
 
+    /// `const fn` helper: return `b` if `self` is truthy, otherwise return `a`.
+    ///
+    /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
+    /// and can't use the trait. The former will provide better constant-time assurances.
+    #[inline]
+    pub const fn select_u128(self, a: u128, b: u128) -> u128 {
+        a ^ (self.to_u128_mask() & (a ^ b))
+    }
+
     /// Create a `u32` bitmask.
     ///
     /// # Returns
@@ -251,6 +274,16 @@ impl Choice {
     #[inline]
     pub const fn to_u64_mask(self) -> u64 {
         (self.0 as u64 & 1).wrapping_neg()
+    }
+
+    /// Create a `u128` bitmask.
+    ///
+    /// # Returns
+    /// - `0` for `Choice::FALSE`
+    /// - `u128::MAX` for `Choice::TRUE`
+    #[inline]
+    pub const fn to_u128_mask(self) -> u128 {
+        (self.0 as u128 & 1).wrapping_neg()
     }
 }
 
@@ -502,6 +535,20 @@ mod tests {
     }
 
     #[test]
+    fn from_u128_le() {
+        assert_eq!(Choice::from_u128_le(0, 0), Choice::TRUE);
+        assert_eq!(Choice::from_u128_le(1, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u128_le(1, 1), Choice::TRUE);
+        assert_eq!(Choice::from_u128_le(1, 2), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u128_lsb() {
+        assert_eq!(Choice::from_u128_lsb(0), Choice::FALSE);
+        assert_eq!(Choice::from_u128_lsb(1), Choice::TRUE);
+    }
+
+    #[test]
     fn select_i64() {
         let a: i64 = 1;
         let b: i64 = 2;
@@ -523,5 +570,13 @@ mod tests {
         let b: u64 = 2;
         assert_eq!(Choice::TRUE.select_u64(a, b), b);
         assert_eq!(Choice::FALSE.select_u64(a, b), a);
+    }
+
+    #[test]
+    fn select_u128() {
+        let a: u128 = 1;
+        let b: u128 = 2;
+        assert_eq!(Choice::TRUE.select_u128(a, b), b);
+        assert_eq!(Choice::FALSE.select_u128(a, b), a);
     }
 }
