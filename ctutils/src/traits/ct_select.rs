@@ -2,6 +2,9 @@ use crate::Choice;
 use cmov::Cmov;
 use core::cmp;
 
+#[cfg(feature = "subtle")]
+use crate::CtOption;
+
 /// Constant-time selection: pick between two values based on a given [`Choice`].
 pub trait CtSelect: Sized {
     /// Select between `self` and `other` based on `choice`, returning a copy of the value.
@@ -111,6 +114,29 @@ where
         for (a, b) in self.iter_mut().zip(other) {
             a.ct_assign(b, choice)
         }
+    }
+}
+
+#[cfg(feature = "subtle")]
+impl CtSelect for subtle::Choice {
+    #[inline]
+    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        Choice::from(*self)
+            .ct_select(&Choice::from(*other), choice)
+            .into()
+    }
+}
+
+#[cfg(feature = "subtle")]
+impl<T> CtSelect for subtle::CtOption<T>
+where
+    T: CtSelect + Default + subtle::ConditionallySelectable,
+{
+    #[inline]
+    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        CtOption::from(*self)
+            .ct_select(&CtOption::from(*other), choice)
+            .into()
     }
 }
 

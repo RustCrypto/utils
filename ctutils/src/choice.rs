@@ -410,6 +410,15 @@ impl From<Choice> for bool {
     }
 }
 
+impl Not for Choice {
+    type Output = Choice;
+
+    #[inline]
+    fn not(self) -> Choice {
+        self.not()
+    }
+}
+
 #[cfg(feature = "subtle")]
 impl From<subtle::Choice> for Choice {
     #[inline]
@@ -426,12 +435,19 @@ impl From<Choice> for subtle::Choice {
     }
 }
 
-impl Not for Choice {
-    type Output = Choice;
-
+#[cfg(feature = "subtle")]
+impl subtle::ConditionallySelectable for Choice {
     #[inline]
-    fn not(self) -> Choice {
-        self.not()
+    fn conditional_select(a: &Self, b: &Self, choice: subtle::Choice) -> Self {
+        CtSelect::ct_select(a, b, choice.into())
+    }
+}
+
+#[cfg(feature = "subtle")]
+impl subtle::ConstantTimeEq for Choice {
+    #[inline]
+    fn ct_eq(&self, other: &Self) -> subtle::Choice {
+        CtEq::ct_eq(self, other).into()
     }
 }
 

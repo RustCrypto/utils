@@ -576,6 +576,29 @@ impl<T> From<CtOption<T>> for subtle::CtOption<T> {
     }
 }
 
+#[cfg(feature = "subtle")]
+impl<T> subtle::ConditionallySelectable for CtOption<T>
+where
+    T: Copy, // `ConditionallySelectable` supertrait bound
+    Self: CtSelect,
+{
+    #[inline]
+    fn conditional_select(a: &Self, b: &Self, choice: subtle::Choice) -> Self {
+        CtSelect::ct_select(a, b, choice.into())
+    }
+}
+
+#[cfg(feature = "subtle")]
+impl<T> subtle::ConstantTimeEq for CtOption<T>
+where
+    Self: CtEq,
+{
+    #[inline]
+    fn ct_eq(&self, other: &Self) -> subtle::Choice {
+        CtEq::ct_eq(self, other).into()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{Choice, CtEq, CtOption, CtSelect};
