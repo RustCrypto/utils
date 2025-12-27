@@ -25,10 +25,10 @@ pub trait CtSelect: Sized {
 }
 
 // Impl `CtSelect` using the `cmov::Cmov` trait
-macro_rules! impl_unsigned_ct_select_with_cmov {
-    ( $($uint:ty),+ ) => {
+macro_rules! impl_ct_select_with_cmov {
+    ( $($ty:ty),+ ) => {
         $(
-            impl CtSelect for $uint {
+            impl CtSelect for $ty {
                 #[inline]
                 fn ct_select(&self, other: &Self, choice: Choice) -> Self {
                     let mut ret = *self;
@@ -36,6 +36,7 @@ macro_rules! impl_unsigned_ct_select_with_cmov {
                     ret
                 }
 
+                #[inline]
                 fn ct_assign(&mut self, other: &Self, choice: Choice) {
                     self.cmovnz(other, choice.into());
                 }
@@ -44,23 +45,7 @@ macro_rules! impl_unsigned_ct_select_with_cmov {
     };
 }
 
-// Impl `CtSelect` by first casting to unsigned then using the unsigned `CtSelect` impls
-// TODO(tarcieri): add signed integer support to `cmov`
-macro_rules! impl_signed_ct_select_with_cmov {
-    ( $($int:ty => $uint:ty),+ ) => {
-        $(
-            impl CtSelect for $int {
-                #[inline]
-                fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-                    (*self as $uint).ct_select(&(*other as $uint), choice) as Self
-                }
-            }
-        )+
-    };
-}
-
-impl_unsigned_ct_select_with_cmov!(u8, u16, u32, u64, u128);
-impl_signed_ct_select_with_cmov!(i8 => u8, i16 => u16, i32 => u32, i64 => u64, i128 => u128);
+impl_ct_select_with_cmov!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl CtSelect for usize {
