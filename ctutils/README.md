@@ -5,6 +5,7 @@
 [![Build Status][build-image]][build-link]
 ![Apache 2.0/MIT Licensed][license-image]
 ![MSRV][msrv-image]
+[![Project Chat][chat-image]][chat-link]
 
 Constant-time utility library with selection and equality testing support targeting cryptographic
 applications. Supports `const fn` where appropriate. Built on the [`cmov`] crate which provides
@@ -58,8 +59,10 @@ dual licensed as above, without any additional terms or conditions.
 [docs-link]: https://docs.rs/ctutils/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [msrv-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
-[build-image]: https://github.com/RustCrypto/utils/actions/workflows/ctutils.yml/badge.svg?branch=master
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/ctutils.yml?query=branch:master
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/ctutils.yml/badge.svg
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/ctutils.yml
+[chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
+[chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
 
 [//]: # (links)
 
