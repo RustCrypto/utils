@@ -1,11 +1,11 @@
 /// Write the tests for an integer type, given two unequal integers
 macro_rules! int_tests {
-    ($a:expr, $b:expr) => {
+    ($ty:path, $a:expr, $b:expr) => {
         use cmov::{Cmov as _, CmovEq as _};
 
         #[test]
         fn cmovz_works() {
-            let mut n = $a;
+            let mut n: $ty = $a;
 
             for cond in 1..0xFF {
                 n.cmovz(&$b, cond);
@@ -14,6 +14,9 @@ macro_rules! int_tests {
 
             n.cmovz(&$b, 0);
             assert_eq!(n, $b);
+
+            n.cmovz(&<$ty>::MAX, 0);
+            assert_eq!(n, <$ty>::MAX);
         }
 
         #[test]
@@ -33,6 +36,12 @@ macro_rules! int_tests {
         fn cmoveq_works() {
             let mut o = 0u8;
 
+            // compare to zero (a and b should be non-zero)
+            $a.cmoveq(&0, 1, &mut o);
+            assert_eq!(o, 0);
+            0.cmoveq(&$a, 1, &mut o);
+            assert_eq!(o, 0);
+
             for cond in 1..0xFFi64 {
                 cond.cmoveq(&cond, cond as u8, &mut o);
                 assert_eq!(o, cond as u8);
@@ -47,11 +56,25 @@ macro_rules! int_tests {
             // non-equal so we don't move
             $a.cmoveq(&$b, 55u8, &mut o);
             assert_eq!(o, 43u8);
+            <$ty>::MAX.cmoveq(&$a, 55u8, &mut o);
+            assert_eq!(o, 43u8);
+
+            // equal so we move
+            <$ty>::MAX.cmoveq(&<$ty>::MAX, 55u8, &mut o);
+            assert_eq!(o, 55u8);
         }
 
         #[test]
         fn cmovne_works() {
             let mut o = 0u8;
+
+            // compare to zero (a and b should be non-zero)
+            $a.cmovne(&0, 1, &mut o);
+            assert_eq!(o, 1);
+            o = 0;
+            0.cmovne(&$a, 1, &mut o);
+            assert_eq!(o, 1);
+            o = 0;
 
             for cond in 1..0xFFi64 {
                 cond.cmovne(&0, cond as u8, &mut o);
@@ -61,74 +84,81 @@ macro_rules! int_tests {
             }
 
             // non-equal so we move
+            o = 0;
             $a.cmovne(&$b, 55u8, &mut o);
             assert_eq!(o, 55u8);
 
             // equal so we don't move
-            $a.cmovne(&$a, 12u8, &mut o);
+            $a.cmovne(&$a, 66u8, &mut o);
             assert_eq!(o, 55u8);
+            <$ty>::MAX.cmovne(&<$ty>::MAX, 66u8, &mut o);
+            assert_eq!(o, 55u8);
+
+            // non-equal so we move
+            <$ty>::MAX.cmovne(&$a, 66u8, &mut o);
+            assert_eq!(o, 66u8);
         }
     };
 }
 
 mod i8 {
-    pub const I8_A: i64 = 0x11;
-    pub const I8_B: i64 = -0x22;
-    int_tests!(I8_A, I8_B);
+    pub const I8_A: i8 = 0x11;
+    pub const I8_B: i8 = -0x22;
+    int_tests!(i8, I8_A, I8_B);
 }
 
 mod i16 {
-    pub const I16_A: i64 = 0x1111;
-    pub const I16_B: i64 = -0x2222;
-    int_tests!(I16_A, I16_B);
+    pub const I16_A: i16 = 0x1111;
+    pub const I16_B: i16 = -0x2222;
+    int_tests!(i16, I16_A, I16_B);
 }
 
 mod i32 {
     pub const I32_A: i32 = 0x1111_1111;
     pub const I32_B: i32 = -0x2222_2222;
-    int_tests!(I32_A, I32_B);
+    int_tests!(i32, I32_A, I32_B);
 }
 
 mod i64 {
     pub const I64_A: i64 = 0x1111_1111_1111_1111;
     pub const I64_B: i64 = -0x2222_2222_2222_2222;
-    int_tests!(I64_A, I64_B);
+    int_tests!(i64, I64_A, I64_B);
 }
 
 mod i128 {
     pub const I128_A: i128 = 0x1111_1111_1111_1111_1111_1111_1111_1111;
     pub const I128_B: i128 = -0x2222_2222_2222_2222_2222_2222_2222_2222;
-    int_tests!(I128_A, I128_B);
+    int_tests!(i128, I128_A, I128_B);
 }
 
 mod u8 {
     pub const U8_A: u8 = 0x11;
     pub const U8_B: u8 = 0x22;
-    int_tests!(U8_A, U8_B);
+    int_tests!(u8, U8_A, U8_B);
 }
 
 mod u16 {
     pub const U16_A: u16 = 0x1111;
     pub const U16_B: u16 = 0x2222;
-    int_tests!(U16_A, U16_B);
+    int_tests!(u16, U16_A, U16_B);
 }
 
 mod u32 {
     pub const U32_A: u32 = 0x1111_1111;
     pub const U32_B: u32 = 0x2222_2222;
-    int_tests!(U32_A, U32_B);
+    int_tests!(u32, U32_A, U32_B);
 }
 
 mod u64 {
     pub const U64_A: u64 = 0x1111_1111_1111_1111;
     pub const U64_B: u64 = 0x2222_2222_2222_2222;
-    int_tests!(U64_A, U64_B);
+    int_tests!(u64, U64_A, U64_B);
 }
 
 mod u128 {
     pub const U128_A: u128 = 0x1111_1111_1111_1111_2222_2222_2222_2222;
     pub const U128_B: u128 = 0x2222_2222_2222_2222_3333_3333_3333_3333;
-    int_tests!(U128_A, U128_B);
+    int_tests!(u128, U128_A, U128_B);
 }
 
 mod slices {
