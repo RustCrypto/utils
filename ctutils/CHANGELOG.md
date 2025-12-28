@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.2 (2025-12-28)
+### Added
+- Unsigned `CtNeg` impls ([#1306])
+
+[#1306]: https://github.com/RustCrypto/utils/pull/1306
+
+## 0.2.1 (2025-12-27)
+### Added
+- Enhanced `subtle` interop ([#1289])
+
+### Security
+- Pin to `cmov` v0.4.3+ - includes important security fixes ([#1304])
+
+[#1289]: https://github.com/RustCrypto/utils/pull/1304
+[#1304]: https://github.com/RustCrypto/utils/pull/1304
+
 ## 0.2.0 (2025-12-27)
 ### Added
 - Additional `Choice::from_u128*` constructors ([#1285])
