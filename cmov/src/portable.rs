@@ -7,7 +7,14 @@
 // TODO(tarcieri): more optimized implementation for small integers
 
 use crate::{Cmov, CmovEq, Condition};
-use core::{hint::black_box, mem::size_of};
+use core::hint::black_box;
+
+/// Bitwise non-zero: returns `1` if `x != 0`, and otherwise returns `0`.
+macro_rules! bitnz {
+    ($value:expr, $bits:expr) => {
+        ($value | $value.wrapping_neg()) >> ($bits - 1)
+    };
+}
 
 impl Cmov for u16 {
     #[inline]
@@ -68,13 +75,13 @@ impl CmovEq for u32 {
 impl Cmov for u64 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        let mask = is_non_zero(condition).wrapping_sub(1);
+        let mask = black_box((bitnz!(condition, u8::BITS) as u64).wrapping_sub(1));
         *self = (*self & mask) | (*value & !mask);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        let mask = (1 ^ is_non_zero(condition)).wrapping_sub(1);
+        let mask = black_box((1 ^ bitnz!(condition, u8::BITS) as u64).wrapping_sub(1));
         *self = (*self & mask) | (*value & !mask);
     }
 }
@@ -82,23 +89,13 @@ impl Cmov for u64 {
 impl CmovEq for u64 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        output.cmovnz(&input, (self ^ rhs) as u8);
+        let ne = bitnz!(self ^ rhs, u64::BITS) as u8;
+        output.cmovnz(&input, black_box(ne));
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        output.cmovz(&input, (self ^ rhs) as u8);
+        let ne = bitnz!(self ^ rhs, u64::BITS) as u8;
+        output.cmovnz(&input, black_box(ne ^ 1));
     }
-}
-
-/// Check if the given condition value is non-zero
-///
-/// # Returns
-/// - `condition` is zero: `0`
-/// - `condition` is non-zero: `1`
-#[inline]
-fn is_non_zero(condition: Condition) -> u64 {
-    const SHIFT_BITS: usize = size_of::<u64>() - 1;
-    let condition = condition as u64;
-    black_box(((condition | (!condition).wrapping_add(1)) >> SHIFT_BITS) & 1)
 }

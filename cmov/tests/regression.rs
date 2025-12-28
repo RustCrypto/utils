@@ -1,8 +1,5 @@
 //! Tests for previous bugs in the implementation.
 
-// TODO(tarcieri): known to be broken on PPC32. See RustCrypto/utils#1298
-#![cfg(not(target_arch = "powerpc"))]
-
 use cmov::CmovEq;
 
 #[test]
