@@ -37,6 +37,8 @@ library incorporated into `subtle` for a potential v3.0.
 - Guaranteed constant-time equality testing and conditional selection on `x86(_64)` and `aarch64`
   using `asm!` implementations in the `cmov` crate which call special constant-time CPU instructions
   with a portable "best effort" fallback on other platforms using bitwise arithmetic and `black_box`
+- No `Copy` (or even `Clone`) bounds, which means all functionality can work with heap-allocated
+  types in addition to stack-allocated
 
 Many features of this crate are extractions from the [`crypto-bigint`] crate, where we implement all
 core logic as `const fn` and needed solutions for implementing constant-time code despite the
