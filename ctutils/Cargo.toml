@@ -17,7 +17,7 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-cmov = "0.4.2"
+cmov = "0.4.3"
 
 # optional dependencies
 subtle = { version = "2", optional = true, default-features = false }
