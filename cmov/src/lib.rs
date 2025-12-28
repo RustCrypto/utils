@@ -4,7 +4,18 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
-#![warn(missing_docs, unused_qualifications)]
+#![warn(
+    clippy::cast_possible_truncation,
+    clippy::integer_division_remainder_used,
+    clippy::mod_module_files,
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    rust_2018_idioms,
+    trivial_casts,
+    trivial_numeric_casts,
+    unused_qualifications
+)]
 
 #[cfg(not(miri))]
 #[cfg(target_arch = "aarch64")]
@@ -59,6 +70,8 @@ pub trait CmovEq {
     }
 }
 
+// TODO(tarcieri): address truncation lint
+#[allow(clippy::cast_possible_truncation)]
 impl Cmov for u8 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -87,6 +100,8 @@ impl CmovEq for u8 {
     }
 }
 
+// TODO(tarcieri): address truncation lint
+#[allow(clippy::cast_possible_truncation)]
 impl Cmov for u128 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -111,6 +126,8 @@ impl Cmov for u128 {
     }
 }
 
+// TODO(tarcieri): address truncation lint
+#[allow(clippy::cast_possible_truncation)]
 impl CmovEq for u128 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
