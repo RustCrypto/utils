@@ -70,21 +70,21 @@ pub trait CmovEq {
     }
 }
 
-// TODO(tarcieri): address truncation lint
-#[allow(clippy::cast_possible_truncation)]
 impl Cmov for u8 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
         let mut tmp = *self as u16;
         tmp.cmovnz(&(*value as u16), condition);
-        *self = tmp as u8;
+        debug_assert!(tmp <= u8::MAX as u16);
+        *self = (tmp & 0xFF) as u8;
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
         let mut tmp = *self as u16;
         tmp.cmovz(&(*value as u16), condition);
-        *self = tmp as u8;
+        debug_assert!(tmp <= u8::MAX as u16);
+        *self = (tmp & 0xFF) as u8;
     }
 }
 
