@@ -15,3 +15,6 @@ Conditional move CPU intrinsics which are guaranteed on major platforms to execu
 and not be rewritten as branches by the compiler. Provides wrappers for the CMOV family of
 instructions on x86/x86_64 and CSEL on AArch64, along with a portable "best-effort" fallback.
 """
+
+[dev-dependencies]
+proptest = "1.9"
