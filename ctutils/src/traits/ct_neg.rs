@@ -13,11 +13,11 @@ pub trait CtNeg: Sized {
     }
 }
 
-// Impl `CtNeg` for an integer type which impls `CtSelect`
-macro_rules! impl_ct_neg {
-    ( $($ty:ty),+ ) => {
+// Impl `CtNeg` for a signed integer (`i*`) type which impls `CtSelect`
+macro_rules! impl_signed_ct_neg {
+    ( $($int:ty),+ ) => {
         $(
-            impl CtNeg for $ty {
+            impl CtNeg for $int {
                 #[inline]
                 fn ct_neg(&self, choice: Choice) -> Self {
                     let neg = -*self;
@@ -34,26 +34,91 @@ macro_rules! impl_ct_neg {
     };
 }
 
-impl_ct_neg!(i8, i16, i32, i64, i128);
+// Impl `CtNeg` for an unsigned integer (`u*`) type which impls `CtSelect`
+macro_rules! impl_unsigned_ct_neg {
+    ( $($uint:ty),+ ) => {
+        $(
+            impl CtNeg for $uint {
+                #[inline]
+                fn ct_neg(&self, choice: Choice) -> Self {
+                    let neg = self.wrapping_neg();
+                    self.ct_select(&neg, choice)
+                }
 
-// TODO(tarcieri): test all signed integer types
+                #[inline]
+                fn ct_neg_assign(&mut self, choice: Choice) {
+                     let neg = self.wrapping_neg();
+                    self.ct_assign(&neg, choice)
+                }
+            }
+        )+
+    };
+}
+
+impl_signed_ct_neg!(i8, i16, i32, i64, i128);
+impl_unsigned_ct_neg!(u8, u16, u32, u64, u128);
+
+// TODO(tarcieri): test all signed/unsigned integer types
 #[cfg(test)]
 mod tests {
-    use super::{Choice, CtNeg};
+    /// Test `CtNeg` impl on `i*`
+    macro_rules! signed_ct_neg_tests {
+         ( $($int:ident),+ ) => {
+             $(
+                mod $int {
+                    use crate::{Choice, CtNeg};
 
-    #[test]
-    fn i64_ct_neg() {
-        assert_eq!(42, 42.ct_neg(Choice::FALSE));
-        assert_eq!(-42, 42.ct_neg(Choice::TRUE));
+                    #[test]
+                    fn ct_neg() {
+                        let n: $int = 42;
+                        assert_eq!(n, n.ct_neg(Choice::FALSE));
+                        assert_eq!(-n, n.ct_neg(Choice::TRUE));
+                    }
+
+                    #[test]
+                    fn ct_neg_assign() {
+                        let n: $int = 42;
+                        let mut x = n;
+                        x.ct_neg_assign(Choice::FALSE);
+                        assert_eq!(n, x);
+
+                        x.ct_neg_assign(Choice::TRUE);
+                        assert_eq!(-n, x);
+                    }
+                }
+             )+
+        };
     }
 
-    #[test]
-    fn i64_ct_neg_assign() {
-        let mut n = 42;
-        n.ct_neg_assign(Choice::FALSE);
-        assert_eq!(42, n);
+    /// Test `CtNeg` impl on `u*`
+    macro_rules! unsigned_ct_neg_tests {
+         ( $($uint:ident),+ ) => {
+             $(
+                mod $uint {
+                    use crate::{Choice, CtNeg};
 
-        n.ct_neg_assign(Choice::TRUE);
-        assert_eq!(-42, n);
+                    #[test]
+                    fn u32_ct_neg() {
+                        let n: $uint = 42;
+                        assert_eq!(n, n.ct_neg(Choice::FALSE));
+                        assert_eq!(<$uint>::MAX - n + 1, n.ct_neg(Choice::TRUE));
+                    }
+
+                    #[test]
+                    fn u32_ct_neg_assign() {
+                        let n: $uint = 42;
+                        let mut x = n;
+                        x.ct_neg_assign(Choice::FALSE);
+                        assert_eq!(n, x);
+
+                        x.ct_neg_assign(Choice::TRUE);
+                        assert_eq!(<$uint>::MAX - n + 1, x);
+                    }
+                }
+             )+
+        };
     }
+
+    signed_ct_neg_tests!(i8, i16, i32, i64, i128);
+    unsigned_ct_neg_tests!(u8, u16, u32, u64, u128);
 }
