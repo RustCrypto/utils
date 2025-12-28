@@ -37,7 +37,10 @@ macro_rules! cseleq {
             };
         };
 
-        *$dst = tmp as u8;
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            *$dst = tmp as u8;
+        }
     };
 }
 
