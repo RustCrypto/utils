@@ -1,8 +1,9 @@
 use crate::{Cmov, CmovEq, Condition};
 use core::arch::asm;
 
+/// Conditional select
 macro_rules! csel {
-    ($csel:expr, $dst:expr, $src:expr, $condition:expr) => {
+    ($cmp:expr, $csel:expr, $dst:expr, $src:expr, $condition:expr) => {
         unsafe {
             asm! {
                 "cmp {0:w}, 0",
@@ -17,13 +18,14 @@ macro_rules! csel {
     };
 }
 
-macro_rules! csel_eq {
-    ($instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
+/// Conditional select-based equality test
+macro_rules! cseleq {
+    ($eor:expr, $cmp:expr, $instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
         let mut tmp = *$dst as u16;
         unsafe {
             asm! {
-                "eor {0:w}, {1:w}, {2:w}",
-                "cmp {0:w}, 0",
+                $eor,
+                $cmp,
                 $instruction,
                 out(reg) _,
                 in(reg) *$lhs,
@@ -39,74 +41,118 @@ macro_rules! csel_eq {
     };
 }
 
+/// Conditional select using 32-bit `:w` registers
+macro_rules! csel32 {
+    ($csel:expr, $dst:expr, $src:expr, $condition:expr) => {
+        csel!("cmp {0:w}, 0", $csel, $dst, $src, $condition)
+    };
+}
+
+/// Conditional select using 64-bit `:x` registers
+macro_rules! csel64 {
+    ($csel:expr, $dst:expr, $src:expr, $condition:expr) => {
+        csel!("cmp {0:x}, 0", $csel, $dst, $src, $condition)
+    };
+}
+
+/// Conditional select equality test using 32-bit `:w` registers
+macro_rules! cseleq32 {
+    ($instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
+        cseleq!(
+            "eor {0:w}, {1:w}, {2:w}",
+            "cmp {0:w}, 0",
+            $instruction,
+            $lhs,
+            $rhs,
+            $condition,
+            $dst
+        )
+    };
+}
+
+/// Conditional select equality test using 64-bit `:w` registers
+macro_rules! cseleq64 {
+    ($instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
+        cseleq!(
+            "eor {0:x}, {1:x}, {2:x}",
+            "cmp {0:x}, 0",
+            $instruction,
+            $lhs,
+            $rhs,
+            $condition,
+            $dst
+        )
+    };
+}
+
 impl Cmov for u16 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:w}, {2:w}, {3:w}, NE", self, value, condition);
+        csel32!("csel {1:w}, {2:w}, {3:w}, NE", self, value, condition);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:w}, {2:w}, {3:w}, EQ", self, value, condition);
+        csel32!("csel {1:w}, {2:w}, {3:w}, EQ", self, value, condition);
     }
 }
 
 impl CmovEq for u16 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        csel_eq!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
+        cseleq32!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        csel_eq!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
+        cseleq32!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
     }
 }
 
 impl Cmov for u32 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:w}, {2:w}, {3:w}, NE", self, value, condition);
+        csel32!("csel {1:w}, {2:w}, {3:w}, NE", self, value, condition);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:w}, {2:w}, {3:w}, EQ", self, value, condition);
+        csel32!("csel {1:w}, {2:w}, {3:w}, EQ", self, value, condition);
     }
 }
 
 impl CmovEq for u32 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        csel_eq!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
+        cseleq32!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        csel_eq!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
+        cseleq32!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
     }
 }
 
 impl Cmov for u64 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:x}, {2:x}, {3:x}, NE", self, value, condition);
+        csel64!("csel {1:x}, {2:x}, {3:x}, NE", self, value, condition);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        csel!("csel {1:x}, {2:x}, {3:x}, EQ", self, value, condition);
+        csel64!("csel {1:x}, {2:x}, {3:x}, EQ", self, value, condition);
     }
 }
 
 impl CmovEq for u64 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        csel_eq!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
+        cseleq64!("csel {3:x}, {4:x}, {5:x}, NE", self, rhs, input, output);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        csel_eq!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
+        cseleq64!("csel {3:x}, {4:x}, {5:x}, EQ", self, rhs, input, output);
     }
 }
