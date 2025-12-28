@@ -1,6 +1,3 @@
-// TODO(tarcieri): known to be broken on PPC32. See RustCrypto/utils#1298
-#![cfg(not(target_arch = "powerpc"))]
-
 /// Write the proptests for an integer type.
 macro_rules! int_proptests {
     ( $($int:ident),+ ) => {
