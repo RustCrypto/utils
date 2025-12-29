@@ -45,13 +45,6 @@ impl Choice {
     /// Equivalent of [`true`].
     pub const TRUE: Self = Self(1);
 
-    /// DEPRECATED: legacy alias for [`Choice::from_u8_lsb`].
-    #[deprecated(since = "0.2.3", note = "use `Choice::from_u8_lsb` instead")]
-    #[inline]
-    pub const fn new(value: u8) -> Self {
-        Self::from_u8_lsb(value)
-    }
-
     /// Convert `Choice` into a `bool`.
     ///
     /// <div class = "warning">
