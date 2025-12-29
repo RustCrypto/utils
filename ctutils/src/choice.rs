@@ -47,6 +47,17 @@ impl Choice {
 
     /// Create a new [`Choice`] from the given `u8` value, which MUST be either `0` or `1`.
     ///
+    /// <div class="warning">
+    /// <b>Potential panics and other misbehavior!</b>
+    ///
+    /// This constructor panics in debug builds if the given value is not 0 or 1.
+    ///
+    /// It mainly exists as a convenience for migrating code which previously used `subtle`, but
+    /// we may deprecate it in future releases.
+    ///
+    /// Consider using a more specific non-panicking constructor, like [`Choice::from_u8_lsb`].
+    /// </div>
+    ///
     /// # Panics
     /// - in `debug` builds, panics if the value is anything other than `0` or `1`.
     // TODO(tarcieri): deprecate this in favor of non-panicking constructors?
@@ -160,11 +171,79 @@ impl Choice {
     // `const fn` constructor methods
     //
 
+    // i64
+
     /// Returns the truthy value if `x == y`, and the falsy value otherwise.
     #[inline]
     pub const fn from_i64_eq(x: i64, y: i64) -> Self {
         Self::from_u64_nz(x as u64 ^ y as u64).not()
     }
+
+    // u8
+
+    /// Returns the truthy value if `x == y`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u8_eq(x: u8, y: u8) -> Self {
+        Self::from_u8_nz(x ^ y).not()
+    }
+
+    /// Returns the truthy value if `x <= y` and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u8_le(x: u8, y: u8) -> Self {
+        Self::from_u8_lsb(bitle!(x, y, u8::BITS))
+    }
+
+    /// Initialize from the least significant bit of a `u8`.
+    #[inline]
+    pub const fn from_u8_lsb(value: u8) -> Self {
+        Self(value & 0x1)
+    }
+
+    /// Returns the truthy value if `x < y`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u8_lt(x: u8, y: u8) -> Self {
+        Self::from_u8_lsb(bitlt!(x, y, u8::BITS))
+    }
+
+    /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u8_nz(value: u8) -> Self {
+        Self::from_u8_lsb(bitnz!(value, u8::BITS))
+    }
+
+    // u16
+
+    /// Returns the truthy value if `x == y`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u16_eq(x: u16, y: u16) -> Self {
+        Self::from_u16_nz(x ^ y).not()
+    }
+
+    /// Returns the truthy value if `x <= y` and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u16_le(x: u16, y: u16) -> Self {
+        Self::from_u16_lsb(bitle!(x, y, u16::BITS))
+    }
+
+    /// Initialize from the least significant bit of a `u16`.
+    #[inline]
+    pub const fn from_u16_lsb(value: u16) -> Self {
+        Self((value & 0x1) as u8)
+    }
+
+    /// Returns the truthy value if `x < y`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u16_lt(x: u16, y: u16) -> Self {
+        Self::from_u16_lsb(bitlt!(x, y, u16::BITS))
+    }
+
+    /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
+    #[inline]
+    pub const fn from_u16_nz(value: u16) -> Self {
+        Self::from_u16_lsb(bitnz!(value, u16::BITS))
+    }
+
+    // u32
 
     /// Returns the truthy value if `x == y`, and the falsy value otherwise.
     #[inline]
@@ -181,7 +260,7 @@ impl Choice {
     /// Initialize from the least significant bit of a `u32`.
     #[inline]
     pub const fn from_u32_lsb(value: u32) -> Self {
-        Self::new((value & 0x1) as u8)
+        Self((value & 0x1) as u8)
     }
 
     /// Returns the truthy value if `x < y`, and the falsy value otherwise.
@@ -195,6 +274,8 @@ impl Choice {
     pub const fn from_u32_nz(value: u32) -> Self {
         Self::from_u32_lsb(bitnz!(value, u32::BITS))
     }
+
+    // u64
 
     /// Returns the truthy value if `x == y`, and the falsy value otherwise.
     #[inline]
@@ -211,7 +292,7 @@ impl Choice {
     /// Initialize from the least significant bit of a `u64`.
     #[inline]
     pub const fn from_u64_lsb(value: u64) -> Self {
-        Self::new((value & 0x1) as u8)
+        Self((value & 0x1) as u8)
     }
 
     /// Returns the truthy value if `x < y`, and the falsy value otherwise.
@@ -225,6 +306,8 @@ impl Choice {
     pub const fn from_u64_nz(value: u64) -> Self {
         Self::from_u64_lsb(bitnz!(value, u64::BITS))
     }
+
+    // u128
 
     /// Returns the truthy value if `x == y`, and the falsy value otherwise.
     #[inline]
@@ -241,7 +324,7 @@ impl Choice {
     /// Initialize from the least significant bit of a `u128`.
     #[inline]
     pub const fn from_u128_lsb(value: u128) -> Self {
-        Self::new((value & 1) as u8)
+        Self((value & 1) as u8)
     }
 
     /// Returns the truthy value if `x < y`, and the falsy value otherwise.
@@ -537,6 +620,80 @@ mod tests {
     fn from_i64_eq() {
         assert_eq!(Choice::from_i64_eq(0, 1), Choice::FALSE);
         assert_eq!(Choice::from_i64_eq(1, 1), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u8_eq() {
+        assert_eq!(Choice::from_u8_eq(0, 1), Choice::FALSE);
+        assert_eq!(Choice::from_u8_eq(1, 1), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u8_le() {
+        assert_eq!(Choice::from_u8_le(0, 0), Choice::TRUE);
+        assert_eq!(Choice::from_u8_le(1, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u8_le(1, 1), Choice::TRUE);
+        assert_eq!(Choice::from_u8_le(1, 2), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u8_lsb() {
+        assert_eq!(Choice::from_u8_lsb(0), Choice::FALSE);
+        assert_eq!(Choice::from_u8_lsb(1), Choice::TRUE);
+        assert_eq!(Choice::from_u8_lsb(2), Choice::FALSE);
+        assert_eq!(Choice::from_u8_lsb(3), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u8_lt() {
+        assert_eq!(Choice::from_u8_lt(0, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u8_lt(1, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u8_lt(1, 1), Choice::FALSE);
+        assert_eq!(Choice::from_u8_lt(1, 2), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u8_nz() {
+        assert_eq!(Choice::from_u8_nz(0), Choice::FALSE);
+        assert_eq!(Choice::from_u8_nz(1), Choice::TRUE);
+        assert_eq!(Choice::from_u8_nz(2), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u16_eq() {
+        assert_eq!(Choice::from_u16_eq(0, 1), Choice::FALSE);
+        assert_eq!(Choice::from_u16_eq(1, 1), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u16_le() {
+        assert_eq!(Choice::from_u16_le(0, 0), Choice::TRUE);
+        assert_eq!(Choice::from_u16_le(1, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u16_le(1, 1), Choice::TRUE);
+        assert_eq!(Choice::from_u16_le(1, 2), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u16_lsb() {
+        assert_eq!(Choice::from_u16_lsb(0), Choice::FALSE);
+        assert_eq!(Choice::from_u16_lsb(1), Choice::TRUE);
+        assert_eq!(Choice::from_u16_lsb(2), Choice::FALSE);
+        assert_eq!(Choice::from_u16_lsb(3), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u16_lt() {
+        assert_eq!(Choice::from_u16_lt(0, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u16_lt(1, 0), Choice::FALSE);
+        assert_eq!(Choice::from_u16_lt(1, 1), Choice::FALSE);
+        assert_eq!(Choice::from_u16_lt(1, 2), Choice::TRUE);
+    }
+
+    #[test]
+    fn from_u16_nz() {
+        assert_eq!(Choice::from_u16_nz(0), Choice::FALSE);
+        assert_eq!(Choice::from_u16_nz(1), Choice::TRUE);
+        assert_eq!(Choice::from_u16_nz(2), Choice::TRUE);
     }
 
     #[test]
