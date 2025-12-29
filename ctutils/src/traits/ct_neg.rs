@@ -58,7 +58,6 @@ macro_rules! impl_unsigned_ct_neg {
 impl_signed_ct_neg!(i8, i16, i32, i64, i128);
 impl_unsigned_ct_neg!(u8, u16, u32, u64, u128);
 
-// TODO(tarcieri): test all signed/unsigned integer types
 #[cfg(test)]
 mod tests {
     /// Test `CtNeg` impl on `i*`
