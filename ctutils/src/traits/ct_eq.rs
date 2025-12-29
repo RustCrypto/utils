@@ -29,9 +29,9 @@ macro_rules! impl_ct_eq_with_cmov_eq {
             impl CtEq for $ty {
                 #[inline]
                 fn ct_eq(&self, other: &Self) -> Choice {
-                    let mut ret = 0;
-                    self.cmoveq(other, 1, &mut ret);
-                    Choice::new(ret)
+                    let mut ret = Choice::FALSE;
+                    self.cmoveq(other, 1, &mut ret.0);
+                    ret
                 }
             }
         )+
