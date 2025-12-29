@@ -5,7 +5,7 @@ Constant-time utility library with selection and equality testing support target
 applications. Supports `const fn` where appropriate. Built on the `cmov` crate which provides
 architecture-specific predication intrinsics. Heavily inspired by the `subtle` crate.
 """
-version = "0.3.0-pre"
+version = "0.3.0"
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
 homepage = "https://github.com/RustCrypto/utils/tree/master/ctselect"
