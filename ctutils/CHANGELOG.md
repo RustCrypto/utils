@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.3 (2025-12-29)
+### Added
+- Impl `From<u8>` for `Choice` ([#1309])
+- `Choice::from_u8*` and `from_u16*` ([#1311])
+
+### Changed
+- Deprecate `Choice::new` ([#1312])
+
+[#1309]: https://github.com/RustCrypto/utils/pull/1309
+[#1311]: https://github.com/RustCrypto/utils/pull/1311
+[#1312]: https://github.com/RustCrypto/utils/pull/1312
+
 ## 0.2.2 (2025-12-28)
 ### Added
 - Unsigned `CtNeg` impls ([#1306])
