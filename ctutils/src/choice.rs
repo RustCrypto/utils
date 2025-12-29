@@ -32,10 +32,10 @@ macro_rules! bitnz {
 /// applied which depend on a value.
 ///
 /// This is used as a "belt-and-suspenders" defense in addition to mechanisms like
-/// constant-time predication intrinsics provided by the `cmov` crate, and is never expected to be
+/// constant-time predication intrinsics provided by the [`cmov`] crate, and is never expected to be
 /// the only line of defense.
-// TODO(tarcieri): remove `Eq`/`PartialEq` when `crypto-bigint` is updated
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+// NOTE: we deliberately do NOT impl `Eq`, `Hash`, `PartialEq`, etc. See #1315
+#[derive(Copy, Clone, Debug)]
 pub struct Choice(pub(crate) u8);
 
 impl Choice {
@@ -597,189 +597,189 @@ mod tests {
 
     #[test]
     fn from_i64_eq() {
-        assert_eq!(Choice::from_i64_eq(0, 1), Choice::FALSE);
-        assert_eq!(Choice::from_i64_eq(1, 1), Choice::TRUE);
+        assert!(Choice::from_i64_eq(0, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_i64_eq(1, 1).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u8_eq() {
-        assert_eq!(Choice::from_u8_eq(0, 1), Choice::FALSE);
-        assert_eq!(Choice::from_u8_eq(1, 1), Choice::TRUE);
+        assert!(Choice::from_u8_eq(0, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u8_eq(1, 1).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u8_le() {
-        assert_eq!(Choice::from_u8_le(0, 0), Choice::TRUE);
-        assert_eq!(Choice::from_u8_le(1, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u8_le(1, 1), Choice::TRUE);
-        assert_eq!(Choice::from_u8_le(1, 2), Choice::TRUE);
+        assert!(Choice::from_u8_le(0, 0).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u8_le(1, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u8_le(1, 1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u8_le(1, 2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u8_lsb() {
-        assert_eq!(Choice::from_u8_lsb(0), Choice::FALSE);
-        assert_eq!(Choice::from_u8_lsb(1), Choice::TRUE);
-        assert_eq!(Choice::from_u8_lsb(2), Choice::FALSE);
-        assert_eq!(Choice::from_u8_lsb(3), Choice::TRUE);
+        assert!(Choice::from_u8_lsb(0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u8_lsb(1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u8_lsb(2).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u8_lsb(3).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u8_lt() {
-        assert_eq!(Choice::from_u8_lt(0, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u8_lt(1, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u8_lt(1, 1), Choice::FALSE);
-        assert_eq!(Choice::from_u8_lt(1, 2), Choice::TRUE);
+        assert!(Choice::from_u8_lt(0, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u8_lt(1, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u8_lt(1, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u8_lt(1, 2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u8_nz() {
-        assert_eq!(Choice::from_u8_nz(0), Choice::FALSE);
-        assert_eq!(Choice::from_u8_nz(1), Choice::TRUE);
-        assert_eq!(Choice::from_u8_nz(2), Choice::TRUE);
+        assert!(Choice::from_u8_nz(0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u8_nz(1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u8_nz(2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u16_eq() {
-        assert_eq!(Choice::from_u16_eq(0, 1), Choice::FALSE);
-        assert_eq!(Choice::from_u16_eq(1, 1), Choice::TRUE);
+        assert!(Choice::from_u16_eq(0, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u16_eq(1, 1).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u16_le() {
-        assert_eq!(Choice::from_u16_le(0, 0), Choice::TRUE);
-        assert_eq!(Choice::from_u16_le(1, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u16_le(1, 1), Choice::TRUE);
-        assert_eq!(Choice::from_u16_le(1, 2), Choice::TRUE);
+        assert!(Choice::from_u16_le(0, 0).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u16_le(1, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u16_le(1, 1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u16_le(1, 2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u16_lsb() {
-        assert_eq!(Choice::from_u16_lsb(0), Choice::FALSE);
-        assert_eq!(Choice::from_u16_lsb(1), Choice::TRUE);
-        assert_eq!(Choice::from_u16_lsb(2), Choice::FALSE);
-        assert_eq!(Choice::from_u16_lsb(3), Choice::TRUE);
+        assert!(Choice::from_u16_lsb(0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u16_lsb(1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u16_lsb(2).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u16_lsb(3).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u16_lt() {
-        assert_eq!(Choice::from_u16_lt(0, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u16_lt(1, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u16_lt(1, 1), Choice::FALSE);
-        assert_eq!(Choice::from_u16_lt(1, 2), Choice::TRUE);
+        assert!(Choice::from_u16_lt(0, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u16_lt(1, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u16_lt(1, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u16_lt(1, 2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u16_nz() {
-        assert_eq!(Choice::from_u16_nz(0), Choice::FALSE);
-        assert_eq!(Choice::from_u16_nz(1), Choice::TRUE);
-        assert_eq!(Choice::from_u16_nz(2), Choice::TRUE);
+        assert!(Choice::from_u16_nz(0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u16_nz(1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u16_nz(2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u32_eq() {
-        assert_eq!(Choice::from_u32_eq(0, 1), Choice::FALSE);
-        assert_eq!(Choice::from_u32_eq(1, 1), Choice::TRUE);
+        assert!(Choice::from_u32_eq(0, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u32_eq(1, 1).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u32_le() {
-        assert_eq!(Choice::from_u32_le(0, 0), Choice::TRUE);
-        assert_eq!(Choice::from_u32_le(1, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u32_le(1, 1), Choice::TRUE);
-        assert_eq!(Choice::from_u32_le(1, 2), Choice::TRUE);
+        assert!(Choice::from_u32_le(0, 0).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u32_le(1, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u32_le(1, 1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u32_le(1, 2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u32_lsb() {
-        assert_eq!(Choice::from_u32_lsb(0), Choice::FALSE);
-        assert_eq!(Choice::from_u32_lsb(1), Choice::TRUE);
-        assert_eq!(Choice::from_u32_lsb(2), Choice::FALSE);
-        assert_eq!(Choice::from_u32_lsb(3), Choice::TRUE);
+        assert!(Choice::from_u32_lsb(0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u32_lsb(1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u32_lsb(2).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u32_lsb(3).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u32_lt() {
-        assert_eq!(Choice::from_u32_lt(0, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u32_lt(1, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u32_lt(1, 1), Choice::FALSE);
-        assert_eq!(Choice::from_u32_lt(1, 2), Choice::TRUE);
+        assert!(Choice::from_u32_lt(0, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u32_lt(1, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u32_lt(1, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u32_lt(1, 2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u32_nz() {
-        assert_eq!(Choice::from_u32_nz(0), Choice::FALSE);
-        assert_eq!(Choice::from_u32_nz(1), Choice::TRUE);
-        assert_eq!(Choice::from_u32_nz(2), Choice::TRUE);
+        assert!(Choice::from_u32_nz(0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u32_nz(1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u32_nz(2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u64_eq() {
-        assert_eq!(Choice::from_u64_eq(0, 1), Choice::FALSE);
-        assert_eq!(Choice::from_u64_eq(1, 1), Choice::TRUE);
+        assert!(Choice::from_u64_eq(0, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u64_eq(1, 1).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u64_le() {
-        assert_eq!(Choice::from_u64_le(0, 0), Choice::TRUE);
-        assert_eq!(Choice::from_u64_le(1, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u64_le(1, 1), Choice::TRUE);
-        assert_eq!(Choice::from_u64_le(1, 2), Choice::TRUE);
+        assert!(Choice::from_u64_le(0, 0).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u64_le(1, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u64_le(1, 1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u64_le(1, 2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u64_lsb() {
-        assert_eq!(Choice::from_u64_lsb(0), Choice::FALSE);
-        assert_eq!(Choice::from_u64_lsb(1), Choice::TRUE);
+        assert!(Choice::from_u64_lsb(0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u64_lsb(1).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u64_lt() {
-        assert_eq!(Choice::from_u64_lt(0, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u64_lt(1, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u64_lt(1, 1), Choice::FALSE);
-        assert_eq!(Choice::from_u64_lt(1, 2), Choice::TRUE);
+        assert!(Choice::from_u64_lt(0, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u64_lt(1, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u64_lt(1, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u64_lt(1, 2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u64_nz() {
-        assert_eq!(Choice::from_u64_nz(0), Choice::FALSE);
-        assert_eq!(Choice::from_u64_nz(1), Choice::TRUE);
-        assert_eq!(Choice::from_u64_nz(2), Choice::TRUE);
+        assert!(Choice::from_u64_nz(0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u64_nz(1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u64_nz(2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u128_eq() {
-        assert_eq!(Choice::from_u128_eq(0, 1), Choice::FALSE);
-        assert_eq!(Choice::from_u128_eq(1, 1), Choice::TRUE);
+        assert!(Choice::from_u128_eq(0, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u128_eq(1, 1).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u128_le() {
-        assert_eq!(Choice::from_u128_le(0, 0), Choice::TRUE);
-        assert_eq!(Choice::from_u128_le(1, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u128_le(1, 1), Choice::TRUE);
-        assert_eq!(Choice::from_u128_le(1, 2), Choice::TRUE);
+        assert!(Choice::from_u128_le(0, 0).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u128_le(1, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u128_le(1, 1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u128_le(1, 2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u128_lsb() {
-        assert_eq!(Choice::from_u128_lsb(0), Choice::FALSE);
-        assert_eq!(Choice::from_u128_lsb(1), Choice::TRUE);
+        assert!(Choice::from_u128_lsb(0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u128_lsb(1).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u128_lt() {
-        assert_eq!(Choice::from_u128_lt(0, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u128_lt(1, 0), Choice::FALSE);
-        assert_eq!(Choice::from_u128_lt(1, 1), Choice::FALSE);
-        assert_eq!(Choice::from_u128_lt(1, 2), Choice::TRUE);
+        assert!(Choice::from_u128_lt(0, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u128_lt(1, 0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u128_lt(1, 1).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u128_lt(1, 2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
     fn from_u128_nz() {
-        assert_eq!(Choice::from_u128_nz(0), Choice::FALSE);
-        assert_eq!(Choice::from_u128_nz(1), Choice::TRUE);
-        assert_eq!(Choice::from_u128_nz(2), Choice::TRUE);
+        assert!(Choice::from_u128_nz(0).eq(Choice::FALSE).to_bool());
+        assert!(Choice::from_u128_nz(1).eq(Choice::TRUE).to_bool());
+        assert!(Choice::from_u128_nz(2).eq(Choice::TRUE).to_bool());
     }
 
     #[test]
