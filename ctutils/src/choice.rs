@@ -36,7 +36,7 @@ macro_rules! bitnz {
 /// the only line of defense.
 // TODO(tarcieri): remove `Eq`/`PartialEq` when `crypto-bigint` is updated
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Choice(u8);
+pub struct Choice(pub(crate) u8);
 
 impl Choice {
     /// Equivalent of [`false`].
@@ -45,28 +45,11 @@ impl Choice {
     /// Equivalent of [`true`].
     pub const TRUE: Self = Self(1);
 
-    /// Create a new [`Choice`] from the given `u8` value, which MUST be either `0` or `1`.
-    ///
-    /// <div class="warning">
-    /// <b>Potential panics and other misbehavior!</b>
-    ///
-    /// This constructor panics in debug builds if the given value is not 0 or 1.
-    ///
-    /// It mainly exists as a convenience for migrating code which previously used `subtle`, but
-    /// we may deprecate it in future releases.
-    ///
-    /// Consider using a more specific non-panicking constructor, like [`Choice::from_u8_lsb`].
-    /// </div>
-    ///
-    /// # Panics
-    /// - in `debug` builds, panics if the value is anything other than `0` or `1`.
-    // TODO(tarcieri): deprecate this in favor of non-panicking constructors?
+    /// DEPRECATED: legacy alias for [`Choice::from_u8_lsb`].
+    #[deprecated(since = "0.2.3", note = "use `Choice::from_u8_lsb` instead")]
     #[inline]
     pub const fn new(value: u8) -> Self {
-        // Compare to what should be the non-secret upper bits of the value, which should always be
-        // zero, and thus avoid branching on the bit that carries a potential secret
-        debug_assert!(value & 0xFE == 0, "Choice::new accepts only 0 or 1");
-        Self(value)
+        Self::from_u8_lsb(value)
     }
 
     /// Convert `Choice` into a `bool`.
@@ -472,14 +455,17 @@ impl CtSelect for Choice {
     }
 }
 
-/// Create a new [`Choice`] from the given `u8` value, which MUST be either `0` or `1`.
+/// DEPRECATED: this exists to aid migrating code from `subtle`. Use `Choice::from_u8_lsb` instead.
 ///
-/// # Panics
-/// - in `debug` builds, panics if the value is anything other than `0` or `1`.
-// TODO(tarcieri): deprecate this in favor of non-panicking constructors?
+/// <div class="warning">
+/// <b>Note</b>
+///
+/// Rust doesn't actually let us deprecate an impl block, however this comment is here to
+/// discourage future use and warn that this will be removed in a future release.
+/// </div>
 impl From<u8> for Choice {
     fn from(value: u8) -> Self {
-        Choice::new(value)
+        Choice::from_u8_lsb(value)
     }
 }
 
@@ -576,44 +562,44 @@ mod tests {
 
     #[test]
     fn to_bool() {
-        assert!(!Choice::new(0).to_bool());
-        assert!(Choice::new(1).to_bool());
+        assert!(!Choice::FALSE.to_bool());
+        assert!(Choice::TRUE.to_bool());
     }
 
     #[test]
     fn to_u8() {
-        assert_eq!(Choice::new(0).to_u8(), 0);
-        assert_eq!(Choice::new(1).to_u8(), 1);
+        assert_eq!(Choice::FALSE.to_u8(), 0);
+        assert_eq!(Choice::TRUE.to_u8(), 1);
     }
 
     #[test]
     fn and() {
-        assert_eq!((Choice::new(0) & Choice::new(0)).to_u8(), 0);
-        assert_eq!((Choice::new(1) & Choice::new(0)).to_u8(), 0);
-        assert_eq!((Choice::new(0) & Choice::new(1)).to_u8(), 0);
-        assert_eq!((Choice::new(1) & Choice::new(1)).to_u8(), 1);
+        assert_eq!((Choice::FALSE & Choice::FALSE).to_u8(), 0);
+        assert_eq!((Choice::TRUE & Choice::FALSE).to_u8(), 0);
+        assert_eq!((Choice::FALSE & Choice::TRUE).to_u8(), 0);
+        assert_eq!((Choice::TRUE & Choice::TRUE).to_u8(), 1);
     }
 
     #[test]
     fn or() {
-        assert_eq!((Choice::new(0) | Choice::new(0)).to_u8(), 0);
-        assert_eq!((Choice::new(1) | Choice::new(0)).to_u8(), 1);
-        assert_eq!((Choice::new(0) | Choice::new(1)).to_u8(), 1);
-        assert_eq!((Choice::new(1) | Choice::new(1)).to_u8(), 1);
+        assert_eq!((Choice::FALSE | Choice::FALSE).to_u8(), 0);
+        assert_eq!((Choice::TRUE | Choice::FALSE).to_u8(), 1);
+        assert_eq!((Choice::FALSE | Choice::TRUE).to_u8(), 1);
+        assert_eq!((Choice::TRUE | Choice::TRUE).to_u8(), 1);
     }
 
     #[test]
     fn xor() {
-        assert_eq!((Choice::new(0) ^ Choice::new(0)).to_u8(), 0);
-        assert_eq!((Choice::new(1) ^ Choice::new(0)).to_u8(), 1);
-        assert_eq!((Choice::new(0) ^ Choice::new(1)).to_u8(), 1);
-        assert_eq!((Choice::new(1) ^ Choice::new(1)).to_u8(), 0);
+        assert_eq!((Choice::FALSE ^ Choice::FALSE).to_u8(), 0);
+        assert_eq!((Choice::TRUE ^ Choice::FALSE).to_u8(), 1);
+        assert_eq!((Choice::FALSE ^ Choice::TRUE).to_u8(), 1);
+        assert_eq!((Choice::TRUE ^ Choice::TRUE).to_u8(), 0);
     }
 
     #[test]
     fn not() {
-        assert_eq!(Choice::new(0).not().to_u8(), 1);
-        assert_eq!(Choice::new(1).not().to_u8(), 0);
+        assert_eq!(Choice::FALSE.not().to_u8(), 1);
+        assert_eq!(Choice::TRUE.not().to_u8(), 0);
     }
 
     #[test]

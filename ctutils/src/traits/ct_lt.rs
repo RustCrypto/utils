@@ -15,7 +15,7 @@ macro_rules! impl_unsigned_ct_lt {
                 #[inline]
                 fn ct_lt(&self, other: &Self) -> Choice {
                     let (_, overflow) = self.overflowing_sub(*other);
-                    Choice::new(overflow.into())
+                    Choice(overflow.into())
                 }
             }
         )+
