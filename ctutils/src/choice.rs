@@ -49,6 +49,7 @@ impl Choice {
     ///
     /// # Panics
     /// - in `debug` builds, panics if the value is anything other than `0` or `1`.
+    // TODO(tarcieri): deprecate this in favor of non-panicking constructors?
     #[inline]
     pub const fn new(value: u8) -> Self {
         // Compare to what should be the non-secret upper bits of the value, which should always be
@@ -385,6 +386,17 @@ impl CtSelect for Choice {
     #[inline]
     fn ct_select(&self, other: &Self, choice: Choice) -> Self {
         Choice(self.0.ct_select(&other.0, choice))
+    }
+}
+
+/// Create a new [`Choice`] from the given `u8` value, which MUST be either `0` or `1`.
+///
+/// # Panics
+/// - in `debug` builds, panics if the value is anything other than `0` or `1`.
+// TODO(tarcieri): deprecate this in favor of non-panicking constructors?
+impl From<u8> for Choice {
+    fn from(value: u8) -> Self {
+        Choice::new(value)
     }
 }
 
