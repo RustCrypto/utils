@@ -4,6 +4,7 @@ use std::{
     marker::{PhantomData, PhantomPinned},
     mem::{MaybeUninit, size_of},
     num::*,
+    sync::Arc,
 };
 use zeroize::*;
 
@@ -207,4 +208,92 @@ fn asref() {
     let mut buffer: Zeroizing<Box<[u8]>> = Default::default();
     let _asmut: &mut [u8] = buffer.as_mut();
     let _asref: &[u8] = buffer.as_ref();
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn box_unsized_zeroizing() {
+    let mut b: Box<Zeroizing<[u8]>> = Box::new(Zeroizing::new([1, 2, 3, 4]));
+    {
+        let s: &[u8] = &b;
+        assert_eq!(s, &[1, 2, 3, 4]);
+
+        let s: &[u8] = b.as_ref();
+        assert_eq!(s, &[1, 2, 3, 4]);
+
+        let s: &mut [u8] = b.as_mut();
+        assert_eq!(s, &[1, 2, 3, 4]);
+    }
+
+    unsafe {
+        core::ptr::drop_in_place(&mut *b);
+    }
+
+    let s: &[u8] = &b;
+    assert_eq!(s, &[0, 0, 0, 0]);
+}
+
+#[cfg(feature = "alloc")]
+#[test]
+fn arc_unsized_zeroizing() {
+    let mut arc: Arc<Zeroizing<[u8]>> = Arc::new(Zeroizing::new([1, 2, 3, 4]));
+    {
+        let s: &[u8] = &arc;
+        assert_eq!(s, &[1, 2, 3, 4]);
+
+        let s: &[u8] = arc.as_ref();
+        assert_eq!(s, &[1, 2, 3, 4]);
+    }
+
+    unsafe {
+        let inner = Arc::get_mut(&mut arc).unwrap();
+        core::ptr::drop_in_place(inner);
+    }
+
+    let s: &[u8] = &arc;
+    assert_eq!(s, &[0, 0, 0, 0]);
+}
+
+// This is a weird way to use zeroizing, but it's technically allowed b/c
+// unsized types can be stored inside Zeroizing, so make sure it works as
+// expected.
+#[test]
+fn zeroizing_dyn_trait() {
+    trait TestTrait: Zeroize {
+        fn data(&self) -> &[u8];
+    }
+
+    struct TestStruct {
+        data: [u8; 4],
+    }
+
+    impl Zeroize for TestStruct {
+        fn zeroize(&mut self) {
+            self.data.zeroize();
+        }
+    }
+
+    impl Drop for TestStruct {
+        fn drop(&mut self) {
+            self.zeroize();
+        }
+    }
+
+    impl TestTrait for TestStruct {
+        fn data(&self) -> &[u8] {
+            &self.data
+        }
+    }
+
+    let mut b: Box<Zeroizing<dyn TestTrait>> =
+        Box::new(Zeroizing::new(TestStruct { data: [1, 2, 3, 4] }));
+
+    unsafe {
+        core::ptr::drop_in_place(&mut *b);
+    }
+
+    let inner: &Zeroizing<dyn TestTrait> = &b;
+    let inner: &dyn TestTrait = std::ops::Deref::deref(inner);
+
+    assert_eq!(inner.data(), &[0, 0, 0, 0]);
 }
