@@ -454,7 +454,7 @@ mod tests {
                 impl ::zeroize::Zeroize for Z {
                     fn zeroize(&mut self) {
                         match self {
-                            #[allow(unused_variables)]
+                            #[allow(unused_variables, unused_assignments)]
                             Z { a, b, c } => {
                                 a.zeroize();
                                 b.zeroize();
@@ -484,7 +484,7 @@ mod tests {
                 impl ::zeroize::Zeroize for Z {
                     fn zeroize(&mut self) {
                         match self {
-                            #[allow(unused_variables)]
+                            #[allow(unused_variables, unused_assignments)]
                             Z { a, b, c } => {
                                 a.zeroize();
                                 b.zeroize();
@@ -520,7 +520,7 @@ mod tests {
                 impl ::zeroize::Zeroize for Z {
                     fn zeroize(&mut self) {
                         match self {
-                            #[allow(unused_variables)]
+                            #[allow(unused_variables, unused_assignments)]
                             Z { a, b, c } => {
                                 a.zeroize();
                                 b.zeroize()
@@ -545,7 +545,7 @@ mod tests {
                 impl<T> ::zeroize::Zeroize for Z<T> where T: MyTrait {
                     fn zeroize(&mut self) {
                         match self {
-                            #[allow(unused_variables)]
+                            #[allow(unused_variables, unused_assignments)]
                             Z(__zeroize_field_0) => {
                                 __zeroize_field_0.zeroize()
                             }
@@ -574,7 +574,7 @@ mod tests {
                         use ::zeroize::__internal::AssertZeroize;
                         use ::zeroize::__internal::AssertZeroizeOnDrop;
                         match self {
-                            #[allow(unused_variables)]
+                            #[allow(unused_variables, unused_assignments)]
                             Z { a, b, c } => {
                                 a.zeroize_or_on_drop();
                                 b.zeroize_or_on_drop();
