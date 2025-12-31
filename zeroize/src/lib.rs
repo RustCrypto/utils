@@ -252,7 +252,7 @@ mod x86;
 
 use core::{
     marker::{PhantomData, PhantomPinned},
-    mem::{self, MaybeUninit},
+    mem::{size_of, MaybeUninit},
     num::{
         self, NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize,
         NonZeroU128, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
@@ -269,7 +269,7 @@ use {
 };
 
 #[cfg(feature = "std")]
-use std::ffi::CString;
+use {core::mem, std::ffi::CString};
 
 /// Trait for securely erasing values from memory.
 pub trait Zeroize {
@@ -405,7 +405,7 @@ where
         // The memory pointed to by `self` is valid for `mem::size_of::<Self>()` bytes.
         // It is also properly aligned, because `u8` has an alignment of `1`.
         unsafe {
-            volatile_set(self as *mut _ as *mut u8, 0, mem::size_of::<Self>());
+            volatile_set(self as *mut _ as *mut u8, 0, size_of::<Self>());
         }
 
         // Ensures self is overwritten with the default bit pattern. volatile_write can't be
@@ -436,7 +436,7 @@ impl<Z> ZeroizeOnDrop for Option<Z> where Z: ZeroizeOnDrop {}
 impl<Z> Zeroize for [MaybeUninit<Z>] {
     fn zeroize(&mut self) {
         let ptr = self.as_mut_ptr() as *mut MaybeUninit<u8>;
-        let size = self.len().checked_mul(mem::size_of::<Z>()).unwrap();
+        let size = self.len().checked_mul(size_of::<Z>()).unwrap();
         assert!(size <= isize::MAX as usize);
 
         // Safety:
