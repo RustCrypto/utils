@@ -17,6 +17,7 @@
     clippy::std_instead_of_alloc,
     clippy::std_instead_of_core,
     clippy::unwrap_used,
+    missing_copy_implementations,
     missing_debug_implementations,
     missing_docs,
     rust_2018_idioms,

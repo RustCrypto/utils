@@ -6,13 +6,24 @@
 )]
 #![deny(unsafe_code)]
 #![warn(
+    clippy::cast_lossless,
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::checked_conversions,
+    clippy::implicit_saturating_sub,
+    clippy::integer_division_remainder_used,
     clippy::mod_module_files,
-    missing_docs,
-    missing_debug_implementations,
+    clippy::panic,
+    clippy::panic_in_result_fn,
+    clippy::std_instead_of_alloc,
+    clippy::std_instead_of_core,
     missing_copy_implementations,
+    missing_debug_implementations,
+    missing_docs,
     rust_2018_idioms,
     trivial_casts,
     trivial_numeric_casts,
+    unused_lifetimes,
     unused_qualifications
 )]
 #![cfg_attr(not(test), warn(clippy::unwrap_used))]

@@ -622,7 +622,7 @@ mod tests {
     #[test]
     fn map_macro() {
         assert!(map!(NONE, u16::from).is_none().to_bool());
-        assert_eq!(map!(SOME, u16::from).unwrap(), VALUE as u16);
+        assert_eq!(map!(SOME, u16::from).unwrap(), u16::from(VALUE));
     }
 
     #[test]

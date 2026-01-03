@@ -59,6 +59,7 @@ impl CtSelect for isize {
     }
 
     #[cfg(target_pointer_width = "64")]
+    #[allow(clippy::cast_possible_truncation)]
     #[inline]
     fn ct_select(&self, other: &Self, choice: Choice) -> Self {
         (*self as i64).ct_select(&(*other as i64), choice) as isize
@@ -74,6 +75,7 @@ impl CtSelect for usize {
     }
 
     #[cfg(target_pointer_width = "64")]
+    #[allow(clippy::cast_possible_truncation)]
     #[inline]
     fn ct_select(&self, other: &Self, choice: Choice) -> Self {
         (*self as u64).ct_select(&(*other as u64), choice) as usize
