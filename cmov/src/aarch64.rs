@@ -21,7 +21,8 @@ macro_rules! csel {
 /// Conditional select-based equality test
 macro_rules! cseleq {
     ($eor:expr, $cmp:expr, $instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
-        let mut tmp = *$dst as u16;
+        let mut tmp = u16::from(*$dst);
+        let condition = u16::from($condition);
         unsafe {
             asm! {
                 $eor,
@@ -31,16 +32,13 @@ macro_rules! cseleq {
                 in(reg) *$lhs,
                 in(reg) *$rhs,
                 inlateout(reg) tmp,
-                in(reg) $condition as u16,
+                in(reg) condition,
                 in(reg) tmp,
                 options(pure, nomem, nostack),
             };
         };
 
-        #[allow(clippy::cast_possible_truncation)]
-        {
-            *$dst = tmp as u8;
-        }
+        *$dst = (tmp & 0xFF) as u8;
     };
 }
 
