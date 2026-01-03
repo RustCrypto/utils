@@ -280,6 +280,24 @@ impl Choice {
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
     #[inline]
+    pub const fn select_u8(self, a: u8, b: u8) -> u8 {
+        a ^ (self.to_u8_mask() & (a ^ b))
+    }
+
+    /// `const fn` helper: return `b` if `self` is [`Choice::TRUE`], otherwise return `a`.
+    ///
+    /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
+    /// and can't use the trait. The former will provide better constant-time assurances.
+    #[inline]
+    pub const fn select_u16(self, a: u16, b: u16) -> u16 {
+        a ^ (self.to_u16_mask() & (a ^ b))
+    }
+
+    /// `const fn` helper: return `b` if `self` is [`Choice::TRUE`], otherwise return `a`.
+    ///
+    /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
+    /// and can't use the trait. The former will provide better constant-time assurances.
+    #[inline]
     pub const fn select_u32(self, a: u32, b: u32) -> u32 {
         a ^ (self.to_u32_mask() & (a ^ b))
     }
@@ -800,6 +818,22 @@ mod tests {
         let b: i64 = 2;
         assert_eq!(Choice::TRUE.select_i64(a, b), b);
         assert_eq!(Choice::FALSE.select_i64(a, b), a);
+    }
+
+    #[test]
+    fn select_u8() {
+        let a: u8 = 1;
+        let b: u8 = 2;
+        assert_eq!(Choice::TRUE.select_u8(a, b), b);
+        assert_eq!(Choice::FALSE.select_u8(a, b), a);
+    }
+
+    #[test]
+    fn select_u16() {
+        let a: u16 = 1;
+        let b: u16 = 2;
+        assert_eq!(Choice::TRUE.select_u16(a, b), b);
+        assert_eq!(Choice::FALSE.select_u16(a, b), a);
     }
 
     #[test]
