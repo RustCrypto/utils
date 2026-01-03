@@ -45,61 +45,8 @@ impl Choice {
     /// Equivalent of [`true`].
     pub const TRUE: Self = Self(1);
 
-    /// Convert `Choice` into a `bool`.
-    ///
-    /// <div class = "warning">
-    /// <b>Security Warning</b>
-    ///
-    /// Using this function will introduce timing variability, since computing this at all currently
-    /// requires a branch.
-    ///
-    /// This is intended to be used as either the one and only branch at the end of a constant-time
-    /// operation to e.g. differentiate between success and failure, or in contexts where
-    /// constant-time doesn't matter, e.g. variable-time code that operates on "maybe secret" types
-    /// which aren't secrets in a particular context.
-    ///
-    /// If you are trying to use this in the context of a constant-time operation, be warned that
-    /// the small amount of timing variability it introduces can potentially be exploited. Whenever
-    /// possible, prefer fully constant-time approaches instead.
-    /// </div>
-    // TODO(tarcieri): `const fn` when MSRV 1.86
-    pub fn to_bool(self) -> bool {
-        self.to_u8() != 0
-    }
-
-    /// Convert [`Choice`] to a `u8`, attempting to apply a "best effort" optimization barrier.
-    // TODO(tarcieri): `const fn` when MSRV 1.86
-    pub fn to_u8(self) -> u8 {
-        // `black_box` is documented as working on a "best effort" basis. That's fine, this type is
-        // likewise documented as only working on a "best effort" basis itself. The only way we
-        // rely on `black_box` for correctness is it behaving as the identity function.
-        core::hint::black_box(self.0)
-    }
-
-    /// HACK: workaround to allow `const fn` boolean support on Rust 1.85.
-    ///
-    /// This does not apply `black_box` to the output.
-    ///
-    /// <div class = "warning">
-    /// <b>Security Warning</b>
-    ///
-    /// See the security warnings for [`Choice::to_bool`].
-    /// </div>
-    // TODO(tarcieri): deprecate/remove this in favor of `to_bool` when MSRV is Rust 1.86
-    pub const fn to_bool_vartime(self) -> bool {
-        self.0 != 0
-    }
-
-    /// HACK: workaround to allow `const fn` boolean support on Rust 1.85.
-    ///
-    /// This does not apply `black_box` to the output.
-    // TODO(tarcieri): deprecate/remove this in favor of `to_u8` when MSRV is Rust 1.86
-    pub const fn to_u8_vartime(self) -> u8 {
-        self.0
-    }
-
     //
-    // Bitwise ops
+    // `const fn` bitwise ops
     //
 
     /// Apply an `and` conditional to the given [`Choice`]s.
@@ -128,7 +75,7 @@ impl Choice {
     }
 
     //
-    // Comparison ops
+    // `const fn` comparison ops
     //
 
     /// `const fn` equality operation.
@@ -355,6 +302,83 @@ impl Choice {
         a ^ (self.to_u128_mask() & (a ^ b))
     }
 
+    //
+    // Output conversion methods
+    //
+
+    /// Convert `Choice` into a `bool`.
+    ///
+    /// <div class = "warning">
+    /// <b>Security Warning</b>
+    ///
+    /// Using this function will introduce timing variability, since computing this at all currently
+    /// requires a branch.
+    ///
+    /// This is intended to be used as either the one and only branch at the end of a constant-time
+    /// operation to e.g. differentiate between success and failure, or in contexts where
+    /// constant-time doesn't matter, e.g. variable-time code that operates on "maybe secret" types
+    /// which aren't secrets in a particular context.
+    ///
+    /// If you are trying to use this in the context of a constant-time operation, be warned that
+    /// the small amount of timing variability it introduces can potentially be exploited. Whenever
+    /// possible, prefer fully constant-time approaches instead.
+    /// </div>
+    // TODO(tarcieri): `const fn` when MSRV 1.86
+    pub fn to_bool(self) -> bool {
+        self.to_u8() != 0
+    }
+
+    /// Convert [`Choice`] to a `u8`, attempting to apply a "best effort" optimization barrier.
+    // TODO(tarcieri): `const fn` when MSRV 1.86
+    pub fn to_u8(self) -> u8 {
+        // `black_box` is documented as working on a "best effort" basis. That's fine, this type is
+        // likewise documented as only working on a "best effort" basis itself. The only way we
+        // rely on `black_box` for correctness is it behaving as the identity function.
+        core::hint::black_box(self.0)
+    }
+
+    /// HACK: workaround to allow `const fn` boolean support on Rust 1.85.
+    ///
+    /// This does not apply `black_box` to the output.
+    ///
+    /// <div class = "warning">
+    /// <b>Security Warning</b>
+    ///
+    /// See the security warnings for [`Choice::to_bool`].
+    /// </div>
+    // TODO(tarcieri): deprecate/remove this in favor of `to_bool` when MSRV is Rust 1.86
+    pub const fn to_bool_vartime(self) -> bool {
+        self.0 != 0
+    }
+
+    /// HACK: workaround to allow `const fn` boolean support on Rust 1.85.
+    ///
+    /// This does not apply `black_box` to the output.
+    // TODO(tarcieri): deprecate/remove this in favor of `to_u8` when MSRV is Rust 1.86
+    pub const fn to_u8_vartime(self) -> u8 {
+        self.0
+    }
+
+    /// Create a `u8` bitmask.
+    ///
+    /// # Returns
+    /// - `0` for `Choice::FALSE`
+    /// - `u8::MAX` for `Choice::TRUE`
+    #[inline]
+    pub const fn to_u8_mask(self) -> u8 {
+        self.0.wrapping_neg()
+    }
+
+    /// Create a `u16` bitmask.
+    ///
+    /// # Returns
+    /// - `0` for `Choice::FALSE`
+    /// - `u16::MAX` for `Choice::TRUE`
+    #[inline]
+    pub const fn to_u16_mask(self) -> u16 {
+        (self.0 as u16).wrapping_neg()
+    }
+
     /// Create a `u32` bitmask.
     ///
     /// # Returns
@@ -362,7 +386,7 @@ impl Choice {
     /// - `u32::MAX` for `Choice::TRUE`
     #[inline]
     pub const fn to_u32_mask(self) -> u32 {
-        (self.0 as u32 & 1).wrapping_neg()
+        (self.0 as u32).wrapping_neg()
     }
 
     /// Create a `u64` bitmask.
@@ -372,7 +396,7 @@ impl Choice {
     /// - `u64::MAX` for `Choice::TRUE`
     #[inline]
     pub const fn to_u64_mask(self) -> u64 {
-        (self.0 as u64 & 1).wrapping_neg()
+        (self.0 as u64).wrapping_neg()
     }
 
     /// Create a `u128` bitmask.
@@ -382,7 +406,7 @@ impl Choice {
     /// - `u128::MAX` for `Choice::TRUE`
     #[inline]
     pub const fn to_u128_mask(self) -> u128 {
-        (self.0 as u128 & 1).wrapping_neg()
+        (self.0 as u128).wrapping_neg()
     }
 }
 
@@ -551,18 +575,6 @@ mod tests {
         let b = Choice::TRUE;
         assert_eq!(a.ct_select(&b, Choice::FALSE).to_bool(), a.to_bool());
         assert_eq!(a.ct_select(&b, Choice::TRUE).to_bool(), b.to_bool());
-    }
-
-    #[test]
-    fn to_bool() {
-        assert!(!Choice::FALSE.to_bool());
-        assert!(Choice::TRUE.to_bool());
-    }
-
-    #[test]
-    fn to_u8() {
-        assert_eq!(Choice::FALSE.to_u8(), 0);
-        assert_eq!(Choice::TRUE.to_u8(), 1);
     }
 
     #[test]
@@ -812,5 +824,47 @@ mod tests {
         let b: u128 = 2;
         assert_eq!(Choice::TRUE.select_u128(a, b), b);
         assert_eq!(Choice::FALSE.select_u128(a, b), a);
+    }
+
+    #[test]
+    fn to_bool() {
+        assert!(!Choice::FALSE.to_bool());
+        assert!(Choice::TRUE.to_bool());
+    }
+
+    #[test]
+    fn to_u8() {
+        assert_eq!(Choice::FALSE.to_u8(), 0);
+        assert_eq!(Choice::TRUE.to_u8(), 1);
+    }
+
+    #[test]
+    fn to_u8_mask() {
+        assert_eq!(Choice::FALSE.to_u8_mask(), 0);
+        assert_eq!(Choice::TRUE.to_u8_mask(), u8::MAX);
+    }
+
+    #[test]
+    fn to_u16_mask() {
+        assert_eq!(Choice::FALSE.to_u16_mask(), 0);
+        assert_eq!(Choice::TRUE.to_u16_mask(), u16::MAX);
+    }
+
+    #[test]
+    fn to_u32_mask() {
+        assert_eq!(Choice::FALSE.to_u32_mask(), 0);
+        assert_eq!(Choice::TRUE.to_u32_mask(), u32::MAX);
+    }
+
+    #[test]
+    fn to_u64_mask() {
+        assert_eq!(Choice::FALSE.to_u64_mask(), 0);
+        assert_eq!(Choice::TRUE.to_u64_mask(), u64::MAX);
+    }
+
+    #[test]
+    fn to_u128_mask() {
+        assert_eq!(Choice::FALSE.to_u128_mask(), 0);
+        assert_eq!(Choice::TRUE.to_u128_mask(), u128::MAX);
     }
 }
