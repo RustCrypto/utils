@@ -99,6 +99,26 @@ jobs:
       - run: ${{ matrix.deps }}
       - run: cargo test --target ${{ matrix.target }}
 
+  # Custom derive tests
+  test-derive:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: zeroize_derive
+    strategy:
+      matrix:
+        rust:
+          - 1.85.0 # MSRV
+          - stable
+    steps:
+      - uses: actions/checkout@v6
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - run: cargo test
+      - run: cargo test --release
+
   # Cross-compiled tests
   cross:
     strategy:
