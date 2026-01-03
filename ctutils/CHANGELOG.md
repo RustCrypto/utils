@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.1 (2026-01-03)
+### Added
+- `Choice::to_u8_mask`/`to_u16_mask` ([#1322])
+- `Choice::select_u8`/`select_u16` ([#1324])
+
+[#1322]: https://github.com/RustCrypto/utils/pull/1322
+[#1324]: https://github.com/RustCrypto/utils/pull/1324
+
 ## 0.3.0 (2025-12-29)
 ### Removed
 - `Choice::new` ([#1314])
