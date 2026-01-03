@@ -27,7 +27,8 @@ macro_rules! cmov {
 
 macro_rules! cmov_eq {
     ($xor:expr, $instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
-        let mut tmp = *$dst as u16;
+        let mut tmp = u16::from(*$dst);
+        let condition = u16::from($condition);
         unsafe {
             asm! {
                 $xor,
@@ -35,15 +36,12 @@ macro_rules! cmov_eq {
                 inout(reg) *$lhs => _,
                 in(reg) *$rhs,
                 inlateout(reg) tmp,
-                in(reg) $condition as u16,
+                in(reg) condition,
                 options(pure, nomem, nostack),
             };
         }
 
-        #[allow(clippy::cast_possible_truncation)]
-        {
-            *$dst = tmp as u8;
-        }
+        *$dst = (tmp & 0xFF) as u8;
     };
 }
 

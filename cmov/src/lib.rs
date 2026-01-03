@@ -5,15 +5,24 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
 #![warn(
+    clippy::cast_lossless,
     clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::checked_conversions,
+    clippy::implicit_saturating_sub,
     clippy::integer_division_remainder_used,
     clippy::mod_module_files,
-    missing_docs,
+    clippy::panic,
+    clippy::panic_in_result_fn,
+    clippy::std_instead_of_alloc,
+    clippy::std_instead_of_core,
+    clippy::unwrap_used,
     missing_debug_implementations,
-    missing_copy_implementations,
+    missing_docs,
     rust_2018_idioms,
     trivial_casts,
     trivial_numeric_casts,
+    unused_lifetimes,
     unused_qualifications
 )]
 
@@ -73,17 +82,17 @@ pub trait CmovEq {
 impl Cmov for u8 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        let mut tmp = *self as u16;
-        tmp.cmovnz(&(*value as u16), condition);
-        debug_assert!(tmp <= u8::MAX as u16);
+        let mut tmp = u16::from(*self);
+        tmp.cmovnz(&u16::from(*value), condition);
+        debug_assert!(u8::try_from(tmp).is_ok());
         *self = (tmp & 0xFF) as u8;
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        let mut tmp = *self as u16;
-        tmp.cmovz(&(*value as u16), condition);
-        debug_assert!(tmp <= u8::MAX as u16);
+        let mut tmp = u16::from(*self);
+        tmp.cmovz(&u16::from(*value), condition);
+        debug_assert!(u8::try_from(tmp).is_ok());
         *self = (tmp & 0xFF) as u8;
     }
 }
@@ -91,12 +100,12 @@ impl Cmov for u8 {
 impl CmovEq for u8 {
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        (*self as u16).cmoveq(&(*rhs as u16), input, output);
+        u16::from(*self).cmoveq(&u16::from(*rhs), input, output);
     }
 
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        (*self as u16).cmovne(&(*rhs as u16), input, output);
+        u16::from(*self).cmovne(&u16::from(*rhs), input, output);
     }
 }
 
@@ -105,24 +114,24 @@ impl CmovEq for u8 {
 impl Cmov for u128 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        let mut lo = (*self & u64::MAX as u128) as u64;
+        let mut lo = (*self & u128::from(u64::MAX)) as u64;
         let mut hi = (*self >> 64) as u64;
 
-        lo.cmovnz(&((*value & u64::MAX as u128) as u64), condition);
+        lo.cmovnz(&((*value & u128::from(u64::MAX)) as u64), condition);
         hi.cmovnz(&((*value >> 64) as u64), condition);
 
-        *self = (lo as u128) | ((hi as u128) << 64);
+        *self = u128::from(lo) | (u128::from(hi) << 64);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        let mut lo = (*self & u64::MAX as u128) as u64;
+        let mut lo = (*self & u128::from(u64::MAX)) as u64;
         let mut hi = (*self >> 64) as u64;
 
-        lo.cmovz(&((*value & u64::MAX as u128) as u64), condition);
+        lo.cmovz(&((*value & u128::from(u64::MAX)) as u64), condition);
         hi.cmovz(&((*value >> 64) as u64), condition);
 
-        *self = (lo as u128) | ((hi as u128) << 64);
+        *self = u128::from(lo) | (u128::from(hi) << 64);
     }
 }
 
@@ -131,22 +140,22 @@ impl Cmov for u128 {
 impl CmovEq for u128 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let lo = (*self & u64::MAX as u128) as u64;
+        let lo = (*self & u128::from(u64::MAX)) as u64;
         let hi = (*self >> 64) as u64;
 
         let mut tmp = 1u8;
-        lo.cmovne(&((*rhs & u64::MAX as u128) as u64), 0, &mut tmp);
+        lo.cmovne(&((*rhs & u128::from(u64::MAX)) as u64), 0, &mut tmp);
         hi.cmovne(&((*rhs >> 64) as u64), 0, &mut tmp);
         tmp.cmoveq(&0, input, output);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let lo = (*self & u64::MAX as u128) as u64;
+        let lo = (*self & u128::from(u64::MAX)) as u64;
         let hi = (*self >> 64) as u64;
 
         let mut tmp = 1u8;
-        lo.cmovne(&((*rhs & u64::MAX as u128) as u64), 0, &mut tmp);
+        lo.cmovne(&((*rhs & u128::from(u64::MAX)) as u64), 0, &mut tmp);
         hi.cmovne(&((*rhs >> 64) as u64), 0, &mut tmp);
         tmp.cmoveq(&1, input, output);
     }
