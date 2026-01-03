@@ -22,5 +22,8 @@ cmov = "0.4.3"
 # optional dependencies
 subtle = { version = "2", optional = true, default-features = false }
 
+[dev-dependencies]
+proptest = "1.9"
+
 [package.metadata.docs.rs]
 all-features = true
