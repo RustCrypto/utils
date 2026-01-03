@@ -28,8 +28,8 @@ macro_rules! bitnz {
 
 /// Constant-time analogue of `bool` providing a "best effort" optimization barrier.
 ///
-/// Attempts to hint to the compiler and its codegen backends that optimizations should not be
-/// applied which depend on a value.
+/// This type attempts to hint to the compiler and its codegen backends that optimizations should
+/// not be applied which depend on specific values of this type.
 ///
 /// This is used as a "belt-and-suspenders" defense in addition to mechanisms like
 /// constant-time predication intrinsics provided by the [`cmov`] crate, and is never expected to be
@@ -96,7 +96,7 @@ impl Choice {
 
     // i64
 
-    /// Returns the truthy value if `x == y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_i64_eq(x: i64, y: i64) -> Self {
         Self::from_u64_nz(x as u64 ^ y as u64).not()
@@ -104,13 +104,13 @@ impl Choice {
 
     // u8
 
-    /// Returns the truthy value if `x == y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u8_eq(x: u8, y: u8) -> Self {
         Self::from_u8_nz(x ^ y).not()
     }
 
-    /// Returns the truthy value if `x <= y` and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x <= y` and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u8_le(x: u8, y: u8) -> Self {
         Self::from_u8_lsb(bitle!(x, y, u8::BITS))
@@ -122,13 +122,13 @@ impl Choice {
         Self(value & 0x1)
     }
 
-    /// Returns the truthy value if `x < y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x < y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u8_lt(x: u8, y: u8) -> Self {
         Self::from_u8_lsb(bitlt!(x, y, u8::BITS))
     }
 
-    /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u8_nz(value: u8) -> Self {
         Self::from_u8_lsb(bitnz!(value, u8::BITS))
@@ -136,13 +136,13 @@ impl Choice {
 
     // u16
 
-    /// Returns the truthy value if `x == y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u16_eq(x: u16, y: u16) -> Self {
         Self::from_u16_nz(x ^ y).not()
     }
 
-    /// Returns the truthy value if `x <= y` and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x <= y` and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u16_le(x: u16, y: u16) -> Self {
         Self::from_u16_lsb(bitle!(x, y, u16::BITS))
@@ -154,13 +154,13 @@ impl Choice {
         Self((value & 0x1) as u8)
     }
 
-    /// Returns the truthy value if `x < y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x < y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u16_lt(x: u16, y: u16) -> Self {
         Self::from_u16_lsb(bitlt!(x, y, u16::BITS))
     }
 
-    /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u16_nz(value: u16) -> Self {
         Self::from_u16_lsb(bitnz!(value, u16::BITS))
@@ -168,13 +168,13 @@ impl Choice {
 
     // u32
 
-    /// Returns the truthy value if `x == y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u32_eq(x: u32, y: u32) -> Self {
         Self::from_u32_nz(x ^ y).not()
     }
 
-    /// Returns the truthy value if `x <= y` and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x <= y` and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u32_le(x: u32, y: u32) -> Self {
         Self::from_u32_lsb(bitle!(x, y, u32::BITS))
@@ -186,13 +186,13 @@ impl Choice {
         Self((value & 0x1) as u8)
     }
 
-    /// Returns the truthy value if `x < y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x < y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u32_lt(x: u32, y: u32) -> Self {
         Self::from_u32_lsb(bitlt!(x, y, u32::BITS))
     }
 
-    /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u32_nz(value: u32) -> Self {
         Self::from_u32_lsb(bitnz!(value, u32::BITS))
@@ -200,13 +200,13 @@ impl Choice {
 
     // u64
 
-    /// Returns the truthy value if `x == y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u64_eq(x: u64, y: u64) -> Self {
         Self::from_u64_nz(x ^ y).not()
     }
 
-    /// Returns the truthy value if `x <= y` and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x <= y` and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u64_le(x: u64, y: u64) -> Self {
         Self::from_u64_lsb(bitle!(x, y, u64::BITS))
@@ -218,13 +218,13 @@ impl Choice {
         Self((value & 0x1) as u8)
     }
 
-    /// Returns the truthy value if `x < y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x < y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u64_lt(x: u64, y: u64) -> Self {
         Self::from_u64_lsb(bitlt!(x, y, u64::BITS))
     }
 
-    /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u64_nz(value: u64) -> Self {
         Self::from_u64_lsb(bitnz!(value, u64::BITS))
@@ -232,13 +232,13 @@ impl Choice {
 
     // u128
 
-    /// Returns the truthy value if `x == y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u128_eq(x: u128, y: u128) -> Self {
         Self::from_u128_nz(x ^ y).not()
     }
 
-    /// Returns the truthy value if `x <= y` and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x <= y` and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u128_le(x: u128, y: u128) -> Self {
         Self::from_u128_lsb(bitle!(x, y, u128::BITS))
@@ -250,13 +250,13 @@ impl Choice {
         Self((value & 1) as u8)
     }
 
-    /// Returns the truthy value if `x < y`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `x < y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u128_lt(x: u128, y: u128) -> Self {
         Self::from_u128_lsb(bitlt!(x, y, u128::BITS))
     }
 
-    /// Returns the truthy value if `value != 0`, and the falsy value otherwise.
+    /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
     pub const fn from_u128_nz(value: u128) -> Self {
         Self::from_u128_lsb(bitnz!(value, u128::BITS))
@@ -266,7 +266,7 @@ impl Choice {
     // `const fn` predication methods
     //
 
-    /// `const fn` helper: return `b` if `self` is truthy, otherwise return `a`.
+    /// `const fn` helper: return `b` if `self` is [`Choice::TRUE`], otherwise return `a`.
     ///
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
@@ -275,7 +275,7 @@ impl Choice {
         self.select_u64(a as u64, b as u64) as i64
     }
 
-    /// `const fn` helper: return `b` if `self` is truthy, otherwise return `a`.
+    /// `const fn` helper: return `b` if `self` is [`Choice::TRUE`], otherwise return `a`.
     ///
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
@@ -284,7 +284,7 @@ impl Choice {
         a ^ (self.to_u32_mask() & (a ^ b))
     }
 
-    /// `const fn` helper: return `b` if `self` is truthy, otherwise return `a`.
+    /// `const fn` helper: return `b` if `self` is [`Choice::TRUE`], otherwise return `a`.
     ///
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
@@ -293,7 +293,7 @@ impl Choice {
         a ^ (self.to_u64_mask() & (a ^ b))
     }
 
-    /// `const fn` helper: return `b` if `self` is truthy, otherwise return `a`.
+    /// `const fn` helper: return `b` if `self` is [`Choice::TRUE`], otherwise return `a`.
     ///
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
