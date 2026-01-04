@@ -626,7 +626,7 @@ impl Zeroize for CString {
 /// guaranteed to have the same physical representation as the underlying type.
 #[derive(Debug, Default, Eq, PartialEq)]
 #[repr(transparent)]
-pub struct Zeroizing<Z: Zeroize>(Z);
+pub struct Zeroizing<Z: Zeroize + ?Sized>(Z);
 
 impl<Z> Zeroizing<Z>
 where
@@ -665,7 +665,7 @@ where
 
 impl<Z> ops::Deref for Zeroizing<Z>
 where
-    Z: Zeroize,
+    Z: Zeroize + ?Sized,
 {
     type Target = Z;
 
@@ -677,7 +677,7 @@ where
 
 impl<Z> ops::DerefMut for Zeroizing<Z>
 where
-    Z: Zeroize,
+    Z: Zeroize + ?Sized,
 {
     #[inline(always)]
     fn deref_mut(&mut self) -> &mut Z {
@@ -688,7 +688,7 @@ where
 impl<T, Z> AsRef<T> for Zeroizing<Z>
 where
     T: ?Sized,
-    Z: AsRef<T> + Zeroize,
+    Z: AsRef<T> + Zeroize + ?Sized,
 {
     #[inline(always)]
     fn as_ref(&self) -> &T {
@@ -699,7 +699,7 @@ where
 impl<T, Z> AsMut<T> for Zeroizing<Z>
 where
     T: ?Sized,
-    Z: AsMut<T> + Zeroize,
+    Z: AsMut<T> + Zeroize + ?Sized,
 {
     #[inline(always)]
     fn as_mut(&mut self) -> &mut T {
@@ -709,18 +709,18 @@ where
 
 impl<Z> Zeroize for Zeroizing<Z>
 where
-    Z: Zeroize,
+    Z: Zeroize + ?Sized,
 {
     fn zeroize(&mut self) {
         self.0.zeroize();
     }
 }
 
-impl<Z> ZeroizeOnDrop for Zeroizing<Z> where Z: Zeroize {}
+impl<Z> ZeroizeOnDrop for Zeroizing<Z> where Z: Zeroize + ?Sized {}
 
 impl<Z> Drop for Zeroizing<Z>
 where
-    Z: Zeroize,
+    Z: Zeroize + ?Sized,
 {
     fn drop(&mut self) {
         self.0.zeroize()
@@ -730,7 +730,7 @@ where
 #[cfg(feature = "serde")]
 impl<Z> serde::Serialize for Zeroizing<Z>
 where
-    Z: Zeroize + serde::Serialize,
+    Z: Zeroize + serde::Serialize + ?Sized,
 {
     #[inline(always)]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
