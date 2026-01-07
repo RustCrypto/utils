@@ -1,7 +1,7 @@
 /// Zeroize `N` bytes of stack space.
 ///
 /// Most algorithm implementations use stack to store temporary data.
-/// This temporaries may contain sensitive information (e.g. cryptgraphic keys)
+/// Such temporaries may contain sensitive information (e.g. cryptgraphic keys)
 /// and can stay on stack after the computation is finished. If an attacker
 /// is able for some reasons to read stack data freely, it may result in
 /// leaking of the sensitive data.
@@ -24,7 +24,7 @@
 /// # fn leaking_encryption(_: &[u8; 16], _: &mut [u8]) {}
 /// ```
 /// `leaking_encryption` may get inlined and `zeroize_stack` will erase
-/// stack memory above stack frame reserved by `encrypt_data`. In other words,
+/// stack memory above the stack frame reserved by `encrypt_data`, i.e.
 /// it will **NOT** erase stack memory used by `leaking_encryption`.
 ///
 /// You should wrap your computation in the following way:
