@@ -14,7 +14,7 @@
 /// [`cargo-call-stack`]: https://github.com/japaric/cargo-call-stack
 ///
 /// Additionally, you must annotate your sensitive function with `#[inline(never)]`.
-/// 
+///
 /// For example, the following example **DOES NOT** erase stack properly:
 /// ```ignore
 /// pub fn encrypt_data(cipher: &Cipher, data: &mut [u8]) {
@@ -32,7 +32,7 @@
 /// fn encrypt_data_inner(cipher: &Cipher, data: &mut [u8]) {
 ///     cipher.encrypt(data);
 /// }
-/// 
+///
 /// pub fn encrypt_data(cipher: &Cipher, data: &mut [u8]) {
 ///     cipher.encrypt(data);
 ///     zeroize::zeroize_stack::<65_536>();
