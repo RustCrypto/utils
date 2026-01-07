@@ -16,27 +16,29 @@
 /// Additionally, you must annotate your sensitive function with `#[inline(never)]`.
 ///
 /// For example, the following example **DOES NOT** erase stack properly:
-/// ```ignore
-/// pub fn encrypt_data(cipher: &Cipher, data: &mut [u8]) {
-///     cipher.encrypt(data);
+/// ```
+/// pub fn encrypt_data(key: &[u8; 16], data: &mut [u8]) {
+///     leaking_encryption(key, data);
 ///     zeroize::zeroize_stack::<65_536>();
 /// }
+/// # fn leaking_encryption(_: &[u8; 16], _: &mut [u8]) {}
 /// ```
-/// The `cipher.encrypt` method may get inlined and `zeroize_stack` will erase
+/// `leaking_encryption` may get inlined and `zeroize_stack` will erase
 /// stack memory above stack frame reserved by `encrypt_data`. In other words,
-/// it will **NOT** erase stack memory used by `cipher.encrypt`.
+/// it will **NOT** erase stack memory used by `leaking_encryption`.
 ///
 /// You should wrap your computation in the following way:
-/// ```ignore
+/// ```
 /// #[inline(never)]
-/// fn encrypt_data_inner(cipher: &Cipher, data: &mut [u8]) {
-///     cipher.encrypt(data);
+/// fn encrypt_data_inner(key: &[u8; 16], data: &mut [u8]) {
+///     leaking_encryption(key, data);
 /// }
 ///
-/// pub fn encrypt_data(cipher: &Cipher, data: &mut [u8]) {
-///     cipher.encrypt(data);
+/// pub fn encrypt_data(key: &[u8; 16], data: &mut [u8]) {
+///     encrypt_data_inner(key, data);
 ///     zeroize::zeroize_stack::<65_536>();
 /// }
+/// # fn leaking_encryption(_: &[u8; 16], _: &mut [u8]) {}
 /// ```
 /// Finally, note that `#[inline(never)]` is just a hint and may be ignored
 /// by the compiler. It works properly in practice, but such stack zeroization
