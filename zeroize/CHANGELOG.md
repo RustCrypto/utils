@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 1.9.0 (unreleased)
 ### Added
 - `optimization_barrier` function ([#1261])
+- `zeroize_stack` function ([#1331])
 
 ### Changed
 - Edition changed to 2024 and MSRV bumped to 1.85 ([#1149])
 
 [#1149]: https://github.com/RustCrypto/utils/pull/1149
 [#1261]: https://github.com/RustCrypto/utils/pull/1261
+[#1331]: https://github.com/RustCrypto/utils/pull/1331
 
 ## 1.8.2 (2025-09-29)
 ### Changed
@@ -164,7 +166,7 @@ if you would like to support older Rust versions.
 ## 1.3.0 (2021-04-19)
 ### Added
 - impl `Zeroize` for `Box<[Z]>`
-- Clear residual space within `Option
+- Clear residual space within `Option`
 
 ### Changed
 - Ensure `Option` is `None` when zeroized
@@ -172,7 +174,7 @@ if you would like to support older Rust versions.
 
 ## 1.2.0 (2020-12-09)
 ### Added
-- `Zeroize` support for x86(_64) SIMD registers
+- `Zeroize` support for x86(-64) SIMD registers
 
 ### Changed
 - Simplify `String::zeroize`
