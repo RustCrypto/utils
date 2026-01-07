@@ -253,6 +253,9 @@ mod x86;
 mod barrier;
 pub use barrier::optimization_barrier;
 
+mod stack;
+pub use stack::zeroize_stack;
+
 use core::{
     marker::{PhantomData, PhantomPinned},
     mem::{MaybeUninit, size_of},
