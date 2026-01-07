@@ -9,15 +9,19 @@ members = [
     "ctutils",
     "cpufeatures",
     "dbl",
-    "digest-io",
     "hex-literal",
     "inout",
     "opaque-debug",
     "wycheproof2blb",
     "zeroize",
-    "zeroize_derive"
+    "zeroize_derive",
 ]
-exclude = ["aarch64-dit"]
+exclude = [
+    # Works only on AArch64
+    "aarch64-dit",
+    # Results in circular dependencies
+    "digest-io",
+]
 
 [profile.dev]
 opt-level = 2
