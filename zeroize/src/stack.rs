@@ -38,6 +38,11 @@
 ///     zeroize::zeroize_stack::<65_536>();
 /// }
 /// ```
+/// Finally, note that `#[inline(never)]` is just a hint and may be ignored
+/// by the compiler. It works properly in practice, but such stack zeroization
+/// should be considered as "best effort" and in cases where it's not enough
+/// you should inspect the generated binary to verify that you got a desired
+/// codegen.
 #[inline(never)]
 pub fn zeroize_stack<const N: usize>() {
     let buf = [0u8; N];
