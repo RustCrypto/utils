@@ -7,6 +7,43 @@
 // TODO(tarcieri): more optimized implementation for small integers
 
 use crate::{Cmov, CmovEq, Condition};
+
+// Use `asm!` on architectures where it's stable but we don't have a custom-written backend
+#[cfg(all(
+    not(miri),
+    any(
+        target_arch = "arm",
+        target_arch = "arm64ec",
+        target_arch = "loongarch64",
+        target_arch = "riscv32",
+        target_arch = "riscv64",
+        target_arch = "s390x"
+    )
+))]
+fn black_box<T: Copy>(val: T) -> T {
+    #[allow(trivial_casts)]
+    unsafe {
+        core::arch::asm!(
+            "# {}",
+            in(reg) &val as *const T as *const (),
+            options(readonly, preserves_flags, nostack),
+        );
+    }
+    val
+}
+
+// Use `black_box` as a portable fallback for other architectures
+#[cfg(not(all(
+    not(miri),
+    any(
+        target_arch = "arm",
+        target_arch = "arm64ec",
+        target_arch = "loongarch64",
+        target_arch = "riscv32",
+        target_arch = "riscv64",
+        target_arch = "s390x"
+    )
+)))]
 use core::hint::black_box;
 
 /// Bitwise non-zero: returns `1` if `x != 0`, and otherwise returns `0`.
