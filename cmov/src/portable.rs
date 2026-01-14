@@ -12,7 +12,7 @@ use core::hint::black_box;
 /// Bitwise non-zero: returns `1` if `x != 0`, and otherwise returns `0`.
 macro_rules! bitnz {
     ($value:expr, $bits:expr) => {
-        ($value | $value.wrapping_neg()) >> ($bits - 1)
+        black_box(($value | $value.wrapping_neg()) >> ($bits - 1))
     };
 }
 
@@ -75,13 +75,13 @@ impl CmovEq for u32 {
 impl Cmov for u64 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        let mask = black_box((bitnz!(condition, u8::BITS) as u64).wrapping_sub(1));
+        let mask = (bitnz!(condition, u8::BITS) as u64).wrapping_sub(1);
         *self = (*self & mask) | (*value & !mask);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        let mask = black_box((1 ^ bitnz!(condition, u8::BITS) as u64).wrapping_sub(1));
+        let mask = (1 ^ bitnz!(condition, u8::BITS) as u64).wrapping_sub(1);
         *self = (*self & mask) | (*value & !mask);
     }
 }
@@ -90,12 +90,12 @@ impl CmovEq for u64 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         let ne = bitnz!(self ^ rhs, u64::BITS) as u8;
-        output.cmovnz(&input, black_box(ne));
+        output.cmovnz(&input, ne);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         let ne = bitnz!(self ^ rhs, u64::BITS) as u8;
-        output.cmovnz(&input, black_box(ne ^ 1));
+        output.cmovnz(&input, ne ^ 1);
     }
 }
