@@ -8,13 +8,6 @@
 
 use crate::{Cmov, CmovEq, Condition};
 
-/// Bitwise non-zero: returns `1` if `x != 0`, and otherwise returns `0`.
-macro_rules! bitnz {
-    ($value:expr, $bits:expr) => {
-        core::hint::black_box(($value | $value.wrapping_neg()) >> ($bits - 1))
-    };
-}
-
 impl Cmov for u16 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -46,13 +39,13 @@ impl CmovEq for u16 {
 impl Cmov for u32 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        let mask = nzmask32(condition);
+        let mask = masknz32(condition);
         *self = (*self & !mask) | (*value & mask);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        let mask = nzmask32(condition);
+        let mask = masknz32(condition);
         *self = (*self & mask) | (*value & !mask);
     }
 }
@@ -60,15 +53,13 @@ impl Cmov for u32 {
 impl CmovEq for u32 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let xor = self ^ rhs;
-        let ne = bitnz!(xor, u32::BITS) as u8;
+        let ne = testnz32(self ^ rhs) as u8;
         output.cmovnz(&input, ne);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let xor = self ^ rhs;
-        let ne = bitnz!(xor, u32::BITS) as u8;
+        let ne = testnz32(self ^ rhs) as u8;
         output.cmovnz(&input, ne ^ 1);
     }
 }
@@ -76,13 +67,13 @@ impl CmovEq for u32 {
 impl Cmov for u64 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        let mask = nzmask64(condition);
+        let mask = masknz64(condition);
         *self = (*self & !mask) | (*value & mask);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        let mask = nzmask64(condition);
+        let mask = masknz64(condition);
         *self = (*self & mask) | (*value & !mask);
     }
 }
@@ -90,52 +81,70 @@ impl Cmov for u64 {
 impl CmovEq for u64 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let xor = self ^ rhs;
-        let ne = bitnz!(xor, u64::BITS) as u8;
+        let ne = testnz64(self ^ rhs) as u8;
         output.cmovnz(&input, ne);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let xor = self ^ rhs;
-        let ne = bitnz!(xor, u64::BITS) as u8;
+        let ne = testnz64(self ^ rhs) as u8;
         output.cmovnz(&input, ne ^ 1);
     }
 }
 
+/// Returns `0` if `x` is `0`, otherwise returns `1` (32-bit version)
+pub fn testnz32(mut x: u32) -> u32 {
+    x |= x.wrapping_neg();
+    core::hint::black_box(x >> (u32::BITS - 1))
+}
+
+/// Returns `0` if `x` is `0`, otherwise returns `1` (64-bit version)
+pub fn testnz64(mut x: u64) -> u64 {
+    x |= x.wrapping_neg();
+    core::hint::black_box(x >> (u64::BITS - 1))
+}
+
 /// Return a [`u32::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
-pub fn nzmask32(condition: Condition) -> u32 {
-    bitnz!(condition as u32, u32::BITS).wrapping_neg()
+pub fn masknz32(condition: Condition) -> u32 {
+    testnz32(condition as u32).wrapping_neg()
 }
 
 /// Return a [`u64::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
-pub fn nzmask64(condition: Condition) -> u64 {
-    bitnz!(condition as u64, u64::BITS).wrapping_neg()
+pub fn masknz64(condition: Condition) -> u64 {
+    testnz64(condition as u64).wrapping_neg()
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
-    fn bitnz() {
-        assert_eq!(bitnz!(0u8, u8::BITS), 0);
+    fn testnz32() {
+        assert_eq!(super::testnz32(0), 0);
         for i in 1..=u8::MAX {
-            assert_eq!(bitnz!(i, u8::BITS), 1);
+            assert_eq!(super::testnz32(i as u32), 1);
         }
     }
 
     #[test]
-    fn nzmask32() {
-        assert_eq!(super::nzmask32(0), 0);
+    fn testnz64() {
+        assert_eq!(super::testnz64(0), 0);
         for i in 1..=u8::MAX {
-            assert_eq!(super::nzmask32(i), u32::MAX);
+            assert_eq!(super::testnz64(i as u64), 1);
         }
     }
 
     #[test]
-    fn nzmask64() {
-        assert_eq!(super::nzmask64(0), 0);
+    fn masknz32() {
+        assert_eq!(super::masknz32(0), 0);
         for i in 1..=u8::MAX {
-            assert_eq!(super::nzmask64(i), u64::MAX);
+            assert_eq!(super::masknz32(i), u32::MAX);
+        }
+    }
+
+    #[test]
+    fn masknz64() {
+        assert_eq!(super::masknz64(0), 0);
+        for i in 1..=u8::MAX {
+            assert_eq!(super::masknz64(i), u64::MAX);
         }
     }
 }
