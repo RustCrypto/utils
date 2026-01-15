@@ -10,29 +10,29 @@ use crate::{Cmov, CmovEq, Condition};
 
 impl Cmov for u16 {
     #[inline]
-    fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        let mut tmp = *self as u32;
-        tmp.cmovnz(&(*value as u32), condition);
-        *self = tmp as u16;
+    fn cmovnz(&mut self, value: &u16, condition: Condition) {
+        let mut tmp = u32::from(*self);
+        tmp.cmovnz(&(*value).into(), condition);
+        *self = (tmp & 0xFFFF) as u16;
     }
 
     #[inline]
-    fn cmovz(&mut self, value: &Self, condition: Condition) {
-        let mut tmp = *self as u32;
-        tmp.cmovz(&(*value as u32), condition);
-        *self = tmp as u16;
+    fn cmovz(&mut self, value: &u16, condition: Condition) {
+        let mut tmp = u32::from(*self);
+        tmp.cmovz(&(*value).into(), condition);
+        *self = (tmp & 0xFFFF) as u16;
     }
 }
 
 impl CmovEq for u16 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        (*self as u32).cmovne(&(*rhs as u32), input, output);
+        u32::from(*self).cmovne(&(*rhs).into(), input, output);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        (*self as u32).cmoveq(&(*rhs as u32), input, output);
+        u32::from(*self).cmoveq(&(*rhs).into(), input, output);
     }
 }
 
@@ -104,12 +104,12 @@ fn testeq64(x: u64, y: u64) -> Condition {
 
 /// Returns `0` if `x` is equal to `y`, otherwise returns `1` (32-bit version)
 fn testne32(x: u32, y: u32) -> Condition {
-    testnz32(x ^ y) as Condition
+    (testnz32(x ^ y) & 0xFF) as Condition
 }
 
 /// Returns `0` if `x` is equal to `y`, otherwise returns `1` (64-bit version)
 fn testne64(x: u64, y: u64) -> Condition {
-    testnz64(x ^ y) as Condition
+    (testnz64(x ^ y) & 0xFF) as Condition
 }
 
 /// Returns `0` if `x` is `0`, otherwise returns `1` (32-bit version)
@@ -126,12 +126,12 @@ fn testnz64(mut x: u64) -> u64 {
 
 /// Return a [`u32::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
 fn masknz32(condition: Condition) -> u32 {
-    testnz32(condition as u32).wrapping_neg()
+    testnz32(condition.into()).wrapping_neg()
 }
 
 /// Return a [`u64::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
 fn masknz64(condition: Condition) -> u64 {
-    testnz64(condition as u64).wrapping_neg()
+    testnz64(condition.into()).wrapping_neg()
 }
 
 #[cfg(test)]
