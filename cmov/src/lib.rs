@@ -98,18 +98,6 @@ impl Cmov for u8 {
     }
 }
 
-impl CmovEq for u8 {
-    #[inline]
-    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        u16::from(*self).cmoveq(&u16::from(*rhs), input, output);
-    }
-
-    #[inline]
-    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        u16::from(*self).cmovne(&u16::from(*rhs), input, output);
-    }
-}
-
 impl Cmov for u128 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -131,6 +119,18 @@ impl Cmov for u128 {
         hi.cmovz(&((*value >> 64) as u64), condition);
 
         *self = u128::from(lo) | (u128::from(hi) << 64);
+    }
+}
+
+impl CmovEq for u8 {
+    #[inline]
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        u16::from(*self).cmoveq(&u16::from(*rhs), input, output);
+    }
+
+    #[inline]
+    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        u16::from(*self).cmovne(&u16::from(*rhs), input, output);
     }
 }
 
