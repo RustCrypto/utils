@@ -1,28 +1,25 @@
-//! Portable "best effort" implementation of `Cmov`.
+//! Portable "best effort" implementation of `Cmov`/`CmovEq`.
 //!
-//! This implementation is based on portable bitwise arithmetic but cannot guarantee that the
-//! resulting generated assembly is free of branch instructions.
+//! This implementation is based on portable bitwise arithmetic augmented with tactical usage of
+//! `core::hint::black_box` based on past observations of where the optimizer has inserted branches
+//! (see CVE-2026-23519), but the fully portable implementation cannot guarantee that the resulting
+//! generated assembly is free of branch instructions.
 //!
-//! For select platforms we use `asm!` for mask generation which should largely mitigate the
-//! optimizer potentially inserting branches.
+//! For select platforms using this backend (currently limited to ARM32) we use `asm!` for mask
+//! generation which should largely mitigate the optimizer potentially inserting branches.
 
 use crate::{Cmov, CmovEq, Condition};
 use core::ops::{BitAnd, BitOr, Not};
 
-// Uses `Cmov` impl for `u32`
 impl Cmov for u16 {
     #[inline]
     fn cmovnz(&mut self, value: &u16, condition: Condition) {
-        let mut tmp = u32::from(*self);
-        tmp.cmovnz(&(*value).into(), condition);
-        *self = (tmp & 0xFFFF) as u16;
+        *self = masksel(*self, *value, (masknz32(condition.into()) & 0xFFFF) as u16);
     }
 
     #[inline]
     fn cmovz(&mut self, value: &u16, condition: Condition) {
-        let mut tmp = u32::from(*self);
-        tmp.cmovz(&(*value).into(), condition);
-        *self = (tmp & 0xFFFF) as u16;
+        *self = masksel(*self, *value, (!masknz32(condition.into()) & 0xFFFF) as u16);
     }
 }
 
@@ -50,40 +47,47 @@ impl Cmov for u64 {
     }
 }
 
-// Uses `CmovEq` impl for `u32`
 impl CmovEq for u16 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        u32::from(*self).cmovne(&(*rhs).into(), input, output);
+        *output = masksel(
+            *output,
+            input,
+            (masknz32((*self ^ *rhs).into()) & 0xFF) as Condition,
+        );
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        u32::from(*self).cmoveq(&(*rhs).into(), input, output);
+        *output = masksel(
+            *output,
+            input,
+            (!masknz32((*self ^ *rhs).into()) & 0xFF) as Condition,
+        );
     }
 }
 
 impl CmovEq for u32 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        *output = masksel(*output, input, (maskne32(*self, *rhs) & 0xFF) as u8);
+        *output = masksel(*output, input, (maskne32(*self, *rhs) & 0xFF) as Condition);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        *output = masksel(*output, input, (maskeq32(*self, *rhs) & 0xFF) as u8);
+        *output = masksel(*output, input, (maskeq32(*self, *rhs) & 0xFF) as Condition);
     }
 }
 
 impl CmovEq for u64 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        *output = masksel(*output, input, (maskne64(*self, *rhs) & 0xFF) as u8);
+        *output = masksel(*output, input, (maskne64(*self, *rhs) & 0xFF) as Condition);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        *output = masksel(*output, input, (maskeq64(*self, *rhs) & 0xFF) as u8);
+        *output = masksel(*output, input, (maskeq64(*self, *rhs) & 0xFF) as Condition);
     }
 }
 
@@ -137,10 +141,10 @@ fn masknz32(condition: u32) -> u32 {
     let mut mask = condition;
     unsafe {
         core::arch::asm!(
-        "rsbs {0}, {0}, #0",  // Reverse subtract
-        "sbcs {0}, {0}, {0}", // Subtract with carry, setting flags
-        inout(reg) mask,
-        options(nostack, nomem),
+            "rsbs {0}, {0}, #0",  // Reverse subtract
+            "sbcs {0}, {0}, {0}", // Subtract with carry, setting flags
+            inout(reg) mask,
+            options(nostack, nomem),
         );
     }
     mask
