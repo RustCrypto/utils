@@ -101,6 +101,11 @@ jobs:
     strategy:
       matrix:
         include:
+          # ARM32
+          - target: armv7-unknown-linux-gnueabi
+            rust: 1.85.0 # MSRV
+          - target: armv7-unknown-linux-gnueabi
+            rust: stable # MSRV
           # ARM64
           - target: aarch64-unknown-linux-gnu
             rust: 1.85.0 # MSRV
@@ -130,6 +135,7 @@ jobs:
     strategy:
       matrix:
         target:
+          - armv7-unknown-linux-gnueabi
           - powerpc-unknown-linux-gnu
           - s390x-unknown-linux-gnu
           - x86_64-unknown-linux-gnu
