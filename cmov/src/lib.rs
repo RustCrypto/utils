@@ -27,6 +27,9 @@
     unused_qualifications
 )]
 
+#[macro_use]
+mod macros;
+
 #[cfg(not(miri))]
 #[cfg(target_arch = "aarch64")]
 mod aarch64;
@@ -57,7 +60,8 @@ pub trait Cmov {
     /// equal to zero, and if so, conditionally moves `value` to `self`
     /// when `condition` is equal to zero.
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        self.cmovnz(value, !condition)
+        let nz = masknz!(condition: Condition);
+        self.cmovnz(value, !nz)
     }
 }
 

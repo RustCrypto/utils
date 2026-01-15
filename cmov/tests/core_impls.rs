@@ -166,6 +166,19 @@ mod arrays {
             assert_eq!(x, EXAMPLE_B);
         }
     }
+
+    #[test]
+    fn u8_cmovz_works() {
+        let mut x = EXAMPLE_A;
+        x.cmovz(&EXAMPLE_B, 0);
+        assert_eq!(x, EXAMPLE_B);
+
+        for cond in 1..u8::MAX {
+            let mut x = EXAMPLE_A;
+            x.cmovz(&EXAMPLE_B, cond);
+            assert_eq!(x, EXAMPLE_A);
+        }
+    }
 }
 
 mod slices {
