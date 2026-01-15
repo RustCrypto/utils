@@ -98,18 +98,6 @@ impl Cmov for u16 {
     }
 }
 
-impl CmovEq for u16 {
-    #[inline]
-    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cseleq32!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
-    }
-
-    #[inline]
-    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cseleq32!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
-    }
-}
-
 impl Cmov for u32 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -122,7 +110,19 @@ impl Cmov for u32 {
     }
 }
 
-impl CmovEq for u32 {
+impl Cmov for u64 {
+    #[inline]
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
+        csel64!("csel {1:x}, {2:x}, {3:x}, NE", self, value, condition);
+    }
+
+    #[inline]
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
+        csel64!("csel {1:x}, {2:x}, {3:x}, EQ", self, value, condition);
+    }
+}
+
+impl CmovEq for u16 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         cseleq32!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
@@ -134,15 +134,15 @@ impl CmovEq for u32 {
     }
 }
 
-impl Cmov for u64 {
+impl CmovEq for u32 {
     #[inline]
-    fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        csel64!("csel {1:x}, {2:x}, {3:x}, NE", self, value, condition);
+    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        cseleq32!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
     }
 
     #[inline]
-    fn cmovz(&mut self, value: &Self, condition: Condition) {
-        csel64!("csel {1:x}, {2:x}, {3:x}, EQ", self, value, condition);
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        cseleq32!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
     }
 }
 
