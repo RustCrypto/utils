@@ -125,13 +125,37 @@ fn testnz64(mut x: u64) -> u64 {
 }
 
 /// Return a [`u32::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
+#[cfg(not(target_arch = "arm"))]
 fn masknz32(condition: Condition) -> u32 {
     testnz32(condition.into()).wrapping_neg()
 }
 
 /// Return a [`u64::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
+#[cfg(not(target_arch = "arm"))]
 fn masknz64(condition: Condition) -> u64 {
     testnz64(condition.into()).wrapping_neg()
+}
+
+/// Optimized mask generation for ARM32 targets.
+#[cfg(target_arch = "arm")]
+fn masknz32(condition: u8) -> u32 {
+    let mut out = condition as u32;
+    unsafe {
+        core::arch::asm!(
+        "rsbs {0}, {0}, #0",  // Reverse subtract
+        "sbcs {0}, {0}, {0}", // Subtract with carry, setting flags
+        inout(reg) out,
+        options(nostack, nomem),
+        );
+    }
+    out
+}
+
+/// 64-bit wrapper for targets that implement 32-bit mask generation in assembly.
+#[cfg(target_arch = "arm")]
+fn masknz64(condition: u8) -> u64 {
+    let mask = masknz32(condition) as u64;
+    mask | mask << 32
 }
 
 #[cfg(test)]

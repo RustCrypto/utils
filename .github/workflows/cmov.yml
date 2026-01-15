@@ -135,7 +135,6 @@ jobs:
     strategy:
       matrix:
         target:
-          - armv7-unknown-linux-gnueabi
           - powerpc-unknown-linux-gnu
           - s390x-unknown-linux-gnu
           - x86_64-unknown-linux-gnu
