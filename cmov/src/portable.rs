@@ -26,6 +26,30 @@ impl Cmov for u16 {
     }
 }
 
+impl Cmov for u32 {
+    #[inline]
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
+        *self = masksel(*self, *value, masknz32(condition.into()));
+    }
+
+    #[inline]
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
+        *self = masksel(*self, *value, !masknz32(condition.into()));
+    }
+}
+
+impl Cmov for u64 {
+    #[inline]
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
+        *self = masksel(*self, *value, masknz64(condition.into()));
+    }
+
+    #[inline]
+    fn cmovz(&mut self, value: &Self, condition: Condition) {
+        *self = masksel(*self, *value, !masknz64(condition.into()));
+    }
+}
+
 // Uses `CmovEq` impl for `u32`
 impl CmovEq for u16 {
     #[inline]
@@ -39,18 +63,6 @@ impl CmovEq for u16 {
     }
 }
 
-impl Cmov for u32 {
-    #[inline]
-    fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        *self = masksel(*self, *value, masknz32(condition.into()));
-    }
-
-    #[inline]
-    fn cmovz(&mut self, value: &Self, condition: Condition) {
-        *self = masksel(*self, *value, !masknz32(condition.into()));
-    }
-}
-
 impl CmovEq for u32 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
@@ -60,18 +72,6 @@ impl CmovEq for u32 {
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
         *output = masksel(*output, input, (maskeq32(*self, *rhs) & 0xFF) as u8);
-    }
-}
-
-impl Cmov for u64 {
-    #[inline]
-    fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        *self = masksel(*self, *value, masknz64(condition.into()));
-    }
-
-    #[inline]
-    fn cmovz(&mut self, value: &Self, condition: Condition) {
-        *self = masksel(*self, *value, !masknz64(condition.into()));
     }
 }
 
@@ -88,21 +88,25 @@ impl CmovEq for u64 {
 }
 
 /// Returns `u32::MAX` if `x` is equal to `y`, otherwise returns `0` (32-bit version)
+#[inline]
 fn maskeq32(x: u32, y: u32) -> u32 {
     !maskne32(x, y)
 }
 
 /// Returns `u32::MAX` if `x` is equal to `y`, otherwise returns `0` (64-bit version)
+#[inline]
 fn maskeq64(x: u64, y: u64) -> u64 {
     !maskne64(x, y)
 }
 
 /// Returns `0` if `x` is equal to `y`, otherwise returns `1` (32-bit version)
+#[inline]
 fn maskne32(x: u32, y: u32) -> u32 {
     masknz32(x ^ y)
 }
 
 /// Returns `0` if `x` is equal to `y`, otherwise returns `1` (64-bit version)
+#[inline]
 fn maskne64(x: u64, y: u64) -> u64 {
     masknz64(x ^ y)
 }
