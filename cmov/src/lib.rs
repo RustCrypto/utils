@@ -110,15 +110,13 @@ impl CmovEq for u8 {
     }
 }
 
-// TODO(tarcieri): address truncation lint
-#[allow(clippy::cast_possible_truncation)]
 impl Cmov for u128 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        let mut lo = (*self & u128::from(u64::MAX)) as u64;
+        let mut lo = (*self & 0xFFFF_FFFF_FFFF_FFFF) as u64;
         let mut hi = (*self >> 64) as u64;
 
-        lo.cmovnz(&((*value & u128::from(u64::MAX)) as u64), condition);
+        lo.cmovnz(&((*value & 0xFFFF_FFFF_FFFF_FFFF) as u64), condition);
         hi.cmovnz(&((*value >> 64) as u64), condition);
 
         *self = u128::from(lo) | (u128::from(hi) << 64);
@@ -126,37 +124,35 @@ impl Cmov for u128 {
 
     #[inline]
     fn cmovz(&mut self, value: &Self, condition: Condition) {
-        let mut lo = (*self & u128::from(u64::MAX)) as u64;
+        let mut lo = (*self & 0xFFFF_FFFF_FFFF_FFFF) as u64;
         let mut hi = (*self >> 64) as u64;
 
-        lo.cmovz(&((*value & u128::from(u64::MAX)) as u64), condition);
+        lo.cmovz(&((*value & 0xFFFF_FFFF_FFFF_FFFF) as u64), condition);
         hi.cmovz(&((*value >> 64) as u64), condition);
 
         *self = u128::from(lo) | (u128::from(hi) << 64);
     }
 }
 
-// TODO(tarcieri): address truncation lint
-#[allow(clippy::cast_possible_truncation)]
 impl CmovEq for u128 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let lo = (*self & u128::from(u64::MAX)) as u64;
+        let lo = (*self & 0xFFFF_FFFF_FFFF_FFFF) as u64;
         let hi = (*self >> 64) as u64;
 
         let mut tmp = 1u8;
-        lo.cmovne(&((*rhs & u128::from(u64::MAX)) as u64), 0, &mut tmp);
+        lo.cmovne(&((*rhs & 0xFFFF_FFFF_FFFF_FFFF) as u64), 0, &mut tmp);
         hi.cmovne(&((*rhs >> 64) as u64), 0, &mut tmp);
         tmp.cmoveq(&0, input, output);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let lo = (*self & u128::from(u64::MAX)) as u64;
+        let lo = (*self & 0xFFFF_FFFF_FFFF_FFFF) as u64;
         let hi = (*self >> 64) as u64;
 
         let mut tmp = 1u8;
-        lo.cmovne(&((*rhs & u128::from(u64::MAX)) as u64), 0, &mut tmp);
+        lo.cmovne(&((*rhs & 0xFFFF_FFFF_FFFF_FFFF) as u64), 0, &mut tmp);
         hi.cmovne(&((*rhs >> 64) as u64), 0, &mut tmp);
         tmp.cmoveq(&1, input, output);
     }
