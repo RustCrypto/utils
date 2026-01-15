@@ -118,17 +118,13 @@ fn maskne64(x: u64, y: u64) -> u64 {
 /// Return a [`u32::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
 #[cfg(not(target_arch = "arm"))]
 fn masknz32(condition: u32) -> u32 {
-    let x = condition | condition.wrapping_neg(); // MSB of `x` now `1` if non-zero
-    let nz = core::hint::black_box(x >> (u32::BITS - 1)); // Extract MSB
-    nz.wrapping_neg()
+    masknz!(condition: u32)
 }
 
 /// Return a [`u64::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
 #[cfg(not(target_arch = "arm"))]
 fn masknz64(condition: u64) -> u64 {
-    let x = condition | condition.wrapping_neg(); // MSB of `x` now `1` if non-zero
-    let nz = core::hint::black_box(x >> (u64::BITS - 1)); // Extract MSB
-    nz.wrapping_neg()
+    masknz!(condition: u64)
 }
 
 /// Optimized mask generation for ARM32 targets.
