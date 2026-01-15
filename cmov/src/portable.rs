@@ -53,14 +53,14 @@ impl Cmov for u32 {
 impl CmovEq for u32 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let ne = testnz32(self ^ rhs) as u8;
+        let ne = testne32(*self, *rhs);
         output.cmovnz(&input, ne);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let ne = testnz32(self ^ rhs) as u8;
-        output.cmovnz(&input, ne ^ 1);
+        let eq = testeq32(*self, *rhs);
+        output.cmovnz(&input, eq);
     }
 }
 
@@ -81,41 +81,105 @@ impl Cmov for u64 {
 impl CmovEq for u64 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let ne = testnz64(self ^ rhs) as u8;
+        let ne = testne64(*self, *rhs);
         output.cmovnz(&input, ne);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let ne = testnz64(self ^ rhs) as u8;
-        output.cmovnz(&input, ne ^ 1);
+        let eq = testeq64(*self, *rhs);
+        output.cmovnz(&input, eq);
     }
 }
 
+/// Returns `1` if `x` is equal to `y`, otherwise returns `0` (32-bit version)
+fn testeq32(x: u32, y: u32) -> Condition {
+    testne32(x, y) ^ 1
+}
+
+/// Returns `1` if `x` is equal to `y`, otherwise returns `0` (64-bit version)
+fn testeq64(x: u64, y: u64) -> Condition {
+    testne64(x, y) ^ 1
+}
+
+/// Returns `0` if `x` is equal to `y`, otherwise returns `1` (32-bit version)
+fn testne32(x: u32, y: u32) -> Condition {
+    testnz32(x ^ y) as Condition
+}
+
+/// Returns `0` if `x` is equal to `y`, otherwise returns `1` (64-bit version)
+fn testne64(x: u64, y: u64) -> Condition {
+    testnz64(x ^ y) as Condition
+}
+
 /// Returns `0` if `x` is `0`, otherwise returns `1` (32-bit version)
-pub fn testnz32(mut x: u32) -> u32 {
-    x |= x.wrapping_neg();
-    core::hint::black_box(x >> (u32::BITS - 1))
+fn testnz32(mut x: u32) -> u32 {
+    x |= x.wrapping_neg(); // MSB now set if non-zero
+    core::hint::black_box(x >> (u32::BITS - 1)) // Extract MSB
 }
 
 /// Returns `0` if `x` is `0`, otherwise returns `1` (64-bit version)
-pub fn testnz64(mut x: u64) -> u64 {
-    x |= x.wrapping_neg();
-    core::hint::black_box(x >> (u64::BITS - 1))
+fn testnz64(mut x: u64) -> u64 {
+    x |= x.wrapping_neg(); // MSB now set if non-zero
+    core::hint::black_box(x >> (u64::BITS - 1)) // Extract MSB
 }
 
 /// Return a [`u32::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
-pub fn masknz32(condition: Condition) -> u32 {
+fn masknz32(condition: Condition) -> u32 {
     testnz32(condition as u32).wrapping_neg()
 }
 
 /// Return a [`u64::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
-pub fn masknz64(condition: Condition) -> u64 {
+fn masknz64(condition: Condition) -> u64 {
     testnz64(condition as u64).wrapping_neg()
 }
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn testeq32() {
+        assert_eq!(super::testeq32(0, 0), 1);
+        assert_eq!(super::testeq32(1, 0), 0);
+        assert_eq!(super::testeq32(0, 1), 0);
+        assert_eq!(super::testeq32(1, 1), 1);
+        assert_eq!(super::testeq32(u32::MAX, 1), 0);
+        assert_eq!(super::testeq32(1, u32::MAX), 0);
+        assert_eq!(super::testeq32(u32::MAX, u32::MAX), 1);
+    }
+
+    #[test]
+    fn testeq64() {
+        assert_eq!(super::testeq64(0, 0), 1);
+        assert_eq!(super::testeq64(1, 0), 0);
+        assert_eq!(super::testeq64(0, 1), 0);
+        assert_eq!(super::testeq64(1, 1), 1);
+        assert_eq!(super::testeq64(u64::MAX, 1), 0);
+        assert_eq!(super::testeq64(1, u64::MAX), 0);
+        assert_eq!(super::testeq64(u64::MAX, u64::MAX), 1);
+    }
+
+    #[test]
+    fn testne32() {
+        assert_eq!(super::testne32(0, 0), 0);
+        assert_eq!(super::testne32(1, 0), 1);
+        assert_eq!(super::testne32(0, 1), 1);
+        assert_eq!(super::testne32(1, 1), 0);
+        assert_eq!(super::testne32(u32::MAX, 1), 1);
+        assert_eq!(super::testne32(1, u32::MAX), 1);
+        assert_eq!(super::testne32(u32::MAX, u32::MAX), 0);
+    }
+
+    #[test]
+    fn testne64() {
+        assert_eq!(super::testne64(0, 0), 0);
+        assert_eq!(super::testne64(1, 0), 1);
+        assert_eq!(super::testne64(0, 1), 1);
+        assert_eq!(super::testne64(1, 1), 0);
+        assert_eq!(super::testne64(u64::MAX, 1), 1);
+        assert_eq!(super::testne64(1, u64::MAX), 1);
+        assert_eq!(super::testne64(u64::MAX, u64::MAX), 0);
+    }
+
     #[test]
     fn testnz32() {
         assert_eq!(super::testnz32(0), 0);
