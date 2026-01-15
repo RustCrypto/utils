@@ -1,10 +1,10 @@
 //! Portable "best effort" implementation of `Cmov`.
 //!
-//! This implementation is based on portable bitwise arithmetic but cannot
-//! guarantee that the resulting generated assembly is free of branch
-//! instructions.
-
-// TODO(tarcieri): more optimized implementation for small integers
+//! This implementation is based on portable bitwise arithmetic but cannot guarantee that the
+//! resulting generated assembly is free of branch instructions.
+//!
+//! For select platforms we use `asm!` for mask generation which should largely mitigate the
+//! optimizer potentially inserting branches.
 
 use crate::{Cmov, CmovEq, Condition};
 
@@ -60,13 +60,15 @@ impl Cmov for u32 {
 impl CmovEq for u32 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let ne = bitnz!(self ^ rhs, u32::BITS) as u8;
+        let xor = self ^ rhs;
+        let ne = bitnz!(xor, u32::BITS) as u8;
         output.cmovnz(&input, ne);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let ne = bitnz!(self ^ rhs, u32::BITS) as u8;
+        let xor = self ^ rhs;
+        let ne = bitnz!(xor, u32::BITS) as u8;
         output.cmovnz(&input, ne ^ 1);
     }
 }
@@ -88,13 +90,15 @@ impl Cmov for u64 {
 impl CmovEq for u64 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let ne = bitnz!(self ^ rhs, u64::BITS) as u8;
+        let xor = self ^ rhs;
+        let ne = bitnz!(xor, u64::BITS) as u8;
         output.cmovnz(&input, ne);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        let ne = bitnz!(self ^ rhs, u64::BITS) as u8;
+        let xor = self ^ rhs;
+        let ne = bitnz!(xor, u64::BITS) as u8;
         output.cmovnz(&input, ne ^ 1);
     }
 }
