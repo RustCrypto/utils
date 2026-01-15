@@ -138,12 +138,13 @@ fn masknz64(condition: u64) -> u64 {
 /// assembly should guarantee won't happen again in the future (CVE-2026-23519).
 #[cfg(target_arch = "arm")]
 fn masknz32(condition: u32) -> u32 {
-    let mut mask = condition;
+    let mut mask: u32;
     unsafe {
         core::arch::asm!(
-            "rsbs {0}, {0}, #0",  // Reverse subtract
+            "rsbs {0}, {1}, #0",  // Reverse subtract
             "sbcs {0}, {0}, {0}", // Subtract with carry, setting flags
-            inout(reg) mask,
+            lateout(reg) mask,
+            in(reg) condition,
             options(nostack, nomem),
         );
     }
