@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.5 (2026-01-15)
+### Changed
+- Introduce small ARM32 `asm!` optimization which also guarantees constant-time operation ([#1336], [#1346])
+
+[#1336]: https://github.com/RustCrypto/utils/pull/1336
+[#1346]: https://github.com/RustCrypto/utils/pull/1346
+
 ## 0.4.4 (2026-01-14)
 ### Security
 - Fix non-constant-time assembly being emitted from portable backend on `thumbv6m-none-eabi` ([#1332])

@@ -156,7 +156,7 @@ fn masknz32(condition: u32) -> u32 {
 fn masknz64(condition: u64) -> u64 {
     let lo = masknz32((condition & 0xFFFF_FFFF) as u32);
     let hi = masknz32((condition >> 32) as u32);
-    let mask = (lo | hi) as u64;
+    let mask = u64::from(lo | hi);
     mask | mask << 32
 }
 
