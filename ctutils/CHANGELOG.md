@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.2 (2026-01-16)
+### Added
+- `BytesCtEq` and `BytesCtSelect` traits ([#1359])
+- `CtFind` trait ([#1361])
+- `CtLookup` trait ([#1362])
+
+### Changed
+- Bump `cmov` crate dependency to v0.5.0-pre.0 ([#1357])
+
+[#1357]: https://github.com/RustCrypto/utils/pull/1357
+[#1359]: https://github.com/RustCrypto/utils/pull/1359
+[#1361]: https://github.com/RustCrypto/utils/pull/1361
+[#1362]: https://github.com/RustCrypto/utils/pull/1362
+
 ## 0.3.1 (2026-01-03)
 ### Added
 - `Choice::to_u8_mask`/`to_u16_mask` ([#1322])
