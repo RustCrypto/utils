@@ -13,10 +13,10 @@ pub trait CtEq<Rhs = Self>
 where
     Rhs: ?Sized,
 {
-    /// Equality
+    /// Determine if `self` is equal to `other` in constant-time.
     fn ct_eq(&self, other: &Rhs) -> Choice;
 
-    /// Inequality
+    /// Determine if `self` is NOT equal to `other` in constant-time.
     fn ct_ne(&self, other: &Rhs) -> Choice {
         !self.ct_eq(other)
     }

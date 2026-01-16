@@ -86,10 +86,12 @@
 //! This makes it possible to use `ctutils` in a codebase where other dependencies are using
 //! `subtle`.
 
+mod bytes;
 mod choice;
 mod ct_option;
 mod traits;
 
+pub use bytes::{BytesCtEq, BytesCtSelect};
 pub use choice::Choice;
 pub use ct_option::CtOption;
 pub use traits::{ct_eq::CtEq, ct_gt::CtGt, ct_lt::CtLt, ct_neg::CtNeg, ct_select::CtSelect};
