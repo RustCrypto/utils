@@ -150,6 +150,24 @@ impl<T> CtOption<T> {
         self.as_inner_unchecked()
     }
 
+    /// Inserts `value` into the [`CtOption`], then returns a mutable reference to it.
+    ///
+    /// If the option already contains a value, the old value is dropped.
+    pub fn insert(&mut self, value: T) -> &mut T {
+        self.value = value;
+        self.is_some = Choice::TRUE;
+        &mut self.value
+    }
+
+    /// Conditionally inserts `value` into the [`CtOption`] if the given condition holds.
+    pub fn insert_if(&mut self, value: &T, condition: Choice)
+    where
+        T: CtSelect,
+    {
+        self.value.ct_assign(value, condition);
+        self.is_some.ct_assign(&Choice::TRUE, condition);
+    }
+
     /// Convert the [`CtOption`] wrapper into an [`Option`], depending on whether
     /// [`CtOption::is_some`] is a truthy or falsy [`Choice`].
     ///
@@ -733,6 +751,28 @@ mod tests {
         assert!(NONE.filter_by(Choice::TRUE).is_none().to_bool());
         assert!(SOME.filter_by(Choice::FALSE).ct_eq(&NONE).to_bool());
         assert_eq!(SOME.filter_by(Choice::TRUE).unwrap(), VALUE);
+    }
+
+    #[test]
+    fn insert() {
+        let mut example = NONE;
+        assert!(example.is_none().to_bool());
+
+        let ret = example.insert(42);
+        assert_eq!(ret, &42);
+        assert!(example.is_some().to_bool());
+    }
+
+    #[test]
+    fn insert_if() {
+        let mut example = NONE;
+        assert!(example.is_none().to_bool());
+
+        example.insert_if(&42, Choice::FALSE);
+        assert!(example.is_none().to_bool());
+
+        example.insert_if(&42, Choice::TRUE);
+        assert_eq!(example.unwrap(), 42);
     }
 
     #[test]
