@@ -1,6 +1,6 @@
 //! Portable "best effort" implementation of `Cmov`/`CmovEq`.
 //!
-//! This implementation is based on portable bitwise arithmetic augmented with tactical usage of
+//! This implementation is based on portable arithmetic operations augmented with tactical usage of
 //! `core::hint::black_box` based on past observations of where the optimizer has inserted branches
 //! (see CVE-2026-23519), but the fully portable implementation cannot guarantee that the resulting
 //! generated assembly is free of branch instructions.
