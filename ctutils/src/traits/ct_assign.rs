@@ -70,6 +70,13 @@ where
     #[inline]
     #[track_caller]
     fn ct_assign(&mut self, other: &Self, choice: Choice) {
+        const {
+            assert!(
+                size_of::<T>() != 1,
+                "use `BytesCtAssign::bytes_ct_assign` when working with byte-sized values"
+            );
+        }
+
         assert_eq!(
             self.len(),
             other.len(),

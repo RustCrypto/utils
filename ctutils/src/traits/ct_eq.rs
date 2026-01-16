@@ -77,11 +77,30 @@ impl CtEq for cmp::Ordering {
 impl<T: CtEq> CtEq for [T] {
     #[inline]
     fn ct_eq(&self, other: &[T]) -> Choice {
+        const {
+            assert!(
+                size_of::<T>() != 1,
+                "use `BytesCtEq::bytes_ct_eq` when working with byte-sized values"
+            );
+        }
+
         let mut ret = self.len().ct_eq(&other.len());
         for (a, b) in self.iter().zip(other.iter()) {
             ret &= a.ct_eq(b);
         }
         ret
+    }
+
+    #[inline]
+    fn ct_ne(&self, other: &[T]) -> Choice {
+        const {
+            assert!(
+                size_of::<T>() != 1,
+                "use `BytesCtEq::bytes_ct_ne` when working with byte-sized values"
+            );
+        }
+
+        !self.ct_eq(other)
     }
 }
 

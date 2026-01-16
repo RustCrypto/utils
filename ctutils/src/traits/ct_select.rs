@@ -98,6 +98,13 @@ where
 {
     #[inline]
     fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        const {
+            assert!(
+                size_of::<T>() != 1,
+                "use `BytesCtSelect::bytes_ct_select` when working with byte-sized values"
+            );
+        }
+
         core::array::from_fn(|i| T::ct_select(&self[i], &other[i], choice))
     }
 }
