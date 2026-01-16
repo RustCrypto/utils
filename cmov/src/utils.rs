@@ -23,6 +23,14 @@ macro_rules! masknz {
     }};
 }
 
+// Uses 64-bit words on 64-bit targets, 32-bit everywhere else
+#[cfg(not(target_pointer_width = "64"))]
+pub(crate) type Word = u32;
+#[cfg(target_pointer_width = "64")]
+pub(crate) type Word = u64;
+pub(crate) const WORD_SIZE: usize = size_of::<Word>();
+const _: () = debug_assert!(size_of::<usize>() <= WORD_SIZE, "unexpected word size");
+
 /// Rust core `[T]::as_chunks` vendored because of its 1.88 MSRV.
 /// TODO(tarcieri): use upstream function when we bump MSRV
 #[inline]
