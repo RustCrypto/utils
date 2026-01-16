@@ -18,6 +18,7 @@ const _: () = assert!(size_of::<usize>() <= WORD_SIZE, "unexpected word size");
 /// - if slices have unequal lengths
 impl Cmov for [u8] {
     #[inline]
+    #[track_caller]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
         assert_eq!(
             self.len(),

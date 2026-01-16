@@ -13,10 +13,23 @@ use crate::Choice;
 use cmov::{Cmov, CmovEq};
 
 #[cfg(doc)]
-use crate::{CtEq, CtSelect};
+use crate::{CtAssign, CtEq, CtSelect};
+
+/// [`CtAssign`]-like trait impl'd for `[u8]` and `[u8; N]` providing optimized implementations
+/// which perform better than the generic impl of [`CtAssign`] for `[T]` and `[T; N]`
+/// where `T = u8`.
+///
+/// Ideally we would use [specialization] to provide more specific impls of these traits for these
+/// types, but it's unstable and unlikely to be stabilized soon.
+///
+/// [specialization]: https://rust-lang.github.io/rfcs/1210-impl-specialization.html
+pub trait BytesCtAssign: sealed::Sealed {
+    /// Conditionally assign `other` to `self` if `choice` is [`Choice::TRUE`].
+    fn bytes_ct_assign(&mut self, other: &Self, choice: Choice);
+}
 
 /// [`CtEq`]-like trait impl'd for `[u8]` and `[u8; N]` providing optimized implementations which
-/// perform than the generic impl of [`CtEq`] for `[T; N]` where `T = u8`.
+/// perform better than the generic impl of [`CtEq`] for `[T; N]` where `T = u8`.
 ///
 /// Ideally we would use [specialization] to provide more specific impls of these traits for these
 /// types, but it's unstable and unlikely to be stabilized soon.
@@ -33,22 +46,35 @@ pub trait BytesCtEq<Rhs: ?Sized = Self>: sealed::Sealed {
 }
 
 /// [`CtSelect`]-like trait impl'd for `[u8]` and `[u8; N]` providing optimized implementations
-/// which perform than the generic impl of [`CtSelect`] for `[T; N]` where `T = u8`.
+/// which perform better than the generic impl of [`CtSelect`] for `[T; N]` where `T = u8`.
 ///
 /// Ideally we would use [specialization] to provide more specific impls of these traits for these
 /// types, but it's unstable and unlikely to be stabilized soon.
 ///
 /// [specialization]: https://rust-lang.github.io/rfcs/1210-impl-specialization.html
-pub trait BytesCtSelect: Sized + sealed::Sealed {
-    /// Conditionally assign `other` to `self` if `choice` is [`Choice::TRUE`].
-    fn bytes_ct_assign(&mut self, other: &Self, choice: Choice);
-
+pub trait BytesCtSelect: BytesCtAssign + Sized {
     /// Select between `self` and `other` based on `choice`, returning a copy of the value.
     ///
     /// # Returns
     /// - `self` if `choice` is [`Choice::FALSE`].
     /// - `other` if `choice` is [`Choice::TRUE`].
     fn bytes_ct_select(&self, other: &Self, choice: Choice) -> Self;
+}
+
+impl BytesCtAssign for [u8] {
+    #[inline]
+    #[track_caller]
+    fn bytes_ct_assign(&mut self, other: &Self, choice: Choice) {
+        assert_eq!(
+            self.len(),
+            other.len(),
+            "source slice length ({}) does not match destination slice length ({})",
+            other.len(),
+            self.len()
+        );
+
+        self.cmovnz(other, choice.into());
+    }
 }
 
 impl BytesCtEq for [u8] {
@@ -67,6 +93,13 @@ impl<const N: usize> BytesCtEq for [u8; N] {
     }
 }
 
+impl<const N: usize> BytesCtAssign for [u8; N] {
+    #[inline]
+    fn bytes_ct_assign(&mut self, other: &Self, choice: Choice) {
+        self.cmovnz(other, choice.into());
+    }
+}
+
 impl<const N: usize> BytesCtEq<[u8]> for [u8; N] {
     #[inline]
     fn bytes_ct_eq(&self, other: &[u8]) -> Choice {
@@ -77,11 +110,6 @@ impl<const N: usize> BytesCtEq<[u8]> for [u8; N] {
 }
 
 impl<const N: usize> BytesCtSelect for [u8; N] {
-    #[inline]
-    fn bytes_ct_assign(&mut self, other: &Self, choice: Choice) {
-        self.cmovnz(other, choice.into());
-    }
-
     #[inline]
     fn bytes_ct_select(&self, other: &Self, choice: Choice) -> Self {
         let mut ret = *self;
@@ -100,7 +128,7 @@ mod sealed {
 
 #[cfg(test)]
 mod tests {
-    use super::{BytesCtEq, BytesCtSelect, Choice};
+    use super::{BytesCtAssign, BytesCtEq, BytesCtSelect, Choice};
 
     mod array {
         use super::*;
@@ -136,6 +164,17 @@ mod tests {
         const EXAMPLE_A: &[u8] = &[1, 2, 3];
         const EXAMPLE_B: &[u8] = &[2, 2, 3];
         const EXAMPLE_C: &[u8] = &[1, 2];
+
+        #[test]
+        fn bytes_ct_assign() {
+            let mut bytes = [0u8; 3];
+            let slice = bytes.as_mut();
+
+            slice.bytes_ct_assign(EXAMPLE_A, Choice::FALSE);
+            assert_eq!(slice, &[0u8; 3]);
+            slice.bytes_ct_assign(EXAMPLE_A, Choice::TRUE);
+            assert_eq!(slice, EXAMPLE_A);
+        }
 
         #[test]
         fn bytes_ct_eq() {

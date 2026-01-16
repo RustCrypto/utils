@@ -1,4 +1,4 @@
-use crate::{CtEq, CtSelect};
+use crate::{CtAssign, CtEq, CtSelect};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
 /// Bitwise less-than-or equal: returns `1` if `x <= y`, and otherwise returns `0`.
@@ -473,6 +473,13 @@ impl BitXorAssign for Choice {
     #[inline]
     fn bitxor_assign(&mut self, rhs: Choice) {
         *self = *self ^ rhs;
+    }
+}
+
+impl CtAssign for Choice {
+    #[inline]
+    fn ct_assign(&mut self, other: &Self, choice: Choice) {
+        self.0.ct_assign(&other.0, choice);
     }
 }
 
