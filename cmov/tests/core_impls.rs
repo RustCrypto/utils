@@ -195,7 +195,7 @@ mod arrays {
     }
 
     #[test]
-    fn cmoveq_works() {
+    fn u8_cmoveq_works() {
         let mut o = 0u8;
 
         // Same contents.
@@ -209,7 +209,7 @@ mod arrays {
     }
 
     #[test]
-    fn cmovne_works() {
+    fn u8_cmovne_works() {
         let mut o = 0u8;
 
         // Same contents.
@@ -226,41 +226,76 @@ mod arrays {
 }
 
 mod slices {
-    use cmov::CmovEq;
+    use cmov::{Cmov, CmovEq};
+
+    const EXAMPLE_A: &[u8] = &[1u8, 2, 3];
+    const EXAMPLE_B: &[u8] = &[1, 2, 4]; // different contents
+    const EXAMPLE_C: &[u8] = &[1u8, 2]; // different length
 
     #[test]
-    fn cmoveq_works() {
-        let example = [1u8, 2, 3].as_slice();
-        let mut o = 0u8;
+    fn u8_cmovnz_works() {
+        let mut x = [0u8; 3];
+        x.as_mut_slice().cmovnz(EXAMPLE_A, 0);
+        assert_eq!(x, [0u8; 3]);
 
-        // Same slices.
-        example.cmoveq(example, 43, &mut o);
-        assert_eq!(o, 43);
-
-        // Different lengths.
-        example.cmoveq(&[1, 2], 44, &mut o);
-        assert_ne!(o, 44);
-
-        // Different contents.
-        example.cmoveq(&[1, 2, 4], 45, &mut o);
-        assert_ne!(o, 45);
+        for cond in 1..u8::MAX {
+            let mut x = [0u8; 3];
+            x.as_mut_slice().cmovnz(EXAMPLE_A, cond);
+            assert_eq!(x, EXAMPLE_A);
+        }
     }
 
     #[test]
-    fn cmovne_works() {
-        let example = [1u8, 2, 3].as_slice();
+    fn u8_cmovz_works() {
+        let mut x = [0u8; 3];
+        x.as_mut_slice().cmovz(EXAMPLE_A, 0);
+        assert_eq!(x, EXAMPLE_A);
+
+        for cond in 1..u8::MAX {
+            let mut x = [0u8; 3];
+            x.as_mut_slice().cmovz(EXAMPLE_A, cond);
+            assert_eq!(x, [0u8; 3]);
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn u8_cmovnz_length_mismatch_panics() {
+        let mut x = [0u8; 3];
+        x.as_mut_slice().cmovnz(EXAMPLE_C, 1);
+    }
+
+    #[test]
+    fn u8_cmoveq_works() {
         let mut o = 0u8;
 
         // Same slices.
-        example.cmovne(example, 43, &mut o);
-        assert_ne!(o, 43);
-
-        // Different lengths.
-        example.cmovne(&[1, 2], 44, &mut o);
-        assert_eq!(o, 44);
+        EXAMPLE_A.cmoveq(EXAMPLE_A, 43, &mut o);
+        assert_eq!(o, 43);
 
         // Different contents.
-        example.cmovne(&[1, 2, 4], 45, &mut o);
+        EXAMPLE_A.cmoveq(EXAMPLE_B, 45, &mut o);
+        assert_ne!(o, 45);
+
+        // Different lengths.
+        EXAMPLE_A.cmoveq(EXAMPLE_C, 44, &mut o);
+        assert_ne!(o, 44);
+    }
+
+    #[test]
+    fn u8_cmovne_works() {
+        let mut o = 0u8;
+
+        // Same slices.
+        EXAMPLE_A.cmovne(EXAMPLE_A, 43, &mut o);
+        assert_ne!(o, 43);
+
+        // Different contents.
+        EXAMPLE_A.cmovne(EXAMPLE_B, 45, &mut o);
         assert_eq!(o, 45);
+
+        // Different lengths.
+        EXAMPLE_A.cmovne(EXAMPLE_C, 44, &mut o);
+        assert_eq!(o, 44);
     }
 }
