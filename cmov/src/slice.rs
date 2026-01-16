@@ -32,7 +32,7 @@ impl Cmov for [u8] {
     }
 }
 
-/// Optimized implementation for byte arrays which coalesces them into word-sized chunks first,
+/// Optimized implementation for byte slices which coalesces them into word-sized chunks first,
 /// then performs [`CmovEq`] at the word-level to cut down on the total number of instructions.
 ///
 /// This is only constant-time for equal-length slices, and will short-circuit and set `output`
