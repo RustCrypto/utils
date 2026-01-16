@@ -39,6 +39,7 @@ mod array;
     miri
 ))]
 mod portable;
+mod slice;
 #[cfg(not(miri))]
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
@@ -198,19 +199,3 @@ macro_rules! impl_cmov_traits_for_signed_ints {
 }
 
 impl_cmov_traits_for_signed_ints!(i8 => u8, i16 => u16, i32 => u32, i64 => u64, i128 => u128);
-
-impl<T: CmovEq> CmovEq for [T] {
-    fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        // Short-circuit the comparison if the slices are of different lengths, and set the output
-        // condition to the input condition.
-        if self.len() != rhs.len() {
-            *output = input;
-            return;
-        }
-
-        // Compare each byte.
-        for (a, b) in self.iter().zip(rhs.iter()) {
-            a.cmovne(b, input, output);
-        }
-    }
-}
