@@ -3,7 +3,7 @@ macro_rules! int_proptests {
     ( $($int:ident),+ ) => {
         $(
             mod $int {
-                use ctutils::{CtSelect, CtEq, Choice};
+                use ctutils::{CtAssign, CtSelect, CtEq, Choice};
                 use proptest::prelude::*;
 
                 proptest! {

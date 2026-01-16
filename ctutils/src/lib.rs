@@ -91,10 +91,10 @@ mod choice;
 mod ct_option;
 mod traits;
 
-pub use bytes::{BytesCtEq, BytesCtSelect};
+pub use bytes::{BytesCtAssign, BytesCtEq, BytesCtSelect};
 pub use choice::Choice;
 pub use ct_option::CtOption;
 pub use traits::{
-    ct_eq::CtEq, ct_find::CtFind, ct_gt::CtGt, ct_lookup::CtLookup, ct_lt::CtLt, ct_neg::CtNeg,
-    ct_select::CtSelect,
+    ct_assign::CtAssign, ct_eq::CtEq, ct_find::CtFind, ct_gt::CtGt, ct_lookup::CtLookup,
+    ct_lt::CtLt, ct_neg::CtNeg, ct_select::CtSelect,
 };

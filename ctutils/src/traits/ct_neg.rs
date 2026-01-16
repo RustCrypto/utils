@@ -1,4 +1,4 @@
-use crate::{Choice, CtSelect};
+use crate::{Choice, CtAssign, CtSelect};
 
 /// Constant-time conditional negation: negates a value when `choice` is [`Choice::TRUE`].
 pub trait CtNeg: Sized {

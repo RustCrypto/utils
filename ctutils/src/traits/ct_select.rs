@@ -1,23 +1,17 @@
-use crate::Choice;
-use cmov::Cmov;
+use crate::{Choice, CtAssign};
 use core::cmp;
 
 #[cfg(feature = "subtle")]
 use crate::CtOption;
 
 /// Constant-time selection: pick between two values based on a given [`Choice`].
-pub trait CtSelect: Sized {
+pub trait CtSelect: CtAssign + Sized {
     /// Select between `self` and `other` based on `choice`, returning a copy of the value.
     ///
     /// # Returns
     /// - `self` if `choice` is [`Choice::FALSE`].
     /// - `other` if `choice` is [`Choice::TRUE`].
     fn ct_select(&self, other: &Self, choice: Choice) -> Self;
-
-    /// Conditionally assign `other` to `self` if `choice` is [`Choice::TRUE`].
-    fn ct_assign(&mut self, other: &Self, choice: Choice) {
-        *self = Self::ct_select(self, other, choice);
-    }
 
     /// Conditionally swap `self` and `other` if `choice` is [`Choice::TRUE`].
     fn ct_swap(&mut self, other: &mut Self, choice: Choice) {
@@ -27,8 +21,8 @@ pub trait CtSelect: Sized {
     }
 }
 
-// Impl `CtSelect` using the `cmov::Cmov` trait
-macro_rules! impl_ct_select_with_cmov {
+// Impl `CtSelect` using the `CtAssign` trait, which in turn calls `cmov::Cmov`
+macro_rules! impl_ct_select_with_ct_assign {
     ( $($ty:ty),+ ) => {
         $(
             impl CtSelect for $ty {
@@ -38,17 +32,12 @@ macro_rules! impl_ct_select_with_cmov {
                     ret.ct_assign(other, choice);
                     ret
                 }
-
-                #[inline]
-                fn ct_assign(&mut self, other: &Self, choice: Choice) {
-                    self.cmovnz(other, choice.into());
-                }
             }
         )+
     };
 }
 
-impl_ct_select_with_cmov!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+impl_ct_select_with_ct_assign!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl CtSelect for isize {
@@ -110,12 +99,6 @@ where
     #[inline]
     fn ct_select(&self, other: &Self, choice: Choice) -> Self {
         core::array::from_fn(|i| T::ct_select(&self[i], &other[i], choice))
-    }
-
-    fn ct_assign(&mut self, other: &Self, choice: Choice) {
-        for (a, b) in self.iter_mut().zip(other) {
-            a.ct_assign(b, choice)
-        }
     }
 }
 
