@@ -8,7 +8,27 @@ pub trait CtAssign {
     fn ct_assign(&mut self, other: &Self, choice: Choice);
 }
 
-// Impl `CtAssign` using the `cmov::Cmov` trait
+/// Impl `CtAssign` using the `CtSelect` trait.
+///
+/// In cases where `CtSelect` is more straightforward to implement, but you want to use a provided
+/// implementation of `CtAssign` based on it, you can use this macro to write it for you.
+#[macro_export]
+macro_rules! impl_ct_assign_with_ct_select {
+    ( $($ty:ty),+ ) => {
+        $(
+            impl CtAssign for $ty {
+                #[inline]
+                fn ct_assign(&mut self, other: &Self, choice: Choice) {
+                    *self = Self::ct_select(self, other, choice);
+                }
+            }
+        )+
+    };
+}
+
+impl_ct_assign_with_ct_select!(cmp::Ordering);
+
+/// Impl `CtAssign` using the `cmov::Cmov` trait
 macro_rules! impl_ct_assign_with_cmov {
     ( $($ty:ty),+ ) => {
         $(
@@ -50,13 +70,6 @@ impl CtAssign for usize {
 
     #[cfg(target_pointer_width = "64")]
     #[allow(clippy::cast_possible_truncation)]
-    #[inline]
-    fn ct_assign(&mut self, other: &Self, choice: Choice) {
-        *self = Self::ct_select(self, other, choice);
-    }
-}
-
-impl CtAssign for cmp::Ordering {
     #[inline]
     fn ct_assign(&mut self, other: &Self, choice: Choice) {
         *self = Self::ct_select(self, other, choice);

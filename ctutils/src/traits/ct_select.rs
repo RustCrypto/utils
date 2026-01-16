@@ -21,14 +21,20 @@ pub trait CtSelect: CtAssign + Sized {
     }
 }
 
-// Impl `CtSelect` using the `CtAssign` trait, which in turn calls `cmov::Cmov`
+/// Impl `CtSelect` using the `CtAssign` trait.
+///
+/// In cases where `CtAssign` is more straightforward to implement, but you want to use a provided
+/// implementation of `CtSelect` based on it, you can use this macro to write it for you.
+///
+/// Requires the provided type(s) impl `Clone`.
+#[macro_export]
 macro_rules! impl_ct_select_with_ct_assign {
     ( $($ty:ty),+ ) => {
         $(
             impl CtSelect for $ty {
                 #[inline]
                 fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-                    let mut ret = *self;
+                    let mut ret = self.clone();
                     ret.ct_assign(other, choice);
                     ret
                 }
