@@ -28,7 +28,7 @@
 )]
 
 #[macro_use]
-mod utils;
+mod macros;
 
 #[cfg(not(miri))]
 #[cfg(target_arch = "aarch64")]
