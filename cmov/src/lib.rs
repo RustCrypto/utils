@@ -30,19 +30,9 @@
 #[macro_use]
 mod macros;
 
-#[cfg(not(miri))]
-#[cfg(target_arch = "aarch64")]
-mod aarch64;
 mod array;
-#[cfg(any(
-    not(any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")),
-    miri
-))]
-mod portable;
+mod backends;
 mod slice;
-#[cfg(not(miri))]
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-mod x86;
 
 /// Condition
 pub type Condition = u8;
