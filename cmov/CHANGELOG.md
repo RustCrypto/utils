@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.6 (2026-01-16)
+### Added
+- Optimized `Cmov` for `[u8; N]` ([#1350])
+- Optimized `CmovEq` for `[u8; N]` ([#1353])
+- Optimized `Cmov` for `[u8]` ([#1354])
+
+### Fixed
+- Provided `Cmov::cmovz` impl ([#1351])
+
+[#1350]: https://github.com/RustCrypto/utils/pull/1350
+[#1351]: https://github.com/RustCrypto/utils/pull/1351
+[#1353]: https://github.com/RustCrypto/utils/pull/1353
+[#1354]: https://github.com/RustCrypto/utils/pull/1354
+
 ## 0.4.5 (2026-01-15)
 ### Changed
 - Introduce small ARM32 `asm!` optimization which also guarantees constant-time operation ([#1336], [#1346])
