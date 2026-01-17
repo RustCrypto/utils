@@ -22,18 +22,14 @@ execution features which might introduce timing or other microarchitectural
 sidechannels introduced by branch prediction or other speculative execution
 features.
 
-Intel has confirmed that all extant CPUs implement the CMOV family of
-instructions in constant-time, and that this property will hold for future
-Intel CPUs as well.
-
 This crate provides wrappers for the CMOV/CSEL instructions implemented using
-inline assembly as stabilized in Rust 1.59. This means the implementation
-is a black box that will not be rewritten by e.g. LLVM's architecture-specific
-lowerings, such as the [x86-cmov-conversion] pass.
+inline `asm!`, which means the implementation is a black box that will not be
+rewritten by e.g. LLVM's architecture-specific lowerings, such as the
+[x86-cmov-conversion] pass.
 
 ## Supported target architectures
 
-This crate provides guaranteed constant-time operation using inline assembly
+This crate provides guaranteed constant-time operation using inline `asm!`
 on the following CPU architectures:
 
 - [x] `x86` (`CMOVZ`, `CMOVNZ`)
@@ -42,11 +38,33 @@ on the following CPU architectures:
 - [x] `aarch64` (`CSEL`)
 
 On other target architectures, a "best effort" portable fallback implementation
-based on bitwise arithmetic is used instead. However, we cannot guarantee that
-this implementation generates branch-free code.
+based on bitwise arithmetic is used instead, augmented with tactical usage of
+`core::hint::black_box` based on past analysis of the generated assembly.
+However, we cannot guarantee that this implementation generates branch-free
+code, especially on hypothetical future rustc versions which introduce new
+optimizations.
 
-It's possible to extend constant-time guarantees to other CPU  architectures.
-Please open an issue with your desired CPU architecture if this interests you.
+Please [open an issue] if you notice non-constant-time CPU instructions
+(e.g. branches, secret-dependent address calculations) being generated and we
+will treat it as a security issue and do our best to find a solution.
+
+You can also open an issue to request first-class support for native
+predication instructions on other architectures we don't currently support.
+
+### `x86` / `x86_64` notes
+
+Intel has confirmed that all extant CPUs implement the CMOV family of
+instructions in constant-time, and that this property will hold for future
+Intel CPUs as well.
+
+## ⚠️ Security Warning
+
+The implementation contained in this crate has never been independently audited!
+USE AT YOUR OWN RISK!
+
+Below are security issues this crate has experienced in the past:
+
+- [RUSTSEC-2026-0003]: Non-constant-time code generation on ARM32 targets
 
 ## Minimum Supported Rust Version (MSRV) Policy
 
@@ -91,3 +109,5 @@ dual licensed as above, without any additional terms or conditions.
 [CSEL]: https://developer.arm.com/documentation/dui0802/b/CSEL
 [predication]: https://en.wikipedia.org/wiki/Predication_(computer_architecture)
 [x86-cmov-conversion]: https://dsprenkels.com/cmov-conversion.html
+[open an issue]: https://github.com/RustCrypto/utils/issues
+[RUSTSEC-2026-0003]: https://rustsec.org/advisories/RUSTSEC-2026-0003.html
