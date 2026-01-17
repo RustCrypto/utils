@@ -198,6 +198,107 @@ impl_cmov_with_loop!(
     "Implementation for `u128` slices where we can just loop."
 );
 
+macro_rules! assert_size_and_alignment_eq {
+    ($signed:ty, $unsigned:ty) => {
+        const {
+            assert!(
+                size_of::<$signed>() == size_of::<$unsigned>(),
+                "integers are of unequal size"
+            );
+
+            assert!(
+                align_of::<$signed>() == align_of::<$unsigned>(),
+                "integers have unequal alignment"
+            );
+        }
+    };
+}
+
+/// Implement [`Cmov`] for a signed type by invoking the corresponding unsigned impl.
+macro_rules! impl_cmov_for_signed_with_unsigned {
+    ($signed:ty, $unsigned:ty) => {
+        impl_cmov_for_signed_with_unsigned!(
+            $signed,
+            $unsigned,
+            "Delegating implementation of `Cmov` for signed type which delegates to unsigned."
+        );
+    };
+    ($signed:ty, $unsigned:ty, $doc:expr) => {
+        #[doc = $doc]
+        #[doc = "# Panics"]
+        #[doc = "- if slices have unequal lengths"]
+        impl Cmov for [$signed] {
+            #[inline]
+            #[track_caller]
+            fn cmovnz(&mut self, value: &Self, condition: Condition) {
+                assert_size_and_alignment_eq!($signed, $unsigned);
+
+                // SAFETY:
+                // - Slices being constructed are of same-sized integers as asserted above.
+                // - We source the slice length directly from the other valid slice.
+                #[allow(unsafe_code)]
+                let (self_unsigned, value_unsigned) = unsafe {
+                    (
+                        slice::from_raw_parts_mut(self.as_mut_ptr() as *mut $unsigned, self.len()),
+                        slice::from_raw_parts(value.as_ptr() as *const $unsigned, value.len()),
+                    )
+                };
+
+                self_unsigned.cmovnz(value_unsigned, condition);
+            }
+        }
+    };
+}
+
+/// Implement [`CmovEq`] for a signed type by invoking the corresponding unsigned impl.
+macro_rules! impl_cmoveq_for_signed_with_unsigned {
+    ($signed:ty, $unsigned:ty) => {
+        impl_cmoveq_for_signed_with_unsigned!(
+            $signed,
+            $unsigned,
+            "Delegating implementation of `CmovEq` for signed type which delegates to unsigned."
+        );
+    };
+    ($signed:ty, $unsigned:ty, $doc:expr) => {
+        #[doc = $doc]
+        #[doc = "# Panics"]
+        #[doc = "- if slices have unequal lengths"]
+        impl CmovEq for [$signed] {
+            #[inline]
+            fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+                assert_size_and_alignment_eq!($signed, $unsigned);
+
+                // SAFETY:
+                // - Slices being constructed are of same-sized integers as asserted above.
+                // - We source the slice length directly from the other valid slice.
+                #[allow(unsafe_code)]
+                let (self_unsigned, rhs_unsigned) = unsafe {
+                    (
+                        slice::from_raw_parts(self.as_ptr() as *const $unsigned, self.len()),
+                        slice::from_raw_parts(rhs.as_ptr() as *const $unsigned, rhs.len()),
+                    )
+                };
+
+                self_unsigned.cmovne(rhs_unsigned, input, output);
+            }
+        }
+    };
+}
+
+/// Implement [`Cmov`] and [`CmovEq`] for the given signed/unsigned type pair.
+macro_rules! impl_cmov_traits_for_signed_with_unsigned {
+    ($signed:ty, $unsigned:ty) => {
+        impl_cmov_for_signed_with_unsigned!($signed, $unsigned);
+        impl_cmoveq_for_signed_with_unsigned!($signed, $unsigned);
+    };
+}
+
+impl_cmov_traits_for_signed_with_unsigned!(i8, u8);
+impl_cmov_traits_for_signed_with_unsigned!(i16, u16);
+impl_cmov_traits_for_signed_with_unsigned!(i32, u32);
+impl_cmov_traits_for_signed_with_unsigned!(i64, u64);
+impl_cmov_traits_for_signed_with_unsigned!(i128, u128);
+
 /// Optimized implementation for byte slices which coalesces them into word-sized chunks first,
 /// then performs [`CmovEq`] at the word-level to cut down on the total number of instructions.
 ///
