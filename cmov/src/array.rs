@@ -4,8 +4,8 @@
 
 use crate::{Cmov, CmovEq, Condition};
 
-/// Optimized implementation for byte arrays which coalesces them into word-sized chunks first,
-/// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
+// Optimized implementation for arrays which coalesces them into word-sized chunks first,
+// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
 impl<T, const N: usize> Cmov for [T; N]
 where
     [T]: Cmov,
@@ -16,8 +16,8 @@ where
     }
 }
 
-/// Optimized implementation for byte arrays which coalesces them into word-sized chunks first,
-/// then performs [`CmovEq`] at the word-level to cut down on the total number of instructions.
+// Optimized implementation for arrays which coalesces them into word-sized chunks first,
+// then performs [`CmovEq`] at the word-level to cut down on the total number of instructions.
 impl<T, const N: usize> CmovEq for [T; N]
 where
     [T]: CmovEq,
