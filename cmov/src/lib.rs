@@ -153,7 +153,7 @@ impl CmovEq for u128 {
     }
 }
 
-// Impl `Cmov*` by first casting to unsigned then using the unsigned `Cmov` impls
+/// Impl `Cmov*` by first casting to unsigned then using the unsigned `Cmov` impls
 // TODO(tarcieri): use `cast_unsigned`/`cast_signed` to get rid of the `=> u*`
 macro_rules! impl_cmov_traits_for_signed_ints {
     ( $($int:ty => $uint:ty),+ ) => {
@@ -190,3 +190,62 @@ macro_rules! impl_cmov_traits_for_signed_ints {
 }
 
 impl_cmov_traits_for_signed_ints!(i8 => u8, i16 => u16, i32 => u32, i64 => u64, i128 => u128);
+
+macro_rules! impl_cmov_traits_for_size_type {
+    ($size:ty, $int16:ty, $int32:ty, $int64:ty) => {
+        #[cfg(any(
+            target_pointer_width = "16",
+            target_pointer_width = "32",
+            target_pointer_width = "64"
+        ))]
+        impl Cmov for $size {
+            #[cfg(target_pointer_width = "16")]
+            #[inline]
+            fn cmovnz(&mut self, other: &Self, condition: Condition) {
+                (*self as $int16).cmovnz(&(*other as $int16), condition);
+            }
+
+            #[cfg(target_pointer_width = "32")]
+            #[inline]
+            fn cmovnz(&mut self, other: &Self, condition: Condition) {
+                (*self as $int32).cmovnz(&(*other as $int32), condition);
+            }
+
+            #[cfg(target_pointer_width = "64")]
+            #[allow(clippy::cast_possible_truncation)]
+            #[inline]
+            fn cmovnz(&mut self, other: &Self, condition: Condition) {
+                (*self as $int64).cmovnz(&(*other as $int64), condition);
+            }
+        }
+
+        #[cfg(any(
+            target_pointer_width = "16",
+            target_pointer_width = "32",
+            target_pointer_width = "64"
+        ))]
+        impl CmovEq for $size {
+            #[cfg(target_pointer_width = "16")]
+            #[inline]
+            fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+                (*self as $int16).cmovne(&(*rhs as $int16), input, output);
+            }
+
+            #[cfg(target_pointer_width = "32")]
+            #[inline]
+            fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+                (*self as $int32).cmovne(&(*rhs as $int32), input, output);
+            }
+
+            #[cfg(target_pointer_width = "64")]
+            #[allow(clippy::cast_possible_truncation)]
+            #[inline]
+            fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+                (*self as $int64).cmovne(&(*rhs as $int64), input, output);
+            }
+        }
+    };
+}
+
+impl_cmov_traits_for_size_type!(isize, i16, i32, i64);
+impl_cmov_traits_for_size_type!(usize, u16, u32, u64);
