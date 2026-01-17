@@ -1,4 +1,4 @@
-use crate::{Choice, CtOption, CtSelect};
+use crate::{Choice, CtAssign, CtOption};
 
 #[cfg(feature = "alloc")]
 use alloc::{boxed::Box, vec::Vec};
@@ -9,7 +9,7 @@ use core::iter::Iterator;
 /// Constant-time equivalent of [`Iterator::find`], which can search a collection by iterating over
 /// every element and applying the given predicate to each item, then selecting the first matching
 /// entry.
-pub trait CtFind<T: CtSelect> {
+pub trait CtFind<T: CtAssign> {
     /// Iterate through every `T` item in `&self`, applying the given `predicate` which can select
     /// a specific item by returning [`Choice::TRUE`].
     ///
@@ -22,7 +22,7 @@ pub trait CtFind<T: CtSelect> {
 
 impl<T> CtFind<T> for [T]
 where
-    T: CtSelect + Default,
+    T: CtAssign + Default,
 {
     #[inline]
     fn ct_find<P>(&self, predicate: P) -> CtOption<T>
@@ -41,7 +41,7 @@ where
 
 impl<T, const N: usize> CtFind<T> for [T; N]
 where
-    T: CtSelect + Default,
+    T: CtAssign + Default,
 {
     #[inline]
     fn ct_find<P>(&self, predicate: P) -> CtOption<T>
@@ -55,7 +55,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtFind<T> for Box<[T]>
 where
-    T: CtSelect + Default,
+    T: CtAssign + Default,
 {
     #[inline]
     fn ct_find<P>(&self, predicate: P) -> CtOption<T>
@@ -69,7 +69,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtFind<T> for Vec<T>
 where
-    T: CtSelect + Default,
+    T: CtAssign + Default,
 {
     #[inline]
     fn ct_find<P>(&self, predicate: P) -> CtOption<T>

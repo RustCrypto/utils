@@ -13,7 +13,7 @@ use crate::CtOption;
 use alloc::{boxed::Box, vec::Vec};
 
 /// Constant-time selection: pick between two values based on a given [`Choice`].
-pub trait CtSelect: CtAssign + Sized {
+pub trait CtSelect: Sized {
     /// Select between `self` and `other` based on `choice`, returning a copy of the value.
     ///
     /// # Returns
@@ -140,18 +140,14 @@ impl CtSelect for cmp::Ordering {
 
 impl<T, const N: usize> CtSelect for [T; N]
 where
-    T: CtSelect,
+    T: Clone,
+    [T]: CtAssign,
 {
     #[inline]
     fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        const {
-            assert!(
-                size_of::<T>() != 1,
-                "use `BytesCtSelect::bytes_ct_select` when working with byte-sized values"
-            );
-        }
-
-        core::array::from_fn(|i| T::ct_select(&self[i], &other[i], choice))
+        let mut ret = self.clone();
+        ret.ct_assign(other, choice);
+        ret
     }
 }
 
@@ -169,7 +165,8 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtSelect for Box<[T]>
 where
-    T: Clone + CtSelect,
+    T: Clone,
+    [T]: CtAssign,
 {
     #[inline]
     fn ct_select(&self, other: &Self, choice: Choice) -> Self {
@@ -182,7 +179,8 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtSelect for Vec<T>
 where
-    T: Clone + CtSelect,
+    T: Clone,
+    [T]: CtAssign,
 {
     #[inline]
     fn ct_select(&self, other: &Self, choice: Choice) -> Self {
