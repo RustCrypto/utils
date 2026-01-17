@@ -18,3 +18,6 @@ instructions on x86/x86_64 and CSEL on AArch64, along with a portable "best-effo
 
 [dev-dependencies]
 proptest = "1.9"
+
+[package.metadata.docs.rs]
+all-features = true
