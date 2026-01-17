@@ -305,7 +305,12 @@ mod slices {
         };
     }
 
-    // TODO: int_slice_test!(i8, i8::MIN, i8::MAX);
+    int_slice_test!(i8, i8::MIN, i8::MAX);
+    int_slice_test!(i16, i16::MIN, i16::MAX);
+    int_slice_test!(i32, i32::MIN, i32::MAX);
+    int_slice_test!(i64, i64::MIN, i64::MAX);
+    int_slice_test!(i128, i128::MIN, i128::MAX);
+
     int_slice_test!(u8, 7, u8::MAX);
     int_slice_test!(u16, 11, u16::MAX);
     int_slice_test!(u32, 13, u32::MAX);
