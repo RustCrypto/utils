@@ -22,25 +22,6 @@ macro_rules! assert_lengths_eq {
     };
 }
 
-/// Implement [`Cmov`] using a simple loop.
-macro_rules! impl_cmov_with_loop {
-    ($int:ty, $doc:expr) => {
-        #[doc = $doc]
-        #[doc = "# Panics"]
-        #[doc = "- if slices have unequal lengths"]
-        impl Cmov for [$int] {
-            #[inline]
-            #[track_caller]
-            fn cmovnz(&mut self, value: &Self, condition: Condition) {
-                assert_lengths_eq!(self.len(), value.len());
-                for (a, b) in self.iter_mut().zip(value.iter()) {
-                    a.cmovnz(b, condition);
-                }
-            }
-        }
-    };
-}
-
 /// Optimized implementation for byte slices which coalesces them into word-sized chunks first,
 /// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
 ///
@@ -189,6 +170,25 @@ impl Cmov for [u32] {
     }
 }
 
+/// Implement [`Cmov`] using a simple loop.
+macro_rules! impl_cmov_with_loop {
+    ($int:ty, $doc:expr) => {
+        #[doc = $doc]
+        #[doc = "# Panics"]
+        #[doc = "- if slices have unequal lengths"]
+        impl Cmov for [$int] {
+            #[inline]
+            #[track_caller]
+            fn cmovnz(&mut self, value: &Self, condition: Condition) {
+                assert_lengths_eq!(self.len(), value.len());
+                for (a, b) in self.iter_mut().zip(value.iter()) {
+                    a.cmovnz(b, condition);
+                }
+            }
+        }
+    };
+}
+
 impl_cmov_with_loop!(
     u64,
     "Implementation for `u64` slices where we can just loop."
@@ -228,6 +228,46 @@ impl CmovEq for [u8] {
         }
     }
 }
+
+/// Implement [`CmovEq`] using a simple loop.
+macro_rules! impl_cmoveq_with_loop {
+    ($int:ty, $doc:expr) => {
+        #[doc = $doc]
+        impl CmovEq for [$int] {
+            #[inline]
+            fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+                // Short-circuit the comparison if the slices are of different lengths, and set the output
+                // condition to the input condition.
+                if self.len() != rhs.len() {
+                    *output = input;
+                    return;
+                }
+
+                for (a, b) in self.iter().zip(rhs.iter()) {
+                    a.cmovne(b, input, output);
+                }
+            }
+        }
+    };
+}
+
+// TODO(tarcieri): optimized coalescing implementations of `CmovEq` for `u16` and `u32`
+impl_cmoveq_with_loop!(
+    u16,
+    "Implementation for `u16` slices where we can just loop."
+);
+impl_cmoveq_with_loop!(
+    u32,
+    "Implementation for `u32` slices where we can just loop."
+);
+impl_cmoveq_with_loop!(
+    u64,
+    "Implementation for `u64` slices where we can just loop."
+);
+impl_cmoveq_with_loop!(
+    u128,
+    "Implementation for `u128` slices where we can just loop."
+);
 
 /// Rust core `[T]::as_chunks` vendored because of its 1.88 MSRV.
 /// TODO(tarcieri): use upstream function when we bump MSRV
