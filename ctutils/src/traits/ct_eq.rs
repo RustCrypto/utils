@@ -1,6 +1,12 @@
 use crate::Choice;
 use cmov::CmovEq;
-use core::cmp;
+use core::{
+    cmp,
+    num::{
+        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16,
+        NonZeroU32, NonZeroU64, NonZeroU128,
+    },
+};
 
 #[cfg(feature = "subtle")]
 use crate::CtOption;
@@ -24,7 +30,7 @@ where
     }
 }
 
-// Impl `CtEq` using the `cmov::CmovEq` trait
+/// Impl `CtEq` using the `cmov::CmovEq` trait
 macro_rules! impl_ct_eq_with_cmov_eq {
     ( $($ty:ty),+ ) => {
         $(
@@ -41,6 +47,33 @@ macro_rules! impl_ct_eq_with_cmov_eq {
 }
 
 impl_ct_eq_with_cmov_eq!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+
+/// Impl `CtEq` for `NonZero<T>` by calling `NonZero::get`.
+macro_rules! impl_ct_eq_for_nonzero_integer {
+    ( $($ty:ty),+ ) => {
+        $(
+            impl CtEq for $ty {
+                #[inline]
+                fn ct_eq(&self, other: &Self) -> Choice {
+                    self.get().ct_eq(&other.get())
+                }
+            }
+        )+
+    };
+}
+
+impl_ct_eq_for_nonzero_integer!(
+    NonZeroI8,
+    NonZeroI16,
+    NonZeroI32,
+    NonZeroI64,
+    NonZeroI128,
+    NonZeroU8,
+    NonZeroU16,
+    NonZeroU32,
+    NonZeroU64,
+    NonZeroU128
+);
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl CtEq for isize {

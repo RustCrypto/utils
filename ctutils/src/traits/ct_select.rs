@@ -1,5 +1,11 @@
 use crate::{Choice, CtAssign};
-use core::cmp;
+use core::{
+    cmp,
+    num::{
+        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16,
+        NonZeroU32, NonZeroU64, NonZeroU128,
+    },
+};
 
 #[cfg(feature = "subtle")]
 use crate::CtOption;
@@ -46,6 +52,38 @@ macro_rules! impl_ct_select_with_ct_assign {
 }
 
 impl_ct_select_with_ct_assign!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+
+/// Impl `CtSelect` for `NonZero<T>` by calling the `CtSelect` impl for `T`.
+macro_rules! impl_ct_select_for_nonzero_integer {
+    ( $($nzint:ident),+ ) => {
+        $(
+             impl CtSelect for $nzint {
+                #[inline]
+                fn ct_select(&self, rhs: &Self, choice: Choice) -> Self {
+                    let n = self.get().ct_select(&rhs.get(), choice);
+
+                    // SAFETY: we are constructing `NonZero` from a value we obtained from
+                    // `NonZero::get`, which ensures it's non-zero.
+                    #[allow(unsafe_code)]
+                    unsafe { $nzint::new_unchecked(n) }
+                }
+            }
+        )+
+    };
+}
+
+impl_ct_select_for_nonzero_integer!(
+    NonZeroI8,
+    NonZeroI16,
+    NonZeroI32,
+    NonZeroI64,
+    NonZeroI128,
+    NonZeroU8,
+    NonZeroU16,
+    NonZeroU32,
+    NonZeroU64,
+    NonZeroU128
+);
 
 #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
 impl CtSelect for isize {

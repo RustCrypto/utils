@@ -1,5 +1,8 @@
 use crate::Choice;
-use core::cmp;
+use core::{
+    cmp,
+    num::{NonZeroU8, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128},
+};
 
 /// Constant time greater than.
 pub trait CtGt {
@@ -23,6 +26,22 @@ macro_rules! impl_unsigned_ct_gt {
 }
 
 impl_unsigned_ct_gt!(u8, u16, u32, u64, u128);
+
+/// Impl `CtGt` for `NonZero<T>` by calling `NonZero::get`.
+macro_rules! impl_ct_gt_for_nonzero_integer {
+    ( $($ty:ty),+ ) => {
+        $(
+            impl CtGt for $ty {
+                #[inline]
+                fn ct_gt(&self, other: &Self) -> Choice {
+                    self.get().ct_gt(&other.get())
+                }
+            }
+        )+
+    };
+}
+
+impl_ct_gt_for_nonzero_integer!(NonZeroU8, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128);
 
 impl CtGt for cmp::Ordering {
     #[inline]

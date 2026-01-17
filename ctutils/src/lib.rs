@@ -17,6 +17,8 @@
     clippy::panic_in_result_fn,
     clippy::std_instead_of_alloc,
     clippy::std_instead_of_core,
+    clippy::undocumented_unsafe_blocks,
+    clippy::unnecessary_safety_comment,
     missing_copy_implementations,
     missing_debug_implementations,
     missing_docs,
