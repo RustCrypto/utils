@@ -255,10 +255,9 @@ impl_cmoveq_with_loop!(u16, u32, u64, u128);
 
 /// Performs an unsafe pointer cast from one slice type to the other.
 ///
-/// # Panics
+/// # Compile-time panics
 /// - If `T` and `U` differ in size
 /// - If `T` and `U` differ in alignment
-#[allow(unsafe_code)]
 unsafe fn cast_slice<T, U>(slice: &[T]) -> &[U] {
     const {
         assert!(size_of::<T>() == size_of::<U>(), "T/U size differs");
@@ -266,18 +265,19 @@ unsafe fn cast_slice<T, U>(slice: &[T]) -> &[U] {
     }
 
     // SAFETY:
-    // - Slices being constructed are of same-sized/aligned types as asserted above.
-    // - We source the slice length directly from the other valid slice.
-    // - It's up to the caller to ensure the pointer cast itself is valid.
-    unsafe { slice::from_raw_parts(slice.as_ptr() as *const U, slice.len()) }
+    // - Slices are of same-sized/aligned types as asserted above.
+    // - It's up to the caller to ensure the pointer cast from `T` to `U` itself is valid.
+    #[allow(trivial_casts, unsafe_code)]
+    unsafe {
+        &*((slice as *const [T]) as *const [U])
+    }
 }
 
 /// Performs an unsafe pointer cast from one mutable slice type to the other.
 ///
-/// # Panics
+/// # Compile-time panics
 /// - If `T` and `U` differ in size
 /// - If `T` and `U` differ in alignment
-#[allow(unsafe_code)]
 unsafe fn cast_slice_mut<T, U>(slice: &mut [T]) -> &mut [U] {
     const {
         assert!(size_of::<T>() == size_of::<U>(), "T/U size differs");
@@ -285,10 +285,12 @@ unsafe fn cast_slice_mut<T, U>(slice: &mut [T]) -> &mut [U] {
     }
 
     // SAFETY:
-    // - Slices being constructed are of same-sized/aligned types as asserted above.
-    // - We source the slice length directly from the other valid slice.
-    // - It's up to the caller to ensure the pointer cast itself is valid.
-    unsafe { slice::from_raw_parts_mut(slice.as_mut_ptr() as *mut U, slice.len()) }
+    // - Slices are of same-sized/aligned types as asserted above.
+    // - It's up to the caller to ensure the pointer cast from `T` to `U` itself is valid.
+    #[allow(trivial_casts, unsafe_code)]
+    unsafe {
+        &mut *((slice as *mut [T]) as *mut [U])
+    }
 }
 
 /// Compare the two remainder slices by loading a `Word` then performing `cmovne`.
