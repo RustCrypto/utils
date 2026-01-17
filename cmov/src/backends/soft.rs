@@ -11,6 +11,7 @@
 use crate::{Cmov, CmovEq, Condition};
 use core::ops::{BitAnd, BitOr, Not};
 
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl Cmov for u16 {
     #[inline]
     fn cmovnz(&mut self, value: &u16, condition: Condition) {
@@ -23,6 +24,7 @@ impl Cmov for u16 {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl Cmov for u32 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -35,6 +37,7 @@ impl Cmov for u32 {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl Cmov for u64 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -47,6 +50,7 @@ impl Cmov for u64 {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl CmovEq for u16 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
@@ -67,6 +71,7 @@ impl CmovEq for u16 {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl CmovEq for u32 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
@@ -79,6 +84,7 @@ impl CmovEq for u32 {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl CmovEq for u64 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
@@ -97,31 +103,31 @@ fn maskeq32(x: u32, y: u32) -> u32 {
     !maskne32(x, y)
 }
 
-/// Returns `u32::MAX` if `x` is equal to `y`, otherwise returns `0` (64-bit version)
+/// Returns `u64::MAX` if `x` is equal to `y`, otherwise returns `0` (64-bit version)
 #[inline]
 fn maskeq64(x: u64, y: u64) -> u64 {
     !maskne64(x, y)
 }
 
-/// Returns `0` if `x` is equal to `y`, otherwise returns `1` (32-bit version)
+/// Returns `0` if `x` is equal to `y`, otherwise returns `u32::MAX` (32-bit version)
 #[inline]
 fn maskne32(x: u32, y: u32) -> u32 {
     masknz32(x ^ y)
 }
 
-/// Returns `0` if `x` is equal to `y`, otherwise returns `1` (64-bit version)
+/// Returns `0` if `x` is equal to `y`, otherwise returns `u64::MAX` (64-bit version)
 #[inline]
 fn maskne64(x: u64, y: u64) -> u64 {
     masknz64(x ^ y)
 }
 
-/// Return a [`u32::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
+/// Return a `u32::MAX` mask if `condition` is non-zero, otherwise return zero for a zero input.
 #[cfg(not(target_arch = "arm"))]
 fn masknz32(condition: u32) -> u32 {
     masknz!(condition: u32)
 }
 
-/// Return a [`u64::MAX`] mask if `condition` is non-zero, otherwise return zero for a zero input.
+/// Return a `u64::MAX` mask if `condition` is non-zero, otherwise return zero for a zero input.
 #[cfg(not(target_arch = "arm"))]
 fn masknz64(condition: u64) -> u64 {
     masknz!(condition: u64)

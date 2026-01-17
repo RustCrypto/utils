@@ -45,6 +45,7 @@ macro_rules! cmov_eq {
     };
 }
 
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl Cmov for u16 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -57,6 +58,7 @@ impl Cmov for u16 {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl Cmov for u32 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -70,6 +72,7 @@ impl Cmov for u32 {
 }
 
 #[cfg(target_arch = "x86")]
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl Cmov for u64 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -95,6 +98,7 @@ impl Cmov for u64 {
 }
 
 #[cfg(target_arch = "x86_64")]
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl Cmov for u64 {
     #[inline]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
@@ -107,6 +111,7 @@ impl Cmov for u64 {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl CmovEq for u16 {
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
@@ -133,6 +138,7 @@ impl CmovEq for u16 {
     }
 }
 
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl CmovEq for u32 {
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
@@ -160,6 +166,7 @@ impl CmovEq for u32 {
 }
 
 #[cfg(target_arch = "x86")]
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl CmovEq for u64 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
@@ -185,6 +192,7 @@ impl CmovEq for u64 {
 }
 
 #[cfg(target_arch = "x86_64")]
+#[cfg_attr(docsrs, doc(cfg(true)))]
 impl CmovEq for u64 {
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
