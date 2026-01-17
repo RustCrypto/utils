@@ -1,7 +1,10 @@
 //! Trait impls for core slices.
 
 use crate::{Cmov, CmovEq, Condition};
-use core::slice;
+use core::{
+    ops::{BitOrAssign, Shl},
+    slice,
+};
 
 // Uses 64-bit words on 64-bit targets, 32-bit everywhere else
 #[cfg(not(target_pointer_width = "64"))]
@@ -43,10 +46,7 @@ impl Cmov for [u8] {
             dst_chunk.copy_from_slice(&a.to_ne_bytes());
         }
 
-        // Process the remainder a byte-at-a-time.
-        for (a, b) in dst_remainder.iter_mut().zip(src_remainder.iter()) {
-            a.cmovnz(b, condition);
-        }
+        cmovnz_remainder(dst_remainder, src_remainder, condition);
     }
 }
 
@@ -74,10 +74,7 @@ impl Cmov for [u16] {
             dst_chunk[1] = (a >> 16) as u16;
         }
 
-        // If slice is odd-length
-        if !dst_remainder.is_empty() {
-            dst_remainder[0].cmovnz(&src_remainder[0], condition);
-        }
+        cmovnz_remainder(dst_remainder, src_remainder, condition);
     }
 }
 
@@ -115,9 +112,7 @@ impl Cmov for [u16] {
             dst_chunk[3] = ((a >> 48) & 0xFFFF) as u16;
         }
 
-        for (a, b) in dst_remainder.iter_mut().zip(src_remainder.iter()) {
-            a.cmovnz(b, condition);
-        }
+        cmovnz_remainder(dst_remainder, src_remainder, condition);
     }
 }
 
@@ -163,10 +158,7 @@ impl Cmov for [u32] {
             dst_chunk[1] = (a >> 32) as u32;
         }
 
-        // If slice is odd-length
-        if !dst_remainder.is_empty() {
-            dst_remainder[0].cmovnz(&src_remainder[0], condition);
-        }
+        cmovnz_remainder(dst_remainder, src_remainder, condition);
     }
 }
 
@@ -323,10 +315,7 @@ impl CmovEq for [u8] {
             a.cmovne(&b, input, output);
         }
 
-        // Process the remainder a byte-at-a-time.
-        for (a, b) in self_remainder.iter().zip(rhs_remainder.iter()) {
-            a.cmovne(b, input, output);
-        }
+        cmovne_remainder(self_remainder, rhs_remainder, input, output);
     }
 }
 
@@ -369,6 +358,68 @@ impl_cmoveq_with_loop!(
     u128,
     "Implementation for `u128` slices where we can just loop."
 );
+
+/// Compare the two remainder slices by loading a `Word` then performing `cmovne`.
+#[inline]
+fn cmovne_remainder<T>(
+    a_remainder: &[T],
+    b_remainder: &[T],
+    input: Condition,
+    output: &mut Condition,
+) where
+    T: Copy,
+    Word: From<T>,
+{
+    let a = slice_to_word(a_remainder);
+    let b = slice_to_word(b_remainder);
+    a.cmovne(&b, input, output);
+}
+
+/// Load the remainder from chunking the slice into a single `Word`, perform `cmovnz`, then write
+/// the result back out to `dst_remainder`.
+#[inline]
+fn cmovnz_remainder<T>(dst_remainder: &mut [T], src_remainder: &[T], condition: Condition)
+where
+    T: BitOrAssign + Copy + From<u8> + Shl<usize, Output = T>,
+    Word: From<T>,
+{
+    let mut remainder = slice_to_word(dst_remainder);
+    remainder.cmovnz(&slice_to_word(src_remainder), condition);
+    word_to_slice(remainder, dst_remainder);
+}
+
+/// Create a [`Word`] from the given input slice.
+#[inline]
+fn slice_to_word<T>(slice: &[T]) -> Word
+where
+    T: Copy,
+    Word: From<T>,
+{
+    debug_assert!(size_of_val(slice) <= WORD_SIZE, "slice too large");
+    slice
+        .iter()
+        .rev()
+        .copied()
+        .fold(0, |acc, n| (acc << (size_of::<T>() * 8)) | Word::from(n))
+}
+
+/// Serialize [`Word`] as bytes using the same byte ordering as `slice_to_word`.
+#[inline]
+fn word_to_slice<T>(word: Word, out: &mut [T])
+where
+    T: BitOrAssign + Copy + From<u8> + Shl<usize, Output = T>,
+{
+    debug_assert!(size_of::<T>() > 0, "can't be used with ZSTs");
+    debug_assert!(out.len() <= WORD_SIZE, "slice too large");
+
+    let bytes = word.to_le_bytes();
+    for (o, chunk) in out.iter_mut().zip(bytes.chunks(size_of::<T>())) {
+        *o = T::from(0u8);
+        for (i, &byte) in chunk.iter().enumerate() {
+            *o |= T::from(byte) << (i * 8);
+        }
+    }
+}
 
 /// Rust core `[T]::as_chunks` vendored because of its 1.88 MSRV.
 /// TODO(tarcieri): use upstream function when we bump MSRV
@@ -438,4 +489,60 @@ unsafe fn slice_as_chunks_unchecked_mut<T, const N: usize>(slice: &mut [T]) -> &
     // SAFETY: We cast a slice of `new_len * N` elements into
     // a slice of `new_len` many `N` elements chunks.
     unsafe { slice::from_raw_parts_mut(slice.as_mut_ptr().cast(), new_len) }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn cmovnz_remainder() {
+        // - Test endianness handling on non-64-bit platforms
+        // - Test handling of odd length slices on 64-bit platforms
+        #[cfg(not(target_pointer_width = "64"))]
+        const A_U16: [u16; 2] = [0xAAAA, 0xBBBB];
+        #[cfg(target_pointer_width = "64")]
+        const A_U16: [u16; 3] = [0xAAAA, 0xBBBB, 0xCCCC];
+
+        #[cfg(not(target_pointer_width = "64"))]
+        const B_U16: [u16; 2] = [0x10, 0xFFFF];
+        #[cfg(target_pointer_width = "64")]
+        const B_U16: [u16; 3] = [0x10, 0x10, 0xFFFF];
+
+        let mut out = A_U16;
+
+        super::cmovnz_remainder(&mut out, &B_U16, 0);
+        assert_eq!(A_U16, out);
+
+        super::cmovnz_remainder(&mut out, &B_U16, 1);
+        assert_eq!(B_U16, out);
+    }
+
+    #[test]
+    fn slice_to_word() {
+        assert_eq!(0xAABBCC, super::slice_to_word(&[0xCCu8, 0xBB, 0xAA]));
+        assert_eq!(0xAAAABBBB, super::slice_to_word(&[0xBBBBu16, 0xAAAA]));
+
+        #[cfg(target_pointer_width = "64")]
+        assert_eq!(
+            0xAAAABBBBCCCC,
+            super::slice_to_word(&[0xCCCCu16, 0xBBBB, 0xAAAA])
+        );
+    }
+
+    #[test]
+    fn word_to_slice() {
+        let mut out = [0u8; 3];
+        super::word_to_slice(0xAABBCC, &mut out);
+        assert_eq!(&[0xCC, 0xBB, 0xAA], &out);
+
+        let mut out = [0u16; 2];
+        super::word_to_slice(0xAAAABBBB, &mut out);
+        assert_eq!(&[0xBBBB, 0xAAAA], &out);
+
+        #[cfg(target_pointer_width = "64")]
+        {
+            let mut out = [0u16; 3];
+            super::word_to_slice(0xAAAABBBBCCCC, &mut out);
+            assert_eq!(&[0xCCCC, 0xBBBB, 0xAAAA], &out);
+        }
+    }
 }
