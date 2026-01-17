@@ -92,6 +92,7 @@
 extern crate alloc;
 
 mod bytes;
+mod byteutils;
 mod choice;
 mod ct_option;
 mod traits;

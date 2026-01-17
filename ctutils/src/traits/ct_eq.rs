@@ -1,4 +1,4 @@
-use crate::Choice;
+use crate::{Choice, byteutils, traits::no_uninit::NoUninit};
 use cmov::CmovEq;
 use core::{
     cmp,
@@ -109,37 +109,43 @@ impl CtEq for cmp::Ordering {
     }
 }
 
-impl<T: CtEq> CtEq for [T] {
+impl<T> CtEq for [T]
+where
+    T: CtEq + NoUninit,
+{
     #[inline]
     fn ct_eq(&self, other: &[T]) -> Choice {
-        const {
-            assert!(
-                size_of::<T>() != 1,
-                "use `BytesCtEq::bytes_ct_eq` when working with byte-sized values"
+        /// Iterate over every element in `a_slice` and `b_slice` comparing elements.
+        fn ct_eq_inner<T: CtEq>(a_slice: &[T], b_slice: &[T]) -> Choice {
+            let mut ret = a_slice.len().ct_eq(&b_slice.len());
+            for (a, b) in a_slice.iter().zip(b_slice.iter()) {
+                ret &= a.ct_eq(b);
+            }
+            ret
+        }
+
+        if const { size_of::<T>() == 1 } {
+            let ret = byteutils::ct_eq(self, other);
+
+            // Double-check the result we get from `byteutils::ct_eq` is the same one we would've
+            // gotten had we invoked `CtEq` on each element (i.e. the slow path)
+            debug_assert_eq!(
+                ret.to_bool(),
+                ct_eq_inner(self, other).to_bool(),
+                "mismatch between fast and slow ct_eq implementations"
             );
-        }
 
-        let mut ret = self.len().ct_eq(&other.len());
-        for (a, b) in self.iter().zip(other.iter()) {
-            ret &= a.ct_eq(b);
+            ret
+        } else {
+            ct_eq_inner(self, other)
         }
-        ret
-    }
-
-    #[inline]
-    fn ct_ne(&self, other: &[T]) -> Choice {
-        const {
-            assert!(
-                size_of::<T>() != 1,
-                "use `BytesCtEq::bytes_ct_ne` when working with byte-sized values"
-            );
-        }
-
-        !self.ct_eq(other)
     }
 }
 
-impl<T: CtEq, const N: usize> CtEq for [T; N] {
+impl<T, const N: usize> CtEq for [T; N]
+where
+    T: CtEq + NoUninit,
+{
     #[inline]
     fn ct_eq(&self, other: &[T; N]) -> Choice {
         self.as_slice().ct_eq(other.as_slice())
@@ -161,7 +167,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtEq for Box<[T]>
 where
-    T: CtEq,
+    T: CtEq + NoUninit,
 {
     #[inline]
     #[track_caller]
@@ -173,7 +179,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtEq<[T]> for Box<[T]>
 where
-    T: CtEq,
+    T: CtEq + NoUninit,
 {
     #[inline]
     #[track_caller]
@@ -185,7 +191,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtEq for Vec<T>
 where
-    T: CtEq,
+    T: CtEq + NoUninit,
 {
     #[inline]
     #[track_caller]
@@ -197,7 +203,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtEq<[T]> for Vec<T>
 where
-    T: CtEq,
+    T: CtEq + NoUninit,
 {
     #[inline]
     #[track_caller]
