@@ -38,6 +38,7 @@ on the following CPU architectures:
 
 - [x] `x86` (`CMOVZ`, `CMOVNZ`)
 - [x] `x86_64` (`CMOVZ`, `CMOVNZ`)
+- [x] `arm` (mask generation only)
 - [x] `aarch64` (`CSEL`)
 
 On other target architectures, a "best effort" portable fallback implementation
