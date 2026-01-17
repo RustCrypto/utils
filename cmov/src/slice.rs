@@ -11,6 +11,36 @@ type Word = u64;
 const WORD_SIZE: usize = size_of::<Word>();
 const _: () = assert!(size_of::<usize>() <= WORD_SIZE, "unexpected word size");
 
+/// Assert the lengths of the two slices are equal.
+macro_rules! assert_lengths_eq {
+    ($a:expr, $b:expr) => {
+        assert_eq!(
+            $a, $b,
+            "source slice length ({}) does not match destination slice length ({})",
+            $b, $a
+        );
+    };
+}
+
+/// Implement [`Cmov`] using a simple loop.
+macro_rules! impl_cmov_with_loop {
+    ($int:ty, $doc:expr) => {
+        #[doc = $doc]
+        #[doc = "# Panics"]
+        #[doc = "- if slices have unequal lengths"]
+        impl Cmov for [$int] {
+            #[inline]
+            #[track_caller]
+            fn cmovnz(&mut self, value: &Self, condition: Condition) {
+                assert_lengths_eq!(self.len(), value.len());
+                for (a, b) in self.iter_mut().zip(value.iter()) {
+                    a.cmovnz(b, condition);
+                }
+            }
+        }
+    };
+}
+
 /// Optimized implementation for byte slices which coalesces them into word-sized chunks first,
 /// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
 ///
@@ -20,17 +50,153 @@ impl Cmov for [u8] {
     #[inline]
     #[track_caller]
     fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        assert_eq!(
-            self.len(),
-            value.len(),
-            "source slice length ({}) does not match destination slice length ({})",
-            value.len(),
-            self.len()
-        );
+        assert_lengths_eq!(self.len(), value.len());
 
-        cmovnz_slice_unchecked(self, value, condition);
+        let (dst_chunks, dst_remainder) = slice_as_chunks_mut::<u8, WORD_SIZE>(self);
+        let (src_chunks, src_remainder) = slice_as_chunks::<u8, WORD_SIZE>(value);
+
+        for (dst_chunk, src_chunk) in dst_chunks.iter_mut().zip(src_chunks.iter()) {
+            let mut a = Word::from_ne_bytes(*dst_chunk);
+            let b = Word::from_ne_bytes(*src_chunk);
+            a.cmovnz(&b, condition);
+            dst_chunk.copy_from_slice(&a.to_ne_bytes());
+        }
+
+        // Process the remainder a byte-at-a-time.
+        for (a, b) in dst_remainder.iter_mut().zip(src_remainder.iter()) {
+            a.cmovnz(b, condition);
+        }
     }
 }
+
+/// Optimized implementation for slices of `u16` which coalesces them into word-sized chunks first,
+/// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
+///
+/// # Panics
+/// - if slices have unequal lengths
+#[cfg(not(target_pointer_width = "64"))]
+#[cfg_attr(docsrs, doc(cfg(true)))]
+impl Cmov for [u16] {
+    #[inline]
+    #[track_caller]
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
+        assert_lengths_eq!(self.len(), value.len());
+
+        let (dst_chunks, dst_remainder) = slice_as_chunks_mut::<u16, 2>(self);
+        let (src_chunks, src_remainder) = slice_as_chunks::<u16, 2>(value);
+
+        for (dst_chunk, src_chunk) in dst_chunks.iter_mut().zip(src_chunks.iter()) {
+            let mut a = Word::from(dst_chunk[0]) | (Word::from(dst_chunk[1]) << 16);
+            let b = Word::from(src_chunk[0]) | (Word::from(src_chunk[1]) << 16);
+            a.cmovnz(&b, condition);
+            dst_chunk[0] = (a & 0xFFFF) as u16;
+            dst_chunk[1] = (a >> 16) as u16;
+        }
+
+        // If slice is odd-length
+        if !dst_remainder.is_empty() {
+            dst_remainder[0].cmovnz(&src_remainder[0], condition);
+        }
+    }
+}
+
+/// Optimized implementation for slices of `u16` which coalesces them into word-sized chunks first,
+/// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
+///
+/// # Panics
+/// - if slices have unequal lengths
+#[cfg(target_pointer_width = "64")]
+#[cfg_attr(docsrs, doc(cfg(true)))]
+impl Cmov for [u16] {
+    #[inline]
+    #[track_caller]
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
+        assert_lengths_eq!(self.len(), value.len());
+
+        #[inline(always)]
+        fn u16x4_to_u64(input: &[u16; 4]) -> u64 {
+            Word::from(input[0])
+                | (Word::from(input[1]) << 16)
+                | (Word::from(input[2]) << 32)
+                | (Word::from(input[3]) << 48)
+        }
+
+        let (dst_chunks, dst_remainder) = slice_as_chunks_mut::<u16, 4>(self);
+        let (src_chunks, src_remainder) = slice_as_chunks::<u16, 4>(value);
+
+        for (dst_chunk, src_chunk) in dst_chunks.iter_mut().zip(src_chunks.iter()) {
+            let mut a = u16x4_to_u64(dst_chunk);
+            let b = u16x4_to_u64(src_chunk);
+            a.cmovnz(&b, condition);
+            dst_chunk[0] = (a & 0xFFFF) as u16;
+            dst_chunk[1] = ((a >> 16) & 0xFFFF) as u16;
+            dst_chunk[2] = ((a >> 32) & 0xFFFF) as u16;
+            dst_chunk[3] = ((a >> 48) & 0xFFFF) as u16;
+        }
+
+        for (a, b) in dst_remainder.iter_mut().zip(src_remainder.iter()) {
+            a.cmovnz(b, condition);
+        }
+    }
+}
+
+/// Implementation for slices of `u32` on 32-bit platforms, where we can just loop.
+///
+/// # Panics
+/// - if slices have unequal lengths
+#[cfg(not(target_pointer_width = "64"))]
+#[cfg_attr(docsrs, doc(cfg(true)))]
+impl Cmov for [u32] {
+    #[inline]
+    #[track_caller]
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
+        assert_lengths_eq!(self.len(), value.len());
+
+        for (a, b) in self.iter_mut().zip(value.iter()) {
+            a.cmovnz(b, condition);
+        }
+    }
+}
+
+/// Optimized implementation for slices of `u32` which coalesces them into word-sized chunks first,
+/// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
+///
+/// # Panics
+/// - if slices have unequal lengths
+#[cfg(target_pointer_width = "64")]
+#[cfg_attr(docsrs, doc(cfg(true)))]
+impl Cmov for [u32] {
+    #[inline]
+    #[track_caller]
+    fn cmovnz(&mut self, value: &Self, condition: Condition) {
+        assert_lengths_eq!(self.len(), value.len());
+
+        let (dst_chunks, dst_remainder) = slice_as_chunks_mut::<u32, 2>(self);
+        let (src_chunks, src_remainder) = slice_as_chunks::<u32, 2>(value);
+
+        for (dst_chunk, src_chunk) in dst_chunks.iter_mut().zip(src_chunks.iter()) {
+            let mut a = Word::from(dst_chunk[0]) | (Word::from(dst_chunk[1]) << 32);
+            let b = Word::from(src_chunk[0]) | (Word::from(src_chunk[1]) << 32);
+            a.cmovnz(&b, condition);
+            dst_chunk[0] = (a & 0xFFFF_FFFF) as u32;
+            dst_chunk[1] = (a >> 32) as u32;
+        }
+
+        // If slice is odd-length
+        if !dst_remainder.is_empty() {
+            dst_remainder[0].cmovnz(&src_remainder[0], condition);
+        }
+    }
+}
+
+impl_cmov_with_loop!(
+    u64,
+    "Implementation for `u64` slices where we can just loop."
+);
+impl_cmov_with_loop!(
+    u128,
+    "Implementation for `u128` slices where we can just loop."
+);
 
 /// Optimized implementation for byte slices which coalesces them into word-sized chunks first,
 /// then performs [`CmovEq`] at the word-level to cut down on the total number of instructions.
@@ -60,27 +226,6 @@ impl CmovEq for [u8] {
         for (a, b) in self_remainder.iter().zip(rhs_remainder.iter()) {
             a.cmovne(b, input, output);
         }
-    }
-}
-
-/// Conditionally move `src` to `dst` in constant-time if `condition` is non-zero.
-///
-/// This function does not check the slices are equal-length and expects the caller to do so first.
-#[inline(always)]
-pub(crate) fn cmovnz_slice_unchecked(dst: &mut [u8], src: &[u8], condition: Condition) {
-    let (dst_chunks, dst_remainder) = slice_as_chunks_mut::<u8, WORD_SIZE>(dst);
-    let (src_chunks, src_remainder) = slice_as_chunks::<u8, WORD_SIZE>(src);
-
-    for (dst_chunk, src_chunk) in dst_chunks.iter_mut().zip(src_chunks.iter()) {
-        let mut a = Word::from_ne_bytes(*dst_chunk);
-        let b = Word::from_ne_bytes(*src_chunk);
-        a.cmovnz(&b, condition);
-        dst_chunk.copy_from_slice(&a.to_ne_bytes());
-    }
-
-    // Process the remainder a byte-at-a-time.
-    for (a, b) in dst_remainder.iter_mut().zip(src_remainder.iter()) {
-        a.cmovnz(b, condition);
     }
 }
 
