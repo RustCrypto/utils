@@ -1,5 +1,8 @@
 use crate::{Choice, CtOption, CtSelect};
 
+#[cfg(feature = "alloc")]
+use alloc::{boxed::Box, vec::Vec};
+
 #[cfg(doc)]
 use core::iter::Iterator;
 
@@ -21,6 +24,7 @@ impl<T> CtFind<T> for [T]
 where
     T: CtSelect + Default,
 {
+    #[inline]
     fn ct_find<P>(&self, predicate: P) -> CtOption<T>
     where
         P: Fn(&T) -> Choice,
@@ -39,6 +43,35 @@ impl<T, const N: usize> CtFind<T> for [T; N]
 where
     T: CtSelect + Default,
 {
+    #[inline]
+    fn ct_find<P>(&self, predicate: P) -> CtOption<T>
+    where
+        P: Fn(&T) -> Choice,
+    {
+        self.as_slice().ct_find(predicate)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> CtFind<T> for Box<[T]>
+where
+    T: CtSelect + Default,
+{
+    #[inline]
+    fn ct_find<P>(&self, predicate: P) -> CtOption<T>
+    where
+        P: Fn(&T) -> Choice,
+    {
+        (**self).ct_find(predicate)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> CtFind<T> for Vec<T>
+where
+    T: CtSelect + Default,
+{
+    #[inline]
     fn ct_find<P>(&self, predicate: P) -> CtOption<T>
     where
         P: Fn(&T) -> Choice,

@@ -4,6 +4,8 @@ use core::cmp;
 
 #[cfg(feature = "subtle")]
 use crate::CtOption;
+#[cfg(feature = "alloc")]
+use alloc::{boxed::Box, vec::Vec};
 
 /// Constant-time equality: like `(Partial)Eq` with [`Choice`] instead of [`bool`].
 ///
@@ -108,6 +110,66 @@ impl<T: CtEq, const N: usize> CtEq for [T; N] {
     #[inline]
     fn ct_eq(&self, other: &[T; N]) -> Choice {
         self.as_slice().ct_eq(other.as_slice())
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> CtEq for Box<T>
+where
+    T: CtEq,
+{
+    #[inline]
+    #[track_caller]
+    fn ct_eq(&self, rhs: &Self) -> Choice {
+        (**self).ct_eq(rhs)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> CtEq for Box<[T]>
+where
+    T: CtEq,
+{
+    #[inline]
+    #[track_caller]
+    fn ct_eq(&self, rhs: &Self) -> Choice {
+        self.ct_eq(&**rhs)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> CtEq<[T]> for Box<[T]>
+where
+    T: CtEq,
+{
+    #[inline]
+    #[track_caller]
+    fn ct_eq(&self, rhs: &[T]) -> Choice {
+        (**self).ct_eq(rhs)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> CtEq for Vec<T>
+where
+    T: CtEq,
+{
+    #[inline]
+    #[track_caller]
+    fn ct_eq(&self, rhs: &Self) -> Choice {
+        self.ct_eq(rhs.as_slice())
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> CtEq<[T]> for Vec<T>
+where
+    T: CtEq,
+{
+    #[inline]
+    #[track_caller]
+    fn ct_eq(&self, rhs: &[T]) -> Choice {
+        self.as_slice().ct_eq(rhs)
     }
 }
 

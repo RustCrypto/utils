@@ -25,5 +25,9 @@ subtle = { version = "2", optional = true, default-features = false }
 [dev-dependencies]
 proptest = "1.9"
 
+[features]
+alloc = []
+subtle = ["dep:subtle"]
+
 [package.metadata.docs.rs]
 all-features = true

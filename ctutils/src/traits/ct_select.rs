@@ -3,6 +3,8 @@ use core::cmp;
 
 #[cfg(feature = "subtle")]
 use crate::CtOption;
+#[cfg(feature = "alloc")]
+use alloc::{boxed::Box, vec::Vec};
 
 /// Constant-time selection: pick between two values based on a given [`Choice`].
 pub trait CtSelect: CtAssign + Sized {
@@ -112,6 +114,43 @@ where
         }
 
         core::array::from_fn(|i| T::ct_select(&self[i], &other[i], choice))
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> CtSelect for Box<T>
+where
+    T: CtSelect,
+{
+    #[inline]
+    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        Box::new(T::ct_select(&**self, &**other, choice))
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> CtSelect for Box<[T]>
+where
+    T: Clone + CtSelect,
+{
+    #[inline]
+    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        let mut ret = self.clone();
+        ret.ct_assign(other, choice);
+        ret
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T> CtSelect for Vec<T>
+where
+    T: Clone + CtSelect,
+{
+    #[inline]
+    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        let mut ret = self.clone();
+        ret.ct_assign(other, choice);
+        ret
     }
 }
 

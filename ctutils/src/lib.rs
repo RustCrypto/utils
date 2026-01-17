@@ -86,6 +86,9 @@
 //! This makes it possible to use `ctutils` in a codebase where other dependencies are using
 //! `subtle`.
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 mod bytes;
 mod choice;
 mod ct_option;

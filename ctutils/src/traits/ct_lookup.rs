@@ -1,6 +1,9 @@
 use crate::{CtEq, CtOption, CtSelect};
 use core::ops::AddAssign;
 
+#[cfg(feature = "alloc")]
+use alloc::{boxed::Box, vec::Vec};
+
 #[cfg(doc)]
 use core::ops::Index;
 
@@ -22,6 +25,7 @@ where
 {
     type Output = T;
 
+    #[inline]
     fn ct_lookup(&self, index: Idx) -> CtOption<T> {
         let mut ret = CtOption::none();
         let mut i = Idx::default();
@@ -44,6 +48,35 @@ where
 {
     type Output = T;
 
+    #[inline]
+    fn ct_lookup(&self, index: Idx) -> CtOption<T> {
+        self.as_slice().ct_lookup(index)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T, Idx> CtLookup<Idx> for Box<[T]>
+where
+    T: CtSelect + Default,
+    Idx: AddAssign + CtEq + Default + From<u8>,
+{
+    type Output = T;
+
+    #[inline]
+    fn ct_lookup(&self, index: Idx) -> CtOption<T> {
+        (**self).ct_lookup(index)
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl<T, Idx> CtLookup<Idx> for Vec<T>
+where
+    T: CtSelect + Default,
+    Idx: AddAssign + CtEq + Default + From<u8>,
+{
+    type Output = T;
+
+    #[inline]
     fn ct_lookup(&self, index: Idx) -> CtOption<T> {
         self.as_slice().ct_lookup(index)
     }
