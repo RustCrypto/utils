@@ -25,11 +25,8 @@ macro_rules! assert_lengths_eq {
     };
 }
 
-/// Optimized implementation for byte slices which coalesces them into word-sized chunks first,
-/// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
-///
-/// # Panics
-/// - if slices have unequal lengths
+// Optimized implementation for byte slices which coalesces them into word-sized chunks first,
+// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
 impl Cmov for [u8] {
     #[inline]
     #[track_caller]
@@ -50,11 +47,8 @@ impl Cmov for [u8] {
     }
 }
 
-/// Optimized implementation for slices of `u16` which coalesces them into word-sized chunks first,
-/// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
-///
-/// # Panics
-/// - if slices have unequal lengths
+// Optimized implementation for slices of `u16` which coalesces them into word-sized chunks first,
+// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
 #[cfg(not(target_pointer_width = "64"))]
 #[cfg_attr(docsrs, doc(cfg(true)))]
 impl Cmov for [u16] {
@@ -78,11 +72,8 @@ impl Cmov for [u16] {
     }
 }
 
-/// Optimized implementation for slices of `u16` which coalesces them into word-sized chunks first,
-/// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
-///
-/// # Panics
-/// - if slices have unequal lengths
+// Optimized implementation for slices of `u16` which coalesces them into word-sized chunks first,
+// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
 #[cfg(target_pointer_width = "64")]
 #[cfg_attr(docsrs, doc(cfg(true)))]
 impl Cmov for [u16] {
@@ -116,90 +107,36 @@ impl Cmov for [u16] {
     }
 }
 
-/// Implementation for slices of `u32` on 32-bit platforms, where we can just loop.
-///
-/// # Panics
-/// - if slices have unequal lengths
-#[cfg(not(target_pointer_width = "64"))]
-#[cfg_attr(docsrs, doc(cfg(true)))]
-impl Cmov for [u32] {
-    #[inline]
-    #[track_caller]
-    fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        assert_lengths_eq!(self.len(), value.len());
-
-        for (a, b) in self.iter_mut().zip(value.iter()) {
-            a.cmovnz(b, condition);
-        }
-    }
-}
-
-/// Optimized implementation for slices of `u32` which coalesces them into word-sized chunks first,
-/// then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
-///
-/// # Panics
-/// - if slices have unequal lengths
-#[cfg(target_pointer_width = "64")]
-#[cfg_attr(docsrs, doc(cfg(true)))]
-impl Cmov for [u32] {
-    #[inline]
-    #[track_caller]
-    fn cmovnz(&mut self, value: &Self, condition: Condition) {
-        assert_lengths_eq!(self.len(), value.len());
-
-        let (dst_chunks, dst_remainder) = slice_as_chunks_mut::<u32, 2>(self);
-        let (src_chunks, src_remainder) = slice_as_chunks::<u32, 2>(value);
-
-        for (dst_chunk, src_chunk) in dst_chunks.iter_mut().zip(src_chunks.iter()) {
-            let mut a = Word::from(dst_chunk[0]) | (Word::from(dst_chunk[1]) << 32);
-            let b = Word::from(src_chunk[0]) | (Word::from(src_chunk[1]) << 32);
-            a.cmovnz(&b, condition);
-            dst_chunk[0] = (a & 0xFFFF_FFFF) as u32;
-            dst_chunk[1] = (a >> 32) as u32;
-        }
-
-        cmovnz_remainder(dst_remainder, src_remainder, condition);
-    }
-}
-
 /// Implement [`Cmov`] using a simple loop.
 macro_rules! impl_cmov_with_loop {
-    ($int:ty, $doc:expr) => {
-        #[doc = $doc]
-        #[doc = "# Panics"]
-        #[doc = "- if slices have unequal lengths"]
-        impl Cmov for [$int] {
-            #[inline]
-            #[track_caller]
-            fn cmovnz(&mut self, value: &Self, condition: Condition) {
-                assert_lengths_eq!(self.len(), value.len());
-                for (a, b) in self.iter_mut().zip(value.iter()) {
-                    a.cmovnz(b, condition);
+    ( $($int:ty),+ ) => {
+        $(
+            impl Cmov for [$int] {
+                #[inline]
+                #[track_caller]
+                fn cmovnz(&mut self, value: &Self, condition: Condition) {
+                    assert_lengths_eq!(self.len(), value.len());
+                    for (a, b) in self.iter_mut().zip(value.iter()) {
+                        a.cmovnz(b, condition);
+                    }
                 }
             }
-        }
+        )+
     };
 }
 
-impl_cmov_with_loop!(
-    u64,
-    "Implementation for `u64` slices where we can just loop."
-);
-impl_cmov_with_loop!(
-    u128,
-    "Implementation for `u128` slices where we can just loop."
-);
+impl_cmov_with_loop!(u32, u64, u128);
 
 macro_rules! assert_size_and_alignment_eq {
-    ($signed:ty, $unsigned:ty) => {
+    ($int:ty, $uint:ty) => {
         const {
             assert!(
-                size_of::<$signed>() == size_of::<$unsigned>(),
+                size_of::<$int>() == size_of::<$uint>(),
                 "integers are of unequal size"
             );
 
             assert!(
-                align_of::<$signed>() == align_of::<$unsigned>(),
+                align_of::<$int>() == align_of::<$uint>(),
                 "integers have unequal alignment"
             );
         }
@@ -208,34 +145,20 @@ macro_rules! assert_size_and_alignment_eq {
 
 /// Implement [`Cmov`] for a signed type by invoking the corresponding unsigned impl.
 macro_rules! impl_cmov_for_signed_with_unsigned {
-    ($signed:ty, $unsigned:ty) => {
-        impl_cmov_for_signed_with_unsigned!(
-            $signed,
-            $unsigned,
-            "Delegating implementation of `Cmov` for signed type which delegates to unsigned."
-        );
-    };
-    ($signed:ty, $unsigned:ty, $doc:expr) => {
-        #[doc = $doc]
-        #[doc = "# Panics"]
-        #[doc = "- if slices have unequal lengths"]
-        impl Cmov for [$signed] {
+    ($int:ty, $uint:ty) => {
+        impl Cmov for [$int] {
             #[inline]
             #[track_caller]
+            #[allow(unsafe_code)]
             fn cmovnz(&mut self, value: &Self, condition: Condition) {
-                assert_size_and_alignment_eq!($signed, $unsigned);
+                assert_size_and_alignment_eq!($int, $uint);
 
                 // SAFETY:
                 // - Slices being constructed are of same-sized integers as asserted above.
                 // - We source the slice length directly from the other valid slice.
-                #[allow(unsafe_code)]
-                let (self_unsigned, value_unsigned) = unsafe {
-                    (
-                        slice::from_raw_parts_mut(self.as_mut_ptr() as *mut $unsigned, self.len()),
-                        slice::from_raw_parts(value.as_ptr() as *const $unsigned, value.len()),
-                    )
-                };
 
+                let self_unsigned = unsafe { cast_slice_mut::<$int, $uint>(self) };
+                let value_unsigned = unsafe { cast_slice::<$int, $uint>(value) };
                 self_unsigned.cmovnz(value_unsigned, condition);
             }
         }
@@ -244,33 +167,16 @@ macro_rules! impl_cmov_for_signed_with_unsigned {
 
 /// Implement [`CmovEq`] for a signed type by invoking the corresponding unsigned impl.
 macro_rules! impl_cmoveq_for_signed_with_unsigned {
-    ($signed:ty, $unsigned:ty) => {
-        impl_cmoveq_for_signed_with_unsigned!(
-            $signed,
-            $unsigned,
-            "Delegating implementation of `CmovEq` for signed type which delegates to unsigned."
-        );
-    };
-    ($signed:ty, $unsigned:ty, $doc:expr) => {
-        #[doc = $doc]
-        #[doc = "# Panics"]
-        #[doc = "- if slices have unequal lengths"]
-        impl CmovEq for [$signed] {
+    ($int:ty, $uint:ty) => {
+        impl CmovEq for [$int] {
             #[inline]
+            #[allow(unsafe_code)]
             fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-                assert_size_and_alignment_eq!($signed, $unsigned);
-
                 // SAFETY:
                 // - Slices being constructed are of same-sized integers as asserted above.
                 // - We source the slice length directly from the other valid slice.
-                #[allow(unsafe_code)]
-                let (self_unsigned, rhs_unsigned) = unsafe {
-                    (
-                        slice::from_raw_parts(self.as_ptr() as *const $unsigned, self.len()),
-                        slice::from_raw_parts(rhs.as_ptr() as *const $unsigned, rhs.len()),
-                    )
-                };
-
+                let self_unsigned = unsafe { cast_slice::<$int, $uint>(self) };
+                let rhs_unsigned = unsafe { cast_slice::<$int, $uint>(rhs) };
                 self_unsigned.cmovne(rhs_unsigned, input, output);
             }
         }
@@ -278,24 +184,26 @@ macro_rules! impl_cmoveq_for_signed_with_unsigned {
 }
 
 /// Implement [`Cmov`] and [`CmovEq`] for the given signed/unsigned type pair.
+// TODO(tarcieri): use `cast_unsigned`/`cast_signed` to get rid of the `=> u*`
 macro_rules! impl_cmov_traits_for_signed_with_unsigned {
-    ($signed:ty, $unsigned:ty) => {
-        impl_cmov_for_signed_with_unsigned!($signed, $unsigned);
-        impl_cmoveq_for_signed_with_unsigned!($signed, $unsigned);
+    ( $($int:ty => $uint:ty),+ ) => {
+        $(
+            impl_cmov_for_signed_with_unsigned!($int, $uint);
+            impl_cmoveq_for_signed_with_unsigned!($int, $uint);
+        )+
     };
 }
 
-impl_cmov_traits_for_signed_with_unsigned!(i8, u8);
-impl_cmov_traits_for_signed_with_unsigned!(i16, u16);
-impl_cmov_traits_for_signed_with_unsigned!(i32, u32);
-impl_cmov_traits_for_signed_with_unsigned!(i64, u64);
-impl_cmov_traits_for_signed_with_unsigned!(i128, u128);
+impl_cmov_traits_for_signed_with_unsigned!(
+    i8 => u8,
+    i16 => u16,
+    i32 => u32,
+    i64 => u64,
+    i128 => u128
+);
 
-/// Optimized implementation for byte slices which coalesces them into word-sized chunks first,
-/// then performs [`CmovEq`] at the word-level to cut down on the total number of instructions.
-///
-/// This is only constant-time for equal-length slices, and will short-circuit and set `output`
-/// in the event the slices are of unequal length.
+// Optimized implementation for byte slices which coalesces them into word-sized chunks first,
+// then performs [`CmovEq`] at the word-level to cut down on the total number of instructions.
 impl CmovEq for [u8] {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
@@ -321,43 +229,67 @@ impl CmovEq for [u8] {
 
 /// Implement [`CmovEq`] using a simple loop.
 macro_rules! impl_cmoveq_with_loop {
-    ($int:ty, $doc:expr) => {
-        #[doc = $doc]
-        impl CmovEq for [$int] {
-            #[inline]
-            fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-                // Short-circuit the comparison if the slices are of different lengths, and set the output
-                // condition to the input condition.
-                if self.len() != rhs.len() {
-                    *output = input;
-                    return;
-                }
+    ( $($int:ty),+ ) => {
+        $(
+            impl CmovEq for [$int] {
+                #[inline]
+                fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+                    // Short-circuit the comparison if the slices are of different lengths, and set the output
+                    // condition to the input condition.
+                    if self.len() != rhs.len() {
+                        *output = input;
+                        return;
+                    }
 
-                for (a, b) in self.iter().zip(rhs.iter()) {
-                    a.cmovne(b, input, output);
+                    for (a, b) in self.iter().zip(rhs.iter()) {
+                        a.cmovne(b, input, output);
+                    }
                 }
             }
-        }
+        )+
     };
 }
 
-// TODO(tarcieri): optimized coalescing implementations of `CmovEq` for `u16` and `u32`
-impl_cmoveq_with_loop!(
-    u16,
-    "Implementation for `u16` slices where we can just loop."
-);
-impl_cmoveq_with_loop!(
-    u32,
-    "Implementation for `u32` slices where we can just loop."
-);
-impl_cmoveq_with_loop!(
-    u64,
-    "Implementation for `u64` slices where we can just loop."
-);
-impl_cmoveq_with_loop!(
-    u128,
-    "Implementation for `u128` slices where we can just loop."
-);
+// TODO(tarcieri): investigate word-coalescing impls
+impl_cmoveq_with_loop!(u16, u32, u64, u128);
+
+/// Performs an unsafe pointer cast from one slice type to the other.
+///
+/// # Panics
+/// - If `T` and `U` differ in size
+/// - If `T` and `U` differ in alignment
+#[allow(unsafe_code)]
+unsafe fn cast_slice<T, U>(slice: &[T]) -> &[U] {
+    const {
+        assert!(size_of::<T>() == size_of::<U>(), "T/U size differs");
+        assert!(align_of::<T>() == align_of::<U>(), "T/U alignment differs");
+    }
+
+    // SAFETY:
+    // - Slices being constructed are of same-sized/aligned types as asserted above.
+    // - We source the slice length directly from the other valid slice.
+    // - It's up to the caller to ensure the pointer cast itself is valid.
+    unsafe { slice::from_raw_parts(slice.as_ptr() as *const U, slice.len()) }
+}
+
+/// Performs an unsafe pointer cast from one mutable slice type to the other.
+///
+/// # Panics
+/// - If `T` and `U` differ in size
+/// - If `T` and `U` differ in alignment
+#[allow(unsafe_code)]
+unsafe fn cast_slice_mut<T, U>(slice: &mut [T]) -> &mut [U] {
+    const {
+        assert!(size_of::<T>() == size_of::<U>(), "T/U size differs");
+        assert!(align_of::<T>() == align_of::<U>(), "T/U alignment differs");
+    }
+
+    // SAFETY:
+    // - Slices being constructed are of same-sized/aligned types as asserted above.
+    // - We source the slice length directly from the other valid slice.
+    // - It's up to the caller to ensure the pointer cast itself is valid.
+    unsafe { slice::from_raw_parts_mut(slice.as_mut_ptr() as *mut U, slice.len()) }
+}
 
 /// Compare the two remainder slices by loading a `Word` then performing `cmovne`.
 #[inline]
