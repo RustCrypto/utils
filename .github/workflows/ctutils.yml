@@ -44,6 +44,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - run: cargo build --target ${{ matrix.target }}
+      - run: cargo build --target ${{ matrix.target }} --features alloc
 
   # Disabled until there's a stable `cmov` v0.5.0 release
   #  minimal-versions:
@@ -65,6 +66,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
       - run: cargo test
+      - run: cargo test --features alloc
       - run: cargo test --features subtle
       - run: cargo test --all-features
       - run: cargo test --all-features --release
