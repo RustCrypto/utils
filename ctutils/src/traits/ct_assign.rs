@@ -1,6 +1,12 @@
 use crate::{Choice, CtSelect};
 use cmov::Cmov;
-use core::cmp;
+use core::{
+    cmp,
+    num::{
+        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16,
+        NonZeroU32, NonZeroU64, NonZeroU128,
+    },
+};
 
 #[cfg(feature = "alloc")]
 use alloc::{boxed::Box, vec::Vec};
@@ -29,7 +35,19 @@ macro_rules! impl_ct_assign_with_ct_select {
     };
 }
 
-impl_ct_assign_with_ct_select!(cmp::Ordering);
+impl_ct_assign_with_ct_select!(
+    cmp::Ordering,
+    NonZeroI8,
+    NonZeroI16,
+    NonZeroI32,
+    NonZeroI64,
+    NonZeroI128,
+    NonZeroU8,
+    NonZeroU16,
+    NonZeroU32,
+    NonZeroU64,
+    NonZeroU128
+);
 
 /// Impl `CtAssign` using the `cmov::Cmov` trait
 macro_rules! impl_ct_assign_with_cmov {

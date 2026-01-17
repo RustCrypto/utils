@@ -1,4 +1,8 @@
 use crate::{Choice, CtAssign, CtSelect};
+use core::num::{
+    NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16, NonZeroU32,
+    NonZeroU64, NonZeroU128,
+};
 
 /// Constant-time conditional negation: negates a value when `choice` is [`Choice::TRUE`].
 pub trait CtNeg: Sized {
@@ -57,6 +61,42 @@ macro_rules! impl_unsigned_ct_neg {
 
 impl_signed_ct_neg!(i8, i16, i32, i64, i128);
 impl_unsigned_ct_neg!(u8, u16, u32, u64, u128);
+
+/// Impl `CtNeg` for `NonZero<T>` by calling the `CtNeg` impl for `T`.
+macro_rules! impl_ct_neg_for_nonzero_integer {
+    ( $($nzint:ident),+ ) => {
+        $(
+             impl CtNeg for $nzint {
+                #[inline]
+                fn ct_neg(&self, choice: Choice) -> Self {
+                    let n = self.get().ct_neg(choice);
+
+                    // SAFETY: we are constructing `NonZero` from a value we obtained from
+                    // `NonZero::get`, which ensures it's non-zero, and the negation of a non-zero
+                    // integer will always be non-zero:
+                    //
+                    // - signed: `{i*}::MIN` and `{i*}::MAX` are each other's negations
+                    // - unsigned: `1` and `{u*}::MAX` are each other's negations
+                    #[allow(unsafe_code)]
+                    unsafe { $nzint::new_unchecked(n) }
+                }
+            }
+        )+
+    };
+}
+
+impl_ct_neg_for_nonzero_integer!(
+    NonZeroI8,
+    NonZeroI16,
+    NonZeroI32,
+    NonZeroI64,
+    NonZeroI128,
+    NonZeroU8,
+    NonZeroU16,
+    NonZeroU32,
+    NonZeroU64,
+    NonZeroU128
+);
 
 #[cfg(test)]
 mod tests {
