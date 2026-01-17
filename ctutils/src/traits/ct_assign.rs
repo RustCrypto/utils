@@ -63,55 +63,39 @@ macro_rules! impl_ct_assign_with_cmov {
     };
 }
 
-impl_ct_assign_with_cmov!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+impl_ct_assign_with_cmov!(
+    i8,
+    i16,
+    i32,
+    i64,
+    i128,
+    u8,
+    u16,
+    u32,
+    u64,
+    u128,
+    [i8],
+    [i16],
+    [i32],
+    [i64],
+    [i128],
+    [u8],
+    [u16],
+    [u32],
+    [u64],
+    [u128]
+);
 
-#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
-impl CtAssign for isize {
-    #[inline]
-    fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
-        *self = Self::ct_select(self, rhs, choice);
-    }
-}
-
-#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
-impl CtAssign for usize {
-    #[inline]
-    fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
-        *self = Self::ct_select(self, rhs, choice);
-    }
-}
-
-impl<T> CtAssign for [T]
-where
-    T: CtAssign,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
-        const {
-            assert!(
-                size_of::<T>() != 1,
-                "use `BytesCtAssign::bytes_ct_assign` when working with byte-sized values"
-            );
-        }
-
-        assert_eq!(
-            self.len(),
-            rhs.len(),
-            "source slice length ({}) does not match destination slice length ({})",
-            rhs.len(),
-            self.len()
-        );
-
-        for (a, b) in self.iter_mut().zip(rhs) {
-            a.ct_assign(b, choice)
-        }
-    }
-}
+#[cfg(any(
+    target_pointer_width = "16",
+    target_pointer_width = "32",
+    target_pointer_width = "64"
+))]
+impl_ct_assign_with_cmov!(isize, usize);
 
 impl<T, const N: usize> CtAssign for [T; N]
 where
-    T: CtAssign,
+    [T]: CtAssign,
 {
     #[inline]
     fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
@@ -134,7 +118,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtAssign for Box<[T]>
 where
-    T: CtAssign,
+    [T]: CtAssign,
 {
     #[inline]
     #[track_caller]
@@ -146,7 +130,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtAssign<[T]> for Box<[T]>
 where
-    T: CtAssign,
+    [T]: CtAssign,
 {
     #[inline]
     #[track_caller]
@@ -158,7 +142,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtAssign for Vec<T>
 where
-    T: CtAssign,
+    [T]: CtAssign,
 {
     #[inline]
     #[track_caller]
@@ -170,7 +154,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtAssign<[T]> for Vec<T>
 where
-    T: CtAssign,
+    [T]: CtAssign,
 {
     #[inline]
     #[track_caller]

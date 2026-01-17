@@ -91,12 +91,13 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-mod bytes;
+pub mod array;
+pub mod slice;
+
 mod choice;
 mod ct_option;
 mod traits;
 
-pub use bytes::{BytesCtAssign, BytesCtEq, BytesCtSelect};
 pub use choice::Choice;
 pub use ct_option::CtOption;
 pub use traits::{

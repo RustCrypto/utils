@@ -1,4 +1,4 @@
-use crate::{CtEq, CtOption, CtSelect};
+use crate::{CtAssign, CtEq, CtOption};
 use core::ops::AddAssign;
 
 #[cfg(feature = "alloc")]
@@ -11,7 +11,7 @@ use core::ops::Index;
 /// constant-time.
 pub trait CtLookup<Idx> {
     /// Output type returned by the lookup operation.
-    type Output: CtSelect;
+    type Output: CtAssign;
 
     /// Attempt to retrieve the item at the given `index`, either returning it or the [`CtOption`]
     /// equivalent of [`None`] if the `index` was out-of-bounds.
@@ -20,7 +20,7 @@ pub trait CtLookup<Idx> {
 
 impl<T, Idx> CtLookup<Idx> for [T]
 where
-    T: CtSelect + Default,
+    T: CtAssign + Default,
     Idx: AddAssign + CtEq + Default + From<u8>,
 {
     type Output = T;
@@ -43,7 +43,7 @@ where
 
 impl<T, Idx, const N: usize> CtLookup<Idx> for [T; N]
 where
-    T: CtSelect + Default,
+    T: CtAssign + Default,
     Idx: AddAssign + CtEq + Default + From<u8>,
 {
     type Output = T;
@@ -57,7 +57,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T, Idx> CtLookup<Idx> for Box<[T]>
 where
-    T: CtSelect + Default,
+    T: CtAssign + Default,
     Idx: AddAssign + CtEq + Default + From<u8>,
 {
     type Output = T;
@@ -71,7 +71,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T, Idx> CtLookup<Idx> for Vec<T>
 where
-    T: CtSelect + Default,
+    T: CtAssign + Default,
     Idx: AddAssign + CtEq + Default + From<u8>,
 {
     type Output = T;

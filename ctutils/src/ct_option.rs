@@ -162,7 +162,7 @@ impl<T> CtOption<T> {
     /// Conditionally inserts `value` into the [`CtOption`] if the given condition holds.
     pub fn insert_if(&mut self, value: &T, condition: Choice)
     where
-        T: CtSelect,
+        T: CtAssign,
     {
         self.value.ct_assign(value, condition);
         self.is_some.ct_assign(&Choice::TRUE, condition);

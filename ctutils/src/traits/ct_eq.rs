@@ -46,7 +46,35 @@ macro_rules! impl_ct_eq_with_cmov_eq {
     };
 }
 
-impl_ct_eq_with_cmov_eq!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+impl_ct_eq_with_cmov_eq!(
+    i8,
+    i16,
+    i32,
+    i64,
+    i128,
+    u8,
+    u16,
+    u32,
+    u64,
+    u128,
+    [i8],
+    [i16],
+    [i32],
+    [i64],
+    [i128],
+    [u8],
+    [u16],
+    [u32],
+    [u64],
+    [u128]
+);
+
+#[cfg(any(
+    target_pointer_width = "16",
+    target_pointer_width = "32",
+    target_pointer_width = "64"
+))]
+impl_ct_eq_with_cmov_eq!(isize, usize);
 
 /// Impl `CtEq` for `NonZero<T>` by calling `NonZero::get`.
 macro_rules! impl_ct_eq_for_nonzero_integer {
@@ -75,32 +103,6 @@ impl_ct_eq_for_nonzero_integer!(
     NonZeroU128
 );
 
-#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
-impl CtEq for isize {
-    #[cfg(target_pointer_width = "32")]
-    fn ct_eq(&self, other: &Self) -> Choice {
-        (*self as i32).ct_eq(&(*other as i32))
-    }
-
-    #[cfg(target_pointer_width = "64")]
-    fn ct_eq(&self, other: &Self) -> Choice {
-        (*self as i64).ct_eq(&(*other as i64))
-    }
-}
-
-#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
-impl CtEq for usize {
-    #[cfg(target_pointer_width = "32")]
-    fn ct_eq(&self, other: &Self) -> Choice {
-        (*self as u32).ct_eq(&(*other as u32))
-    }
-
-    #[cfg(target_pointer_width = "64")]
-    fn ct_eq(&self, other: &Self) -> Choice {
-        (*self as u64).ct_eq(&(*other as u64))
-    }
-}
-
 impl CtEq for cmp::Ordering {
     #[inline]
     fn ct_eq(&self, other: &Self) -> Choice {
@@ -109,37 +111,10 @@ impl CtEq for cmp::Ordering {
     }
 }
 
-impl<T: CtEq> CtEq for [T] {
-    #[inline]
-    fn ct_eq(&self, other: &[T]) -> Choice {
-        const {
-            assert!(
-                size_of::<T>() != 1,
-                "use `BytesCtEq::bytes_ct_eq` when working with byte-sized values"
-            );
-        }
-
-        let mut ret = self.len().ct_eq(&other.len());
-        for (a, b) in self.iter().zip(other.iter()) {
-            ret &= a.ct_eq(b);
-        }
-        ret
-    }
-
-    #[inline]
-    fn ct_ne(&self, other: &[T]) -> Choice {
-        const {
-            assert!(
-                size_of::<T>() != 1,
-                "use `BytesCtEq::bytes_ct_ne` when working with byte-sized values"
-            );
-        }
-
-        !self.ct_eq(other)
-    }
-}
-
-impl<T: CtEq, const N: usize> CtEq for [T; N] {
+impl<T, const N: usize> CtEq for [T; N]
+where
+    [T]: CtEq,
+{
     #[inline]
     fn ct_eq(&self, other: &[T; N]) -> Choice {
         self.as_slice().ct_eq(other.as_slice())
@@ -161,7 +136,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtEq for Box<[T]>
 where
-    T: CtEq,
+    [T]: CtEq,
 {
     #[inline]
     #[track_caller]
@@ -173,7 +148,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtEq<[T]> for Box<[T]>
 where
-    T: CtEq,
+    [T]: CtEq,
 {
     #[inline]
     #[track_caller]
@@ -185,7 +160,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtEq for Vec<T>
 where
-    T: CtEq,
+    [T]: CtEq,
 {
     #[inline]
     #[track_caller]
@@ -197,7 +172,7 @@ where
 #[cfg(feature = "alloc")]
 impl<T> CtEq<[T]> for Vec<T>
 where
-    T: CtEq,
+    [T]: CtEq,
 {
     #[inline]
     #[track_caller]
