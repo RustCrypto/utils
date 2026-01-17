@@ -22,9 +22,11 @@ where
     Rhs: ?Sized,
 {
     /// Determine if `self` is equal to `other` in constant-time.
+    #[must_use]
     fn ct_eq(&self, other: &Rhs) -> Choice;
 
     /// Determine if `self` is NOT equal to `other` in constant-time.
+    #[must_use]
     fn ct_ne(&self, other: &Rhs) -> Choice {
         !self.ct_eq(other)
     }

@@ -15,6 +15,7 @@
     clippy::mod_module_files,
     clippy::panic,
     clippy::panic_in_result_fn,
+    clippy::return_self_not_must_use,
     clippy::std_instead_of_alloc,
     clippy::std_instead_of_core,
     clippy::undocumented_unsafe_blocks,

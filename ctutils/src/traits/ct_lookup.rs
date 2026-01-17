@@ -15,6 +15,7 @@ pub trait CtLookup<Idx> {
 
     /// Attempt to retrieve the item at the given `index`, either returning it or the [`CtOption`]
     /// equivalent of [`None`] if the `index` was out-of-bounds.
+    #[must_use]
     fn ct_lookup(&self, index: Idx) -> CtOption<Self::Output>;
 }
 

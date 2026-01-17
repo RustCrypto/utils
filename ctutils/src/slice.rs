@@ -43,6 +43,7 @@ where
     target_pointer_width = "64"
 ))]
 #[inline]
+#[must_use]
 pub fn ct_eq<T>(a: &[T], b: &[T]) -> Choice
 where
     T: CtEq,
