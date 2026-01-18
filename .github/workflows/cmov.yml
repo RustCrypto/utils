@@ -116,6 +116,9 @@ jobs:
             rust: 1.85.0 # MSRV
           - target: powerpc-unknown-linux-gnu
             rust: stable
+          # RISCV64
+          - target: riscv64gc-unknown-linux-gnu
+            rust: stable
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
