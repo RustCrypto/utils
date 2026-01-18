@@ -34,7 +34,7 @@ pub trait CtAssign<Rhs: ?Sized = Self> {
 /// `Self` type implementing the trait, via a blanket impl.
 ///
 /// It needs to be a separate trait from [`CtAssign`] because we need to be able to impl
-/// [`CtAssign`] for `[T]`.
+/// [`CtAssign`] for `[T]` which is `?Sized`.
 pub trait CtAssignSlice: CtAssign + Sized {
     /// Conditionally assign `src` to `dst` if `choice` is [`Choice::TRUE`], or leave it unchanged
     /// for [`Choice::FALSE`].

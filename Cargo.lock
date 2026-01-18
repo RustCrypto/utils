@@ -75,7 +75,7 @@ dependencies = [
 
 [[package]]
 name = "ctutils"
-version = "0.4.0-pre.2"
+version = "0.4.0-pre.3"
 dependencies = [
  "cmov",
  "proptest",
