@@ -95,10 +95,6 @@ impl CtAssignSlice for isize {}
 impl CtAssignSlice for usize {}
 
 /// Impl `CtAssign` using the `CtSelect` trait.
-///
-/// In cases where `CtSelect` is more straightforward to implement, but you want to use a provided
-/// implementation of `CtAssign` based on it, you can use this macro to write it for you.
-#[macro_export]
 macro_rules! impl_ct_assign_with_ct_select {
     ( $($ty:ty),+ ) => {
         $(
