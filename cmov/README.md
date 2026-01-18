@@ -37,6 +37,7 @@ on the following CPU architectures:
 - [x] `arm` (mask generation only)
 - [x] `aarch64` (`CSEL`)
 - [x] `riscv32` (mask generation only)
+- [x] `riscv64` (mask generation only)
 
 On other target architectures, a "best effort" portable fallback implementation
 based on bitwise arithmetic is used instead, augmented with tactical usage of
