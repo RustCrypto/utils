@@ -122,13 +122,13 @@ fn maskne64(x: u64, y: u64) -> u64 {
 }
 
 /// Return a `u32::MAX` mask if `condition` is non-zero, otherwise return zero for a zero input.
-#[cfg(not(target_arch = "arm"))]
+#[cfg(not(any(target_arch = "arm", target_arch = "riscv32")))]
 fn masknz32(condition: u32) -> u32 {
     masknz!(condition: u32)
 }
 
 /// Return a `u64::MAX` mask if `condition` is non-zero, otherwise return zero for a zero input.
-#[cfg(not(target_arch = "arm"))]
+#[cfg(not(any(target_arch = "arm", target_arch = "riscv32")))]
 fn masknz64(condition: u64) -> u64 {
     masknz!(condition: u64)
 }
@@ -153,8 +153,24 @@ fn masknz32(condition: u32) -> u32 {
     mask
 }
 
+/// Optimized mask generation for riscv32 targets.
+#[cfg(target_arch = "riscv32")]
+fn masknz32(condition: u32) -> u32 {
+    let mut mask: u32;
+    unsafe {
+        core::arch::asm!(
+            "seqz {0}, {1}",  // Set-if-not-zero pseudo-instruction
+            "addi {0}, {0}, -1", // Subtract 1, to have either full ones or full zeroes mask
+            lateout(reg) mask,
+            in(reg) condition,
+            options(nostack, nomem),
+        );
+    }
+    mask
+}
+
 /// 64-bit wrapper for targets that implement 32-bit mask generation in assembly.
-#[cfg(target_arch = "arm")]
+#[cfg(any(target_arch = "arm", target_arch = "riscv32"))]
 fn masknz64(condition: u64) -> u64 {
     let lo = masknz32((condition & 0xFFFF_FFFF) as u32);
     let hi = masknz32((condition >> 32) as u32);
