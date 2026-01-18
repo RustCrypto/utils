@@ -17,6 +17,15 @@ use alloc::{boxed::Box, vec::Vec};
 ///
 /// Impl'd for: [`u8`], [`u16`], [`u32`], [`u64`], [`u128`], [`usize`], [`cmp::Ordering`],
 /// [`Choice`], and arrays/slices of any type which also impls [`CtEq`].
+///
+/// This crate provides built-in implementations for the following types:
+/// - [`i8`], [`i16`], [`i32`], [`i64`], [`i128`], [`isize`]
+/// - [`u8`], [`u16`], [`u32`], [`u64`], [`u128`], [`usize`]
+/// - [`NonZeroI8`], [`NonZeroI16`], [`NonZeroI32`], [`NonZeroI64`], [`NonZeroI128`]
+/// - [`NonZeroU8`], [`NonZeroU16`], [`NonZeroU32`], [`NonZeroU64`], [`NonZeroU128`]
+/// - [`cmp::Ordering`]
+/// - [`Choice`]
+/// - `[T]` and `[T; N]` where `T` impls [`CtEqSlice`], which the previously mentioned types all do.
 pub trait CtEq<Rhs = Self>
 where
     Rhs: ?Sized,
@@ -29,6 +38,39 @@ where
     #[must_use]
     fn ct_ne(&self, other: &Rhs) -> Choice {
         !self.ct_eq(other)
+    }
+}
+
+/// Implementing this trait enables use of the [`CtEq`] trait for `[T]` where `T` is the
+/// `Self` type implementing the trait, via a blanket impl.
+///
+/// It needs to be a separate trait from [`CtEq`] because we need to be able to impl
+/// [`CtEq`] for `[T]`.
+pub trait CtEqSlice: CtEq + Sized {
+    /// Determine if `a` is equal to `b` in constant-time.
+    #[must_use]
+    fn ct_eq_slice(a: &[Self], b: &[Self]) -> Choice {
+        let mut ret = a.len().ct_eq(&b.len());
+        for (a, b) in a.iter().zip(b.iter()) {
+            ret &= a.ct_eq(b);
+        }
+        ret
+    }
+
+    /// Determine if `a` is NOT equal to `b` in constant-time.
+    #[must_use]
+    fn ct_ne_slice(a: &[Self], b: &[Self]) -> Choice {
+        !Self::ct_eq_slice(a, b)
+    }
+}
+
+impl<T: CtEqSlice> CtEq for [T] {
+    fn ct_eq(&self, other: &Self) -> Choice {
+        T::ct_eq_slice(self, other)
+    }
+
+    fn ct_ne(&self, other: &Self) -> Choice {
+        T::ct_ne_slice(self, other)
     }
 }
 
@@ -48,35 +90,28 @@ macro_rules! impl_ct_eq_with_cmov_eq {
     };
 }
 
-impl_ct_eq_with_cmov_eq!(
-    i8,
-    i16,
-    i32,
-    i64,
-    i128,
-    u8,
-    u16,
-    u32,
-    u64,
-    u128,
-    [i8],
-    [i16],
-    [i32],
-    [i64],
-    [i128],
-    [u8],
-    [u16],
-    [u32],
-    [u64],
-    [u128]
-);
+/// Impl `CtEq` and `CtEqSlice` using the `cmov::CmovEq` trait
+macro_rules! impl_ct_eq_slice_with_cmov_eq {
+    ( $($ty:ty),+ ) => {
+        $(
+            impl_ct_eq_with_cmov_eq!($ty);
 
-#[cfg(any(
-    target_pointer_width = "16",
-    target_pointer_width = "32",
-    target_pointer_width = "64"
-))]
+            impl CtEqSlice for $ty {
+                #[inline]
+                fn ct_eq_slice(a: &[Self], b: &[Self]) -> Choice {
+                    let mut ret = Choice::FALSE;
+                    a.cmoveq(b, 1, &mut ret.0);
+                    ret
+                }
+            }
+        )+
+    };
+}
+
+impl_ct_eq_slice_with_cmov_eq!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
 impl_ct_eq_with_cmov_eq!(isize, usize);
+impl CtEqSlice for isize {}
+impl CtEqSlice for usize {}
 
 /// Impl `CtEq` for `NonZero<T>` by calling `NonZero::get`.
 macro_rules! impl_ct_eq_for_nonzero_integer {
@@ -88,6 +123,8 @@ macro_rules! impl_ct_eq_for_nonzero_integer {
                     self.get().ct_eq(&other.get())
                 }
             }
+
+            impl CtEqSlice for $ty {}
         )+
     };
 }
@@ -113,6 +150,8 @@ impl CtEq for cmp::Ordering {
     }
 }
 
+impl CtEqSlice for cmp::Ordering {}
+
 impl<T, const N: usize> CtEq for [T; N]
 where
     [T]: CtEq,
@@ -122,6 +161,8 @@ where
         self.as_slice().ct_eq(other.as_slice())
     }
 }
+
+impl<T, const N: usize> CtEqSlice for [T; N] where [T]: CtEq {}
 
 #[cfg(feature = "alloc")]
 impl<T> CtEq for Box<T>

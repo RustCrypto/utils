@@ -11,11 +11,88 @@ use core::{
 #[cfg(feature = "alloc")]
 use alloc::{boxed::Box, vec::Vec};
 
+#[cfg(doc)]
+use core::num::NonZero;
+
 /// Constant-time conditional assignment: assign a given value to another based on a [`Choice`].
+///
+/// This crate provides built-in implementations for the following types:
+/// - [`i8`], [`i16`], [`i32`], [`i64`], [`i128`], [`isize`]
+/// - [`u8`], [`u16`], [`u32`], [`u64`], [`u128`], [`usize`]
+/// - [`NonZeroI8`], [`NonZeroI16`], [`NonZeroI32`], [`NonZeroI64`], [`NonZeroI128`]
+/// - [`NonZeroU8`], [`NonZeroU16`], [`NonZeroU32`], [`NonZeroU64`], [`NonZeroU128`]
+/// - [`cmp::Ordering`]
+/// - [`Choice`]
+/// - `[T]` and `[T; N]` where `T` impls [`CtAssignSlice`], which the previously mentioned
+///   types all do.
 pub trait CtAssign<Rhs: ?Sized = Self> {
-    /// Conditionally assign `rhs` to `self` if `choice` is [`Choice::TRUE`].
-    fn ct_assign(&mut self, rhs: &Rhs, choice: Choice);
+    /// Conditionally assign `src` to `self` if `choice` is [`Choice::TRUE`].
+    fn ct_assign(&mut self, src: &Rhs, choice: Choice);
 }
+
+/// Implementing this trait enables use of the [`CtAssign`] trait for `[T]` where `T` is the
+/// `Self` type implementing the trait, via a blanket impl.
+///
+/// It needs to be a separate trait from [`CtAssign`] because we need to be able to impl
+/// [`CtAssign`] for `[T]`.
+pub trait CtAssignSlice: CtAssign + Sized {
+    /// Conditionally assign `src` to `dst` if `choice` is [`Choice::TRUE`], or leave it unchanged
+    /// for [`Choice::FALSE`].
+    fn ct_assign_slice(dst: &mut [Self], src: &[Self], choice: Choice) {
+        assert_eq!(
+            dst.len(),
+            src.len(),
+            "source slice length ({}) does not match destination slice length ({})",
+            src.len(),
+            dst.len()
+        );
+
+        for (a, b) in dst.iter_mut().zip(src) {
+            a.ct_assign(b, choice);
+        }
+    }
+}
+
+impl<T: CtAssignSlice> CtAssign for [T] {
+    fn ct_assign(&mut self, src: &[T], choice: Choice) {
+        T::ct_assign_slice(self, src, choice);
+    }
+}
+
+/// Impl `CtAssign` using the `cmov::Cmov` trait
+macro_rules! impl_ct_assign_with_cmov {
+    ( $($ty:ty),+ ) => {
+        $(
+            impl CtAssign for $ty {
+                #[inline]
+                fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
+                    self.cmovnz(rhs, choice.into());
+                }
+            }
+        )+
+    };
+}
+
+/// Impl `CtAssign` and `CtAssignSlice` using the `cmov::Cmov` trait
+macro_rules! impl_ct_assign_slice_with_cmov {
+    ( $($ty:ty),+ ) => {
+        $(
+            impl_ct_assign_with_cmov!($ty);
+
+            impl CtAssignSlice for $ty {
+                #[inline]
+                fn ct_assign_slice(dst: &mut [Self], src: &[Self], choice: Choice) {
+                    dst.cmovnz(src, choice.into());
+                }
+            }
+        )+
+    };
+}
+
+impl_ct_assign_slice_with_cmov!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+impl_ct_assign_with_cmov!(isize, usize);
+impl CtAssignSlice for isize {}
+impl CtAssignSlice for usize {}
 
 /// Impl `CtAssign` using the `CtSelect` trait.
 ///
@@ -31,6 +108,8 @@ macro_rules! impl_ct_assign_with_ct_select {
                     *self = Self::ct_select(self, rhs, choice);
                 }
             }
+
+            impl CtAssignSlice for $ty {}
         )+
     };
 }
@@ -49,50 +128,6 @@ impl_ct_assign_with_ct_select!(
     NonZeroU128
 );
 
-/// Impl `CtAssign` using the `cmov::Cmov` trait
-macro_rules! impl_ct_assign_with_cmov {
-    ( $($ty:ty),+ ) => {
-        $(
-            impl CtAssign for $ty {
-                #[inline]
-                fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
-                    self.cmovnz(rhs, choice.into());
-                }
-            }
-        )+
-    };
-}
-
-impl_ct_assign_with_cmov!(
-    i8,
-    i16,
-    i32,
-    i64,
-    i128,
-    u8,
-    u16,
-    u32,
-    u64,
-    u128,
-    [i8],
-    [i16],
-    [i32],
-    [i64],
-    [i128],
-    [u8],
-    [u16],
-    [u32],
-    [u64],
-    [u128]
-);
-
-#[cfg(any(
-    target_pointer_width = "16",
-    target_pointer_width = "32",
-    target_pointer_width = "64"
-))]
-impl_ct_assign_with_cmov!(isize, usize);
-
 impl<T, const N: usize> CtAssign for [T; N]
 where
     [T]: CtAssign,
@@ -102,6 +137,8 @@ where
         self.as_mut_slice().ct_assign(rhs, choice);
     }
 }
+
+impl<T, const N: usize> CtAssignSlice for [T; N] where [T]: CtAssign {}
 
 #[cfg(feature = "alloc")]
 impl<T> CtAssign for Box<T>
