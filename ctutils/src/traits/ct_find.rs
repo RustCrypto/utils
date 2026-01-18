@@ -1,8 +1,5 @@
 use crate::{Choice, CtAssign, CtOption};
 
-#[cfg(feature = "alloc")]
-use alloc::{boxed::Box, vec::Vec};
-
 #[cfg(doc)]
 use core::iter::Iterator;
 
@@ -54,30 +51,35 @@ where
 }
 
 #[cfg(feature = "alloc")]
-impl<T> CtFind<T> for Box<[T]>
-where
-    T: CtAssign + Default,
-{
-    #[inline]
-    fn ct_find<P>(&self, predicate: P) -> CtOption<T>
-    where
-        P: Fn(&T) -> Choice,
-    {
-        (**self).ct_find(predicate)
-    }
-}
+mod alloc {
+    use super::{Choice, CtAssign, CtFind, CtOption};
+    use ::alloc::{boxed::Box, vec::Vec};
 
-#[cfg(feature = "alloc")]
-impl<T> CtFind<T> for Vec<T>
-where
-    T: CtAssign + Default,
-{
-    #[inline]
-    fn ct_find<P>(&self, predicate: P) -> CtOption<T>
+    impl<T> CtFind<T> for Box<[T]>
     where
-        P: Fn(&T) -> Choice,
+        T: CtAssign + Default,
     {
-        self.as_slice().ct_find(predicate)
+        #[inline]
+        fn ct_find<P>(&self, predicate: P) -> CtOption<T>
+        where
+            P: Fn(&T) -> Choice,
+        {
+            (**self).ct_find(predicate)
+        }
+    }
+
+    #[cfg(feature = "alloc")]
+    impl<T> CtFind<T> for Vec<T>
+    where
+        T: CtAssign + Default,
+    {
+        #[inline]
+        fn ct_find<P>(&self, predicate: P) -> CtOption<T>
+        where
+            P: Fn(&T) -> Choice,
+        {
+            self.as_slice().ct_find(predicate)
+        }
     }
 }
 

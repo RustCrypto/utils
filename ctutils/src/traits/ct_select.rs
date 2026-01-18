@@ -9,11 +9,6 @@ use core::{
 
 #[cfg(feature = "subtle")]
 use crate::CtOption;
-#[cfg(feature = "alloc")]
-use {
-    crate::CtAssignSlice,
-    alloc::{boxed::Box, vec::Vec},
-};
 
 /// Constant-time selection: choose between two values based on a given [`Choice`].
 ///
@@ -154,20 +149,6 @@ impl CtSelect for cmp::Ordering {
     }
 }
 
-#[cfg(feature = "alloc")]
-impl<T: Clone + CtAssign> CtSelectUsingCtAssign for Box<T> {}
-
-#[cfg(feature = "alloc")]
-impl<T> CtSelectUsingCtAssign for Box<[T]>
-where
-    T: Clone,
-    [T]: CtAssign,
-{
-}
-
-#[cfg(feature = "alloc")]
-impl<T: Clone + CtAssignSlice> CtSelectUsingCtAssign for Vec<T> {}
-
 #[cfg(feature = "subtle")]
 impl CtSelect for subtle::Choice {
     #[inline]
@@ -189,6 +170,26 @@ where
             .ct_select(&CtOption::from(*other), choice)
             .into()
     }
+}
+
+#[cfg(feature = "alloc")]
+mod alloc {
+    use super::CtSelectUsingCtAssign;
+    use crate::{CtAssign, CtAssignSlice};
+    use ::alloc::{boxed::Box, vec::Vec};
+
+    impl<T: Clone + CtAssign> CtSelectUsingCtAssign for Box<T> {}
+
+    #[cfg(feature = "alloc")]
+    impl<T> CtSelectUsingCtAssign for Box<[T]>
+    where
+        T: Clone,
+        [T]: CtAssign,
+    {
+    }
+
+    #[cfg(feature = "alloc")]
+    impl<T: Clone + CtAssignSlice> CtSelectUsingCtAssign for Vec<T> {}
 }
 
 #[cfg(test)]
