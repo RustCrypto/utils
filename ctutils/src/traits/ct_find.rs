@@ -15,6 +15,7 @@ pub trait CtFind<T: CtAssign> {
     ///
     /// The first item where `predicate` returns [`Choice::TRUE`] is selected, or the [`CtOption`]
     /// equivalent of `None` is returned if the `predicate` returns [`Choice::FALSE`] for all items.
+    #[must_use]
     fn ct_find<P>(&self, predicate: P) -> CtOption<T>
     where
         P: Fn(&T) -> Choice;

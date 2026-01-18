@@ -19,6 +19,7 @@ pub trait CtSelect: Sized {
     /// # Returns
     /// - `self` if `choice` is [`Choice::FALSE`].
     /// - `other` if `choice` is [`Choice::TRUE`].
+    #[must_use]
     fn ct_select(&self, other: &Self, choice: Choice) -> Self;
 
     /// Conditionally swap `self` and `other` if `choice` is [`Choice::TRUE`].

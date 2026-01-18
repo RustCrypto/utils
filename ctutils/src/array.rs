@@ -23,6 +23,7 @@ where
 /// Generic implementation of constant-time equality testing for arrays which works with any type
 /// which impls `CtEq`. Useful in the event there isn't a `CtEq` impl for `[T; N]`.
 #[inline]
+#[must_use]
 pub fn ct_eq<T, const N: usize>(a: &[T; N], b: &[T; N]) -> Choice
 where
     T: CtEq,
@@ -42,6 +43,7 @@ where
 /// Unfortunately we can't provide this as a trait impl without specialization, since it would
 /// overlap with the optimized type-specific impls we provide.
 #[inline]
+#[must_use]
 pub fn ct_select<T, const N: usize>(a: &[T; N], b: &[T; N], choice: Choice) -> [T; N]
 where
     T: CtSelect,

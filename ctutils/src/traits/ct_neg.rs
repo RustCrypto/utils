@@ -8,6 +8,7 @@ use core::num::{
 pub trait CtNeg: Sized {
     /// Conditionally negate `self`, returning `-self` if `choice` is [`Choice::TRUE`], or `self`
     /// otherwise.
+    #[must_use]
     fn ct_neg(&self, choice: Choice) -> Self;
 
     /// Conditionally negate `self` in-place, replacing it with `-self` if `choice` is

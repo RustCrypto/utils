@@ -49,18 +49,22 @@ impl<T> CtOption<T> {
     /// Construct a new [`CtOption`], with a [`Choice`] parameter `is_some` as a stand-in for
     /// `Some` or `None` enum variants of a typical [`Option`] type.
     #[inline]
+    #[must_use]
     pub const fn new(value: T, is_some: Choice) -> CtOption<T> {
         Self { value, is_some }
     }
 
     /// Construct a new [`CtOption`] where `self.is_some()` is [`Choice::TRUE`].
     #[inline]
+    #[must_use]
     pub const fn some(value: T) -> CtOption<T> {
         Self::new(value, Choice::TRUE)
     }
 
     /// Construct a new [`CtOption`] with the [`Default`] value, and where `self.is_some()` is
     /// [`Choice::FALSE`].
+    #[inline]
+    #[must_use]
     pub fn none() -> CtOption<T>
     where
         T: Default,
@@ -70,6 +74,7 @@ impl<T> CtOption<T> {
 
     /// Convert from a `&mut CtOption<T>` to `CtOption<&mut T>`.
     #[inline]
+    #[must_use]
     pub const fn as_mut(&mut self) -> CtOption<&mut T> {
         CtOption {
             value: &mut self.value,
@@ -79,6 +84,7 @@ impl<T> CtOption<T> {
 
     /// Convert from a `&CtOption<T>` to `CtOption<&T>`.
     #[inline]
+    #[must_use]
     pub const fn as_ref(&self) -> CtOption<&T> {
         CtOption {
             value: &self.value,
@@ -88,6 +94,8 @@ impl<T> CtOption<T> {
 
     /// Convert from `CtOption<T>` (or `&CtOption<T>`) to `CtOption<&T::Target>`, for types which
     /// impl the [`Deref`] trait.
+    #[inline]
+    #[must_use]
     pub fn as_deref(&self) -> CtOption<&T::Target>
     where
         T: Deref,
@@ -97,6 +105,8 @@ impl<T> CtOption<T> {
 
     /// Convert from `CtOption<T>` (or `&mut CtOption<T>`) to `CtOption<&mut T::Target>`, for types
     /// which impl the [`DerefMut`] trait.
+    #[inline]
+    #[must_use]
     pub fn as_deref_mut(&mut self) -> CtOption<&mut T::Target>
     where
         T: DerefMut,
@@ -110,6 +120,7 @@ impl<T> CtOption<T> {
     /// In the event `self.is_some()` is [`Choice::FALSE`], panics with a custom panic message
     /// provided as the `msg` argument.
     #[inline]
+    #[must_use]
     #[track_caller]
     pub fn expect(self, msg: &str) -> T {
         assert!(self.is_some().to_bool(), "{}", msg);
@@ -127,6 +138,7 @@ impl<T> CtOption<T> {
     // TODO(tarcieri): get rid of this when we can make `expect` a `const fn`
     // (needs `const_precise_live_drops`)
     #[inline]
+    #[must_use]
     #[track_caller]
     pub const fn expect_copied(self, msg: &str) -> T
     where
@@ -143,6 +155,7 @@ impl<T> CtOption<T> {
     // TODO(tarcieri): get rid of this when we can make `expect` a `const fn`
     // (needs `const_precise_live_drops`)
     #[inline]
+    #[must_use]
     #[track_caller]
     pub const fn expect_ref(&self, msg: &str) -> &T {
         // TODO(tarcieri): use `self.is_some().to_bool()` when MSRV is 1.86
@@ -234,6 +247,7 @@ impl<T> CtOption<T> {
     /// Returns `optb` if `self.is_some()` is [`Choice::TRUE`], otherwise returns a [`CtOption`]
     /// where `self.is_some()` is [`Choice::FALSE`].
     #[inline]
+    #[must_use]
     pub fn and<U>(self, mut optb: CtOption<U>) -> CtOption<U> {
         optb.is_some &= self.is_some;
         optb
@@ -248,6 +262,7 @@ impl<T> CtOption<T> {
     /// (e.g. if the [`CtOption`] was constructed with a supplied placeholder value and
     /// [`Choice::FALSE`], the placeholder value will be provided).
     #[inline]
+    #[must_use]
     pub fn and_then<U, F>(self, f: F) -> CtOption<U>
     where
         F: FnOnce(T) -> CtOption<U>,
@@ -271,6 +286,7 @@ impl<T> CtOption<T> {
     /// take great care to ensure that `self.is_some()` is checked elsewhere.
     /// </div>
     #[inline]
+    #[must_use]
     pub const fn as_inner_unchecked(&self) -> &T {
         &self.value
     }
@@ -281,6 +297,7 @@ impl<T> CtOption<T> {
     /// It updates it to be [`Choice::FALSE`] in the event the returned choice is also false.
     /// If it was [`Choice::FALSE`] to begin with, it will unconditionally remain that way.
     #[inline]
+    #[must_use]
     pub fn filter<P>(mut self, predicate: P) -> Self
     where
         P: FnOnce(&T) -> Choice,
@@ -291,6 +308,7 @@ impl<T> CtOption<T> {
 
     /// Apply an additional [`Choice`] requirement to `is_some`.
     #[inline]
+    #[must_use]
     pub const fn filter_by(mut self, is_some: Choice) -> Self {
         self.is_some = self.is_some.and(is_some);
         self
@@ -299,6 +317,7 @@ impl<T> CtOption<T> {
     /// Maps a `CtOption<T>` to a `CtOption<U>` by unconditionally applying a function to the
     /// contained `value`, but returning a new option value which inherits `self.is_some()`.
     #[inline]
+    #[must_use]
     pub fn map<U, F>(self, f: F) -> CtOption<U>
     where
         F: FnOnce(T) -> U,
@@ -322,6 +341,7 @@ impl<T> CtOption<T> {
     /// `U::default()` using the [`Default`] trait, and returning it in the event `self.is_some()`
     /// is [`Choice::FALSE`].
     #[inline]
+    #[must_use]
     pub fn map_or_default<U, F>(self, f: F) -> U
     where
         U: CtSelect + Default,
@@ -364,6 +384,7 @@ impl<T> CtOption<T> {
 
     /// Returns `self` if `self.is_some()` is [`Choice::TRUE`], otherwise returns `optb`.
     #[inline]
+    #[must_use]
     pub fn or(self, optb: CtOption<T>) -> CtOption<T>
     where
         T: CtSelect,
@@ -388,6 +409,7 @@ impl<T> CtOption<T> {
     /// take great care to ensure that `self.is_some()` is checked elsewhere.
     /// </div>
     #[inline]
+    #[must_use]
     pub const fn to_inner_unchecked(self) -> T
     where
         T: Copy,
@@ -410,6 +432,8 @@ impl<T> CtOption<T> {
     /// # Panics
     /// In the event `self.is_some()` is [`Choice::FALSE`].
     #[inline]
+    #[must_use]
+    #[track_caller]
     pub fn unwrap(self) -> T {
         assert!(
             self.is_some.to_bool(),
@@ -421,6 +445,7 @@ impl<T> CtOption<T> {
     /// Return the contained value in the event `self.is_some()` is [`Choice::TRUE`], or if not,
     /// uses a provided default.
     #[inline]
+    #[must_use]
     pub fn unwrap_or(self, default: T) -> T
     where
         T: CtSelect,
@@ -432,6 +457,7 @@ impl<T> CtOption<T> {
     /// the contained value if `self.is_some()` is [`Choice::TRUE`], or if it's [`Choice::FALSE`]
     /// returns the previously computed default.
     #[inline]
+    #[must_use]
     pub fn unwrap_or_default(self) -> T
     where
         T: CtSelect + Default,
@@ -443,6 +469,7 @@ impl<T> CtOption<T> {
     /// the event exactly one of them has `self.is_some()` set to [`Choice::TRUE`], or else returns
     /// a [`CtOption`] with `self.is_some()` set to [`Choice::FALSE`].
     #[inline]
+    #[must_use]
     pub fn xor(self, optb: CtOption<T>) -> CtOption<T>
     where
         T: CtSelect,
@@ -694,7 +721,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn expect_none() {
-        NONE.expect("should panic");
+        let _ = NONE.expect("should panic");
     }
 
     #[test]
@@ -834,7 +861,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn unwrap_none() {
-        NONE.unwrap();
+        let _ = NONE.unwrap();
     }
 
     #[test]

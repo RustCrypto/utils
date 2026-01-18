@@ -51,24 +51,28 @@ impl Choice {
 
     /// Apply an `and` conditional to the given [`Choice`]s.
     #[inline]
+    #[must_use]
     pub const fn and(self, rhs: Choice) -> Choice {
         Self(self.0 & rhs.0)
     }
 
     /// Apply an `or` conditional to the given [`Choice`]s.
     #[inline]
+    #[must_use]
     pub const fn or(self, rhs: Choice) -> Choice {
         Self(self.0 | rhs.0)
     }
 
     /// Apply an `xor` conditional to the given [`Choice`]s.
     #[inline]
+    #[must_use]
     pub const fn xor(self, rhs: Choice) -> Choice {
         Self(self.0 ^ rhs.0)
     }
 
     /// Compute the boolean inverse of `self`.
     #[inline]
+    #[must_use]
     pub const fn not(self) -> Choice {
         // NOTE: assumes self.0 is `0` or `1` as checked in constructor
         Self(self.0 ^ 1)
@@ -80,12 +84,14 @@ impl Choice {
 
     /// `const fn` equality operation.
     #[inline]
+    #[must_use]
     pub const fn eq(self, other: Self) -> Self {
         Self::ne(self, other).not()
     }
 
     /// `const fn` not equal operation.
     #[inline]
+    #[must_use]
     pub const fn ne(self, other: Self) -> Self {
         Self::xor(self, other)
     }

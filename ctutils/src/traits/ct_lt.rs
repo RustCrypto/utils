@@ -7,6 +7,7 @@ use core::{
 /// Constant time less than.
 pub trait CtLt {
     /// Compute whether `self < other` in constant time.
+    #[must_use]
     fn ct_lt(&self, other: &Self) -> Choice;
 }
 
