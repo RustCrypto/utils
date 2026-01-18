@@ -25,9 +25,53 @@
 //!     64      => { pub type Word = u64; }
 //! }
 //! ```
+//!
+//! You can also use the shortened form of the above syntax which implicitly promotes 16-bit
+//! platforms to 32-bit ones:
+//!
+//! ```
+//! cpubits::cpubits! {
+//!     32 => { pub type Word = u32; }
+//!     64 => { pub type Word = u64; }
+//! }
+//! ```
+//!
+//! 32-bit and 64-bit platforms can also be combined to differentiate them from 16-bit ones, e.g.
+//! `16 => { ... }, 32 | 64 => { ... }`, and `32 | 64` can be shortened to just `32` in such a case.
 
 #[macro_export]
 macro_rules! cpubits {
+    (
+        16 => { $( $tokens16:tt )* }
+        32 => { $( $tokens32:tt )* }
+    ) => {
+        $crate::cpubits! {
+            16 => { $( $tokens16 )* }
+            32 | 64 => { $( $tokens32 )* }
+        }
+    };
+
+    (
+        32 => { $( $tokens32:tt )* }
+        64 => { $( $tokens64:tt )* }
+    ) => {
+        $crate::cpubits! {
+            16 | 32 => { $( $tokens32 )* }
+            64 => { $( $tokens64 )* }
+        }
+    };
+
+    (
+        16 => { $( $tokens16:tt )* }
+        32 | 64 => { $( $tokens32:tt )* }
+    ) => {
+        $crate::cpubits! {
+            16 => { $( $tokens16 )* }
+            32 => { $( $tokens32 )* }
+            64 => { $( $tokens32 )* }
+        }
+    };
+
     (
         16 | 32 => { $( $tokens32:tt )* }
         64 => { $( $tokens64:tt )* }
