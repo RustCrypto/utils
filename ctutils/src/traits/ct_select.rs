@@ -101,7 +101,9 @@ macro_rules! impl_ct_select_with_ct_assign {
     };
 }
 
-impl_ct_select_with_ct_assign!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+impl_ct_select_with_ct_assign!(
+    i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize
+);
 
 /// Impl `CtSelect` for `NonZero<T>` by calling the `CtSelect` impl for `T`.
 macro_rules! impl_ct_select_for_nonzero_integer {
@@ -134,38 +136,6 @@ impl_ct_select_for_nonzero_integer!(
     NonZeroU64,
     NonZeroU128
 );
-
-#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
-impl CtSelect for isize {
-    #[cfg(target_pointer_width = "32")]
-    #[inline]
-    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        (*self as i32).ct_select(&(*other as i32), choice) as isize
-    }
-
-    #[cfg(target_pointer_width = "64")]
-    #[allow(clippy::cast_possible_truncation)]
-    #[inline]
-    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        (*self as i64).ct_select(&(*other as i64), choice) as isize
-    }
-}
-
-#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
-impl CtSelect for usize {
-    #[cfg(target_pointer_width = "32")]
-    #[inline]
-    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        (*self as u32).ct_select(&(*other as u32), choice) as usize
-    }
-
-    #[cfg(target_pointer_width = "64")]
-    #[allow(clippy::cast_possible_truncation)]
-    #[inline]
-    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        (*self as u64).ct_select(&(*other as u64), choice) as usize
-    }
-}
 
 impl CtSelect for cmp::Ordering {
     fn ct_select(&self, other: &Self, choice: Choice) -> Self {

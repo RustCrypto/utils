@@ -99,8 +99,6 @@ mod tests {
             assert!(EXAMPLE.ct_lookup(4u32).is_none().to_bool());
         }
 
-        // usize only has a `CtEq` impl on 32-bit and 64-bit targets currently
-        #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
         #[test]
         fn ct_lookup_usize() {
             assert_eq!(EXAMPLE.ct_lookup(0usize).unwrap(), 1);
@@ -125,8 +123,6 @@ mod tests {
             assert!(EXAMPLE.ct_lookup(4u32).is_none().to_bool());
         }
 
-        // usize only has a `CtEq` impl on 32-bit and 64-bit targets currently
-        #[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
         #[test]
         fn ct_lookup_usize() {
             assert_eq!(EXAMPLE.ct_lookup(0usize).unwrap(), 1);
