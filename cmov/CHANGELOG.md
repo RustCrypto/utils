@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 (2026-01-17)
+### Added
+- Optimized `CmovEq` for `[u8]` ([#1356])
+- Optimized `CmovEq` for `[u16]` ([#1370])
+- Impl `Cmov`/`CmovEq` for slices of unsigned integers ([#1370], [#1372])
+- Impl `Cmov`/`CmovEq` for slices of signed integers ([#1373])
+- Impl `Cmov`/`CmovEq` for `isize`/`usize` ([#1375])
+
+### Changed
+- Impls of `Cmov`/`CmovEq` for `[T; N]` are now bounded on `[T]: Cmov(Eq)` ([#1372])
+
+### Removed
+- Generic impl of `CmovEq` for `[T]` where `T: CmovEq` in favor of specialized impls ([#1356])
+
+[#1356]: https://github.com/RustCrypto/utils/pull/1356
+[#1370]: https://github.com/RustCrypto/utils/pull/1370
+[#1372]: https://github.com/RustCrypto/utils/pull/1372
+[#1373]: https://github.com/RustCrypto/utils/pull/1373
+[#1375]: https://github.com/RustCrypto/utils/pull/1375
+
 ## 0.4.6 (2026-01-16)
 ### Added
 - Optimized `Cmov` for `[u8; N]` ([#1350])
