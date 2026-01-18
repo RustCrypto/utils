@@ -1,0 +1,16 @@
+[package]
+name = "cpubits"
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+license = "MIT OR Apache-2.0"
+documentation = "https://docs.rs/cpubits"
+repository = "https://github.com/RustCrypto/utils"
+categories = []
+edition = "2024"
+rust-version = "1.85"
+readme = "README.md"
+description = """
+Compile-time detection heuristics for the optimal word size to use for the
+target CPU, which in some cases may differ from its address size a.k.a.
+`target_pointer_width`. Implemented as `macro_rules!`
+"""
