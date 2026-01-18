@@ -10,8 +10,9 @@
 Conditional move CPU intrinsics which are guaranteed on major platforms to execute in constant-time
 and not be rewritten as branches by the compiler.
 
-Provides wrappers for the [CMOV family] of instructions on x86/x86_64 and the [CSEL] instruction on
-AArch64 CPUs, along with a portable fallback implementation for other CPU architectures.
+Provides wrappers for the [CMOV family] of instructions on `x86`/`x86_64` and the [CSEL]
+instruction on `aarch64` CPUs, along with a portable fallback implementation for other CPU
+architectures.
 
 ## About
 
@@ -32,8 +33,7 @@ rewritten by e.g. LLVM's architecture-specific lowerings, such as the
 This crate provides guaranteed constant-time operation using inline `asm!`
 on the following CPU architectures:
 
-- [x] `x86` (`CMOVZ`, `CMOVNZ`)
-- [x] `x86_64` (`CMOVZ`, `CMOVNZ`)
+- [x] `x86`/`x86_64` (`CMOVZ`, `CMOVNZ`)
 - [x] `arm` (mask generation only)
 - [x] `aarch64` (`CSEL`)
 - [x] `riscv32` (mask generation only)
