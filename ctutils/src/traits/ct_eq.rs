@@ -45,7 +45,7 @@ where
 /// `Self` type implementing the trait, via a blanket impl.
 ///
 /// It needs to be a separate trait from [`CtEq`] because we need to be able to impl
-/// [`CtEq`] for `[T]`.
+/// [`CtEq`] for `[T]` which is `?Sized`.
 pub trait CtEqSlice: CtEq + Sized {
     /// Determine if `a` is equal to `b` in constant-time.
     #[must_use]
