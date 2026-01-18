@@ -1,4 +1,4 @@
-use crate::{Choice, CtAssign, CtEq, CtSelect};
+use crate::{Choice, CtAssign, CtAssignSlice, CtEq, CtEqSlice, CtSelect};
 use core::ops::{Deref, DerefMut};
 
 /// Helper macro for providing behavior like the [`CtOption::map`] combinator that works in
@@ -565,6 +565,7 @@ impl<T: CtAssign> CtAssign for CtOption<T> {
         self.is_some.ct_assign(&other.is_some, choice);
     }
 }
+impl<T: CtAssign> CtAssignSlice for CtOption<T> {}
 
 impl<T: CtEq> CtEq for CtOption<T> {
     #[inline]
@@ -574,11 +575,14 @@ impl<T: CtEq> CtEq for CtOption<T> {
     }
 }
 
+impl<T: CtEq> CtEqSlice for CtOption<T> {}
+
 impl<T: CtSelect> CtSelect for CtOption<T> {
     fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        let value = self.value.ct_select(&other.value, choice);
-        let is_some = self.is_some.ct_select(&other.is_some, choice);
-        CtOption::new(value, is_some)
+        Self {
+            value: self.value.ct_select(&other.value, choice),
+            is_some: self.is_some.ct_select(&other.is_some, choice),
+        }
     }
 }
 

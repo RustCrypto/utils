@@ -1,5 +1,8 @@
-use crate::{CtAssign, CtEq, CtSelect};
+use crate::{CtAssign, CtAssignSlice, CtEq, CtEqSlice, CtSelectUsingCtAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
+
+#[cfg(feature = "subtle")]
+use crate::CtSelect;
 
 /// Bitwise less-than-or equal: returns `1` if `x <= y`, and otherwise returns `0`.
 ///
@@ -529,6 +532,8 @@ impl CtAssign for Choice {
         self.0.ct_assign(&other.0, choice);
     }
 }
+impl CtAssignSlice for Choice {}
+impl CtSelectUsingCtAssign for Choice {}
 
 impl CtEq for Choice {
     #[inline]
@@ -536,13 +541,7 @@ impl CtEq for Choice {
         self.0.ct_eq(&other.0)
     }
 }
-
-impl CtSelect for Choice {
-    #[inline]
-    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        Choice(self.0.ct_select(&other.0, choice))
-    }
-}
+impl CtEqSlice for Choice {}
 
 /// DEPRECATED: this exists to aid migrating code from `subtle`. Use `Choice::from_u8_lsb` instead.
 ///
