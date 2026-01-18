@@ -201,14 +201,17 @@ macro_rules! impl_cmov_traits_for_size_type {
             target_pointer_width = "32",
             target_pointer_width = "64"
         ))]
+        #[cfg_attr(docsrs, doc(cfg(true)))]
         impl Cmov for $size {
             #[cfg(target_pointer_width = "16")]
+            #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovnz(&mut self, other: &Self, condition: Condition) {
                 (*self as $int16).cmovnz(&(*other as $int16), condition);
             }
 
             #[cfg(target_pointer_width = "32")]
+            #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovnz(&mut self, other: &Self, condition: Condition) {
                 (*self as $int32).cmovnz(&(*other as $int32), condition);
@@ -227,14 +230,17 @@ macro_rules! impl_cmov_traits_for_size_type {
             target_pointer_width = "32",
             target_pointer_width = "64"
         ))]
+        #[cfg_attr(docsrs, doc(cfg(true)))]
         impl CmovEq for $size {
             #[cfg(target_pointer_width = "16")]
+            #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
                 (*self as $int16).cmovne(&(*rhs as $int16), input, output);
             }
 
             #[cfg(target_pointer_width = "32")]
+            #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
                 (*self as $int32).cmovne(&(*rhs as $int32), input, output);
