@@ -12,7 +12,20 @@ use crate::CtOption;
 #[cfg(feature = "alloc")]
 use alloc::{boxed::Box, vec::Vec};
 
-/// Constant-time selection: pick between two values based on a given [`Choice`].
+#[cfg(doc)]
+use crate::CtAssignSlice;
+
+/// Constant-time selection: choose between two values based on a given [`Choice`].
+///
+/// This crate provides built-in implementations for the following types:
+/// - [`i8`], [`i16`], [`i32`], [`i64`], [`i128`], [`isize`]
+/// - [`u8`], [`u16`], [`u32`], [`u64`], [`u128`], [`usize`]
+/// - [`NonZeroI8`], [`NonZeroI16`], [`NonZeroI32`], [`NonZeroI64`], [`NonZeroI128`]
+/// - [`NonZeroU8`], [`NonZeroU16`], [`NonZeroU32`], [`NonZeroU64`], [`NonZeroU128`]
+/// - [`cmp::Ordering`]
+/// - [`Choice`]
+/// - `[T; N]` where `T` impls [`CtSelectArray`], which the previously mentioned types all do,
+///   as well as any type which impls [`Clone`] + [`CtAssignSlice`] + [`CtSelect`].
 pub trait CtSelect: Sized {
     /// Select between `self` and `other` based on `choice`, returning a copy of the value.
     ///
@@ -27,6 +40,42 @@ pub trait CtSelect: Sized {
         let tmp = self.ct_select(other, choice);
         *other = Self::ct_select(other, self, choice);
         *self = tmp;
+    }
+}
+
+/// Implementing this trait enables use of the [`CtSelect`] trait to construct `[T; N]` where `T`
+/// is the `Self` type implementing the trait, via a blanket impl.
+///
+/// All types which impl [`Clone`] + [`CtAssignSlice`] + [`CtSelect`] will receive a blanket impl
+/// of this trait and thus also be usable with the [`CtSelect`] impl for `[T; N]`.
+pub trait CtSelectArray<const N: usize>: CtSelect + Sized {
+    /// Select between `a` and `b` in constant-time based on `choice`.
+    #[must_use]
+    fn ct_select_array(a: &[Self; N], b: &[Self; N], choice: Choice) -> [Self; N] {
+        core::array::from_fn(|i| Self::ct_select(&a[i], &b[i], choice))
+    }
+}
+
+impl<T, const N: usize> CtSelect for [T; N]
+where
+    T: CtSelectArray<N>,
+{
+    #[inline]
+    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        T::ct_select_array(self, other, choice)
+    }
+}
+
+impl<T, const N: usize> CtSelectArray<N> for T
+where
+    T: Clone + CtSelect,
+    [T]: CtAssign,
+{
+    #[inline]
+    fn ct_select_array(a: &[Self; N], b: &[Self; N], choice: Choice) -> [Self; N] {
+        let mut ret = a.clone();
+        ret.ct_assign(b, choice);
+        ret
     }
 }
 
@@ -136,19 +185,6 @@ impl CtSelect for cmp::Ordering {
         unsafe {
             *(&raw const ret).cast::<Self>()
         }
-    }
-}
-
-impl<T, const N: usize> CtSelect for [T; N]
-where
-    T: Clone,
-    [T]: CtAssign,
-{
-    #[inline]
-    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        let mut ret = self.clone();
-        ret.ct_assign(other, choice);
-        ret
     }
 }
 

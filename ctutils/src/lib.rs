@@ -96,9 +96,6 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
-pub mod array;
-pub mod slice;
-
 mod choice;
 mod ct_option;
 mod traits;
@@ -106,6 +103,12 @@ mod traits;
 pub use choice::Choice;
 pub use ct_option::CtOption;
 pub use traits::{
-    ct_assign::CtAssign, ct_eq::CtEq, ct_find::CtFind, ct_gt::CtGt, ct_lookup::CtLookup,
-    ct_lt::CtLt, ct_neg::CtNeg, ct_select::CtSelect,
+    ct_assign::{CtAssign, CtAssignSlice},
+    ct_eq::{CtEq, CtEqSlice},
+    ct_find::CtFind,
+    ct_gt::CtGt,
+    ct_lookup::CtLookup,
+    ct_lt::CtLt,
+    ct_neg::CtNeg,
+    ct_select::{CtSelect, CtSelectArray},
 };
