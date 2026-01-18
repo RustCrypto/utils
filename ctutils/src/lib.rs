@@ -110,5 +110,5 @@ pub use traits::{
     ct_lookup::CtLookup,
     ct_lt::CtLt,
     ct_neg::CtNeg,
-    ct_select::{CtSelect, CtSelectArray},
+    ct_select::{CtSelect, CtSelectArray, CtSelectUsingCtAssign},
 };

@@ -10,10 +10,10 @@ use core::{
 #[cfg(feature = "subtle")]
 use crate::CtOption;
 #[cfg(feature = "alloc")]
-use alloc::{boxed::Box, vec::Vec};
-
-#[cfg(doc)]
-use crate::CtAssignSlice;
+use {
+    crate::CtAssignSlice,
+    alloc::{boxed::Box, vec::Vec},
+};
 
 /// Constant-time selection: choose between two values based on a given [`Choice`].
 ///
@@ -79,26 +79,22 @@ where
     }
 }
 
-/// Impl `CtSelect` using the `CtAssign` trait.
-///
-/// In cases where `CtAssign` is more straightforward to implement, but you want to use a provided
-/// implementation of `CtSelect` based on it, you can use this macro to write it for you.
-///
-/// Requires the provided type(s) impl `Clone`.
-#[macro_export]
+/// Marker trait which enables a blanket impl of [`CtSelect`] for types which also impl
+/// [`Clone`] + [`CtAssign`].
+pub trait CtSelectUsingCtAssign: Clone + CtAssign {}
+
+impl<T: CtSelectUsingCtAssign> CtSelect for T {
+    #[inline]
+    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
+        let mut ret = self.clone();
+        ret.ct_assign(other, choice);
+        ret
+    }
+}
+
+/// Macro to write impls of `CtSelectUsingCtAssign`.
 macro_rules! impl_ct_select_with_ct_assign {
-    ( $($ty:ty),+ ) => {
-        $(
-            impl CtSelect for $ty {
-                #[inline]
-                fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-                    let mut ret = self.clone();
-                    ret.ct_assign(other, choice);
-                    ret
-                }
-            }
-        )+
-    };
+    ( $($ty:ty),+ ) => { $(impl CtSelectUsingCtAssign for $ty {})+ };
 }
 
 impl_ct_select_with_ct_assign!(
@@ -159,43 +155,18 @@ impl CtSelect for cmp::Ordering {
 }
 
 #[cfg(feature = "alloc")]
-impl<T> CtSelect for Box<T>
-where
-    T: CtSelect,
-{
-    #[inline]
-    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        Box::new(T::ct_select(&**self, &**other, choice))
-    }
-}
+impl<T: Clone + CtAssign> CtSelectUsingCtAssign for Box<T> {}
 
 #[cfg(feature = "alloc")]
-impl<T> CtSelect for Box<[T]>
+impl<T> CtSelectUsingCtAssign for Box<[T]>
 where
     T: Clone,
     [T]: CtAssign,
 {
-    #[inline]
-    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        let mut ret = self.clone();
-        ret.ct_assign(other, choice);
-        ret
-    }
 }
 
 #[cfg(feature = "alloc")]
-impl<T> CtSelect for Vec<T>
-where
-    T: Clone,
-    [T]: CtAssign,
-{
-    #[inline]
-    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        let mut ret = self.clone();
-        ret.ct_assign(other, choice);
-        ret
-    }
-}
+impl<T: Clone + CtAssignSlice> CtSelectUsingCtAssign for Vec<T> {}
 
 #[cfg(feature = "subtle")]
 impl CtSelect for subtle::Choice {
