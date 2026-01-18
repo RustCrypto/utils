@@ -727,13 +727,13 @@ mod tests {
     #[test]
     fn into_option() {
         assert_eq!(SOME.into_option(), Some(VALUE));
-        assert_eq!(NONE.into_option(), None)
+        assert_eq!(NONE.into_option(), None);
     }
 
     #[test]
     fn into_option_copied() {
         assert_eq!(SOME.into_option_copied(), Some(VALUE));
-        assert_eq!(NONE.into_option_copied(), None)
+        assert_eq!(NONE.into_option_copied(), None);
     }
 
     #[test]
