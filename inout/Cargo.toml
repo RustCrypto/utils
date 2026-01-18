@@ -16,5 +16,8 @@ description = "Custom reference types for code generic over in-place and buffer-
 hybrid-array = "0.4"
 block-padding = { version = "0.4.2", path = "../block-padding", optional = true }
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 all-features = true

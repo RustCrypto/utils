@@ -7,7 +7,8 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/8f1a9894/logo.svg"
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![warn(missing_docs)]
+#![allow(missing_debug_implementations)] // TODO(tarcieri): add missing `Debug` impls
+#![allow(clippy::undocumented_unsafe_blocks)] // TODO(tarcieri): document all unsafe blocks
 
 #[cfg(feature = "block-padding")]
 pub use block_padding;

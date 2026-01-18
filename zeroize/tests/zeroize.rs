@@ -1,5 +1,13 @@
 //! zeroize integration tests.
 
+#![allow(
+    clippy::missing_safety_doc,
+    clippy::std_instead_of_alloc,
+    clippy::std_instead_of_core,
+    clippy::undocumented_unsafe_blocks,
+    clippy::unwrap_used
+)]
+
 use std::{
     marker::{PhantomData, PhantomPinned},
     mem::{MaybeUninit, size_of},
@@ -56,7 +64,7 @@ fn zeroize_byte_arrays() {
 #[test]
 fn zeroize_on_drop_byte_arrays() {
     let mut arr = [ZeroizedOnDrop(42); 1];
-    unsafe { core::ptr::drop_in_place(&mut arr) };
+    unsafe { core::ptr::drop_in_place(&raw mut arr) };
     assert_eq!(arr.as_ref(), [ZeroizedOnDrop(0); 1].as_ref());
 }
 
@@ -91,11 +99,11 @@ fn zeroize_check_tuple() {
 #[test]
 fn zeroize_on_drop_check_tuple() {
     let mut tup1 = (ZeroizedOnDrop(42),);
-    unsafe { core::ptr::drop_in_place(&mut tup1) };
+    unsafe { core::ptr::drop_in_place(&raw mut tup1) };
     assert_eq!(tup1, (ZeroizedOnDrop(0),));
 
     let mut tup2 = (ZeroizedOnDrop(42), ZeroizedOnDrop(42));
-    unsafe { core::ptr::drop_in_place(&mut tup2) };
+    unsafe { core::ptr::drop_in_place(&raw mut tup2) };
     assert_eq!(tup2, (ZeroizedOnDrop(0), ZeroizedOnDrop(0)));
 }
 
@@ -121,9 +129,7 @@ fn zeroize_vec_entire_capacity() {
 
     impl Drop for PanicOnNonZeroDrop {
         fn drop(&mut self) {
-            if self.0 != 0 {
-                panic!("dropped non-zeroized data");
-            }
+            assert!(self.0 == 0, "dropped non-zeroized data");
         }
     }
 
@@ -226,7 +232,7 @@ fn box_unsized_zeroizing() {
     }
 
     unsafe {
-        core::ptr::drop_in_place(&mut *b);
+        core::ptr::drop_in_place(&raw mut *b);
     }
 
     let s: &[u8] = &b;
@@ -289,11 +295,11 @@ fn zeroizing_dyn_trait() {
         Box::new(Zeroizing::new(TestStruct { data: [1, 2, 3, 4] }));
 
     unsafe {
-        core::ptr::drop_in_place(&mut *b);
+        core::ptr::drop_in_place(&raw mut *b);
     }
 
     let inner: &Zeroizing<dyn TestTrait> = &b;
-    let inner: &dyn TestTrait = std::ops::Deref::deref(inner);
+    let inner: &dyn TestTrait = core::ops::Deref::deref(inner);
 
     assert_eq!(inner.data(), &[0, 0, 0, 0]);
 }

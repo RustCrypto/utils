@@ -14,3 +14,6 @@ Compile-time detection heuristics for the optimal word size to use for the
 target CPU, which in some cases may differ from its address size a.k.a.
 `target_pointer_width`. Implemented as `macro_rules!`
 """
+
+[lints]
+workspace = true

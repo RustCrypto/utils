@@ -1,3 +1,5 @@
+//! `cmov` property-based tests: randomized with shrinking.
+
 /// Write the proptests for an integer type.
 macro_rules! int_proptests {
     ( $($int:ident),+ ) => {

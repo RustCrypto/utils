@@ -29,5 +29,8 @@ proptest = "1.9"
 alloc = []
 subtle = ["dep:subtle"]
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 all-features = true
