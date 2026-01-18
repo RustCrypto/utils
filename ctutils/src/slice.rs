@@ -30,7 +30,7 @@ where
     );
 
     for (a, b) in dst.iter_mut().zip(src) {
-        a.ct_assign(b, choice)
+        a.ct_assign(b, choice);
     }
 }
 

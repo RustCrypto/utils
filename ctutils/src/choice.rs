@@ -104,6 +104,7 @@ impl Choice {
 
     /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_i64_eq(x: i64, y: i64) -> Self {
         Self::from_u64_nz(x as u64 ^ y as u64).not()
     }
@@ -112,30 +113,35 @@ impl Choice {
 
     /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u8_eq(x: u8, y: u8) -> Self {
         Self::from_u8_nz(x ^ y).not()
     }
 
     /// Returns [`Choice::TRUE`] if `x <= y` and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u8_le(x: u8, y: u8) -> Self {
         Self::from_u8_lsb(bitle!(x, y, u8::BITS))
     }
 
     /// Initialize from the least significant bit of a `u8`.
     #[inline]
+    #[must_use]
     pub const fn from_u8_lsb(value: u8) -> Self {
         Self(value & 0x1)
     }
 
     /// Returns [`Choice::TRUE`] if `x < y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u8_lt(x: u8, y: u8) -> Self {
         Self::from_u8_lsb(bitlt!(x, y, u8::BITS))
     }
 
     /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u8_nz(value: u8) -> Self {
         Self::from_u8_lsb(bitnz!(value, u8::BITS))
     }
@@ -144,30 +150,35 @@ impl Choice {
 
     /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u16_eq(x: u16, y: u16) -> Self {
         Self::from_u16_nz(x ^ y).not()
     }
 
     /// Returns [`Choice::TRUE`] if `x <= y` and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u16_le(x: u16, y: u16) -> Self {
         Self::from_u16_lsb(bitle!(x, y, u16::BITS))
     }
 
     /// Initialize from the least significant bit of a `u16`.
     #[inline]
+    #[must_use]
     pub const fn from_u16_lsb(value: u16) -> Self {
         Self((value & 0x1) as u8)
     }
 
     /// Returns [`Choice::TRUE`] if `x < y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u16_lt(x: u16, y: u16) -> Self {
         Self::from_u16_lsb(bitlt!(x, y, u16::BITS))
     }
 
     /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u16_nz(value: u16) -> Self {
         Self::from_u16_lsb(bitnz!(value, u16::BITS))
     }
@@ -176,30 +187,35 @@ impl Choice {
 
     /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u32_eq(x: u32, y: u32) -> Self {
         Self::from_u32_nz(x ^ y).not()
     }
 
     /// Returns [`Choice::TRUE`] if `x <= y` and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u32_le(x: u32, y: u32) -> Self {
         Self::from_u32_lsb(bitle!(x, y, u32::BITS))
     }
 
     /// Initialize from the least significant bit of a `u32`.
     #[inline]
+    #[must_use]
     pub const fn from_u32_lsb(value: u32) -> Self {
         Self((value & 0x1) as u8)
     }
 
     /// Returns [`Choice::TRUE`] if `x < y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u32_lt(x: u32, y: u32) -> Self {
         Self::from_u32_lsb(bitlt!(x, y, u32::BITS))
     }
 
     /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u32_nz(value: u32) -> Self {
         Self::from_u32_lsb(bitnz!(value, u32::BITS))
     }
@@ -208,30 +224,35 @@ impl Choice {
 
     /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u64_eq(x: u64, y: u64) -> Self {
         Self::from_u64_nz(x ^ y).not()
     }
 
     /// Returns [`Choice::TRUE`] if `x <= y` and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u64_le(x: u64, y: u64) -> Self {
         Self::from_u64_lsb(bitle!(x, y, u64::BITS))
     }
 
     /// Initialize from the least significant bit of a `u64`.
     #[inline]
+    #[must_use]
     pub const fn from_u64_lsb(value: u64) -> Self {
         Self((value & 0x1) as u8)
     }
 
     /// Returns [`Choice::TRUE`] if `x < y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u64_lt(x: u64, y: u64) -> Self {
         Self::from_u64_lsb(bitlt!(x, y, u64::BITS))
     }
 
     /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u64_nz(value: u64) -> Self {
         Self::from_u64_lsb(bitnz!(value, u64::BITS))
     }
@@ -240,30 +261,35 @@ impl Choice {
 
     /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u128_eq(x: u128, y: u128) -> Self {
         Self::from_u128_nz(x ^ y).not()
     }
 
     /// Returns [`Choice::TRUE`] if `x <= y` and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u128_le(x: u128, y: u128) -> Self {
         Self::from_u128_lsb(bitle!(x, y, u128::BITS))
     }
 
     /// Initialize from the least significant bit of a `u128`.
     #[inline]
+    #[must_use]
     pub const fn from_u128_lsb(value: u128) -> Self {
         Self((value & 1) as u8)
     }
 
     /// Returns [`Choice::TRUE`] if `x < y`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u128_lt(x: u128, y: u128) -> Self {
         Self::from_u128_lsb(bitlt!(x, y, u128::BITS))
     }
 
     /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
+    #[must_use]
     pub const fn from_u128_nz(value: u128) -> Self {
         Self::from_u128_lsb(bitnz!(value, u128::BITS))
     }
@@ -277,6 +303,7 @@ impl Choice {
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
     #[inline]
+    #[must_use]
     pub const fn select_i64(self, a: i64, b: i64) -> i64 {
         self.select_u64(a as u64, b as u64) as i64
     }
@@ -286,6 +313,7 @@ impl Choice {
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
     #[inline]
+    #[must_use]
     pub const fn select_u8(self, a: u8, b: u8) -> u8 {
         a ^ (self.to_u8_mask() & (a ^ b))
     }
@@ -295,6 +323,7 @@ impl Choice {
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
     #[inline]
+    #[must_use]
     pub const fn select_u16(self, a: u16, b: u16) -> u16 {
         a ^ (self.to_u16_mask() & (a ^ b))
     }
@@ -304,6 +333,7 @@ impl Choice {
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
     #[inline]
+    #[must_use]
     pub const fn select_u32(self, a: u32, b: u32) -> u32 {
         a ^ (self.to_u32_mask() & (a ^ b))
     }
@@ -313,6 +343,7 @@ impl Choice {
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
     #[inline]
+    #[must_use]
     pub const fn select_u64(self, a: u64, b: u64) -> u64 {
         a ^ (self.to_u64_mask() & (a ^ b))
     }
@@ -322,6 +353,7 @@ impl Choice {
     /// Only use this instead of the [`CtSelect`] trait in the event you're in a `const fn` context
     /// and can't use the trait. The former will provide better constant-time assurances.
     #[inline]
+    #[must_use]
     pub const fn select_u128(self, a: u128, b: u128) -> u128 {
         a ^ (self.to_u128_mask() & (a ^ b))
     }
@@ -348,12 +380,14 @@ impl Choice {
     /// possible, prefer fully constant-time approaches instead.
     /// </div>
     // TODO(tarcieri): `const fn` when MSRV 1.86
+    #[must_use]
     pub fn to_bool(self) -> bool {
         self.to_u8() != 0
     }
 
     /// Convert [`Choice`] to a `u8`, attempting to apply a "best effort" optimization barrier.
     // TODO(tarcieri): `const fn` when MSRV 1.86
+    #[must_use]
     pub fn to_u8(self) -> u8 {
         // `black_box` is documented as working on a "best effort" basis. That's fine, this type is
         // likewise documented as only working on a "best effort" basis itself. The only way we
@@ -371,6 +405,7 @@ impl Choice {
     /// See the security warnings for [`Choice::to_bool`].
     /// </div>
     // TODO(tarcieri): deprecate/remove this in favor of `to_bool` when MSRV is Rust 1.86
+    #[must_use]
     pub const fn to_bool_vartime(self) -> bool {
         self.0 != 0
     }
@@ -379,6 +414,7 @@ impl Choice {
     ///
     /// This does not apply `black_box` to the output.
     // TODO(tarcieri): deprecate/remove this in favor of `to_u8` when MSRV is Rust 1.86
+    #[must_use]
     pub const fn to_u8_vartime(self) -> u8 {
         self.0
     }
@@ -389,6 +425,7 @@ impl Choice {
     /// - `0` for `Choice::FALSE`
     /// - `u8::MAX` for `Choice::TRUE`
     #[inline]
+    #[must_use]
     pub const fn to_u8_mask(self) -> u8 {
         self.0.wrapping_neg()
     }
@@ -399,6 +436,7 @@ impl Choice {
     /// - `0` for `Choice::FALSE`
     /// - `u16::MAX` for `Choice::TRUE`
     #[inline]
+    #[must_use]
     pub const fn to_u16_mask(self) -> u16 {
         (self.0 as u16).wrapping_neg()
     }
@@ -409,6 +447,7 @@ impl Choice {
     /// - `0` for `Choice::FALSE`
     /// - `u32::MAX` for `Choice::TRUE`
     #[inline]
+    #[must_use]
     pub const fn to_u32_mask(self) -> u32 {
         (self.0 as u32).wrapping_neg()
     }
@@ -419,6 +458,7 @@ impl Choice {
     /// - `0` for `Choice::FALSE`
     /// - `u64::MAX` for `Choice::TRUE`
     #[inline]
+    #[must_use]
     pub const fn to_u64_mask(self) -> u64 {
         (self.0 as u64).wrapping_neg()
     }
@@ -429,6 +469,7 @@ impl Choice {
     /// - `0` for `Choice::FALSE`
     /// - `u128::MAX` for `Choice::TRUE`
     #[inline]
+    #[must_use]
     pub const fn to_u128_mask(self) -> u128 {
         (self.0 as u128).wrapping_neg()
     }

@@ -134,7 +134,7 @@ impl CtSelect for cmp::Ordering {
         // a value which was originally a valid `Ordering` then cast to `i8`
         #[allow(trivial_casts, unsafe_code)]
         unsafe {
-            *(&ret as *const i8).cast::<Self>()
+            *(&raw const ret).cast::<Self>()
         }
     }
 }
