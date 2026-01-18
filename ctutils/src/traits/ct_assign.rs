@@ -123,7 +123,7 @@ impl_ct_assign_with_ct_select!(
 
 impl<T, const N: usize> CtAssign for [T; N]
 where
-    [T]: CtAssign,
+    T: CtAssignSlice,
 {
     #[inline]
     fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
@@ -131,7 +131,7 @@ where
     }
 }
 
-impl<T, const N: usize> CtAssignSlice for [T; N] where [T]: CtAssign {}
+impl<T, const N: usize> CtAssignSlice for [T; N] where T: CtAssignSlice {}
 
 #[cfg(feature = "subtle")]
 impl CtAssign for subtle::Choice {
@@ -154,7 +154,7 @@ where
 }
 #[cfg(feature = "alloc")]
 mod alloc {
-    use super::{Choice, CtAssign};
+    use super::{Choice, CtAssign, CtAssignSlice};
     use ::alloc::{boxed::Box, vec::Vec};
 
     impl<T> CtAssign for Box<T>
@@ -170,7 +170,7 @@ mod alloc {
 
     impl<T> CtAssign for Box<[T]>
     where
-        [T]: CtAssign,
+        T: CtAssignSlice,
     {
         #[inline]
         #[track_caller]
@@ -181,7 +181,7 @@ mod alloc {
 
     impl<T> CtAssign<[T]> for Box<[T]>
     where
-        [T]: CtAssign,
+        T: CtAssignSlice,
     {
         #[inline]
         #[track_caller]
@@ -192,7 +192,7 @@ mod alloc {
 
     impl<T> CtAssign for Vec<T>
     where
-        [T]: CtAssign,
+        T: CtAssignSlice,
     {
         #[inline]
         #[track_caller]
@@ -203,7 +203,7 @@ mod alloc {
 
     impl<T> CtAssign<[T]> for Vec<T>
     where
-        [T]: CtAssign,
+        T: CtAssignSlice,
     {
         #[inline]
         #[track_caller]
