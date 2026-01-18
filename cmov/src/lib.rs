@@ -15,6 +15,9 @@
     clippy::mod_module_files,
     clippy::panic,
     clippy::panic_in_result_fn,
+    clippy::ref_as_ptr,
+    clippy::return_self_not_must_use,
+    clippy::semicolon_if_nothing_returned,
     clippy::std_instead_of_alloc,
     clippy::std_instead_of_core,
     clippy::unwrap_used,
@@ -50,7 +53,7 @@ pub trait Cmov {
     /// Moves `value` to `self` in constant-time if `condition` is equal to zero.
     fn cmovz(&mut self, value: &Self, condition: Condition) {
         let nz = masknz!(condition: Condition);
-        self.cmovnz(value, !nz)
+        self.cmovnz(value, !nz);
     }
 }
 

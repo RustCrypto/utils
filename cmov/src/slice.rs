@@ -3,7 +3,7 @@
 use crate::{Cmov, CmovEq, Condition};
 use core::{
     ops::{BitOrAssign, Shl},
-    slice,
+    ptr, slice,
 };
 
 // Uses 64-bit words on 64-bit targets, 32-bit everywhere else
@@ -267,9 +267,9 @@ unsafe fn cast_slice<T, U>(slice: &[T]) -> &[U] {
     // SAFETY:
     // - Slices are of same-sized/aligned types as asserted above.
     // - It's up to the caller to ensure the pointer cast from `T` to `U` itself is valid.
-    #[allow(trivial_casts, unsafe_code)]
+    #[allow(unsafe_code)]
     unsafe {
-        &*((slice as *const [T]) as *const [U])
+        &*(ptr::from_ref::<[T]>(slice) as *const [U])
     }
 }
 
@@ -287,9 +287,9 @@ unsafe fn cast_slice_mut<T, U>(slice: &mut [T]) -> &mut [U] {
     // SAFETY:
     // - Slices are of same-sized/aligned types as asserted above.
     // - It's up to the caller to ensure the pointer cast from `T` to `U` itself is valid.
-    #[allow(trivial_casts, unsafe_code)]
+    #[allow(unsafe_code)]
     unsafe {
-        &mut *((slice as *mut [T]) as *mut [U])
+        &mut *(ptr::from_mut::<[T]>(slice) as *mut [U])
     }
 }
 
