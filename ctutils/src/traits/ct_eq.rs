@@ -10,8 +10,6 @@ use core::{
 
 #[cfg(feature = "subtle")]
 use crate::CtOption;
-#[cfg(feature = "alloc")]
-use alloc::{boxed::Box, vec::Vec};
 
 /// Constant-time equality: like `(Partial)Eq` with [`Choice`] instead of [`bool`].
 ///
@@ -164,66 +162,6 @@ where
 
 impl<T, const N: usize> CtEqSlice for [T; N] where [T]: CtEq {}
 
-#[cfg(feature = "alloc")]
-impl<T> CtEq for Box<T>
-where
-    T: CtEq,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_eq(&self, rhs: &Self) -> Choice {
-        (**self).ct_eq(rhs)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<T> CtEq for Box<[T]>
-where
-    [T]: CtEq,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_eq(&self, rhs: &Self) -> Choice {
-        self.ct_eq(&**rhs)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<T> CtEq<[T]> for Box<[T]>
-where
-    [T]: CtEq,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_eq(&self, rhs: &[T]) -> Choice {
-        (**self).ct_eq(rhs)
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<T> CtEq for Vec<T>
-where
-    [T]: CtEq,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_eq(&self, rhs: &Self) -> Choice {
-        self.ct_eq(rhs.as_slice())
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<T> CtEq<[T]> for Vec<T>
-where
-    [T]: CtEq,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_eq(&self, rhs: &[T]) -> Choice {
-        self.as_slice().ct_eq(rhs)
-    }
-}
-
 #[cfg(feature = "subtle")]
 impl CtEq for subtle::Choice {
     #[inline]
@@ -240,6 +178,67 @@ where
     #[inline]
     fn ct_eq(&self, other: &Self) -> Choice {
         CtOption::from(*self).ct_eq(&CtOption::from(*other))
+    }
+}
+
+#[cfg(feature = "alloc")]
+mod alloc {
+    use super::{Choice, CtEq};
+    use ::alloc::{boxed::Box, vec::Vec};
+
+    impl<T> CtEq for Box<T>
+    where
+        T: CtEq,
+    {
+        #[inline]
+        #[track_caller]
+        fn ct_eq(&self, rhs: &Self) -> Choice {
+            (**self).ct_eq(rhs)
+        }
+    }
+
+    impl<T> CtEq for Box<[T]>
+    where
+        [T]: CtEq,
+    {
+        #[inline]
+        #[track_caller]
+        fn ct_eq(&self, rhs: &Self) -> Choice {
+            self.ct_eq(&**rhs)
+        }
+    }
+
+    impl<T> CtEq<[T]> for Box<[T]>
+    where
+        [T]: CtEq,
+    {
+        #[inline]
+        #[track_caller]
+        fn ct_eq(&self, rhs: &[T]) -> Choice {
+            (**self).ct_eq(rhs)
+        }
+    }
+
+    impl<T> CtEq for Vec<T>
+    where
+        [T]: CtEq,
+    {
+        #[inline]
+        #[track_caller]
+        fn ct_eq(&self, rhs: &Self) -> Choice {
+            self.ct_eq(rhs.as_slice())
+        }
+    }
+
+    impl<T> CtEq<[T]> for Vec<T>
+    where
+        [T]: CtEq,
+    {
+        #[inline]
+        #[track_caller]
+        fn ct_eq(&self, rhs: &[T]) -> Choice {
+            self.as_slice().ct_eq(rhs)
+        }
     }
 }
 

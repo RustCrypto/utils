@@ -8,9 +8,6 @@ use core::{
     },
 };
 
-#[cfg(feature = "alloc")]
-use alloc::{boxed::Box, vec::Vec};
-
 #[cfg(doc)]
 use core::num::NonZero;
 
@@ -136,66 +133,6 @@ where
 
 impl<T, const N: usize> CtAssignSlice for [T; N] where [T]: CtAssign {}
 
-#[cfg(feature = "alloc")]
-impl<T> CtAssign for Box<T>
-where
-    T: CtAssign,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
-        (**self).ct_assign(rhs, choice);
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<T> CtAssign for Box<[T]>
-where
-    [T]: CtAssign,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
-        self.ct_assign(&**rhs, choice);
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<T> CtAssign<[T]> for Box<[T]>
-where
-    [T]: CtAssign,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_assign(&mut self, rhs: &[T], choice: Choice) {
-        (**self).ct_assign(rhs, choice);
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<T> CtAssign for Vec<T>
-where
-    [T]: CtAssign,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
-        self.ct_assign(rhs.as_slice(), choice);
-    }
-}
-
-#[cfg(feature = "alloc")]
-impl<T> CtAssign<[T]> for Vec<T>
-where
-    [T]: CtAssign,
-{
-    #[inline]
-    #[track_caller]
-    fn ct_assign(&mut self, rhs: &[T], choice: Choice) {
-        self.as_mut_slice().ct_assign(rhs, choice);
-    }
-}
-
 #[cfg(feature = "subtle")]
 impl CtAssign for subtle::Choice {
     #[inline]
@@ -213,5 +150,65 @@ where
     fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
         use subtle::ConditionallySelectable as _;
         self.conditional_assign(rhs, choice.into());
+    }
+}
+#[cfg(feature = "alloc")]
+mod alloc {
+    use super::{Choice, CtAssign};
+    use ::alloc::{boxed::Box, vec::Vec};
+
+    impl<T> CtAssign for Box<T>
+    where
+        T: CtAssign,
+    {
+        #[inline]
+        #[track_caller]
+        fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
+            (**self).ct_assign(rhs, choice);
+        }
+    }
+
+    impl<T> CtAssign for Box<[T]>
+    where
+        [T]: CtAssign,
+    {
+        #[inline]
+        #[track_caller]
+        fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
+            self.ct_assign(&**rhs, choice);
+        }
+    }
+
+    impl<T> CtAssign<[T]> for Box<[T]>
+    where
+        [T]: CtAssign,
+    {
+        #[inline]
+        #[track_caller]
+        fn ct_assign(&mut self, rhs: &[T], choice: Choice) {
+            (**self).ct_assign(rhs, choice);
+        }
+    }
+
+    impl<T> CtAssign for Vec<T>
+    where
+        [T]: CtAssign,
+    {
+        #[inline]
+        #[track_caller]
+        fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
+            self.ct_assign(rhs.as_slice(), choice);
+        }
+    }
+
+    impl<T> CtAssign<[T]> for Vec<T>
+    where
+        [T]: CtAssign,
+    {
+        #[inline]
+        #[track_caller]
+        fn ct_assign(&mut self, rhs: &[T], choice: Choice) {
+            self.as_mut_slice().ct_assign(rhs, choice);
+        }
     }
 }
