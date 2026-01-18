@@ -1,5 +1,7 @@
 //! Tests for `Cmov`/`CmovEq` impls on `core` types.
 
+#![allow(trivial_numeric_casts)]
+
 /// Write the tests for an integer type, given two unequal integers
 macro_rules! int_tests {
     ($int:ident, $a:expr, $b:expr) => {

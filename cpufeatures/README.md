@@ -73,7 +73,7 @@ Target features:
 
 ### `loongarch64`
 
-Linux only (LoongArch64 does not support OS-independent feature detection)
+Linux only (`loongarch64` does not support OS-independent feature detection)
 
 Target features:
 

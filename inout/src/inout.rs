@@ -23,6 +23,7 @@ impl<'inp, 'out, T> InOut<'inp, 'out, T> {
 
     /// Get immutable reference to the input value.
     #[inline(always)]
+    #[must_use]
     pub fn get_in(&self) -> &T {
         unsafe { &*self.in_ptr }
     }
@@ -39,11 +40,12 @@ impl<'inp, 'out, T> InOut<'inp, 'out, T> {
     /// In the case if the input and output references are the same, simply returns
     /// the output reference. Otherwise, copies data from the former to the latter
     /// before returning the output reference.
+    #[must_use]
     pub fn into_out_with_copied_in(self) -> &'out mut T
     where
         T: Copy,
     {
-        if !core::ptr::eq(self.in_ptr, self.out_ptr) {
+        if !ptr::eq(self.in_ptr, self.out_ptr) {
             unsafe {
                 ptr::copy(self.in_ptr, self.out_ptr, 1);
             }
@@ -53,12 +55,14 @@ impl<'inp, 'out, T> InOut<'inp, 'out, T> {
 
     /// Consume `self` and get mutable reference to the output value with lifetime `'out`.
     #[inline(always)]
+    #[must_use]
     pub fn into_out(self) -> &'out mut T {
         unsafe { &mut *self.out_ptr }
     }
 
     /// Convert `self` to a pair of raw input and output pointers.
     #[inline(always)]
+    #[must_use]
     pub fn into_raw(self) -> (*const T, *mut T) {
         (self.in_ptr, self.out_ptr)
     }
@@ -94,6 +98,7 @@ impl<'inp, 'out, T> InOut<'inp, 'out, T> {
 impl<T: Clone> InOut<'_, '_, T> {
     /// Clone input value and return it.
     #[inline(always)]
+    #[must_use]
     pub fn clone_in(&self) -> T {
         unsafe { (*self.in_ptr).clone() }
     }
@@ -102,7 +107,7 @@ impl<T: Clone> InOut<'_, '_, T> {
 impl<'a, T> From<&'a mut T> for InOut<'a, 'a, T> {
     #[inline(always)]
     fn from(val: &'a mut T) -> Self {
-        let p = val as *mut T;
+        let p = ptr::from_mut(val);
         Self {
             in_ptr: p,
             out_ptr: p,
@@ -115,8 +120,8 @@ impl<'inp, 'out, T> From<(&'inp T, &'out mut T)> for InOut<'inp, 'out, T> {
     #[inline(always)]
     fn from((in_val, out_val): (&'inp T, &'out mut T)) -> Self {
         Self {
-            in_ptr: in_val as *const T,
-            out_ptr: out_val as *mut T,
+            in_ptr: ptr::from_ref::<T>(in_val),
+            out_ptr: ptr::from_mut::<T>(out_val),
             _pd: Default::default(),
         }
     }
@@ -132,8 +137,8 @@ impl<'inp, 'out, T, N: ArraySize> InOut<'inp, 'out, Array<T, N>> {
         assert!(pos < N::USIZE);
         unsafe {
             InOut {
-                in_ptr: (self.in_ptr as *const T).add(pos),
-                out_ptr: (self.out_ptr as *mut T).add(pos),
+                in_ptr: self.in_ptr.cast::<T>().add(pos),
+                out_ptr: self.out_ptr.cast::<T>().add(pos),
                 _pd: PhantomData,
             }
         }
@@ -141,10 +146,11 @@ impl<'inp, 'out, T, N: ArraySize> InOut<'inp, 'out, Array<T, N>> {
 
     /// Convert `InOut` array to `InOutBuf`.
     #[inline(always)]
+    #[must_use]
     pub fn into_buf(self) -> InOutBuf<'inp, 'out, T> {
         InOutBuf {
-            in_ptr: self.in_ptr as *const T,
-            out_ptr: self.out_ptr as *mut T,
+            in_ptr: self.in_ptr.cast::<T>(),
+            out_ptr: self.out_ptr.cast::<T>(),
             len: N::USIZE,
             _pd: PhantomData,
         }

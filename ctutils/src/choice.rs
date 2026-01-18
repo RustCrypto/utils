@@ -108,7 +108,9 @@ impl Choice {
     /// Returns [`Choice::TRUE`] if `x == y`, and [`Choice::FALSE`] otherwise.
     #[inline]
     #[must_use]
+    #[allow(clippy::cast_sign_loss)]
     pub const fn from_i64_eq(x: i64, y: i64) -> Self {
+        // TODO(tarcieri): use `cast_unsigned` when MSRV is 1.87
         Self::from_u64_nz(x as u64 ^ y as u64).not()
     }
 
@@ -307,7 +309,9 @@ impl Choice {
     /// and can't use the trait. The former will provide better constant-time assurances.
     #[inline]
     #[must_use]
+    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
     pub const fn select_i64(self, a: i64, b: i64) -> i64 {
+        // TODO(tarcieri): use `cast_signed` when MSRV is 1.87
         self.select_u64(a as u64, b as u64) as i64
     }
 

@@ -5,30 +5,11 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
+#![allow(clippy::undocumented_unsafe_blocks)] // TODO(tarcieri): document all unsafe blocks
 #![warn(
-    clippy::cast_lossless,
-    clippy::cast_possible_truncation,
-    clippy::cast_precision_loss,
-    clippy::checked_conversions,
-    clippy::implicit_saturating_sub,
+    clippy::arithmetic_side_effects,
     clippy::integer_division_remainder_used,
-    clippy::mod_module_files,
-    clippy::panic,
-    clippy::panic_in_result_fn,
-    clippy::ref_as_ptr,
-    clippy::return_self_not_must_use,
-    clippy::semicolon_if_nothing_returned,
-    clippy::std_instead_of_alloc,
-    clippy::std_instead_of_core,
-    clippy::unwrap_used,
-    missing_copy_implementations,
-    missing_debug_implementations,
-    missing_docs,
-    rust_2018_idioms,
-    trivial_casts,
-    trivial_numeric_casts,
-    unused_lifetimes,
-    unused_qualifications
+    clippy::panic
 )]
 
 #[macro_use]
@@ -175,6 +156,7 @@ macro_rules! impl_cmov_traits_for_signed_ints {
         $(
             impl Cmov for $int {
                 #[inline]
+                #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
                 fn cmovnz(&mut self, value: &Self, condition: Condition) {
                     let mut tmp = *self as $uint;
                     tmp.cmovnz(&(*value as $uint), condition);
@@ -182,6 +164,7 @@ macro_rules! impl_cmov_traits_for_signed_ints {
                 }
 
                 #[inline]
+                #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
                 fn cmovz(&mut self, value: &Self, condition: Condition) {
                     let mut tmp = *self as $uint;
                     tmp.cmovz(&(*value as $uint), condition);
@@ -191,11 +174,13 @@ macro_rules! impl_cmov_traits_for_signed_ints {
 
             impl CmovEq for $int {
                 #[inline]
+                #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
                 fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
                     (*self as $uint).cmoveq(&(*rhs as $uint), input, output);
                 }
 
                 #[inline]
+                #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
                 fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
                     (*self as $uint).cmovne(&(*rhs as $uint), input, output);
                 }

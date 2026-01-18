@@ -6,32 +6,9 @@
 )]
 #![forbid(unsafe_code)] // `unsafe` should go in `cmov`
 #![warn(
-    clippy::borrow_as_ptr,
-    clippy::cast_lossless,
-    clippy::cast_possible_truncation,
-    clippy::cast_precision_loss,
-    clippy::checked_conversions,
-    clippy::implicit_saturating_sub,
+    clippy::arithmetic_side_effects,
     clippy::integer_division_remainder_used,
-    clippy::must_use_candidate,
-    clippy::mod_module_files,
-    clippy::panic,
-    clippy::panic_in_result_fn,
-    clippy::ref_as_ptr,
-    clippy::semicolon_if_nothing_returned,
-    clippy::std_instead_of_alloc,
-    clippy::std_instead_of_core,
-    clippy::undocumented_unsafe_blocks,
-    clippy::unnecessary_safety_comment,
-    clippy::unwrap_in_result,
-    missing_copy_implementations,
-    missing_debug_implementations,
-    missing_docs,
-    rust_2018_idioms,
-    trivial_casts,
-    trivial_numeric_casts,
-    unused_lifetimes,
-    unused_qualifications
+    clippy::panic
 )]
 #![cfg_attr(not(test), warn(clippy::unwrap_used))]
 

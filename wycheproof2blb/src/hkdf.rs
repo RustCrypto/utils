@@ -44,7 +44,7 @@ pub fn generator(data: &[u8], algorithm: &str, _key_size: u32) -> Vec<TestInfo> 
     let mut infos = vec![];
     for g in &suite.test_groups {
         for tc in &g.tests {
-            if tc.case.result != crate::wycheproof::CaseResult::Valid {
+            if tc.case.result != wycheproof::CaseResult::Valid {
                 continue;
             }
             if tc.okm.len() != tc.size {

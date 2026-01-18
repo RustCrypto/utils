@@ -51,6 +51,7 @@ macro_rules! try_read_vlq {
 }
 
 /// Blobby file header
+#[derive(Clone, Copy, Debug)]
 pub struct Header {
     /// Number of blobs stored in the file
     pub items_len: usize,
@@ -59,7 +60,10 @@ pub struct Header {
 }
 
 impl Header {
-    /// Parse blobby header
+    /// Parse blobby header.
+    ///
+    /// # Errors
+    /// - If data could not be parsed successfully.
     pub const fn parse(data: &mut &[u8]) -> Result<Self, Error> {
         match (read_vlq(data), read_vlq(data)) {
             (Ok(items_len), Ok(dedup_len)) => Ok(Header {
@@ -72,6 +76,9 @@ impl Header {
 }
 
 /// Parse blobby data into an array.
+///
+/// # Errors
+/// - If data could not be parsed successfully.
 pub const fn parse_into_array<const ITEMS_LEN: usize, const DEDUP_LEN: usize>(
     mut data: &[u8],
 ) -> Result<[&[u8]; ITEMS_LEN], Error> {
@@ -127,7 +134,11 @@ pub const fn parse_into_array<const ITEMS_LEN: usize, const DEDUP_LEN: usize>(
 }
 
 /// Parse blobby data into a vector of slices.
+///
+/// # Errors
+/// - if data failed to parse successfully
 #[cfg(feature = "alloc")]
+#[allow(clippy::missing_panics_doc, clippy::panic_in_result_fn)]
 pub fn parse_into_vec(mut data: &[u8]) -> Result<alloc::vec::Vec<&[u8]>, Error> {
     use alloc::{vec, vec::Vec};
 
@@ -175,6 +186,7 @@ pub fn parse_into_vec(mut data: &[u8]) -> Result<alloc::vec::Vec<&[u8]>, Error> 
     Ok(res)
 }
 
+/// Parse data into a slice.
 #[macro_export]
 macro_rules! parse_into_slice {
     ($data:expr) => {{
@@ -195,6 +207,7 @@ macro_rules! parse_into_slice {
     }};
 }
 
+/// Parse data into structs.
 #[macro_export]
 macro_rules! parse_into_structs {
     (

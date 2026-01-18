@@ -1,4 +1,4 @@
-//! LoongArch64 tests
+//! `loongarch64` tests
 
 #![cfg(target_arch = "loongarch64")]
 

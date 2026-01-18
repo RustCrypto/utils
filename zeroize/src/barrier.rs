@@ -68,7 +68,7 @@ pub fn optimization_barrier<T: ?Sized>(val: &T) {
     unsafe {
         core::arch::asm!(
             "# {}",
-            in(reg) val as *const T as *const (),
+            in(reg) core::ptr::from_ref::<T>(val).cast::<()>(),
             options(readonly, preserves_flags, nostack),
         );
     }
@@ -96,7 +96,7 @@ pub fn optimization_barrier<T: ?Sized>(val: &T) {
 
         core::hint::black_box(val);
         if size_of_val(val) > 0 {
-            custom_black_box(val as *const T as *const u8);
+            custom_black_box(core::ptr::from_ref(val).cast::<u8>());
         }
     }
 }

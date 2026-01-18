@@ -360,6 +360,9 @@ impl<T> CtOption<T> {
     /// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
     /// `T` value since the [`Result`] will do it anyway.
     /// </div>
+    ///
+    /// # Errors
+    /// - Returns `err` in the event `self.is_some()` is [`Choice::FALSE`].
     #[inline]
     pub fn ok_or<E>(self, err: E) -> Result<T, E> {
         self.into_option().ok_or(err)
@@ -374,7 +377,11 @@ impl<T> CtOption<T> {
     /// This implementation doesn't intend to be constant-time nor try to protect the leakage of the
     /// `T` value since the [`Result`] will do it anyway.
     /// </div>
+    ///
+    /// # Errors
+    /// - Returns `err` in the event `self.is_some()` is [`Choice::FALSE`].
     #[inline]
+    #[allow(clippy::missing_errors_doc)]
     pub fn ok_or_else<E, F>(self, err: F) -> Result<T, E>
     where
         F: FnOnce() -> E,
@@ -684,6 +691,7 @@ mod tests {
     #[test]
     fn unwrap_or_macro() {
         // Don't actually use this! It's just a test function implemented in variable-time
+        #[allow(clippy::trivially_copy_pass_by_ref)]
         const fn select_vartime(a: &u8, b: &u8, choice: Choice) -> u8 {
             if choice.to_bool_vartime() { *b } else { *a }
         }
