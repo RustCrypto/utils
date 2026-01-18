@@ -152,7 +152,7 @@ impl CtEqSlice for cmp::Ordering {}
 
 impl<T, const N: usize> CtEq for [T; N]
 where
-    [T]: CtEq,
+    T: CtEqSlice,
 {
     #[inline]
     fn ct_eq(&self, other: &[T; N]) -> Choice {
@@ -160,7 +160,7 @@ where
     }
 }
 
-impl<T, const N: usize> CtEqSlice for [T; N] where [T]: CtEq {}
+impl<T, const N: usize> CtEqSlice for [T; N] where T: CtEqSlice {}
 
 #[cfg(feature = "subtle")]
 impl CtEq for subtle::Choice {
@@ -183,7 +183,7 @@ where
 
 #[cfg(feature = "alloc")]
 mod alloc {
-    use super::{Choice, CtEq};
+    use super::{Choice, CtEq, CtEqSlice};
     use ::alloc::{boxed::Box, vec::Vec};
 
     impl<T> CtEq for Box<T>
@@ -199,7 +199,7 @@ mod alloc {
 
     impl<T> CtEq for Box<[T]>
     where
-        [T]: CtEq,
+        T: CtEqSlice,
     {
         #[inline]
         #[track_caller]
@@ -210,7 +210,7 @@ mod alloc {
 
     impl<T> CtEq<[T]> for Box<[T]>
     where
-        [T]: CtEq,
+        T: CtEqSlice,
     {
         #[inline]
         #[track_caller]
@@ -221,7 +221,7 @@ mod alloc {
 
     impl<T> CtEq for Vec<T>
     where
-        [T]: CtEq,
+        T: CtEqSlice,
     {
         #[inline]
         #[track_caller]
@@ -232,7 +232,7 @@ mod alloc {
 
     impl<T> CtEq<[T]> for Vec<T>
     where
-        [T]: CtEq,
+        T: CtEqSlice,
     {
         #[inline]
         #[track_caller]

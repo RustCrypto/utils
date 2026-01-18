@@ -1,4 +1,4 @@
-use crate::{Choice, CtAssign};
+use crate::{Choice, CtAssign, CtAssignSlice};
 use core::{
     cmp,
     num::{
@@ -63,8 +63,7 @@ where
 
 impl<T, const N: usize> CtSelectArray<N> for T
 where
-    T: Clone + CtSelect,
-    [T]: CtAssign,
+    T: Clone + CtAssignSlice + CtSelect,
 {
     #[inline]
     fn ct_select_array(a: &[Self; N], b: &[Self; N], choice: Choice) -> [Self; N] {
@@ -181,12 +180,7 @@ mod alloc {
     impl<T: Clone + CtAssign> CtSelectUsingCtAssign for Box<T> {}
 
     #[cfg(feature = "alloc")]
-    impl<T> CtSelectUsingCtAssign for Box<[T]>
-    where
-        T: Clone,
-        [T]: CtAssign,
-    {
-    }
+    impl<T> CtSelectUsingCtAssign for Box<[T]> where T: Clone + CtAssignSlice {}
 
     #[cfg(feature = "alloc")]
     impl<T: Clone + CtAssignSlice> CtSelectUsingCtAssign for Vec<T> {}
