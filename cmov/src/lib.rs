@@ -38,7 +38,19 @@ mod array;
 mod backends;
 mod slice;
 
-/// Condition
+use core::{
+    cmp,
+    num::{
+        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16,
+        NonZeroU32, NonZeroU64, NonZeroU128,
+    },
+};
+
+/// Condition: the argument given to [`Cmov`] and [`CmovEq`] representing an effective boolean
+/// condition by virtue of being zero or non-zero.
+///
+/// Using a `u8` for this type helps prevent rustc optimizers from speculating about it as if it
+/// were a boolean value.
 pub type Condition = u8;
 
 /// Conditional move
@@ -192,9 +204,15 @@ macro_rules! impl_cmov_traits_for_signed_ints {
     };
 }
 
-impl_cmov_traits_for_signed_ints!(i8 => u8, i16 => u16, i32 => u32, i64 => u64, i128 => u128);
+impl_cmov_traits_for_signed_ints!(
+    i8 => u8,
+    i16 => u16,
+    i32 => u32,
+    i64 => u64,
+    i128 => u128
+);
 
-macro_rules! impl_cmov_traits_for_size_type {
+macro_rules! impl_cmov_traits_for_size_int {
     ($size:ty, $int16:ty, $int32:ty, $int64:ty) => {
         #[cfg(any(
             target_pointer_width = "16",
@@ -256,5 +274,75 @@ macro_rules! impl_cmov_traits_for_size_type {
     };
 }
 
-impl_cmov_traits_for_size_type!(isize, i16, i32, i64);
-impl_cmov_traits_for_size_type!(usize, u16, u32, u64);
+impl_cmov_traits_for_size_int!(isize, i16, i32, i64);
+impl_cmov_traits_for_size_int!(usize, u16, u32, u64);
+
+/// Impl `Cmov` for `NonZero<T>` by calling the `Cmov` impl for `T`.
+macro_rules! impl_cmov_traits_for_nonzero_integers {
+    ( $($nzint:ident),+ ) => {
+        $(
+             impl Cmov for $nzint {
+                #[inline]
+                fn cmovnz(&mut self, src: &Self, condition: Condition) {
+                    let mut n = self.get();
+                    n.cmovnz(&src.get(), condition);
+
+                    // SAFETY: we are constructing `NonZero` from a value we obtained from
+                    // `NonZero::get`, which ensures it's non-zero.
+                    #[allow(unsafe_code)]
+                    unsafe { *self = $nzint::new_unchecked(n) }
+                }
+            }
+
+            impl CmovEq for $nzint {
+                #[inline]
+                fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+                    self.get().cmoveq(&rhs.get(), input, output);
+                }
+            }
+        )+
+    };
+}
+
+impl_cmov_traits_for_nonzero_integers!(
+    NonZeroI8,
+    NonZeroI16,
+    NonZeroI32,
+    NonZeroI64,
+    NonZeroI128,
+    NonZeroU8,
+    NonZeroU16,
+    NonZeroU32,
+    NonZeroU64,
+    NonZeroU128
+);
+
+impl Cmov for cmp::Ordering {
+    #[inline]
+    fn cmovnz(&mut self, src: &Self, condition: Condition) {
+        // `Ordering` is `#[repr(i8)]` where:
+        //
+        // - `Less` => -1
+        // - `Equal` => 0
+        // - `Greater` => 1
+        //
+        // Given this, it's possible to operate on orderings as if they're `i8`, which allows us to
+        // use the `CtSelect` impl on `i8` to select between them.
+        let mut n = *self as i8;
+        n.cmovnz(&(*src as i8), condition);
+
+        // SAFETY: `Ordering` is `#[repr(i8)]` and `ret` has been assigned to
+        // a value which was originally a valid `Ordering` then cast to `i8`
+        #[allow(trivial_casts, unsafe_code)]
+        unsafe {
+            *self = *(&raw const n).cast::<Self>();
+        }
+    }
+}
+
+impl CmovEq for cmp::Ordering {
+    #[inline]
+    fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+        (*self as i8).cmoveq(&(*rhs as i8), input, output);
+    }
+}

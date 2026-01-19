@@ -2,6 +2,11 @@
 
 use crate::{Cmov, CmovEq, Condition};
 use core::{
+    cmp,
+    num::{
+        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16,
+        NonZeroU32, NonZeroU64, NonZeroU128,
+    },
     ops::{BitOrAssign, Shl},
     ptr, slice,
 };
@@ -12,7 +17,6 @@ type Word = u32;
 #[cfg(target_pointer_width = "64")]
 type Word = u64;
 const WORD_SIZE: usize = size_of::<Word>();
-const _: () = assert!(size_of::<usize>() <= WORD_SIZE, "unexpected word size");
 
 /// Assert the lengths of the two slices are equal.
 macro_rules! assert_lengths_eq {
@@ -24,6 +28,10 @@ macro_rules! assert_lengths_eq {
         );
     };
 }
+
+//
+// `Cmov` trait impls
+//
 
 // Optimized implementation for byte slices which coalesces them into word-sized chunks first,
 // then performs [`Cmov`] at the word-level to cut down on the total number of instructions.
@@ -125,8 +133,10 @@ macro_rules! impl_cmov_with_loop {
     };
 }
 
+// These types are large enough we don't need to use anything more complex than a simple loop
 impl_cmov_with_loop!(u32, u64, u128);
 
+/// Ensure the two provided types have the same size and alignment.
 macro_rules! assert_size_and_alignment_eq {
     ($int:ty, $uint:ty) => {
         const {
@@ -143,64 +153,52 @@ macro_rules! assert_size_and_alignment_eq {
     };
 }
 
-/// Implement [`Cmov`] for a signed type by invoking the corresponding unsigned impl.
-macro_rules! impl_cmov_for_signed_with_unsigned {
-    ($int:ty, $uint:ty) => {
-        impl Cmov for [$int] {
-            #[inline]
-            #[track_caller]
-            #[allow(unsafe_code)]
-            fn cmovnz(&mut self, value: &Self, condition: Condition) {
-                assert_size_and_alignment_eq!($int, $uint);
-
-                // SAFETY:
-                // - Slices being constructed are of same-sized integers as asserted above.
-                // - We source the slice length directly from the other valid slice.
-
-                let self_unsigned = unsafe { cast_slice_mut::<$int, $uint>(self) };
-                let value_unsigned = unsafe { cast_slice::<$int, $uint>(value) };
-                self_unsigned.cmovnz(value_unsigned, condition);
-            }
-        }
-    };
-}
-
-/// Implement [`CmovEq`] for a signed type by invoking the corresponding unsigned impl.
-macro_rules! impl_cmoveq_for_signed_with_unsigned {
-    ($int:ty, $uint:ty) => {
-        impl CmovEq for [$int] {
-            #[inline]
-            #[allow(unsafe_code)]
-            fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-                // SAFETY:
-                // - Slices being constructed are of same-sized integers as asserted above.
-                // - We source the slice length directly from the other valid slice.
-                let self_unsigned = unsafe { cast_slice::<$int, $uint>(self) };
-                let rhs_unsigned = unsafe { cast_slice::<$int, $uint>(rhs) };
-                self_unsigned.cmovne(rhs_unsigned, input, output);
-            }
-        }
-    };
-}
-
-/// Implement [`Cmov`] and [`CmovEq`] for the given signed/unsigned type pair.
-// TODO(tarcieri): use `cast_unsigned`/`cast_signed` to get rid of the `=> u*`
-macro_rules! impl_cmov_traits_for_signed_with_unsigned {
-    ( $($int:ty => $uint:ty),+ ) => {
+/// Implement [`Cmov`] and [`CmovEq`] traits by casting to a different type that impls the traits.
+macro_rules! impl_cmov_with_cast {
+    ( $($src:ty => $dst:ty),+ ) => {
         $(
-            impl_cmov_for_signed_with_unsigned!($int, $uint);
-            impl_cmoveq_for_signed_with_unsigned!($int, $uint);
+            impl Cmov for [$src] {
+                #[inline]
+                #[track_caller]
+                #[allow(unsafe_code)]
+                fn cmovnz(&mut self, value: &Self, condition: Condition) {
+                    assert_size_and_alignment_eq!($src, $dst);
+
+                    // SAFETY:
+                    // - Slices being constructed are of same-sized integers as asserted above.
+                    // - We source the slice length directly from the other valid slice.
+                    let self_unsigned = unsafe { cast_slice_mut::<$src, $dst>(self) };
+                    let value_unsigned = unsafe { cast_slice::<$src, $dst>(value) };
+                    self_unsigned.cmovnz(value_unsigned, condition);
+                }
+            }
         )+
     };
 }
 
-impl_cmov_traits_for_signed_with_unsigned!(
+// These types are all safe to cast between each other
+impl_cmov_with_cast!(
     i8 => u8,
     i16 => u16,
     i32 => u32,
     i64 => u64,
-    i128 => u128
+    i128 => u128,
+    NonZeroI8 => i8,
+    NonZeroI16 => i16,
+    NonZeroI32 => i32,
+    NonZeroI64 => i64,
+    NonZeroI128 => i128,
+    NonZeroU8 => u8,
+    NonZeroU16 => u16,
+    NonZeroU32 => u32,
+    NonZeroU64 => u64,
+    NonZeroU128 => u128,
+    cmp::Ordering => i8 // #[repr(i8)]
 );
+
+//
+// `CmovEq` impls
+//
 
 // Optimized implementation for byte slices which coalesces them into word-sized chunks first,
 // then performs [`CmovEq`] at the word-level to cut down on the total number of instructions.
@@ -252,6 +250,52 @@ macro_rules! impl_cmoveq_with_loop {
 
 // TODO(tarcieri): investigate word-coalescing impls
 impl_cmoveq_with_loop!(u16, u32, u64, u128);
+
+/// Implement [`CmovEq`] traits by casting to a different type that impls the traits.
+macro_rules! impl_cmoveq_with_cast {
+    ( $($src:ty => $dst:ty),+ ) => {
+        $(
+            impl CmovEq for [$src] {
+                #[inline]
+                #[allow(unsafe_code)]
+                fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
+                    assert_size_and_alignment_eq!($src, $dst);
+
+                    // SAFETY:
+                    // - Slices being constructed are of same-sized types as asserted above.
+                    // - We source the slice length directly from the other valid slice.
+                    let self_unsigned = unsafe { cast_slice::<$src, $dst>(self) };
+                    let rhs_unsigned = unsafe { cast_slice::<$src, $dst>(rhs) };
+                    self_unsigned.cmovne(rhs_unsigned, input, output);
+                }
+            }
+        )+
+    };
+}
+
+// These types are all safe to cast between each other
+impl_cmoveq_with_cast!(
+    i8 => u8,
+    i16 => u16,
+    i32 => u32,
+    i64 => u64,
+    i128 => u128,
+    NonZeroI8 => i8,
+    NonZeroI16 => i16,
+    NonZeroI32 => i32,
+    NonZeroI64 => i64,
+    NonZeroI128 => i128,
+    NonZeroU8 => u8,
+    NonZeroU16 => u16,
+    NonZeroU32 => u32,
+    NonZeroU64 => u64,
+    NonZeroU128 => u128,
+    cmp::Ordering => i8 // #[repr(i8)]
+);
+
+//
+// Helper functions
+//
 
 /// Performs an unsafe pointer cast from one slice type to the other.
 ///
@@ -354,6 +398,10 @@ where
         }
     }
 }
+
+//
+// Vendored `core` functions to allow a 1.85 MSRV
+//
 
 /// Rust core `[T]::as_chunks` vendored because of its 1.88 MSRV.
 /// TODO(tarcieri): use upstream function when we bump MSRV
