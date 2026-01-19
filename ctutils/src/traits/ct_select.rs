@@ -92,29 +92,18 @@ macro_rules! impl_ct_select_with_ct_assign {
 }
 
 impl_ct_select_with_ct_assign!(
-    i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize
-);
-
-/// Impl `CtSelect` for `NonZero<T>` by calling the `CtSelect` impl for `T`.
-macro_rules! impl_ct_select_for_nonzero_integer {
-    ( $($nzint:ident),+ ) => {
-        $(
-             impl CtSelect for $nzint {
-                #[inline]
-                fn ct_select(&self, rhs: &Self, choice: Choice) -> Self {
-                    let n = self.get().ct_select(&rhs.get(), choice);
-
-                    // SAFETY: we are constructing `NonZero` from a value we obtained from
-                    // `NonZero::get`, which ensures it's non-zero.
-                    #[allow(unsafe_code)]
-                    unsafe { $nzint::new_unchecked(n) }
-                }
-            }
-        )+
-    };
-}
-
-impl_ct_select_for_nonzero_integer!(
+    i8,
+    i16,
+    i32,
+    i64,
+    i128,
+    isize,
+    u8,
+    u16,
+    u32,
+    u64,
+    u128,
+    usize,
     NonZeroI8,
     NonZeroI16,
     NonZeroI32,
@@ -124,29 +113,9 @@ impl_ct_select_for_nonzero_integer!(
     NonZeroU16,
     NonZeroU32,
     NonZeroU64,
-    NonZeroU128
+    NonZeroU128,
+    cmp::Ordering
 );
-
-impl CtSelect for cmp::Ordering {
-    fn ct_select(&self, other: &Self, choice: Choice) -> Self {
-        // `Ordering` is `#[repr(i8)]` where:
-        //
-        // - `Less` => -1
-        // - `Equal` => 0
-        // - `Greater` => 1
-        //
-        // Given this, it's possible to operate on orderings as if they're `i8`, which allows us to
-        // use the `CtSelect` impl on `i8` to select between them.
-        let ret = (*self as i8).ct_select(&(*other as i8), choice);
-
-        // SAFETY: `Ordering` is `#[repr(i8)]` and `ret` has been assigned to
-        // a value which was originally a valid `Ordering` then cast to `i8`
-        #[allow(trivial_casts, unsafe_code)]
-        unsafe {
-            *(&raw const ret).cast::<Self>()
-        }
-    }
-}
 
 #[cfg(feature = "subtle")]
 impl CtSelect for subtle::Choice {
