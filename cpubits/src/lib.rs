@@ -41,6 +41,7 @@
 
 #[macro_export]
 macro_rules! cpubits {
+    // Select between 16-bit and 32-bit, where 64-bit targets will use the 32-bit option
     (
         16 => { $( $tokens16:tt )* }
         32 => { $( $tokens32:tt )* }
@@ -51,6 +52,18 @@ macro_rules! cpubits {
         }
     };
 
+    // Only run the given block if we have selected the 64-bit backend, i.e. the code will be
+    // ignored on 16-bit and 32-bit platforms.
+    (
+        64 => { $( $tokens64:tt )* }
+    ) => {
+        $crate::cpubits! {
+            16 | 32 => { }
+            64 => { $( $tokens64 )* }
+        }
+    };
+
+    // Select between 32-bit and 64-bit, where 16-bit targets will use the 32-bit option
     (
         32 => { $( $tokens32:tt )* }
         64 => { $( $tokens64:tt )* }
@@ -61,6 +74,7 @@ macro_rules! cpubits {
         }
     };
 
+    // Same as `16`/`32` above, but more explicit
     (
         16 => { $( $tokens16:tt )* }
         32 | 64 => { $( $tokens32:tt )* }
@@ -72,6 +86,7 @@ macro_rules! cpubits {
         }
     };
 
+    // Same as `32`/`64` above, but more explicit
     (
         16 | 32 => { $( $tokens32:tt )* }
         64 => { $( $tokens64:tt )* }
@@ -83,6 +98,7 @@ macro_rules! cpubits {
         }
     };
 
+    // The general API which runs a different block for each possible word size
     (
         16 => { $( $tokens16:tt )* }
         32 => { $( $tokens32:tt )* }
@@ -99,6 +115,8 @@ macro_rules! cpubits {
         }
     };
 
+    // Same API as immediately above, but with a pseudo-attribute we use to pass the `cfg` overrides
+    // for `target_pointer_width` that promote a 32-bit target into a 64-bit one.
     (
         #[enable_64bit( $($enable_64bit:tt)+ )]
         16 => { $( $tokens16:tt )* }
