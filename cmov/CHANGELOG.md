@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.1 (2026-01-18)
+### Added
+- `riscv32` optimised mask generation ([#1396])
+- `riscv64` optimised mask generation ([#1397])
+- Support for `core::num::NonZero*` and `core::cmp::Ordering` ([#1404])
+
+[#1396]: https://github.com/RustCrypto/utils/pull/1396
+[#1397]: https://github.com/RustCrypto/utils/pull/1397
+[#1404]: https://github.com/RustCrypto/utils/pull/1404
+
 ## 0.5.0 (2026-01-17)
 ### Added
 - Optimized `CmovEq` for `[u8]` ([#1356])
