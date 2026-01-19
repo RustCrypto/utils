@@ -26,3 +26,6 @@ libc = { version = "0.2.155", default-features = false }
 
 [target.'cfg(all(target_arch = "aarch64", target_os = "android"))'.dependencies]
 libc = { version = "0.2.155", default-features = false }
+
+[lints]
+workspace = true

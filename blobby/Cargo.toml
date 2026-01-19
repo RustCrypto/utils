@@ -13,3 +13,6 @@ description = "Iterator over simple binary blob storage"
 
 [features]
 alloc = []
+
+[lints]
+workspace = true

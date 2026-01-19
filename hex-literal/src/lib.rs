@@ -38,6 +38,7 @@ const fn next_byte(string: &[u8], pos: usize) -> Option<(u8, usize)> {
 ///
 /// This function is an implementation detail and SHOULD NOT be called directly!
 #[doc(hidden)]
+#[must_use]
 pub const fn len(strings: &[&[u8]]) -> usize {
     let mut i = 0;
     let mut len = 0;
@@ -56,6 +57,7 @@ pub const fn len(strings: &[&[u8]]) -> usize {
 ///
 /// This function is an implementation detail and SHOULD NOT be called directly!
 #[doc(hidden)]
+#[must_use]
 pub const fn decode<const LEN: usize>(strings: &[&[u8]]) -> Option<[u8; LEN]> {
     let mut string_pos = 0;
     let mut buf = [0u8; LEN];

@@ -31,5 +31,8 @@ aarch64 = [] # NOTE: vestigial no-op feature; AArch64 support is always enabled 
 derive = ["zeroize_derive"]
 simd = [] # NOTE: MSRV 1.72
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 all-features = true

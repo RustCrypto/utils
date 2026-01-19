@@ -1,3 +1,5 @@
+//! Tests for splitting `InOutBuf`.
+
 use hybrid_array::{
     Array,
     sizes::{U2, U4, U8},

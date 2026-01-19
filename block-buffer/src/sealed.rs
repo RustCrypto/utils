@@ -43,8 +43,9 @@ impl Sealed for super::Eager {
         pos as usize
     }
 
+    #[allow(clippy::cast_possible_truncation)]
     fn set_pos<N: ArraySize>(buf: &mut Block<N>, _pos: &mut Self::Pos, val: usize) {
-        debug_assert!(val <= u8::MAX as usize);
+        debug_assert!(u8::try_from(val).is_ok());
         // SAFETY: we write to the last byte of `buf` which is always safe
         unsafe {
             let buf_ptr = buf.as_mut_ptr().cast::<u8>();
@@ -73,8 +74,9 @@ impl Sealed for super::Lazy {
         *pos as usize
     }
 
+    #[allow(clippy::cast_possible_truncation)]
     fn set_pos<N: ArraySize>(_: &mut Block<N>, pos: &mut Self::Pos, val: usize) {
-        debug_assert!(val <= u8::MAX as usize);
+        debug_assert!(u8::try_from(val).is_ok());
         *pos = val as u8;
     }
 

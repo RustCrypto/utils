@@ -8,6 +8,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
+#![allow(clippy::missing_errors_doc)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -100,6 +101,7 @@ pub trait TryPush<T> {
 /// [`TryCollect`] is an extension to [`Iterator`] which allows for performing
 /// a fallible collection into a collection type.
 pub trait TryCollect<A> {
+    /// Attempt to collect into the given type.
     fn try_collect<B>(&mut self) -> Result<B, B::Error>
     where
         B: TryFromIterator<A>;

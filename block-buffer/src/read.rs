@@ -73,6 +73,7 @@ impl<BS: ArraySize> ReadBuffer<BS> {
     /// # Safety
     /// `pos` must be smaller than or equal to the buffer block size and be bigger than zero.
     #[inline(always)]
+    #[allow(clippy::cast_possible_truncation)]
     unsafe fn set_pos_unchecked(&mut self, pos: usize) {
         debug_assert!(pos != 0 && pos <= BS::USIZE);
         self.buffer[0] = pos as u8;
@@ -141,7 +142,7 @@ impl<BS: ArraySize> ReadBuffer<BS> {
         }
 
         self.write_block(tail.len(), gen_block, |tail_ks| {
-            tail.copy_from_slice(tail_ks)
+            tail.copy_from_slice(tail_ks);
         });
     }
 
@@ -158,6 +159,10 @@ impl<BS: ArraySize> ReadBuffer<BS> {
     }
 
     /// Deserialize buffer from a byte array.
+    ///
+    /// # Errors
+    /// - If the first byte is `0`.
+    /// - If the first byte is bigger than `BS`.
     #[inline]
     pub fn deserialize(buffer: &Array<u8, BS>) -> Result<Self, Error> {
         let pos = usize::from(buffer[0]);

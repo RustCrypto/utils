@@ -3,6 +3,7 @@ use super::{NEXT_MASK, VAL_MASK};
 /// Write a git-flavoured VLQ value into `buf`.
 ///
 /// Returns the slice within `buf` that holds the value.
+#[allow(clippy::cast_possible_truncation)]
 fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
     macro_rules! step {
         ($n:expr) => {
@@ -40,6 +41,7 @@ fn encode_vlq(mut val: usize, buf: &mut [u8; 4]) -> &[u8] {
 ///         - (J << 1) & 0x01: indicates this blob is index entry J
 ///         - (L << 1) & 0x00: indicates an explicit blob of len L
 ///      - (in the latter case) explicit blob contents (L bytes)
+#[allow(clippy::missing_panics_doc, clippy::unwrap_used)]
 pub fn encode_blobs<T>(blobs: &[T]) -> (alloc::vec::Vec<u8>, usize)
 where
     T: AsRef<[u8]>,
@@ -49,7 +51,7 @@ where
     let mut dedup_map = BTreeMap::new();
     blobs
         .iter()
-        .map(|v| v.as_ref())
+        .map(AsRef::as_ref)
         .filter(|blob| !blob.is_empty())
         .for_each(|blob| {
             let v = dedup_map.entry(blob.as_ref()).or_insert(0);
@@ -89,7 +91,7 @@ where
         out_buf.extend_from_slice(e);
     }
 
-    for blob in blobs.iter().map(|v| v.as_ref()) {
+    for blob in blobs.iter().map(AsRef::as_ref) {
         if let Some(dup_pos) = rev_idx.get(blob) {
             let n = (dup_pos << 1) + 1usize;
             out_buf.extend_from_slice(encode_vlq(n, &mut buf));
@@ -104,6 +106,7 @@ where
 }
 
 #[cfg(test)]
+#[allow(clippy::cast_possible_truncation, clippy::unwrap_used)]
 mod tests {
     use crate::{Error, NEXT_MASK, VAL_MASK, decode::read_vlq};
 

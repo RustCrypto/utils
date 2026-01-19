@@ -1,3 +1,5 @@
+//! `opaque-debug` tests
+
 #![allow(dead_code)]
 
 struct Foo {

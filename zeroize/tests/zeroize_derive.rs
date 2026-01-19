@@ -1,6 +1,7 @@
 //! Integration tests for `zeroize_derive` proc macros
 
 #![cfg(feature = "zeroize_derive")]
+#![allow(clippy::undocumented_unsafe_blocks)]
 
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -11,7 +12,7 @@ fn derive_tuple_struct_test() {
 
     let mut value = Z([1, 2, 3]);
     value.zeroize();
-    assert_eq!(&value.0, &[0, 0, 0])
+    assert_eq!(&value.0, &[0, 0, 0]);
 }
 
 #[test]
@@ -65,7 +66,7 @@ fn derive_struct_drop() {
     #[derive(Zeroize, ZeroizeOnDrop)]
     struct Z([u8; 3]);
 
-    assert!(std::mem::needs_drop::<Z>());
+    assert!(core::mem::needs_drop::<Z>());
 }
 
 /// Test that the custom macro actually derived `Drop` for `Z`
@@ -78,7 +79,7 @@ fn derive_enum_drop() {
         Variant2(usize),
     }
 
-    assert!(std::mem::needs_drop::<Z>());
+    assert!(core::mem::needs_drop::<Z>());
 }
 
 /// Test that the custom macro actually derived `Drop` for `Z`
@@ -87,7 +88,7 @@ fn derive_struct_only_drop() {
     #[derive(ZeroizeOnDrop)]
     struct Z([u8; 3]);
 
-    assert!(std::mem::needs_drop::<Z>());
+    assert!(core::mem::needs_drop::<Z>());
 }
 
 /// Test that the custom macro actually derived `Drop` for `Z`
@@ -100,7 +101,7 @@ fn derive_enum_only_drop() {
         Variant2(usize),
     }
 
-    assert!(std::mem::needs_drop::<Z>());
+    assert!(core::mem::needs_drop::<Z>());
 }
 
 /// Test that `Drop` is not derived in the following case by defining a
@@ -254,9 +255,9 @@ fn derive_inherit_zeroize_on_drop() {
 
     let mut value = Z(X([1, 2, 3]));
     unsafe {
-        std::ptr::drop_in_place(&mut value);
+        core::ptr::drop_in_place(&raw mut value);
     }
-    assert_eq!(&value.0.0, &[0, 0, 0])
+    assert_eq!(&value.0.0, &[0, 0, 0]);
 }
 
 #[test]
@@ -269,9 +270,9 @@ fn derive_inherit_from_both() {
 
     let mut value = Z(X([1, 2, 3]));
     unsafe {
-        std::ptr::drop_in_place(&mut value);
+        core::ptr::drop_in_place(&raw mut value);
     }
-    assert_eq!(&value.0.0, &[0, 0, 0])
+    assert_eq!(&value.0.0, &[0, 0, 0]);
 }
 
 #[test]
@@ -284,16 +285,16 @@ fn derive_inherit_both() {
 
     let mut value = Z(X([1, 2, 3]));
     unsafe {
-        std::ptr::drop_in_place(&mut value);
+        core::ptr::drop_in_place(&raw mut value);
     }
-    assert_eq!(&value.0.0, &[0, 0, 0])
+    assert_eq!(&value.0.0, &[0, 0, 0]);
 }
 
 #[test]
 fn derive_deref() {
     struct X([u8; 3]);
 
-    impl std::ops::Deref for X {
+    impl core::ops::Deref for X {
         type Target = [u8];
 
         fn deref(&self) -> &Self::Target {
@@ -301,7 +302,7 @@ fn derive_deref() {
         }
     }
 
-    impl std::ops::DerefMut for X {
+    impl core::ops::DerefMut for X {
         fn deref_mut(&mut self) -> &mut Self::Target {
             &mut self.0
         }
@@ -312,9 +313,9 @@ fn derive_deref() {
 
     let mut value = Z(X([1, 2, 3]));
     unsafe {
-        std::ptr::drop_in_place(&mut value);
+        core::ptr::drop_in_place(&raw mut value);
     }
-    assert_eq!(&value.0.0, &[0, 0, 0])
+    assert_eq!(&value.0.0, &[0, 0, 0]);
 }
 
 #[test]

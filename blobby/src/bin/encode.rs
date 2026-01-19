@@ -1,5 +1,5 @@
 //! Encoding utility
-use std::error::Error;
+use core::error::Error;
 
 #[cfg(not(feature = "alloc"))]
 fn main() -> Result<(), Box<dyn Error>> {

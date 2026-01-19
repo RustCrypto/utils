@@ -13,3 +13,6 @@ description = "Fallible, no_std-friendly collection traits"
 
 [features]
 alloc = []
+
+[lints]
+workspace = true

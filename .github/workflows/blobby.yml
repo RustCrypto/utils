@@ -2,9 +2,9 @@ name: blobby
 
 on:
   pull_request:
-      paths:
-        - "blobby/**"
-        - "Cargo.*"
+    paths:
+      - "blobby/**"
+      - "Cargo.*"
   push:
     branches: master
 
@@ -38,11 +38,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
-      - run: rm ../Cargo.toml
       - run: cargo test
-
-  minimal-versions:
-    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
-    with:
-        working-directory: ${{ github.workflow }}

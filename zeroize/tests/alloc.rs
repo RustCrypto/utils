@@ -1,5 +1,10 @@
-use std::alloc::{GlobalAlloc, Layout, System};
+#![allow(
+    missing_docs,
+    clippy::std_instead_of_core,
+    clippy::undocumented_unsafe_blocks
+)]
 
+use std::alloc::{GlobalAlloc, Layout, System};
 use zeroize::Zeroize;
 
 // Allocator that ensures that deallocated data is zeroized.
@@ -14,9 +19,7 @@ unsafe impl GlobalAlloc for ProxyAllocator {
         if layout.size() == 160 {
             for i in 0..layout.size() {
                 let b = unsafe { core::ptr::read(ptr.add(i)) };
-                if b != 0 {
-                    panic!()
-                }
+                assert_eq!(b, 0);
             }
         }
 
@@ -37,7 +40,7 @@ impl<S: Zeroize> SecretBox<S> {
 
 impl<S: Zeroize> Drop for SecretBox<S> {
     fn drop(&mut self) {
-        self.0.as_mut().zeroize()
+        self.0.as_mut().zeroize();
     }
 }
 

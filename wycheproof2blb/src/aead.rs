@@ -42,14 +42,17 @@ pub struct TestCase {
     pub tag: Vec<u8>,
 }
 
+#[must_use]
 pub fn aes_gcm_generator(data: &[u8], algorithm: &str, key_size: u32) -> Vec<TestInfo> {
     generator(data, algorithm, key_size, 12 * 8)
 }
 
+#[must_use]
 pub fn chacha20_poly1305(data: &[u8], algorithm: &str, _key_size: u32) -> Vec<TestInfo> {
     generator(data, algorithm, 256, 12 * 8)
 }
 
+#[must_use]
 pub fn xchacha20_poly1305(data: &[u8], algorithm: &str, _key_size: u32) -> Vec<TestInfo> {
     generator(data, algorithm, 256, 24 * 8)
 }

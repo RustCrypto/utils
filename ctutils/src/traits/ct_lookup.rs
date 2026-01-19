@@ -24,6 +24,7 @@ where
     type Output = T;
 
     #[inline]
+    #[allow(clippy::arithmetic_side_effects)]
     fn ct_lookup(&self, index: Idx) -> CtOption<T> {
         let mut ret = CtOption::none();
         let mut i = Idx::default();

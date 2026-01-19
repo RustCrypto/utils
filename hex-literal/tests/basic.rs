@@ -1,3 +1,5 @@
+//! Basic `hex-literal` tests.
+
 use hex_literal::hex;
 
 #[test]

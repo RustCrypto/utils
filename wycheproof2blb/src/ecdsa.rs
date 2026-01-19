@@ -60,7 +60,7 @@ pub fn generator(data: &[u8], algorithm: &str, _key_size: u32) -> Vec<TestInfo> 
             "SHA-224" | "SHA-256" | "SHA-384" | "SHA-512"
         ));
         for tc in &g.tests {
-            if tc.case.result == crate::wycheproof::CaseResult::Acceptable {
+            if tc.case.result == wycheproof::CaseResult::Acceptable {
                 // TODO: figure out what to do with test cases that pass but which have weak params
                 continue;
             }

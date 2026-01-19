@@ -9,3 +9,6 @@ readme = "README.md"
 repository = "https://github.com/RustCrypto/utils"
 license = "MIT OR Apache-2.0"
 description = "Macro for opaque Debug trait implementation"
+
+[lints]
+workspace = true
