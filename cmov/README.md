@@ -28,6 +28,12 @@ inline `asm!`, which means the implementation is a black box that will not be
 rewritten by e.g. LLVM's architecture-specific lowerings, such as the
 [x86-cmov-conversion] pass.
 
+This is a *low level crate* who's API is designed to make it easy to build
+portable abstractions across various CPU architectures and is not intended for
+general purpose use.
+
+See the [`ctutils`] crate for a higher-level API build on top of `cmov`.
+
 ## Supported target architectures
 
 This crate provides guaranteed constant-time operation using inline `asm!`
@@ -111,5 +117,6 @@ dual licensed as above, without any additional terms or conditions.
 [CSEL]: https://developer.arm.com/documentation/dui0802/b/CSEL
 [predication]: https://en.wikipedia.org/wiki/Predication_(computer_architecture)
 [x86-cmov-conversion]: https://dsprenkels.com/cmov-conversion.html
+[`ctutils`]: https://docs.rs/ctutils
 [open an issue]: https://github.com/RustCrypto/utils/issues
 [RUSTSEC-2026-0003]: https://rustsec.org/advisories/RUSTSEC-2026-0003.html
