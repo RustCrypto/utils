@@ -60,6 +60,17 @@
 //! something it isn't with `Option`: evaluate combinators eagerly instead of lazily, running the
 //! same functions regardless of the value's effective presence or absence.
 //!
+//! ## [`CtAssign`]: constant-time additional assignment using [predication]
+//! Support for conditionally assigning to a type or slices thereof (for types which impl the
+//! [`CtAssignSlice`] trait) based on a provided condition value.
+//!
+//! Uses predication instructions or a portable simulation thereof to perform constant-time
+//! conditional assignment based ona  [`Choice`].
+//!
+//! *NOTE: for `subtle` users, this trait provides the equivalent of the
+//! `ConditionallySelectable::conditional_assign` method, but as its own trait without a `Sized`
+//! bound so it can also be impl'd for slices*
+//!
 //! ## [`CtEq`]: constant-time analogue for [`PartialEq`]/[`Eq`]
 //! Equality testing often short circuits for performance reasons, but when comparing values in
 //! constant-time such short-circuiting is forbidden.
@@ -75,8 +86,8 @@
 //! using non-branch instructions which perform conditional modifications based on a *predicate*
 //! or boolean value, in the design of this library a `Choice`.
 //!
-//! The `CtSelect` trait provides methods for performing conditional moves, either conditionally
-//! modifying a value in-place, or selecting from two different inputs and returning a new one.
+//! The `CtSelect` trait provides methods for performing conditional selection between two
+//! different inputs and returning a new one.
 //!
 //! *NOTE: for `subtle` users, this is the equivalent of the `ConditionallySelectable` trait*
 //!
