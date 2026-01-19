@@ -1,4 +1,4 @@
-use crate::{Choice, CtSelect};
+use crate::Choice;
 use cmov::Cmov;
 use core::{
     cmp,
@@ -7,6 +7,9 @@ use core::{
         NonZeroU32, NonZeroU64, NonZeroU128,
     },
 };
+
+#[cfg(feature = "subtle")]
+use crate::CtSelect;
 
 #[cfg(doc)]
 use core::num::NonZero;
@@ -86,29 +89,18 @@ macro_rules! impl_ct_assign_slice_with_cmov {
     };
 }
 
-impl_ct_assign_slice_with_cmov!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
-impl_ct_assign_with_cmov!(isize, usize);
-impl CtAssignSlice for isize {}
-impl CtAssignSlice for usize {}
-
-/// Impl `CtAssign` using the `CtSelect` trait.
-macro_rules! impl_ct_assign_with_ct_select {
-    ( $($ty:ty),+ ) => {
-        $(
-            impl CtAssign for $ty {
-                #[inline]
-                fn ct_assign(&mut self, rhs: &Self, choice: Choice) {
-                    *self = Self::ct_select(self, rhs, choice);
-                }
-            }
-
-            impl CtAssignSlice for $ty {}
-        )+
-    };
-}
-
-impl_ct_assign_with_ct_select!(
-    cmp::Ordering,
+// NOTE: impls `CtAssign` and `CtAssignSlice`
+impl_ct_assign_slice_with_cmov!(
+    i8,
+    i16,
+    i32,
+    i64,
+    i128,
+    u8,
+    u16,
+    u32,
+    u64,
+    u128,
     NonZeroI8,
     NonZeroI16,
     NonZeroI32,
@@ -118,8 +110,13 @@ impl_ct_assign_with_ct_select!(
     NonZeroU16,
     NonZeroU32,
     NonZeroU64,
-    NonZeroU128
+    NonZeroU128,
+    cmp::Ordering
 );
+
+impl_ct_assign_with_cmov!(isize, usize);
+impl CtAssignSlice for isize {}
+impl CtAssignSlice for usize {}
 
 impl<T, const N: usize> CtAssign for [T; N]
 where

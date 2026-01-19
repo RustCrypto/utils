@@ -25,14 +25,12 @@ macro_rules! impl_signed_ct_neg {
             impl CtNeg for $int {
                 #[inline]
                 fn ct_neg(&self, choice: Choice) -> Self {
-                    let neg = -*self;
-                    self.ct_select(&neg, choice)
+                    self.ct_select(&-*self, choice)
                 }
 
                 #[inline]
                 fn ct_neg_assign(&mut self, choice: Choice) {
-                    let neg = -*self;
-                    self.ct_assign(&neg, choice)
+                    self.ct_assign(&-*self, choice)
                 }
             }
         )+
@@ -46,58 +44,52 @@ macro_rules! impl_unsigned_ct_neg {
             impl CtNeg for $uint {
                 #[inline]
                 fn ct_neg(&self, choice: Choice) -> Self {
-                    let neg = self.wrapping_neg();
-                    self.ct_select(&neg, choice)
+                    self.ct_select(&self.wrapping_neg(), choice)
                 }
 
                 #[inline]
                 fn ct_neg_assign(&mut self, choice: Choice) {
-                     let neg = self.wrapping_neg();
-                    self.ct_assign(&neg, choice)
+                    self.ct_assign(&self.wrapping_neg(), choice)
                 }
             }
         )+
     };
 }
 
-impl_signed_ct_neg!(i8, i16, i32, i64, i128);
-impl_unsigned_ct_neg!(u8, u16, u32, u64, u128);
-
-/// Impl `CtNeg` for `NonZero<T>` by calling the `CtNeg` impl for `T`.
-macro_rules! impl_ct_neg_for_nonzero_integer {
-    ( $($nzint:ident),+ ) => {
-        $(
-             impl CtNeg for $nzint {
-                #[inline]
-                fn ct_neg(&self, choice: Choice) -> Self {
-                    let n = self.get().ct_neg(choice);
-
-                    // SAFETY: we are constructing `NonZero` from a value we obtained from
-                    // `NonZero::get`, which ensures it's non-zero, and the negation of a non-zero
-                    // integer will always be non-zero:
-                    //
-                    // - signed: `{i*}::MIN` and `{i*}::MAX` are each other's negations
-                    // - unsigned: `1` and `{u*}::MAX` are each other's negations
-                    #[allow(unsafe_code)]
-                    unsafe { $nzint::new_unchecked(n) }
-                }
-            }
-        )+
-    };
-}
-
-impl_ct_neg_for_nonzero_integer!(
+impl_signed_ct_neg!(
+    i8,
+    i16,
+    i32,
+    i64,
+    i128,
     NonZeroI8,
     NonZeroI16,
     NonZeroI32,
     NonZeroI64,
-    NonZeroI128,
-    NonZeroU8,
-    NonZeroU16,
-    NonZeroU32,
-    NonZeroU64,
-    NonZeroU128
+    NonZeroI128
 );
+impl_unsigned_ct_neg!(u8, u16, u32, u64, u128);
+
+/// Unfortunately `NonZeroU*` doesn't support `wrapping_neg` for some reason (but `NonZeroI*` does),
+/// even though the wrapping negation of any non-zero integer should also be non-zero.
+///
+/// So we need a special case just for `NonZeroU*`, at least for now.
+macro_rules! impl_ct_neg_for_unsigned_nonzero {
+    ( $($nzuint:ident),+ ) => {
+        $(
+            impl CtNeg for $nzuint {
+                #[inline]
+                fn ct_neg(&self, choice: Choice) -> Self {
+                    // TODO(tarcieri): use `NonZero::wrapping_neg` if it becomes available
+                    let n = self.get().ct_select(&self.get().wrapping_neg(), choice);
+                    $nzuint::new(n).expect("should be non-zero")
+                }
+            }
+        )+
+    };
+}
+
+impl_ct_neg_for_unsigned_nonzero!(NonZeroU8, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128);
 
 #[cfg(test)]
 mod tests {

@@ -63,6 +63,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "cmov"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df1888fb431ee159b513b5c2f249e03f1c9d788f7bd842927619dbeb88764039"
+
+[[package]]
 name = "collectable"
 version = "0.1.0"
 
@@ -81,7 +87,7 @@ dependencies = [
 name = "ctutils"
 version = "0.4.0-pre.4"
 dependencies = [
- "cmov",
+ "cmov 0.5.1",
  "proptest",
  "subtle",
 ]
