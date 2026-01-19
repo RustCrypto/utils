@@ -1,3 +1,5 @@
+//! Tests for `Cmov`/`CmovEq` impls on `core` types.
+
 /// Write the tests for an integer type, given two unequal integers
 macro_rules! int_tests {
     ($int:ident, $a:expr, $b:expr) => {
@@ -43,7 +45,7 @@ macro_rules! int_tests {
                 0.cmoveq(&$a, 1, &mut o);
                 assert_eq!(o, 0);
 
-                for cond in 1..0xFFi64 {
+                for cond in 1..(0x7F as $int) {
                     cond.cmoveq(&cond, cond as u8, &mut o);
                     assert_eq!(o, cond as u8);
                     cond.cmoveq(&0, 0, &mut o);
@@ -77,7 +79,7 @@ macro_rules! int_tests {
                 assert_eq!(o, 1);
                 o = 0;
 
-                for cond in 1..0xFFi64 {
+                for cond in 1..(0x7F as $int) {
                     cond.cmovne(&0, cond as u8, &mut o);
                     assert_eq!(o, cond as u8);
                     cond.cmovne(&cond, 0, &mut o);
@@ -121,6 +123,52 @@ int_tests!(
     0x1111_1111_1111_1111_2222_2222_2222_2222u128,
     0x2222_2222_2222_2222_3333_3333_3333_3333u128
 );
+
+mod ordering {
+    use cmov::{Cmov, CmovEq};
+    use core::cmp::Ordering;
+
+    #[test]
+    fn cmovz_works() {
+        let mut n: Ordering = Ordering::Less;
+
+        n.cmovz(&Ordering::Equal, 0);
+        assert_eq!(n, Ordering::Equal);
+
+        for cond in 1..0xFF {
+            n.cmovz(&Ordering::Greater, cond);
+            assert_eq!(n, Ordering::Equal);
+        }
+    }
+
+    #[test]
+    fn cmovnz_works() {
+        let mut n = Ordering::Less;
+        n.cmovnz(&Ordering::Equal, 0);
+        assert_eq!(n, Ordering::Less);
+
+        for cond in 1..0xFF {
+            let mut n = Ordering::Less;
+            n.cmovnz(&Ordering::Greater, cond);
+            assert_eq!(n, Ordering::Greater);
+        }
+    }
+
+    #[test]
+    fn cmoveq_works() {
+        let mut o = 0u8;
+
+        // equal so we move
+        Ordering::Equal.cmoveq(&Ordering::Equal, 43u8, &mut o);
+        assert_eq!(o, 43u8);
+
+        // non-equal so we don't move
+        Ordering::Less.cmoveq(&Ordering::Equal, 1, &mut o);
+        assert_eq!(o, 43u8);
+        Ordering::Less.cmoveq(&Ordering::Greater, 1, &mut o);
+        assert_eq!(o, 43u8);
+    }
+}
 
 mod arrays {
     use cmov::{Cmov, CmovEq};
