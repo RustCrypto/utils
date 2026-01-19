@@ -186,7 +186,6 @@ impl<N: ArraySize> InOut<'_, '_, Array<u8, N>> {
     /// # Panics
     /// If `data` length is not equal to the buffer length.
     #[inline(always)]
-    #[allow(clippy::needless_range_loop)]
     pub fn xor_in2out(&mut self, data: &Array<u8, N>) {
         unsafe {
             let input = ptr::read(self.in_ptr);
@@ -210,7 +209,6 @@ where
     /// # Panics
     /// If `data` length is not equal to the buffer length.
     #[inline(always)]
-    #[allow(clippy::needless_range_loop)]
     pub fn xor_in2out(&mut self, data: &Array<Array<u8, N>, M>) {
         unsafe {
             let input = ptr::read(self.in_ptr);
