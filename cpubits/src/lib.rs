@@ -17,15 +17,10 @@
 //! expected values for `target_pointer_width` are: `16`, `32`, and `64`
 //! ```
 //!
-//! # Usage
+//! # Example
 //!
-//! Use this macro to run code blocks specific to certain CPU word sizes, e.g. to conditionally
-//! define types at compile-time based on the word size.
-//!
-//! The macro doesn't create a new block and supports arbitrary statements in toplevel code, just
-//! like the `cfg-if` crate (whose guts it recycles).
-//!
-//! ## Basic usage
+//! See the [`cpubits`] macro itself for more detailed usage examples including other syntax
+//! variations.
 //!
 //! ```
 //! cpubits::cpubits! {
@@ -34,39 +29,71 @@
 //!     64 => { pub type Word = u64; }
 //! }
 //! ```
-//!
-//! ## Grouping multiple bit sizes
-//!
-//! If you would like to group together 16-bit and 32-bit platforms, you can do so as follows:
-//!
-//! ```
-//! cpubits::cpubits! {
-//!     16 | 32 => { pub type Word = u32; }
-//!     64      => { pub type Word = u64; }
-//! }
-//! ```
-//!
-//! ## Handling single-size cases
-//!
-//! If you only want a block to run for a specific size, e.g. to know when it's possible to write
-//! `impl From<u64> for MyWordNewtype`, you can do the following:
-//!
-//! ```
-//! # type Word = u64;
-//! pub struct MyWordNewtype(Word);
-//!
-//! cpubits::cpubits! {
-//!     64 => {
-//!         impl From<u64> for MyWordNewtype {
-//!             #[inline]
-//!             fn from(n: u64) -> MyWordNewtype {
-//!                 MyWordNewtype(n)
-//!             }
-//!         }
-//!     }
-//! }
-//! ```
 
+// End of toplevel rustdoc, beginning of macro documentation. We put the detailed docs on the macro
+// itself so we can re-export it, and people can easily get to these docs from the re-exported
+// version.
+
+/// # Usage
+///
+/// The macro works sort of like a `match` expression that takes an implicit number of CPU bits,
+/// which is one of `16`, `32`, or `64`.
+///
+/// Use this macro to conditionally emit code specific to certain CPU word sizes, e.g. defining
+/// types at compile-time based on the word size.
+///
+/// The macro doesn't create a new block and supports arbitrary statements in toplevel code, just
+/// like the `cfg-if` crate (whose guts it recycles).
+///
+/// ## Basic usage
+///
+/// ```
+/// cpubits::cpubits! {
+///     16 => { pub type Word = u16; }
+///     32 => { pub type Word = u32; }
+///     64 => { pub type Word = u64; }
+/// }
+/// ```
+///
+/// ## Grouping multiple bit sizes
+///
+/// If you would like to group together 16-bit and 32-bit platforms, you can do so as follows:
+///
+/// ```
+/// cpubits::cpubits! {
+///     16 | 32 => { pub type Word = u32; }
+///     64      => { pub type Word = u64; }
+/// }
+/// ```
+///
+/// ## Handling single-size cases
+///
+/// If you only want a block to run for a specific size, e.g. to know when it's possible to write
+/// `impl From<u64> for MyWordNewtype`, you can do the following:
+///
+/// ```
+/// # type Word = u64;
+/// pub struct MyWordNewtype(Word);
+///
+/// cpubits::cpubits! {
+///     64 => {
+///         impl From<u64> for MyWordNewtype {
+///             #[inline]
+///             fn from(n: u64) -> MyWordNewtype {
+///                 MyWordNewtype(n)
+///             }
+///         }
+///     }
+/// }
+/// ```
+///
+/// # Selection rules
+///
+/// The macro augments `target_pointer_width`-based selection with specific overrides which promote
+/// certain targets from 32-bit to 64-bit ones.
+///
+/// This 64-bit promotion occurs if `any` of the following `cfg`s are true:
+/// - `target_family = "wasm"`
 #[macro_export]
 macro_rules! cpubits {
     // Only run the given block if we have selected a 16-bit word size, i.e. the code will be
@@ -146,10 +173,10 @@ macro_rules! cpubits {
         64 => { $( $tokens64:tt )* }
     ) => {
         $crate::cpubits! {
-            #[enable_64bit(
+            #[cfg(enable_64bit(
                 // `cfg` selector for 64-bit targets (implicitly `any`)
                 target_family = "wasm",
-            )]
+            ))]
             16 => { $( $tokens32 )* }
             32 => { $( $tokens32 )* }
             64 => { $( $tokens64 )* }
@@ -159,7 +186,7 @@ macro_rules! cpubits {
     // Same API as immediately above, but with a pseudo-attribute we use to pass the `cfg` overrides
     // for `target_pointer_width` that promote a 32-bit target into a 64-bit one.
     (
-        #[enable_64bit( $($enable_64bit:tt)+ )]
+        #[cfg(enable_64bit( $($enable_64bit:tt)+ ))]
         16 => { $( $tokens16:tt )* }
         32 => { $( $tokens32:tt )* }
         64 => { $( $tokens64:tt )* }
@@ -192,9 +219,8 @@ macro_rules! cpubits {
     };
 }
 
-// Vendored partial copy of the `cfg_if::cfg_if` macro.
-// Copyright (c) 2014 Alex Crichton. Dual-licensed Apache 2.0 + MIT.
-// TODO(tarcieri): refactor and golf this down to just the parts we use
+/// Vendored partial copy of the `cfg_if::cfg_if` macro.
+/// Copyright (c) 2014 Alex Crichton. Dual-licensed Apache 2.0 + MIT.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! cfg_if {
