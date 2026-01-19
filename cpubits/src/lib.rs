@@ -5,9 +5,27 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
 
+//! # Supported bit sizes
+//!
+//! This crate supports the following bit sizes:
+//! - `16`
+//! - `32`
+//! - `64`
+//!
+//! This matches the available options for `target_pointer_width` in `rustc`:
+//! ```text
+//! expected values for `target_pointer_width` are: `16`, `32`, and `64`
+//! ```
+//!
 //! # Usage
 //!
-//! Use this macro to e.g. conditionally define types at compile-time based on the word size.
+//! Use this macro to run code blocks specific to certain CPU word sizes, e.g. to conditionally
+//! define types at compile-time based on the word size.
+//!
+//! The macro doesn't create a new block and supports arbitrary statements in toplevel code, just
+//! like the `cfg-if` crate (whose guts it recycles).
+//!
+//! ## Basic usage
 //!
 //! ```
 //! cpubits::cpubits! {
@@ -16,6 +34,8 @@
 //!     64 => { pub type Word = u64; }
 //! }
 //! ```
+//!
+//! ## Grouping multiple bit sizes
 //!
 //! If you would like to group together 16-bit and 32-bit platforms, you can do so as follows:
 //!
@@ -26,55 +46,76 @@
 //! }
 //! ```
 //!
-//! You can also use the shortened form of the above syntax which implicitly promotes 16-bit
-//! platforms to 32-bit ones:
+//! ## Handling single-size cases
+//!
+//! If you only want a block to run for a specific size, e.g. to know when it's possible to write
+//! `impl From<u64> for MyWordNewtype`, you can do the following:
 //!
 //! ```
+//! # type Word = u64;
+//! pub struct MyWordNewtype(Word);
+//!
 //! cpubits::cpubits! {
-//!     32 => { pub type Word = u32; }
-//!     64 => { pub type Word = u64; }
+//!     64 => {
+//!         impl From<u64> for MyWordNewtype {
+//!             #[inline]
+//!             fn from(n: u64) -> MyWordNewtype {
+//!                 MyWordNewtype(n)
+//!             }
+//!         }
+//!     }
 //! }
 //! ```
-//!
-//! 32-bit and 64-bit platforms can also be combined to differentiate them from 16-bit ones, e.g.
-//! `16 => { ... }, 32 | 64 => { ... }`, and `32 | 64` can be shortened to just `32` in such a case.
 
 #[macro_export]
 macro_rules! cpubits {
-    // Select between 16-bit and 32-bit, where 64-bit targets will use the 32-bit option
-    (
-        16 => { $( $tokens16:tt )* }
-        32 => { $( $tokens32:tt )* }
-    ) => {
+    // Only run the given block if we have selected a 16-bit word size, i.e. the code will be
+    // ignored on 32-bit and 64-bit platforms.
+    ( 16 => { $( $tokens:tt )* } ) => {
         $crate::cpubits! {
-            16 => { $( $tokens16 )* }
-            32 | 64 => { $( $tokens32 )* }
+            16 => { $( $tokens )* },
+            32 | 64 => { }
         }
     };
 
-    // Only run the given block if we have selected the 64-bit backend, i.e. the code will be
+    // Only run the given block if we have selected a 32-bit word size, i.e. the code will be
+    // ignored on 32-bit and 64-bit platforms.
+    ( 32 => { $( $tokens:tt )* } ) => {
+        $crate::cpubits! {
+            16 => { }
+            32 => { $( $tokens )* }
+            64 => { }
+        }
+    };
+
+    // Only run the given block if we have selected a 64-bit word size, i.e. the code will be
     // ignored on 16-bit and 32-bit platforms.
-    (
-        64 => { $( $tokens64:tt )* }
-    ) => {
+    ( 64 => { $( $tokens:tt )* } ) => {
         $crate::cpubits! {
             16 | 32 => { }
-            64 => { $( $tokens64 )* }
+            64 => { $( $tokens )* }
         }
     };
 
-    // Select between 32-bit and 64-bit, where 16-bit targets will use the 32-bit option
-    (
-        32 => { $( $tokens32:tt )* }
-        64 => { $( $tokens64:tt )* }
-    ) => {
+    // Only run the block on 16-bit and 32-bit targets.
+    ( 16 | 32 => { $( $tokens:tt )* } ) => {
         $crate::cpubits! {
-            16 | 32 => { $( $tokens32 )* }
-            64 => { $( $tokens64 )* }
+            16 => { $( $tokens )* }
+            32 => { $( $tokens )* }
+            64 => { }
         }
     };
 
-    // Same as `16`/`32` above, but more explicit
+    // Only run the block on 32-bit and 64-bit targets.
+    ( 32 | 64 => { $( $tokens:tt )* } ) => {
+        $crate::cpubits! {
+            16 => { }
+            32 => { $( $tokens )* }
+            64 => { $( $tokens )* }
+        }
+    };
+
+    // Select between 16-bit and 32-bit options, where 64-bit will use the 32-bit option
     (
         16 => { $( $tokens16:tt )* }
         32 | 64 => { $( $tokens32:tt )* }
@@ -86,7 +127,7 @@ macro_rules! cpubits {
         }
     };
 
-    // Same as `32`/`64` above, but more explicit
+    // Select between 32-bit and 64-bit options, where 16-bit will use the 32-bit option
     (
         16 | 32 => { $( $tokens32:tt )* }
         64 => { $( $tokens64:tt )* }
