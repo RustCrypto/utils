@@ -41,8 +41,8 @@ mod slice;
 use core::{
     cmp,
     num::{
-        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16,
-        NonZeroU32, NonZeroU64, NonZeroU128,
+        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroIsize, NonZeroU8,
+        NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize,
     },
 };
 
@@ -316,11 +316,13 @@ impl_cmov_traits_for_nonzero_integers!(
     NonZeroI32,
     NonZeroI64,
     NonZeroI128,
+    NonZeroIsize,
     NonZeroU8,
     NonZeroU16,
     NonZeroU32,
     NonZeroU64,
-    NonZeroU128
+    NonZeroU128,
+    NonZeroUsize
 );
 
 impl Cmov for cmp::Ordering {
