@@ -57,6 +57,7 @@ mod tests {
         masknz_u16: u16,
         masknz_u32: u32,
         masknz_u64: u64,
-        masknz_u128: u128
+        masknz_u128: u128,
+        masknz_usize: usize
     );
 }

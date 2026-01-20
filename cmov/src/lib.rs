@@ -225,21 +225,27 @@ macro_rules! impl_cmov_traits_for_size_int {
             #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovnz(&mut self, other: &Self, condition: Condition) {
-                (*self as $int16).cmovnz(&(*other as $int16), condition);
+                let mut tmp = *self as $int16;
+                tmp.cmovnz(&(*other as $int16), condition);
+                *self = tmp as $size;
             }
 
             #[cfg(target_pointer_width = "32")]
             #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovnz(&mut self, other: &Self, condition: Condition) {
-                (*self as $int32).cmovnz(&(*other as $int32), condition);
+                let mut tmp = *self as $int32;
+                tmp.cmovnz(&(*other as $int32), condition);
+                *self = tmp as $size;
             }
 
             #[cfg(target_pointer_width = "64")]
             #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovnz(&mut self, other: &Self, condition: Condition) {
-                (*self as $int64).cmovnz(&(*other as $int64), condition);
+                let mut tmp = *self as $int64;
+                tmp.cmovnz(&(*other as $int64), condition);
+                *self = tmp as $size;
             }
         }
 
