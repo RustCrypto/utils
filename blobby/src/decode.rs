@@ -63,7 +63,7 @@ impl Header {
     /// Parse blobby header.
     ///
     /// # Errors
-    /// - If data could not be parsed successfully.
+    /// If data could not be parsed successfully.
     pub const fn parse(data: &mut &[u8]) -> Result<Self, Error> {
         match (read_vlq(data), read_vlq(data)) {
             (Ok(items_len), Ok(dedup_len)) => Ok(Header {
@@ -78,7 +78,7 @@ impl Header {
 /// Parse blobby data into an array.
 ///
 /// # Errors
-/// - If data could not be parsed successfully.
+/// If data could not be parsed successfully.
 pub const fn parse_into_array<const ITEMS_LEN: usize, const DEDUP_LEN: usize>(
     mut data: &[u8],
 ) -> Result<[&[u8]; ITEMS_LEN], Error> {

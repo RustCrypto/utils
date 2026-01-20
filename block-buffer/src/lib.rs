@@ -337,7 +337,7 @@ where
     /// Deserialize buffer from a byte array.
     ///
     /// # Errors
-    /// - If algorithm-specific invariant fails to hold
+    /// If algorithm-specific invariant fails to hold
     pub fn deserialize(buf: &SerializedBuffer<BS, K>) -> Result<Self, Error> {
         let (pos, block) = buf.split_at(1);
         let pos = usize::from(pos[0]);

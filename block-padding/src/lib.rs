@@ -403,7 +403,7 @@ impl<'a, BlockSize: ArraySize> PaddedData<'a, BlockSize> {
     /// Unwrap the `Pad` variant.
     ///
     /// # Panics
-    /// - If `self` is a variant other than [`PaddedData::Pad`].
+    /// If `self` is a variant other than [`PaddedData::Pad`].
     pub fn unwrap(self) -> (&'a [Array<u8, BlockSize>], Array<u8, BlockSize>) {
         match self {
             PaddedData::Pad { blocks, tail_block } => (blocks, tail_block),
