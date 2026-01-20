@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 (2026-01-19)
+### Added
+- `core::num::NonZero<T>` support ([#1368])
+- Pluggable trait impls for `[T]` and `[T; N]` using helper traits: ([#1388])
+  - `CtAssign`: `CtAssignSlice`
+  - `CtEq`: `CtEqSlice`
+  - `CtSelect`: `CtSelectArray`
+- `CtSelectUsingCtAssign` marker trait ([#1391])
+
+### Changed
+- Split `CtAssign` out of `CtSelect` ([#1363])
+- Bump `cmov` to v0.5 ([#1386])
+
+### Removed
+- `BytesCtEq`/`BytesCtSelect` no longer needed because default `[u8]` impls are fast ([#1376])
+- `target_pointer_width` gating ([#1389])
+- `unsafe` code ([#1405])
+
+[#1363]: https://github.com/RustCrypto/utils/pull/1363
+[#1368]: https://github.com/RustCrypto/utils/pull/1368
+[#1376]: https://github.com/RustCrypto/utils/pull/1376
+[#1386]: https://github.com/RustCrypto/utils/pull/1386
+[#1388]: https://github.com/RustCrypto/utils/pull/1388
+[#1389]: https://github.com/RustCrypto/utils/pull/1389
+[#1391]: https://github.com/RustCrypto/utils/pull/1391
+[#1405]: https://github.com/RustCrypto/utils/pull/1405
+
 ## 0.3.2 (2026-01-16)
 ### Added
 - `BytesCtEq` and `BytesCtSelect` traits ([#1359])
