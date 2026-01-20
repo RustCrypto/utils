@@ -1,7 +1,7 @@
 use crate::Choice;
 use core::{
     cmp,
-    num::{NonZeroU8, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128},
+    num::{NonZeroU8, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize},
 };
 
 /// Constant time greater than.
@@ -26,7 +26,7 @@ macro_rules! impl_unsigned_ct_gt {
     };
 }
 
-impl_unsigned_ct_gt!(u8, u16, u32, u64, u128);
+impl_unsigned_ct_gt!(u8, u16, u32, u64, u128, usize);
 
 /// Impl `CtGt` for `NonZero<T>` by calling `NonZero::get`.
 macro_rules! impl_ct_gt_for_nonzero_integer {
@@ -42,7 +42,14 @@ macro_rules! impl_ct_gt_for_nonzero_integer {
     };
 }
 
-impl_ct_gt_for_nonzero_integer!(NonZeroU8, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128);
+impl_ct_gt_for_nonzero_integer!(
+    NonZeroU8,
+    NonZeroU16,
+    NonZeroU32,
+    NonZeroU64,
+    NonZeroU128,
+    NonZeroUsize
+);
 
 impl CtGt for cmp::Ordering {
     #[inline]
@@ -59,14 +66,28 @@ mod tests {
     use super::CtGt;
     use core::cmp::Ordering;
 
-    #[test]
-    fn ct_gt() {
-        let a = 42u64;
-        let b = 43u64;
-        assert!(!a.ct_gt(&a).to_bool());
-        assert!(!a.ct_gt(&b).to_bool());
-        assert!(b.ct_gt(&a).to_bool());
+    /// Test `CtGt`
+    macro_rules! ct_gt_tests {
+         ( $($int:ident),+ ) => {
+             $(
+                mod $int {
+                    use super::CtGt;
+
+                    #[test]
+                    fn ct_gt() {
+                        let a = <$int>::MIN;
+                        let b = <$int>::MAX;
+                        assert!(!a.ct_gt(&a).to_bool());
+                        assert!(!a.ct_gt(&b).to_bool());
+                        assert!(b.ct_gt(&a).to_bool());
+                    }
+
+                }
+             )+
+        };
     }
+
+    ct_gt_tests!(u8, u16, u32, u64, u128, usize);
 
     #[test]
     fn ordering() {

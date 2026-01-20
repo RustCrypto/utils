@@ -2,8 +2,8 @@ use crate::{Choice, CtAssign, CtAssignSlice};
 use core::{
     cmp,
     num::{
-        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16,
-        NonZeroU32, NonZeroU64, NonZeroU128,
+        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroIsize, NonZeroU8,
+        NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize,
     },
 };
 
@@ -15,8 +15,8 @@ use crate::CtOption;
 /// This crate provides built-in implementations for the following types:
 /// - [`i8`], [`i16`], [`i32`], [`i64`], [`i128`], [`isize`]
 /// - [`u8`], [`u16`], [`u32`], [`u64`], [`u128`], [`usize`]
-/// - [`NonZeroI8`], [`NonZeroI16`], [`NonZeroI32`], [`NonZeroI64`], [`NonZeroI128`]
-/// - [`NonZeroU8`], [`NonZeroU16`], [`NonZeroU32`], [`NonZeroU64`], [`NonZeroU128`]
+/// - [`NonZeroI8`], [`NonZeroI16`], [`NonZeroI32`], [`NonZeroI64`], [`NonZeroI128`], [`NonZeroI128`]
+/// - [`NonZeroU8`], [`NonZeroU16`], [`NonZeroU32`], [`NonZeroU64`], [`NonZeroU128`],, [`NonZeroUsize`]
 /// - [`cmp::Ordering`]
 /// - [`Choice`]
 /// - `[T; N]` where `T` impls [`CtSelectArray`], which the previously mentioned types all do,
@@ -109,11 +109,13 @@ impl_ct_select_with_ct_assign!(
     NonZeroI32,
     NonZeroI64,
     NonZeroI128,
+    NonZeroIsize,
     NonZeroU8,
     NonZeroU16,
     NonZeroU32,
     NonZeroU64,
     NonZeroU128,
+    NonZeroUsize,
     cmp::Ordering
 );
 
@@ -159,7 +161,7 @@ mod alloc {
 mod tests {
     use super::{Choice, CtSelect, cmp};
 
-    macro_rules! ct_select_test {
+    macro_rules! ct_select_test_unsigned {
         ($ty:ty, $name:ident) => {
             #[test]
             fn $name() {
@@ -171,11 +173,31 @@ mod tests {
         };
     }
 
-    ct_select_test!(u8, u8_ct_select);
-    ct_select_test!(u16, u16_ct_select);
-    ct_select_test!(u32, u32_ct_select);
-    ct_select_test!(u64, u64_ct_select);
-    ct_select_test!(u128, u128_ct_select);
+    macro_rules! ct_select_test_signed {
+        ($ty:ty, $name:ident) => {
+            #[test]
+            fn $name() {
+                let a: $ty = 1;
+                let b: $ty = -2;
+                assert_eq!(a.ct_select(&b, Choice::FALSE), a);
+                assert_eq!(a.ct_select(&b, Choice::TRUE), b);
+            }
+        };
+    }
+
+    ct_select_test_unsigned!(u8, u8_ct_select);
+    ct_select_test_unsigned!(u16, u16_ct_select);
+    ct_select_test_unsigned!(u32, u32_ct_select);
+    ct_select_test_unsigned!(u64, u64_ct_select);
+    ct_select_test_unsigned!(u128, u128_ct_select);
+    ct_select_test_unsigned!(usize, usize_ct_select);
+
+    ct_select_test_signed!(i8, i8_ct_select);
+    ct_select_test_signed!(i16, i16_ct_select);
+    ct_select_test_signed!(i32, i32_ct_select);
+    ct_select_test_signed!(i64, i64_ct_select);
+    ct_select_test_signed!(i128, i128_ct_select);
+    ct_select_test_signed!(isize, isize_ct_select);
 
     #[test]
     fn ordering_ct_select() {
