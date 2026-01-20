@@ -220,9 +220,9 @@ macro_rules! impl_cmov_traits_for_size_int {
             target_pointer_width = "64"
         ))]
         #[cfg_attr(docsrs, doc(cfg(true)))]
+        #[allow(clippy::cast_possible_truncation)]
         impl Cmov for $size {
             #[cfg(target_pointer_width = "16")]
-            #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovnz(&mut self, other: &Self, condition: Condition) {
                 let mut tmp = *self as $int16;
@@ -231,7 +231,6 @@ macro_rules! impl_cmov_traits_for_size_int {
             }
 
             #[cfg(target_pointer_width = "32")]
-            #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovnz(&mut self, other: &Self, condition: Condition) {
                 let mut tmp = *self as $int32;
@@ -240,7 +239,6 @@ macro_rules! impl_cmov_traits_for_size_int {
             }
 
             #[cfg(target_pointer_width = "64")]
-            #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovnz(&mut self, other: &Self, condition: Condition) {
                 let mut tmp = *self as $int64;
@@ -255,23 +253,21 @@ macro_rules! impl_cmov_traits_for_size_int {
             target_pointer_width = "64"
         ))]
         #[cfg_attr(docsrs, doc(cfg(true)))]
+        #[allow(clippy::cast_possible_truncation)]
         impl CmovEq for $size {
             #[cfg(target_pointer_width = "16")]
-            #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
                 (*self as $int16).cmovne(&(*rhs as $int16), input, output);
             }
 
             #[cfg(target_pointer_width = "32")]
-            #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
                 (*self as $int32).cmovne(&(*rhs as $int32), input, output);
             }
 
             #[cfg(target_pointer_width = "64")]
-            #[allow(clippy::cast_possible_truncation)]
             #[inline]
             fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
                 (*self as $int64).cmovne(&(*rhs as $int64), input, output);
