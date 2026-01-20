@@ -92,7 +92,9 @@ macro_rules! byte_array_proptests {
     };
 }
 
-int_proptests!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+int_proptests!(
+    i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize
+);
 byte_array_proptests!(
     array0: 0,
     array1: 1,
