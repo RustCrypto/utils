@@ -24,7 +24,7 @@ impl<'a, T> InOutBufReserved<'a, 'a, T> {
     /// Crate [`InOutBufReserved`] from a single mutable slice.
     ///
     /// # Errors
-    /// - if `out` is too small.
+    /// If `out` is too small.
     pub fn from_mut_slice(buf: &'a mut [T], msg_len: usize) -> Result<Self, OutIsTooSmallError> {
         if msg_len > buf.len() {
             return Err(OutIsTooSmallError);
@@ -122,7 +122,7 @@ impl<'inp, 'out, T> InOutBufReserved<'inp, 'out, T> {
     /// Crate [`InOutBufReserved`] from two separate slices.
     ///
     /// # Errors
-    /// - if `out` is too small.
+    /// If `out` is too small.
     pub fn from_slices(
         in_buf: &'inp [T],
         out_buf: &'out mut [T],
@@ -165,7 +165,7 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
     /// Transform buffer into [`PaddedInOutBuf`] using padding algorithm `P`.
     ///
     /// # Errors
-    /// - if the padding is invalid
+    /// If the padding is invalid
     #[inline(always)]
     #[allow(clippy::missing_panics_doc, clippy::panic_in_result_fn)]
     pub fn into_padded_blocks<P, BS>(self) -> Result<PaddedInOutBuf<'inp, 'out, BS>, PadError>

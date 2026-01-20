@@ -24,7 +24,7 @@ pub trait Padding: 'static {
     /// Unpad data in `block`.
     ///
     /// # Errors
-    /// - if the block contains malformed padding.
+    /// If the block contains malformed padding.
     fn raw_unpad(block: &[u8]) -> Result<&[u8], Error>;
 
     /// Pads `block` filled with data up to `pos` (i.e the message length
@@ -41,7 +41,7 @@ pub trait Padding: 'static {
     /// Unpad data in `block`.
     ///
     /// # Errors
-    /// - if the block contains malformed padding.
+    /// If the block contains malformed padding.
     #[inline]
     fn unpad<BlockSize: ArraySize>(block: &Array<u8, BlockSize>) -> Result<&[u8], Error> {
         Self::raw_unpad(block.as_slice())
@@ -67,7 +67,7 @@ pub trait Padding: 'static {
     /// Unpad data in `blocks` and return unpadded byte slice.
     ///
     /// # Errors
-    /// - if `blocks` contain malformed padding.
+    /// If `blocks` contain malformed padding.
     #[inline]
     #[allow(clippy::panic_in_result_fn)]
     fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
@@ -184,11 +184,10 @@ impl Pkcs7 {
 
 impl Padding for Pkcs7 {
     #[inline]
-    #[allow(clippy::cast_possible_truncation)]
     fn raw_pad(block: &mut [u8], pos: usize) {
         assert!(block.len() <= 255, "block size is too big for PKCS#7");
         assert!(pos < block.len(), "`pos` is bigger or equal to block size");
-        let n = (block.len() - pos) as u8;
+        let n = u8::try_from(block.len() - pos).expect("overflow");
         block[pos..].fill(n);
     }
 

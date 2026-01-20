@@ -67,7 +67,7 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
     /// Create `InOutBuf` from immutable and mutable slices.
     ///
     /// # Errors
-    /// - if length of slices is not equal to each other.
+    /// If length of slices is not equal to each other.
     #[inline(always)]
     pub fn new(in_buf: &'inp [T], out_buf: &'out mut [T]) -> Result<Self, NotEqualError> {
         if in_buf.len() != out_buf.len() {

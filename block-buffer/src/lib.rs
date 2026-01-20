@@ -145,7 +145,7 @@ impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
     /// Create new buffer from slice.
     ///
     /// # Errors
-    /// - if slice length is not valid for used buffer kind.
+    /// If slice length is not valid for used buffer kind.
     #[inline(always)]
     pub fn try_new(buf: &[u8]) -> Result<Self, Error> {
         const {

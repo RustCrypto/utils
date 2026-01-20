@@ -1,6 +1,10 @@
 //! Tests for `Cmov`/`CmovEq` impls on `core` types.
 
-#![allow(trivial_numeric_casts)]
+#![allow(
+    trivial_numeric_casts,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss
+)]
 
 /// Write the tests for an integer type, given two unequal integers
 macro_rules! int_tests {

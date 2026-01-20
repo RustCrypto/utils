@@ -3,17 +3,15 @@
 #![allow(
     clippy::missing_safety_doc,
     clippy::std_instead_of_alloc,
-    clippy::std_instead_of_core,
-    clippy::undocumented_unsafe_blocks,
-    clippy::unwrap_used
+    clippy::undocumented_unsafe_blocks
 )]
 
-use std::{
+use core::{
     marker::{PhantomData, PhantomPinned},
     mem::{MaybeUninit, size_of},
     num::*,
-    sync::Arc,
 };
+use std::sync::Arc;
 use zeroize::*;
 
 #[cfg(feature = "std")]

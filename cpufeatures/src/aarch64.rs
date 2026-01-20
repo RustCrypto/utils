@@ -135,7 +135,7 @@ macro_rules! check {
 /// <https://developer.apple.com/documentation/kernel/1387446-sysctlbyname>
 ///
 /// # Panics
-/// - if `name` is not NUL terminated
+/// If `name` is not NUL terminated
 #[cfg(target_vendor = "apple")]
 #[must_use]
 pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
