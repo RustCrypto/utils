@@ -24,11 +24,13 @@ macro_rules! impl_signed_ct_neg {
         $(
             impl CtNeg for $int {
                 #[inline]
+                #[allow(clippy::arithmetic_side_effects)]
                 fn ct_neg(&self, choice: Choice) -> Self {
                     self.ct_select(&-*self, choice)
                 }
 
                 #[inline]
+                #[allow(clippy::arithmetic_side_effects)]
                 fn ct_neg_assign(&mut self, choice: Choice) {
                     self.ct_assign(&-*self, choice)
                 }

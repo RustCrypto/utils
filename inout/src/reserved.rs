@@ -22,6 +22,9 @@ pub struct InOutBufReserved<'inp, 'out, T> {
 
 impl<'a, T> InOutBufReserved<'a, 'a, T> {
     /// Crate [`InOutBufReserved`] from a single mutable slice.
+    ///
+    /// # Errors
+    /// If `out` is too small.
     pub fn from_mut_slice(buf: &'a mut [T], msg_len: usize) -> Result<Self, OutIsTooSmallError> {
         if msg_len > buf.len() {
             return Err(OutIsTooSmallError);
@@ -78,18 +81,21 @@ impl<T> InOutBufReserved<'_, '_, T> {
 
     /// Get raw input and output pointers.
     #[inline(always)]
+    #[must_use]
     pub fn into_raw(self) -> (*const T, *mut T) {
         (self.in_ptr, self.out_ptr)
     }
 
     /// Get input buffer length.
     #[inline(always)]
+    #[must_use]
     pub fn get_in_len(&self) -> usize {
         self.in_len
     }
 
     /// Get output buffer length.
     #[inline(always)]
+    #[must_use]
     pub fn get_out_len(&self) -> usize {
         self.out_len
     }
@@ -114,6 +120,9 @@ impl<T> InOutBufReserved<'_, '_, T> {
 
 impl<'inp, 'out, T> InOutBufReserved<'inp, 'out, T> {
     /// Crate [`InOutBufReserved`] from two separate slices.
+    ///
+    /// # Errors
+    /// If `out` is too small.
     pub fn from_slices(
         in_buf: &'inp [T],
         out_buf: &'out mut [T],
@@ -132,6 +141,7 @@ impl<'inp, 'out, T> InOutBufReserved<'inp, 'out, T> {
 
     /// Get input slice.
     #[inline(always)]
+    #[must_use]
     pub fn get_in(&self) -> &[T] {
         unsafe { slice::from_raw_parts(self.in_ptr, self.in_len) }
     }
@@ -144,6 +154,7 @@ impl<'inp, 'out, T> InOutBufReserved<'inp, 'out, T> {
 
     /// Consume `self` and get output slice with lifetime `'out`.
     #[inline(always)]
+    #[must_use]
     pub fn into_out(self) -> &'out mut [T] {
         unsafe { slice::from_raw_parts_mut(self.out_ptr, self.out_len) }
     }
@@ -152,7 +163,11 @@ impl<'inp, 'out, T> InOutBufReserved<'inp, 'out, T> {
 #[cfg(feature = "block-padding")]
 impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
     /// Transform buffer into [`PaddedInOutBuf`] using padding algorithm `P`.
+    ///
+    /// # Errors
+    /// If the padding is invalid
     #[inline(always)]
+    #[allow(clippy::missing_panics_doc)]
     pub fn into_padded_blocks<P, BS>(self) -> Result<PaddedInOutBuf<'inp, 'out, BS>, PadError>
     where
         P: Padding,

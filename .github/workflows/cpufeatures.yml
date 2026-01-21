@@ -28,7 +28,7 @@ jobs:
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
-        working-directory: ${{ github.workflow }}
+      working-directory: ${{ github.workflow }}
 
   # Linux tests
   linux:
@@ -56,8 +56,6 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
-      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
-      - run: rm ../Cargo.toml
       - run: ${{ matrix.deps }}
       - run: cargo test --target ${{ matrix.target }}
 
@@ -76,8 +74,6 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
           targets: x86_64-apple-darwin
-      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
-      - run: rm ../Cargo.toml
       - run: cargo test
 
   # Windows tests
@@ -98,8 +94,6 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
           targets: ${{ matrix.target }}
-      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
-      - run: rm ../Cargo.toml
       - run: cargo test --target ${{ matrix.target }}
 
   # Cross-compiled tests
@@ -121,8 +115,6 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - uses: RustCrypto/actions/cross-install@master
-      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
-      - run: rm ../Cargo.toml
       - run: cross test --target ${{ matrix.target }}
 
   # Build-only tests

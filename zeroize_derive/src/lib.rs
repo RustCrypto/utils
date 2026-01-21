@@ -304,12 +304,13 @@ impl ZeroizeAttrs {
                 }
             }
         } else if meta.path().is_ident("skip") {
-            if variant.is_none() && binding.is_none() {
-                panic!(concat!(
+            assert!(
+                !(variant.is_none() && binding.is_none()),
+                concat!(
                     "The #[zeroize(skip)] attribute is not allowed on a `struct` or `enum`. ",
                     "Use it on a field or variant instead.",
-                ))
-            }
+                )
+            );
         } else {
             panic!("unknown #[zeroize] attribute type: {:?}", meta.path());
         }
@@ -332,9 +333,10 @@ fn generate_fields(input: &DeriveInput, method: TokenStream) -> TokenStream {
             .iter()
             .filter_map(|variant| {
                 if attr_skip(&variant.attrs) {
-                    if variant.fields.iter().any(|field| attr_skip(&field.attrs)) {
-                        panic!("duplicate #[zeroize] skip flags")
-                    }
+                    assert!(
+                        !variant.fields.iter().any(|field| attr_skip(&field.attrs)),
+                        "duplicate #[zeroize] skip flags"
+                    );
                     None
                 } else {
                     let variant_id = &variant.ident;
@@ -465,7 +467,7 @@ mod tests {
                     }
                 }
             },
-        )
+        );
     }
 
     #[test]
@@ -501,7 +503,7 @@ mod tests {
                     }
                 }
             },
-        )
+        );
     }
 
     #[test]
@@ -530,7 +532,7 @@ mod tests {
                     }
                 }
             },
-        )
+        );
     }
 
     #[test]
@@ -554,7 +556,7 @@ mod tests {
                     }
                 }
             },
-        )
+        );
     }
 
     #[test]
@@ -587,7 +589,7 @@ mod tests {
                 #[doc(hidden)]
                 impl ::zeroize::ZeroizeOnDrop for Z {}
             },
-        )
+        );
     }
 
     #[test]

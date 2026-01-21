@@ -3,6 +3,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
+
 use std::io::Write;
 
 // `pub mod` is used to silence "field is never read" warnings

@@ -38,7 +38,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
-#![warn(missing_docs)]
+#![allow(clippy::undocumented_unsafe_blocks)] // TODO(tarcieri): document all unsafe blocks
 
 pub use hybrid_array as array;
 
@@ -94,12 +94,8 @@ pub struct BlockBuffer<BS: ArraySize, K: BufferKind> {
 impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
     /// This associated constant is used to assert block size correctness at compile time.
     const BLOCK_SIZE_ASSERT: bool = {
-        if BS::USIZE == 0 {
-            panic!("Block size can not be equal to zero!");
-        }
-        if BS::USIZE > 255 {
-            panic!("Block size can not be bigger than 255!");
-        }
+        assert!(BS::USIZE != 0, "Block size can not be equal to zero!");
+        assert!(BS::USIZE <= 255, "Block size can not be bigger than 255!");
         true
     };
 }
@@ -140,16 +136,22 @@ impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
     /// # Panics
     /// If slice length is not valid for used buffer kind.
     #[inline(always)]
+    #[must_use]
+    #[track_caller]
     pub fn new(buf: &[u8]) -> Self {
-        Self::try_new(buf).unwrap()
+        Self::try_new(buf).expect("invalid slice length for buffer kind")
     }
 
     /// Create new buffer from slice.
     ///
-    /// Returns an error if slice length is not valid for used buffer kind.
+    /// # Errors
+    /// If slice length is not valid for used buffer kind.
     #[inline(always)]
     pub fn try_new(buf: &[u8]) -> Result<Self, Error> {
-        assert!(Self::BLOCK_SIZE_ASSERT);
+        const {
+            assert!(Self::BLOCK_SIZE_ASSERT);
+        }
+
         if !K::invariant(buf.len(), BS::USIZE) {
             return Err(Error);
         }
@@ -292,7 +294,7 @@ impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
     #[inline(always)]
     unsafe fn set_pos_unchecked(&mut self, pos: usize) {
         debug_assert!(K::invariant(pos, BS::USIZE));
-        K::set_pos(&mut self.buffer, &mut self.pos, pos)
+        K::set_pos(&mut self.buffer, &mut self.pos, pos);
     }
 
     /// Set buffer data.
@@ -322,6 +324,7 @@ where
     Sum<BS, K::Overhead>: ArraySize,
 {
     /// Serialize buffer into a byte array.
+    #[allow(clippy::missing_panics_doc)]
     pub fn serialize(&self) -> SerializedBuffer<BS, K> {
         let mut buf = SerializedBuffer::<BS, K>::default();
         let data = self.get_data();
@@ -332,6 +335,9 @@ where
     }
 
     /// Deserialize buffer from a byte array.
+    ///
+    /// # Errors
+    /// If algorithm-specific invariant fails to hold
     pub fn deserialize(buf: &SerializedBuffer<BS, K>) -> Result<Self, Error> {
         let (pos, block) = buf.split_at(1);
         let pos = usize::from(pos[0]);
@@ -366,9 +372,7 @@ impl<BS: ArraySize> BlockBuffer<BS, Eager> {
         suffix: &[u8],
         mut compress: impl FnMut(&Array<u8, BS>),
     ) {
-        if suffix.len() > BS::USIZE {
-            panic!("suffix is too long");
-        }
+        assert!(suffix.len() <= BS::USIZE, "suffix is too long");
         let pos = self.get_pos();
         let mut buf = self.pad_with_zeros();
         buf[pos] = delim;

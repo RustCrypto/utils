@@ -20,5 +20,8 @@ portable "best-effort" pure Rust fallback implementation.
 [dev-dependencies]
 proptest = "1.9"
 
+[lints]
+workspace = true
+
 [package.metadata.docs.rs]
 all-features = true

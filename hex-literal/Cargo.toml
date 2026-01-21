@@ -11,3 +11,6 @@ license = "MIT OR Apache-2.0"
 keywords = ["hex", "literals"]
 categories = ["no-std"]
 description = "A macro for converting hexadecimal string literals to a byte array at compile time"
+
+[lints]
+workspace = true

@@ -2,7 +2,7 @@ use crate::{
     InOut,
     errors::{IntoArrayError, NotEqualError},
 };
-use core::{marker::PhantomData, slice};
+use core::{marker::PhantomData, ptr, slice};
 use hybrid_array::{Array, ArraySize};
 
 /// Custom slice type which references one immutable (input) slice and one
@@ -32,7 +32,7 @@ impl<'a, T> InOutBuf<'a, 'a, T> {
     /// Create `InOutBuf` from a single mutable reference.
     #[inline(always)]
     pub fn from_mut(val: &'a mut T) -> InOutBuf<'a, 'a, T> {
-        let p = val as *mut T;
+        let p = ptr::from_mut(val);
         Self {
             in_ptr: p,
             out_ptr: p,
@@ -57,8 +57,8 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
     #[inline(always)]
     pub fn from_ref_mut(in_val: &'inp T, out_val: &'out mut T) -> Self {
         Self {
-            in_ptr: in_val as *const T,
-            out_ptr: out_val as *mut T,
+            in_ptr: ptr::from_ref::<T>(in_val),
+            out_ptr: ptr::from_mut::<T>(out_val),
             len: 1,
             _pd: PhantomData,
         }
@@ -66,7 +66,8 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
 
     /// Create `InOutBuf` from immutable and mutable slices.
     ///
-    /// Returns an error if length of slices is not equal to each other.
+    /// # Errors
+    /// If length of slices is not equal to each other.
     #[inline(always)]
     pub fn new(in_buf: &'inp [T], out_buf: &'out mut [T]) -> Result<Self, NotEqualError> {
         if in_buf.len() != out_buf.len() {
@@ -83,12 +84,14 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
 
     /// Get length of the inner buffers.
     #[inline(always)]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.len
     }
 
     /// Returns `true` if the buffer has a length of 0.
     #[inline(always)]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
@@ -111,6 +114,7 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
 
     /// Get input slice.
     #[inline(always)]
+    #[must_use]
     pub fn get_in(&self) -> &[T] {
         unsafe { slice::from_raw_parts(self.in_ptr, self.len) }
     }
@@ -127,13 +131,14 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
     /// In the case if the input and output slices point to the same memory, simply returns
     /// the output slice. Otherwise, copies data from the former to the latter
     /// before returning the output slice.
+    #[must_use]
     pub fn into_out_with_copied_in(self) -> &'out mut [T]
     where
         T: Copy,
     {
-        if !core::ptr::eq(self.in_ptr, self.out_ptr) {
+        if !ptr::eq(self.in_ptr, self.out_ptr) {
             unsafe {
-                core::ptr::copy(self.in_ptr, self.out_ptr, self.len);
+                ptr::copy(self.in_ptr, self.out_ptr, self.len);
             }
         }
         unsafe { slice::from_raw_parts_mut(self.out_ptr, self.len) }
@@ -141,12 +146,14 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
 
     /// Consume `self` and get output slice with lifetime `'out`.
     #[inline(always)]
+    #[must_use]
     pub fn into_out(self) -> &'out mut [T] {
         unsafe { slice::from_raw_parts_mut(self.out_ptr, self.len) }
     }
 
     /// Get raw input and output pointers.
     #[inline(always)]
+    #[must_use]
     pub fn into_raw(self) -> (*const T, *mut T) {
         (self.in_ptr, self.out_ptr)
     }
@@ -206,6 +213,7 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
     ///
     /// Panics if `mid > len`.
     #[inline(always)]
+    #[must_use]
     pub fn split_at(self, mid: usize) -> (InOutBuf<'inp, 'out, T>, InOutBuf<'inp, 'out, T>) {
         assert!(mid <= self.len);
         let (tail_in_ptr, tail_out_ptr) = unsafe { (self.in_ptr.add(mid), self.out_ptr.add(mid)) };
@@ -227,6 +235,7 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
 
     /// Partition buffer into 2 parts: buffer of arrays and tail.
     #[inline(always)]
+    #[must_use]
     pub fn into_chunks<N: ArraySize>(
         self,
     ) -> (InOutBuf<'inp, 'out, Array<T, N>>, InOutBuf<'inp, 'out, T>) {
@@ -235,8 +244,8 @@ impl<'inp, 'out, T> InOutBuf<'inp, 'out, T> {
         let tail_len = self.len() - tail_pos;
         unsafe {
             let chunks = InOutBuf {
-                in_ptr: self.in_ptr as *const Array<T, N>,
-                out_ptr: self.out_ptr as *mut Array<T, N>,
+                in_ptr: self.in_ptr.cast::<Array<T, N>>(),
+                out_ptr: self.out_ptr.cast::<Array<T, N>>(),
                 len: chunks,
                 _pd: PhantomData,
             };
@@ -281,8 +290,8 @@ where
     fn try_into(self) -> Result<InOut<'inp, 'out, Array<T, N>>, Self::Error> {
         if self.len() == N::USIZE {
             Ok(InOut {
-                in_ptr: self.in_ptr as *const _,
-                out_ptr: self.out_ptr as *mut _,
+                in_ptr: self.in_ptr.cast(),
+                out_ptr: self.out_ptr.cast(),
                 _pd: PhantomData,
             })
         } else {

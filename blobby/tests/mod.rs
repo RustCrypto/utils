@@ -1,3 +1,4 @@
+//! `blobby` tests
 #![cfg(feature = "alloc")]
 
 const ITEMS_LEN: usize = 10;
@@ -15,6 +16,7 @@ const TEST_BLOBS: &[&[u8]; ITEMS_LEN] = &[
     &[13; 5_000],
 ];
 
+/// Performs a round-trip test.
 #[test]
 fn blobby_rondtrip_test() -> Result<(), blobby::Error> {
     let (blobby_data, dedup_len) = blobby::encode_blobs(TEST_BLOBS);

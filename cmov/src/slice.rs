@@ -380,15 +380,14 @@ where
     Word: From<T>,
 {
     debug_assert!(size_of_val(slice) <= WORD_SIZE, "slice too large");
-    slice
-        .iter()
-        .rev()
-        .copied()
-        .fold(0, |acc, n| (acc << (size_of::<T>() * 8)) | Word::from(n))
+    slice.iter().rev().copied().fold(0, |acc, n| {
+        (acc << (const { size_of::<T>() * 8 })) | Word::from(n)
+    })
 }
 
 /// Serialize [`Word`] as bytes using the same byte ordering as `slice_to_word`.
 #[inline]
+#[allow(clippy::arithmetic_side_effects)]
 fn word_to_slice<T>(word: Word, out: &mut [T])
 where
     T: BitOrAssign + Copy + From<u8> + Shl<usize, Output = T>,
@@ -414,7 +413,10 @@ where
 #[inline]
 #[track_caller]
 #[must_use]
-#[allow(clippy::integer_division_remainder_used)]
+#[allow(
+    clippy::arithmetic_side_effects,
+    clippy::integer_division_remainder_used
+)]
 fn slice_as_chunks<T, const N: usize>(slice: &[T]) -> (&[[T; N]], &[T]) {
     assert!(N != 0, "chunk size must be non-zero");
     let len_rounded_down = slice.len() / N * N;
@@ -432,7 +434,10 @@ fn slice_as_chunks<T, const N: usize>(slice: &[T]) -> (&[[T; N]], &[T]) {
 #[inline]
 #[track_caller]
 #[must_use]
-#[allow(clippy::integer_division_remainder_used)]
+#[allow(
+    clippy::arithmetic_side_effects,
+    clippy::integer_division_remainder_used
+)]
 fn slice_as_chunks_mut<T, const N: usize>(slice: &mut [T]) -> (&mut [[T; N]], &mut [T]) {
     assert!(N != 0, "chunk size must be non-zero");
     let len_rounded_down = slice.len() / N * N;
@@ -450,9 +455,12 @@ fn slice_as_chunks_mut<T, const N: usize>(slice: &mut [T]) -> (&mut [[T; N]], &m
 #[inline]
 #[must_use]
 #[track_caller]
-#[allow(clippy::integer_division_remainder_used)]
+#[allow(
+    clippy::arithmetic_side_effects,
+    clippy::integer_division_remainder_used
+)]
 unsafe fn slice_as_chunks_unchecked<T, const N: usize>(slice: &[T]) -> &[[T; N]] {
-    // SAFETY: Caller must guarantee that `N` is nonzero and exactly divides the slice length
+    // Caller must guarantee that `N` is nonzero and exactly divides the slice length
     const { debug_assert!(N != 0) };
     debug_assert_eq!(slice.len() % N, 0);
     let new_len = slice.len() / N;
@@ -467,9 +475,12 @@ unsafe fn slice_as_chunks_unchecked<T, const N: usize>(slice: &[T]) -> &[[T; N]]
 #[inline]
 #[must_use]
 #[track_caller]
-#[allow(clippy::integer_division_remainder_used)]
+#[allow(
+    clippy::arithmetic_side_effects,
+    clippy::integer_division_remainder_used
+)]
 unsafe fn slice_as_chunks_unchecked_mut<T, const N: usize>(slice: &mut [T]) -> &mut [[T; N]] {
-    // SAFETY: Caller must guarantee that `N` is nonzero and exactly divides the slice length
+    // Caller must guarantee that `N` is nonzero and exactly divides the slice length
     const { debug_assert!(N != 0) };
     debug_assert_eq!(slice.len() % N, 0);
     let new_len = slice.len() / N;

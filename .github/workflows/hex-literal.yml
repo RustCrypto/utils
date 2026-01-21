@@ -2,9 +2,9 @@ name: hex-literal
 
 on:
   pull_request:
-      paths:
-        - "hex-literal/**"
-        - "Cargo.*"
+    paths:
+      - "hex-literal/**"
+      - "Cargo.*"
   push:
     branches: master
 
@@ -42,14 +42,12 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
-      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
-      - run: rm ../Cargo.toml
       - run: cargo build --target ${{ matrix.target }}
 
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
-        working-directory: ${{ github.workflow }}
+      working-directory: ${{ github.workflow }}
 
   test:
     runs-on: ubuntu-latest
@@ -64,6 +62,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-      # Isolate this crate from workspace which is otherwise MSRV 1.56 due to 2021 edition crates
-      - run: rm ../Cargo.toml
       - run: cargo test

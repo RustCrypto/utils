@@ -5,7 +5,6 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
 #![deny(unsafe_code)]
-#![warn(missing_docs, missing_debug_implementations)]
 
 pub use hybrid_array as array;
 
@@ -24,7 +23,8 @@ pub trait Padding: 'static {
 
     /// Unpad data in `block`.
     ///
-    /// Returns error if the block contains malformed padding.
+    /// # Errors
+    /// If the block contains malformed padding.
     fn raw_unpad(block: &[u8]) -> Result<&[u8], Error>;
 
     /// Pads `block` filled with data up to `pos` (i.e the message length
@@ -40,7 +40,8 @@ pub trait Padding: 'static {
 
     /// Unpad data in `block`.
     ///
-    /// Returns error if the block contains malformed padding.
+    /// # Errors
+    /// If the block contains malformed padding.
     #[inline]
     fn unpad<BlockSize: ArraySize>(block: &Array<u8, BlockSize>) -> Result<&[u8], Error> {
         Self::raw_unpad(block.as_slice())
@@ -53,6 +54,7 @@ pub trait Padding: 'static {
     /// if `data` length is multiple of block size. All other padding implementations
     /// should always return [`PaddedData::Pad`].
     #[inline]
+    #[must_use]
     fn pad_detached<BlockSize: ArraySize>(data: &[u8]) -> PaddedData<'_, BlockSize> {
         let (blocks, tail) = Array::slice_as_chunks(data);
         let mut tail_block = Array::default();
@@ -64,7 +66,8 @@ pub trait Padding: 'static {
 
     /// Unpad data in `blocks` and return unpadded byte slice.
     ///
-    /// Returns error if `blocks` contain malformed padding.
+    /// # Errors
+    /// If `blocks` contain malformed padding.
     #[inline]
     fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         let bs = BlockSize::USIZE;
@@ -101,9 +104,7 @@ pub struct ZeroPadding;
 impl Padding for ZeroPadding {
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
-        if pos > block.len() {
-            panic!("`pos` is bigger than block size");
-        }
+        assert!(pos <= block.len(), "`pos` is bigger than block size");
         block[pos..].fill(0);
     }
 
@@ -165,9 +166,7 @@ pub struct Pkcs7;
 impl Pkcs7 {
     #[inline]
     fn unpad(block: &[u8], strict: bool) -> Result<&[u8], Error> {
-        if block.len() > 255 {
-            panic!("block size is too big for PKCS#7");
-        }
+        assert!(block.len() <= 255, "block size is too big for PKCS#7");
         let bs = block.len();
         let n = block[bs - 1];
         if n == 0 || n as usize > bs {
@@ -184,13 +183,9 @@ impl Pkcs7 {
 impl Padding for Pkcs7 {
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
-        if block.len() > 255 {
-            panic!("block size is too big for PKCS#7");
-        }
-        if pos >= block.len() {
-            panic!("`pos` is bigger or equal to block size");
-        }
-        let n = (block.len() - pos) as u8;
+        assert!(block.len() <= 255, "block size is too big for PKCS#7");
+        assert!(pos < block.len(), "`pos` is bigger or equal to block size");
+        let n = u8::try_from(block.len() - pos).expect("overflow");
         block[pos..].fill(n);
     }
 
@@ -225,7 +220,7 @@ impl Padding for Iso10126 {
     fn raw_pad(block: &mut [u8], pos: usize) {
         // Instead of generating random bytes as specified by Iso10126 we
         // simply use Pkcs7 padding.
-        Pkcs7::raw_pad(block, pos)
+        Pkcs7::raw_pad(block, pos);
     }
 
     #[inline]
@@ -255,13 +250,10 @@ pub struct AnsiX923;
 
 impl Padding for AnsiX923 {
     #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     fn raw_pad(block: &mut [u8], pos: usize) {
-        if block.len() > 255 {
-            panic!("block size is too big for ANSI X9.23");
-        }
-        if pos >= block.len() {
-            panic!("`pos` is bigger or equal to block size");
-        }
+        assert!(block.len() <= 255, "block size is too big for ANSI X9.23");
+        assert!(pos < block.len(), "`pos` is bigger or equal to block size");
         let bs = block.len();
         block[pos..bs - 1].fill(0);
         block[bs - 1] = (bs - pos) as u8;
@@ -269,9 +261,7 @@ impl Padding for AnsiX923 {
 
     #[inline]
     fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
-        if block.len() > 255 {
-            panic!("block size is too big for ANSI X9.23");
-        }
+        assert!(block.len() <= 255, "block size is too big for ANSI X9.23");
         let bs = block.len();
         let n = block[bs - 1] as usize;
         if n == 0 || n > bs {
@@ -306,9 +296,7 @@ pub struct Iso7816;
 impl Padding for Iso7816 {
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
-        if pos >= block.len() {
-            panic!("`pos` is bigger or equal to block size");
-        }
+        assert!(pos < block.len(), "`pos` is bigger or equal to block size");
         block[pos] = 0x80;
         block[pos + 1..].fill(0);
     }
@@ -353,9 +341,7 @@ pub struct NoPadding;
 impl Padding for NoPadding {
     #[inline]
     fn raw_pad(block: &mut [u8], pos: usize) {
-        if pos > block.len() {
-            panic!("`pos` is bigger than block size");
-        }
+        assert!(pos <= block.len(), "`pos` is bigger than block size");
     }
 
     #[inline]
@@ -412,6 +398,9 @@ pub enum PaddedData<'a, BlockSize: ArraySize> {
 
 impl<'a, BlockSize: ArraySize> PaddedData<'a, BlockSize> {
     /// Unwrap the `Pad` variant.
+    ///
+    /// # Panics
+    /// If `self` is a variant other than [`PaddedData::Pad`].
     pub fn unwrap(self) -> (&'a [Array<u8, BlockSize>], Array<u8, BlockSize>) {
         match self {
             PaddedData::Pad { blocks, tail_block } => (blocks, tail_block),

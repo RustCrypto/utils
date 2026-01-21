@@ -1,3 +1,5 @@
+//! `block-buffer` tests.
+
 use block_buffer::{
     EagerBuffer, LazyBuffer, ReadBuffer,
     array::{

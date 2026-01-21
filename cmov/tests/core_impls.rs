@@ -36,6 +36,11 @@ macro_rules! int_tests {
             }
 
             #[test]
+            #[allow(
+                trivial_numeric_casts,
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss
+            )]
             fn cmoveq_works() {
                 let mut o = 0u8;
 
@@ -68,6 +73,11 @@ macro_rules! int_tests {
             }
 
             #[test]
+            #[allow(
+                trivial_numeric_casts,
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss
+            )]
             fn cmovne_works() {
                 let mut o = 0u8;
 

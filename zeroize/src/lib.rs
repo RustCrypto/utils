@@ -4,7 +4,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
-#![warn(missing_docs, unused_qualifications)]
+#![allow(clippy::undocumented_unsafe_blocks)] // TODO(tarcieri): document all unsafe blocks
 
 //! Securely zero memory with a simple trait ([`Zeroize`]) built on stable Rust
 //! primitives which guarantee the operation will not be "optimized away".
@@ -30,11 +30,10 @@
 //!
 //! ## Minimum Supported Rust Version
 //!
-//! Requires Rust **1.72** or newer.
+//! Requires Rust **1.85** or newer.
 //!
-//! In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope
-//! for this crate's SemVer guarantees), however when we do it will be accompanied
-//! by a minor version bump.
+//! In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope for this crate's
+//! semantic versioning guarantees).
 //!
 //! ## Usage
 //!
@@ -323,10 +322,10 @@ impl_zeroize_with_default! {
     u8, u16, u32, u64, u128, usize
 }
 
-/// `PhantomPinned` is zero sized so provide a ZeroizeOnDrop implementation.
+/// `PhantomPinned` is zero sized so provide a `ZeroizeOnDrop` implementation.
 impl ZeroizeOnDrop for PhantomPinned {}
 
-/// `()` is zero sized so provide a ZeroizeOnDrop implementation.
+/// `()` is zero sized so provide a `ZeroizeOnDrop` implementation.
 impl ZeroizeOnDrop for () {}
 
 macro_rules! impl_zeroize_for_non_zero {
@@ -417,7 +416,11 @@ where
         // The memory pointed to by `self` is valid for `size_of::<Self>()` bytes.
         // It is also properly aligned, because `u8` has an alignment of `1`.
         unsafe {
-            volatile_set((self as *mut Self).cast::<u8>(), 0, size_of::<Self>());
+            volatile_set(
+                ptr::from_mut::<Self>(self).cast::<u8>(),
+                0,
+                size_of::<Self>(),
+            );
         }
 
         // Ensures self is overwritten with the `None` bit pattern. volatile_write can't be
@@ -462,8 +465,8 @@ impl<Z> Zeroize for MaybeUninit<Z> {
 impl<Z> Zeroize for [MaybeUninit<Z>] {
     fn zeroize(&mut self) {
         let ptr = self.as_mut_ptr().cast::<MaybeUninit<u8>>();
-        let size = self.len().checked_mul(size_of::<Z>()).unwrap();
-        assert!(size <= isize::MAX as usize);
+        let size = self.len().checked_mul(size_of::<Z>()).expect("overflow");
+        assert!(isize::try_from(size).is_ok());
 
         // Safety:
         //
@@ -489,7 +492,7 @@ where
     Z: DefaultIsZeroes,
 {
     fn zeroize(&mut self) {
-        assert!(self.len() <= isize::MAX as usize);
+        assert!(isize::try_from(self.len()).is_ok());
 
         // Safety:
         //
@@ -515,7 +518,7 @@ impl<Z> Zeroize for PhantomData<Z> {
     fn zeroize(&mut self) {}
 }
 
-/// [`PhantomData` is always zero sized so provide a ZeroizeOnDrop implementation.
+/// [`PhantomData` is always zero sized so provide a `ZeroizeOnDrop` implementation.
 impl<Z> ZeroizeOnDrop for PhantomData<Z> {}
 
 macro_rules! impl_zeroize_tuple {
@@ -726,7 +729,7 @@ where
     Z: Zeroize + ?Sized,
 {
     fn drop(&mut self) {
-        self.0.zeroize()
+        self.0.zeroize();
     }
 }
 
@@ -766,7 +769,7 @@ fn volatile_write<T: Copy + Sized>(dst: &mut T, src: T) {
 
 /// Perform a volatile `memset` operation which fills a slice with a value
 ///
-/// Safety:
+/// # Safety
 /// The memory pointed to by `dst` must be a single allocated object that is valid for `count`
 /// contiguous elements of `T`.
 /// `count` must not be larger than an `isize`.
@@ -846,7 +849,7 @@ pub unsafe fn zeroize_flat_type<F: Sized>(data: *mut F) {
     // This is safe because `size_of<T>()` returns the exact size of the object in memory, and
     // `data_ptr` points directly to the first byte of the data.
     unsafe {
-        volatile_set(data as *mut u8, 0, size);
+        volatile_set(data.cast::<u8>(), 0, size);
     }
     optimization_barrier(&data);
 }
@@ -872,7 +875,7 @@ pub mod __internal {
 
     impl<T: Zeroize + ?Sized> AssertZeroize for T {
         fn zeroize_or_on_drop(&mut self) {
-            self.zeroize()
+            self.zeroize();
         }
     }
 }

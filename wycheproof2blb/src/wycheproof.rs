@@ -1,5 +1,6 @@
 //! Helpers for retrieving Wycheproof test vectors.
 
+use core::fmt;
 use serde::Deserialize;
 
 /// `Suite` represents the common elements of the top level object in a Wycheproof json
@@ -36,8 +37,8 @@ pub enum CaseResult {
     Acceptable,
 }
 
-impl std::fmt::Display for CaseResult {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for CaseResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}",

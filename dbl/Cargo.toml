@@ -17,3 +17,6 @@ polynomial among the irreducible degree `n` polynomials having a minimum number 
 
 [dependencies]
 hybrid-array = "0.4"
+
+[lints]
+workspace = true
