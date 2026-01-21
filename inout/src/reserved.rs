@@ -167,7 +167,7 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
     /// # Errors
     /// If the padding is invalid
     #[inline(always)]
-    #[allow(clippy::missing_panics_doc, clippy::panic_in_result_fn)]
+    #[allow(clippy::missing_panics_doc)]
     pub fn into_padded_blocks<P, BS>(self) -> Result<PaddedInOutBuf<'inp, 'out, BS>, PadError>
     where
         P: Padding,

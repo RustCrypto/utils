@@ -69,7 +69,6 @@ pub trait Padding: 'static {
     /// # Errors
     /// If `blocks` contain malformed padding.
     #[inline]
-    #[allow(clippy::panic_in_result_fn)]
     fn unpad_blocks<BlockSize: ArraySize>(blocks: &[Array<u8, BlockSize>]) -> Result<&[u8], Error> {
         let bs = BlockSize::USIZE;
         let (last_block, full_blocks) = blocks.split_last().ok_or(Error)?;
@@ -166,7 +165,6 @@ pub struct Pkcs7;
 
 impl Pkcs7 {
     #[inline]
-    #[allow(clippy::panic_in_result_fn)]
     fn unpad(block: &[u8], strict: bool) -> Result<&[u8], Error> {
         assert!(block.len() <= 255, "block size is too big for PKCS#7");
         let bs = block.len();
@@ -262,7 +260,6 @@ impl Padding for AnsiX923 {
     }
 
     #[inline]
-    #[allow(clippy::panic_in_result_fn)]
     fn raw_unpad(block: &[u8]) -> Result<&[u8], Error> {
         assert!(block.len() <= 255, "block size is too big for ANSI X9.23");
         let bs = block.len();

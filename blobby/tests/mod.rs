@@ -1,6 +1,5 @@
 //! `blobby` tests
 #![cfg(feature = "alloc")]
-#![allow(clippy::panic_in_result_fn)]
 
 const ITEMS_LEN: usize = 10;
 const DEDUP_LEN: usize = 3;

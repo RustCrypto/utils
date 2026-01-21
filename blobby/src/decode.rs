@@ -138,7 +138,7 @@ pub const fn parse_into_array<const ITEMS_LEN: usize, const DEDUP_LEN: usize>(
 /// # Errors
 /// If data failed to parse successfully
 #[cfg(feature = "alloc")]
-#[allow(clippy::missing_panics_doc, clippy::panic_in_result_fn)]
+#[allow(clippy::missing_panics_doc)]
 pub fn parse_into_vec(mut data: &[u8]) -> Result<alloc::vec::Vec<&[u8]>, Error> {
     use alloc::{vec, vec::Vec};
 
