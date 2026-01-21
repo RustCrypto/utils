@@ -14,21 +14,9 @@
 //! - `64`
 //!
 //! This matches the available options for `target_pointer_width` in `rustc`:
+//!
 //! ```text
 //! expected values for `target_pointer_width` are: `16`, `32`, and `64`
-//! ```
-//!
-//! # Example
-//!
-//! See the [`cpubits`] macro itself for more detailed usage examples including other syntax
-//! variations.
-//!
-//! ```
-//! cpubits::cpubits! {
-//!     16 => { pub type Word = u16; }
-//!     32 => { pub type Word = u32; }
-//!     64 => { pub type Word = u64; }
-//! }
 //! ```
 
 // End of toplevel rustdoc, beginning of macro documentation. We put the detailed docs on the macro
