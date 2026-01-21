@@ -1,7 +1,5 @@
 //! `block-buffer` tests.
 
-#![allow(clippy::unwrap_used)]
-
 use block_buffer::{
     EagerBuffer, LazyBuffer, ReadBuffer,
     array::{

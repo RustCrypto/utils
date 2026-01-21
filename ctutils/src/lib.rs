@@ -10,7 +10,6 @@
     clippy::integer_division_remainder_used,
     clippy::panic
 )]
-#![cfg_attr(not(test), warn(clippy::unwrap_used))]
 
 //! # API Design
 //!

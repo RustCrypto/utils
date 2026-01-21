@@ -423,7 +423,6 @@ fn impl_zeroize_on_drop(input: &DeriveInput) -> TokenStream {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used)]
 mod tests {
     use super::*;
 
