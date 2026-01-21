@@ -4,8 +4,8 @@ use crate::{Cmov, CmovEq, Condition};
 use core::{
     cmp,
     num::{
-        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16,
-        NonZeroU32, NonZeroU64, NonZeroU128,
+        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroIsize, NonZeroU8,
+        NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize,
     },
     ops::{BitOrAssign, Shl},
     ptr, slice,
@@ -134,7 +134,7 @@ macro_rules! impl_cmov_with_loop {
 }
 
 // These types are large enough we don't need to use anything more complex than a simple loop
-impl_cmov_with_loop!(u32, u64, u128);
+impl_cmov_with_loop!(u32, u64, u128, usize);
 
 /// Ensure the two provided types have the same size and alignment.
 macro_rules! assert_size_and_alignment_eq {
@@ -183,16 +183,19 @@ impl_cmov_with_cast!(
     i32 => u32,
     i64 => u64,
     i128 => u128,
+    isize => usize,
     NonZeroI8 => i8,
     NonZeroI16 => i16,
     NonZeroI32 => i32,
     NonZeroI64 => i64,
     NonZeroI128 => i128,
+    NonZeroIsize => isize,
     NonZeroU8 => u8,
     NonZeroU16 => u16,
     NonZeroU32 => u32,
     NonZeroU64 => u64,
     NonZeroU128 => u128,
+    NonZeroUsize => usize,
     cmp::Ordering => i8 // #[repr(i8)]
 );
 
@@ -249,7 +252,7 @@ macro_rules! impl_cmoveq_with_loop {
 }
 
 // TODO(tarcieri): investigate word-coalescing impls
-impl_cmoveq_with_loop!(u16, u32, u64, u128);
+impl_cmoveq_with_loop!(u16, u32, u64, u128, usize);
 
 /// Implement [`CmovEq`] traits by casting to a different type that impls the traits.
 macro_rules! impl_cmoveq_with_cast {
@@ -280,16 +283,19 @@ impl_cmoveq_with_cast!(
     i32 => u32,
     i64 => u64,
     i128 => u128,
+    isize => usize,
     NonZeroI8 => i8,
     NonZeroI16 => i16,
     NonZeroI32 => i32,
     NonZeroI64 => i64,
     NonZeroI128 => i128,
+    NonZeroIsize => isize,
     NonZeroU8 => u8,
     NonZeroU16 => u16,
     NonZeroU32 => u32,
     NonZeroU64 => u64,
     NonZeroU128 => u128,
+    NonZeroUsize => usize,
     cmp::Ordering => i8 // #[repr(i8)]
 );
 
