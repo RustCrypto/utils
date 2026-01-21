@@ -52,6 +52,23 @@ jobs:
       - run: ${{ matrix.deps }}
       - run: cargo test --target ${{ matrix.target }}
 
+  # Test on foreign architectures using `cross test`
+  test-cross:
+    strategy:
+      matrix:
+        include:
+          - target: armv7-unknown-linux-gnueabi # ARM32
+          - target: powerpc-unknown-linux-gnu   # PPC32
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+      - run: cargo install cross
+      - run: cross test --target ${{ matrix.target }}
+
   # Test WASM using `wasm32-wasip1` target on `wasmtime`
   test-wasm:
     strategy:
