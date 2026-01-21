@@ -259,24 +259,43 @@ mod tests {
         };
     }
 
-    macro_rules! ct_eq_test {
+    macro_rules! ct_eq_test_unsigned {
         ($ty:ty, $name:ident) => {
             #[test]
             fn $name() {
-                let a: $ty = 42;
-                let b: $ty = 42;
-                let c: $ty = 1;
+                let a = <$ty>::MAX;
+                let b = <$ty>::MAX;
+                let c = <$ty>::MIN;
                 truth_table!(a, b, c);
             }
         };
     }
 
-    ct_eq_test!(u8, u8_ct_eq);
-    ct_eq_test!(u16, u16_ct_eq);
-    ct_eq_test!(u32, u32_ct_eq);
-    ct_eq_test!(u64, u64_ct_eq);
-    ct_eq_test!(u128, u128_ct_eq);
-    ct_eq_test!(usize, usize_ct_eq);
+    macro_rules! ct_eq_test_signed {
+        ($ty:ty, $name:ident) => {
+            #[test]
+            fn $name() {
+                let a = <$ty>::MAX;
+                let b = <$ty>::MAX;
+                let c = <$ty>::MIN;
+                truth_table!(a, b, c);
+            }
+        };
+    }
+
+    ct_eq_test_unsigned!(u8, u8_ct_eq);
+    ct_eq_test_unsigned!(u16, u16_ct_eq);
+    ct_eq_test_unsigned!(u32, u32_ct_eq);
+    ct_eq_test_unsigned!(u64, u64_ct_eq);
+    ct_eq_test_unsigned!(u128, u128_ct_eq);
+    ct_eq_test_unsigned!(usize, usize_ct_eq);
+
+    ct_eq_test_signed!(i8, i8_ct_eq);
+    ct_eq_test_signed!(i16, i16_ct_eq);
+    ct_eq_test_signed!(i32, i32_ct_eq);
+    ct_eq_test_signed!(i64, i64_ct_eq);
+    ct_eq_test_signed!(i128, i128_ct_eq);
+    ct_eq_test_signed!(isize, isize_ct_eq);
 
     #[test]
     fn array_ct_eq() {

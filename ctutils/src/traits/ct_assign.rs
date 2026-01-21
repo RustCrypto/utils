@@ -3,8 +3,8 @@ use cmov::Cmov;
 use core::{
     cmp,
     num::{
-        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16,
-        NonZeroU32, NonZeroU64, NonZeroU128,
+        NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroIsize, NonZeroU8,
+        NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize,
     },
 };
 
@@ -19,8 +19,8 @@ use core::num::NonZero;
 /// This crate provides built-in implementations for the following types:
 /// - [`i8`], [`i16`], [`i32`], [`i64`], [`i128`], [`isize`]
 /// - [`u8`], [`u16`], [`u32`], [`u64`], [`u128`], [`usize`]
-/// - [`NonZeroI8`], [`NonZeroI16`], [`NonZeroI32`], [`NonZeroI64`], [`NonZeroI128`]
-/// - [`NonZeroU8`], [`NonZeroU16`], [`NonZeroU32`], [`NonZeroU64`], [`NonZeroU128`]
+/// - [`NonZeroI8`], [`NonZeroI16`], [`NonZeroI32`], [`NonZeroI64`], [`NonZeroI128`], [`NonZeroI128`]
+/// - [`NonZeroU8`], [`NonZeroU16`], [`NonZeroU32`], [`NonZeroU64`], [`NonZeroU128`],, [`NonZeroUsize`]
 /// - [`cmp::Ordering`]
 /// - [`Choice`]
 /// - `[T]` and `[T; N]` where `T` impls [`CtAssignSlice`], which the previously mentioned
@@ -106,11 +106,13 @@ impl_ct_assign_slice_with_cmov!(
     NonZeroI32,
     NonZeroI64,
     NonZeroI128,
+    NonZeroIsize,
     NonZeroU8,
     NonZeroU16,
     NonZeroU32,
     NonZeroU64,
     NonZeroU128,
+    NonZeroUsize,
     cmp::Ordering
 );
 

@@ -1,7 +1,7 @@
 use crate::{Choice, CtAssign, CtSelect};
 use core::num::{
-    NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroU8, NonZeroU16, NonZeroU32,
-    NonZeroU64, NonZeroU128,
+    NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI128, NonZeroIsize, NonZeroU8,
+    NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize,
 };
 
 /// Constant-time conditional negation: negates a value when `choice` is [`Choice::TRUE`].
@@ -62,13 +62,15 @@ impl_signed_ct_neg!(
     i32,
     i64,
     i128,
+    isize,
     NonZeroI8,
     NonZeroI16,
     NonZeroI32,
     NonZeroI64,
-    NonZeroI128
+    NonZeroI128,
+    NonZeroIsize
 );
-impl_unsigned_ct_neg!(u8, u16, u32, u64, u128);
+impl_unsigned_ct_neg!(u8, u16, u32, u64, u128, usize);
 
 /// Unfortunately `NonZeroU*` doesn't support `wrapping_neg` for some reason (but `NonZeroI*` does),
 /// even though the wrapping negation of any non-zero integer should also be non-zero.
@@ -89,7 +91,14 @@ macro_rules! impl_ct_neg_for_unsigned_nonzero {
     };
 }
 
-impl_ct_neg_for_unsigned_nonzero!(NonZeroU8, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128);
+impl_ct_neg_for_unsigned_nonzero!(
+    NonZeroU8,
+    NonZeroU16,
+    NonZeroU32,
+    NonZeroU64,
+    NonZeroU128,
+    NonZeroUsize
+);
 
 #[cfg(test)]
 mod tests {
@@ -130,14 +139,14 @@ mod tests {
                     use crate::{Choice, CtNeg};
 
                     #[test]
-                    fn u32_ct_neg() {
+                    fn ct_neg() {
                         let n: $uint = 42;
                         assert_eq!(n, n.ct_neg(Choice::FALSE));
                         assert_eq!(<$uint>::MAX - n + 1, n.ct_neg(Choice::TRUE));
                     }
 
                     #[test]
-                    fn u32_ct_neg_assign() {
+                    fn ct_neg_assign() {
                         let n: $uint = 42;
                         let mut x = n;
                         x.ct_neg_assign(Choice::FALSE);
@@ -151,6 +160,6 @@ mod tests {
         };
     }
 
-    signed_ct_neg_tests!(i8, i16, i32, i64, i128);
-    unsigned_ct_neg_tests!(u8, u16, u32, u64, u128);
+    signed_ct_neg_tests!(i8, i16, i32, i64, i128, isize);
+    unsigned_ct_neg_tests!(u8, u16, u32, u64, u128, usize);
 }
