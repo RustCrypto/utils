@@ -35,10 +35,13 @@
 // itself so we can re-export it, and people can easily get to these docs from the re-exported
 // version.
 
+/// A macro for defining code based on the optimal word size to use for the target, as chosen
+/// heuristically at compile-time using `cfg`-based predicates.
+///
 /// # Usage
 ///
-/// The macro works sort of like a `match` expression that takes an implicit number of CPU bits,
-/// which is one of `16`, `32`, or `64`.
+/// The macro works like a `match` expression that takes an implicit argument representing the
+/// number of CPU bits, which is one of `16`, `32`, or `64`.
 ///
 /// Use this macro to conditionally emit code specific to certain CPU word sizes, e.g. defining
 /// types at compile-time based on the word size.
