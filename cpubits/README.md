@@ -15,6 +15,18 @@ Implemented as `macro_rules!`.
 
 [Documentation][docs-link]
 
+## Example
+
+Below is a basic example of how you can use the `cpubits!` macro:
+
+```rust
+cpubits::cpubits! {
+    16 => { pub type Word = u16; }
+    32 => { pub type Word = u32; }
+    64 => { pub type Word = u64; }
+}
+```
+
 ## License
 
 Licensed under either of:
