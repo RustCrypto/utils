@@ -17,17 +17,56 @@ env:
   RUSTFLAGS: "-Dwarnings"
 
 jobs:
-  build:
+  test:
     strategy:
       matrix:
-        rust:
-          - 1.85 # MSRV
-          - stable
-    runs-on: ubuntu-latest
+        include:
+          # 32-bit Linux
+          - target: i686-unknown-linux-gnu
+            platform: ubuntu-latest
+            rust: 1.85.0 # MSRV
+            deps: sudo apt update && sudo apt install gcc-multilib
+
+          # 64-bit Linux
+          - target: x86_64-unknown-linux-gnu
+            platform: ubuntu-latest
+            rust: 1.85.0 # MSRV
+
+          # 64-bit Windows
+          - target: x86_64-pc-windows-msvc
+            platform: windows-latest
+            rust: 1.85.0 # MSRV
+
+          # 64-bit macOS
+          - target: x86_64-apple-darwin
+            platform: macos-latest
+            rust: 1.85.0 # MSRV
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v6
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-      - run: cargo test
+          targets: ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
+      - run: cargo test --target ${{ matrix.target }}
+
+  # Test WASM using `wasm32-wasip1` target on `wasmtime`
+  test-wasm:
+    strategy:
+      matrix:
+        rust:
+          - 1.85 # MSRV
+          - stable
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TARGET_WASM32_WASIP1_RUNNER: "wasmtime"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: bytecodealliance/actions/wasmtime/setup@v1
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: wasm32-wasip1
+      - run: cargo test --target wasm32-wasip1

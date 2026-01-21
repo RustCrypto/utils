@@ -175,7 +175,7 @@ macro_rules! cpubits {
         $crate::cpubits! {
             #[cfg(enable_64bit(
                 // `cfg` selector for 64-bit targets (implicitly `any`)
-                target_family = "wasm",
+                target_arch = "wasm32"
             ))]
             16 => { $( $tokens32 )* }
             32 => { $( $tokens32 )* }
@@ -268,46 +268,64 @@ macro_rules! cfg_if {
 
 #[cfg(test)]
 mod tests {
-    mod two_arms {
+    /// Return an integer that maps to the number of bits `cpubits` detected.
+    fn detected_bits() -> u32 {
         cpubits! {
-            16 | 32 => {
-                pub type Word = u32;
-            }
-            64 => {
-                pub type Word = u64;
-            }
-        }
-
-        #[test]
-        fn word_matches_pointer_size() {
-            match size_of::<usize>() {
-                2 | 4 => {
-                    assert_eq!(size_of::<Word>(), 4);
-                }
-                8 => {
-                    assert_eq!(size_of::<Word>(), 8);
-                }
-                _ => todo!("unsupported target pointer width"),
-            }
+            16 => { 16 }
+            32 => { 32 }
+            64 => { 64 }
         }
     }
 
-    mod three_arms {
-        cpubits! {
-            16 => {
-                pub type Word = u16;
-            }
-            32 => {
-                pub type Word = u32;
-            }
-            64 => {
-                pub type Word = u64;
+    /// Return an integer that maps to `target_pointer_width`.
+    #[allow(dead_code)]
+    fn detect_pointer_width() -> u32 {
+        if cfg!(target_pointer_width = "16") {
+            16
+        } else if cfg!(target_pointer_width = "32") {
+            32
+        } else if cfg!(target_pointer_width = "64") {
+            64
+        } else {
+            unreachable!("rustc only support 16, 32, and 64-bit pointer widths")
+        }
+    }
+
+    /// Return the expected number of bits for the target.
+    fn expected_bits() -> u32 {
+        // Duplicated 64-bit override predicates need to go here
+        if cfg!(target_arch = "wasm32") {
+            64
+        } else {
+            detect_pointer_width()
+        }
+    }
+
+    #[test]
+    fn cpubits_works() {
+        assert_eq!(detected_bits(), expected_bits());
+    }
+
+    /// Explicit test for WASM so we can see the predicate is working
+    #[cfg(target_arch = "wasm32")]
+    #[test]
+    fn cpubits_on_wasm_is_64bit() {
+        assert_eq!(detected_bits(), 64);
+    }
+
+    #[test]
+    fn cpubits_16_or_32_vs_64() {
+        fn bits32or64() -> u32 {
+            cpubits! {
+                16 | 32 => { 32 }
+                64 => { 64 }
             }
         }
 
-        #[test]
-        fn word_matches_pointer_size() {
-            assert_eq!(size_of::<Word>(), size_of::<usize>());
+        match expected_bits() {
+            16 | 32 => assert_eq!(32, bits32or64()),
+            64 => assert_eq!(64, bits32or64()),
+            bits => unreachable!("#{bits}-bits should be one of: 16, 32, 64"),
         }
     }
 }
