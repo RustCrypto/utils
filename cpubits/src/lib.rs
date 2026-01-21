@@ -278,16 +278,18 @@ macro_rules! cfg_if {
     };
 }
 
+/// Constant representing the detection result from `cpubits!` on the current target.
+pub const CPUBITS: u32 = {
+    cpubits! {
+        16 => { 16 }
+        32 => { 32 }
+        64 => { 64 }
+    }
+};
+
 #[cfg(test)]
 mod tests {
-    /// Return an integer that maps to the number of bits `cpubits` detected.
-    fn detected_bits() -> u32 {
-        cpubits! {
-            16 => { 16 }
-            32 => { 32 }
-            64 => { 64 }
-        }
-    }
+    use super::CPUBITS;
 
     /// Return an integer that maps to `target_pointer_width`.
     #[allow(dead_code)]
@@ -320,21 +322,21 @@ mod tests {
 
     #[test]
     fn cpubits_works() {
-        assert_eq!(detected_bits(), expected_bits());
+        assert_eq!(CPUBITS, expected_bits());
     }
 
     /// Explicit test for ARMv7 so we can see the predicate is working
     #[cfg(all(target_arch = "arm", not(target_feature = "thumb-mode")))]
     #[test]
     fn cpubits_on_armv7_is_64bit() {
-        assert_eq!(detected_bits(), 64);
+        assert_eq!(CPUBITS, 64);
     }
 
     /// Explicit test for WASM so we can see the predicate is working
     #[cfg(target_arch = "wasm32")]
     #[test]
     fn cpubits_on_wasm_is_64bit() {
-        assert_eq!(detected_bits(), 64);
+        assert_eq!(CPUBITS, 64);
     }
 
     #[test]
