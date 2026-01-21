@@ -4,6 +4,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
+#![allow(clippy::doc_markdown)]
 
 //! # Supported bit sizes
 //!
@@ -93,7 +94,8 @@
 /// certain targets from 32-bit to 64-bit ones.
 ///
 /// This 64-bit promotion occurs if `any` of the following `cfg`s are true:
-/// - `target_family = "wasm"`
+/// - ARMv7: `all(target_arch = "arm", not(target_feature = "thumb-mode"))`
+/// - WASM: `target_arch = "wasm32"`
 #[macro_export]
 macro_rules! cpubits {
     // Only run the given block if we have selected a 16-bit word size, i.e. the code will be
@@ -173,9 +175,13 @@ macro_rules! cpubits {
         64 => { $( $tokens64:tt )* }
     ) => {
         $crate::cpubits! {
+            // `cfg` selector for 64-bit target overrides
+            // Implicitly `cfg(any(...))`
             #[cfg(enable_64bit(
-                // `cfg` selector for 64-bit targets (implicitly `any`)
-                target_arch = "wasm32"
+                // ARMv7
+                all(target_arch = "arm", not(target_feature = "thumb-mode")),
+                // WASM
+                target_arch = "wasm32",
             ))]
             16 => { $( $tokens32 )* }
             32 => { $( $tokens32 )* }
@@ -294,7 +300,12 @@ mod tests {
     /// Return the expected number of bits for the target.
     fn expected_bits() -> u32 {
         // Duplicated 64-bit override predicates need to go here
-        if cfg!(target_arch = "wasm32") {
+        if cfg!(any(
+            // ARMv7
+            all(target_arch = "arm", not(target_feature = "thumb-mode")),
+            // WASM
+            target_arch = "wasm32"
+        )) {
             64
         } else {
             detect_pointer_width()
@@ -304,6 +315,13 @@ mod tests {
     #[test]
     fn cpubits_works() {
         assert_eq!(detected_bits(), expected_bits());
+    }
+
+    /// Explicit test for ARMv7 so we can see the predicate is working
+    #[cfg(all(target_arch = "arm", not(target_feature = "thumb-mode")))]
+    #[test]
+    fn cpubits_on_armv7_is_64bit() {
+        assert_eq!(detected_bits(), 64);
     }
 
     /// Explicit test for WASM so we can see the predicate is working
