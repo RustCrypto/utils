@@ -3,6 +3,7 @@
 #![cfg(feature = "zeroize_derive")]
 #![allow(clippy::undocumented_unsafe_blocks)]
 
+use core::ptr;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[test]
@@ -255,7 +256,7 @@ fn derive_inherit_zeroize_on_drop() {
 
     let mut value = Z(X([1, 2, 3]));
     unsafe {
-        core::ptr::drop_in_place(&raw mut value);
+        ptr::drop_in_place(&raw mut value);
     }
     assert_eq!(&value.0.0, &[0, 0, 0]);
 }
@@ -270,7 +271,7 @@ fn derive_inherit_from_both() {
 
     let mut value = Z(X([1, 2, 3]));
     unsafe {
-        core::ptr::drop_in_place(&raw mut value);
+        ptr::drop_in_place(&raw mut value);
     }
     assert_eq!(&value.0.0, &[0, 0, 0]);
 }
@@ -285,7 +286,7 @@ fn derive_inherit_both() {
 
     let mut value = Z(X([1, 2, 3]));
     unsafe {
-        core::ptr::drop_in_place(&raw mut value);
+        ptr::drop_in_place(&raw mut value);
     }
     assert_eq!(&value.0.0, &[0, 0, 0]);
 }
@@ -313,7 +314,7 @@ fn derive_deref() {
 
     let mut value = Z(X([1, 2, 3]));
     unsafe {
-        core::ptr::drop_in_place(&raw mut value);
+        ptr::drop_in_place(&raw mut value);
     }
     assert_eq!(&value.0.0, &[0, 0, 0]);
 }

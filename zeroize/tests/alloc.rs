@@ -1,8 +1,6 @@
-#![allow(
-    missing_docs,
-    clippy::std_instead_of_core,
-    clippy::undocumented_unsafe_blocks
-)]
+//! Tests for `Zeroize` impls on heap-allocated data structures
+
+#![allow(clippy::std_instead_of_core, clippy::undocumented_unsafe_blocks)]
 
 use std::alloc::{GlobalAlloc, Layout, System};
 use zeroize::Zeroize;

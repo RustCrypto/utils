@@ -10,6 +10,7 @@ use core::{
     marker::{PhantomData, PhantomPinned},
     mem::{MaybeUninit, size_of},
     num::*,
+    ptr,
 };
 use std::sync::Arc;
 use zeroize::*;
@@ -62,7 +63,7 @@ fn zeroize_byte_arrays() {
 #[test]
 fn zeroize_on_drop_byte_arrays() {
     let mut arr = [ZeroizedOnDrop(42); 1];
-    unsafe { core::ptr::drop_in_place(&raw mut arr) };
+    unsafe { ptr::drop_in_place(&raw mut arr) };
     assert_eq!(arr.as_ref(), [ZeroizedOnDrop(0); 1].as_ref());
 }
 
@@ -97,11 +98,11 @@ fn zeroize_check_tuple() {
 #[test]
 fn zeroize_on_drop_check_tuple() {
     let mut tup1 = (ZeroizedOnDrop(42),);
-    unsafe { core::ptr::drop_in_place(&raw mut tup1) };
+    unsafe { ptr::drop_in_place(&raw mut tup1) };
     assert_eq!(tup1, (ZeroizedOnDrop(0),));
 
     let mut tup2 = (ZeroizedOnDrop(42), ZeroizedOnDrop(42));
-    unsafe { core::ptr::drop_in_place(&raw mut tup2) };
+    unsafe { ptr::drop_in_place(&raw mut tup2) };
     assert_eq!(tup2, (ZeroizedOnDrop(0), ZeroizedOnDrop(0)));
 }
 
@@ -230,7 +231,7 @@ fn box_unsized_zeroizing() {
     }
 
     unsafe {
-        core::ptr::drop_in_place(&raw mut *b);
+        ptr::drop_in_place(&raw mut *b);
     }
 
     let s: &[u8] = &b;
@@ -251,7 +252,7 @@ fn arc_unsized_zeroizing() {
 
     unsafe {
         let inner = Arc::get_mut(&mut arc).unwrap();
-        core::ptr::drop_in_place(inner);
+        ptr::drop_in_place(inner);
     }
 
     let s: &[u8] = &arc;
@@ -293,7 +294,7 @@ fn zeroizing_dyn_trait() {
         Box::new(Zeroizing::new(TestStruct { data: [1, 2, 3, 4] }));
 
     unsafe {
-        core::ptr::drop_in_place(&raw mut *b);
+        ptr::drop_in_place(&raw mut *b);
     }
 
     let inner: &Zeroizing<dyn TestTrait> = &b;
