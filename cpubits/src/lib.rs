@@ -79,6 +79,21 @@
 /// }
 /// ```
 ///
+/// ## Use as an expression
+///
+/// It's also possible to use the macro as an expression, although in somewhat limited contexts
+/// due to its attribute handling:
+///
+/// ```
+/// fn detected_cpubits() -> u32 {
+///     cpubits::cpubits! {
+///         16 => { 16 }
+///         32 => { 32 }
+///         64 => { 64 }
+///     }
+/// }
+/// ```
+///
 /// # Selection rules
 ///
 /// The macro augments `target_pointer_width`-based selection with specific overrides which promote
