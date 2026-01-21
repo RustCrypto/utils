@@ -182,8 +182,7 @@ macro_rules! cpubits {
     ) => {
         $crate::cpubits! {
             // `cfg` selector for 64-bit target overrides
-            // Implicitly `cfg(any(...))`
-            #[cfg(enable_64bit(
+            #[cfg(enable_64_bit = any(
                 // ARMv7
                 all(target_arch = "arm", not(target_feature = "thumb-mode")),
                 // WASM
@@ -198,7 +197,7 @@ macro_rules! cpubits {
     // Same API as immediately above, but with a pseudo-attribute we use to pass the `cfg` overrides
     // for `target_pointer_width` that promote a 32-bit target into a 64-bit one.
     (
-        #[cfg(enable_64bit( $($enable_64bit:tt)+ ))]
+        #[cfg(enable_64_bit = $($enable_64bit:tt)+ )]
         16 => { $( $tokens16:tt )* }
         32 => { $( $tokens32:tt )* }
         64 => { $( $tokens64:tt )* }
@@ -212,14 +211,14 @@ macro_rules! cpubits {
             (
                 (all(
                     target_pointer_width = "32",
-                    not(any($( $enable_64bit )+))
+                    not($( $enable_64bit )+)
                 ))
                 ( $( $tokens32 )* )
             ),
             (
                 (any(
                     target_pointer_width = "64",
-                    any($( $enable_64bit )+)
+                    $( $enable_64bit )+
                 ))
                 ( $( $tokens64 )* )
             ),
@@ -291,20 +290,6 @@ pub const CPUBITS: u32 = {
 mod tests {
     use super::CPUBITS;
 
-    /// Return an integer that maps to `target_pointer_width`.
-    #[allow(dead_code)]
-    fn detect_pointer_width() -> u32 {
-        if cfg!(target_pointer_width = "16") {
-            16
-        } else if cfg!(target_pointer_width = "32") {
-            32
-        } else if cfg!(target_pointer_width = "64") {
-            64
-        } else {
-            unreachable!("rustc only support 16, 32, and 64-bit pointer widths")
-        }
-    }
-
     /// Return the expected number of bits for the target.
     fn expected_bits() -> u32 {
         // Duplicated 64-bit override predicates need to go here
@@ -316,7 +301,7 @@ mod tests {
         )) {
             64
         } else {
-            detect_pointer_width()
+            usize::BITS
         }
     }
 
@@ -339,18 +324,19 @@ mod tests {
         assert_eq!(CPUBITS, 64);
     }
 
+    /// Test for the `16 | 32` syntax.
     #[test]
     fn cpubits_16_or_32_vs_64() {
-        fn bits32or64() -> u32 {
+        const BITS: u32 = {
             cpubits! {
                 16 | 32 => { 32 }
                 64 => { 64 }
             }
-        }
+        };
 
         match expected_bits() {
-            16 | 32 => assert_eq!(32, bits32or64()),
-            64 => assert_eq!(64, bits32or64()),
+            16 | 32 => assert_eq!(32, BITS),
+            64 => assert_eq!(64, BITS),
             bits => unreachable!("#{bits}-bits should be one of: 16, 32, 64"),
         }
     }
