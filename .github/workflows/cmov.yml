@@ -26,11 +26,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # TODO(tarcieri): disabled until it can be made compatible with workspace-level lints
-  #  minimal-versions:
-  #    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
-  #    with:
-  #      working-directory: ${{ github.workflow }}
+  minimal-versions:
+    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
+    with:
+      working-directory: ${{ github.workflow }}
 
   build:
     runs-on: ubuntu-latest
