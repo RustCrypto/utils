@@ -267,7 +267,6 @@ impl InOutBuf<'_, '_, u8> {
     /// # Panics
     /// If `data` length is not equal to the buffer length.
     #[inline(always)]
-    #[allow(clippy::needless_range_loop)]
     pub fn xor_in2out(&mut self, data: &[u8]) {
         assert_eq!(self.len(), data.len());
         unsafe {
