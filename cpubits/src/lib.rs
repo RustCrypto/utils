@@ -230,11 +230,37 @@ macro_rules! cpubits {
     };
 }
 
-/// Vendored partial copy of the `cfg_if::cfg_if` macro.
+/// Vendored copy of the `cfg_if::cfg_if` macro.
 /// Copyright (c) 2014 Alex Crichton. Dual-licensed Apache 2.0 + MIT.
+///
+/// NOTE: though this is marked `doc(hidden)`, it is considered a stable part of the public API.
 #[doc(hidden)]
 #[macro_export]
 macro_rules! cfg_if {
+    // NOTE(cpubits): we deliberately include the original frontend even though we don't use it
+    // internally within this crate so consumers of `cpubits` can use the vendored `cfg_if` instead
+    // of requiring both `cpubits` and `cfg-if`.
+    (
+        if #[cfg( $($i_meta:tt)+ )] { $( $i_tokens:tt )* }
+        $(
+            else if #[cfg( $($ei_meta:tt)+ )] { $( $ei_tokens:tt )* }
+        )*
+        $(
+            else { $( $e_tokens:tt )* }
+        )?
+    ) => {
+        $crate::cfg_if! {
+            @__items () ;
+            (( $($i_meta)+ ) ( $( $i_tokens )* )),
+            $(
+                (( $($ei_meta)+ ) ( $( $ei_tokens )* )),
+            )*
+            $(
+                (() ( $( $e_tokens )* )),
+            )?
+        }
+    };
+
     // Internal and recursive macro to emit all the items
     //
     // Collects all the previous cfgs in a list at the beginning, so they can be
