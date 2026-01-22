@@ -197,7 +197,7 @@ macro_rules! cpubits {
     // Same API as immediately above, but with a pseudo-attribute we use to pass the `cfg` overrides
     // for `target_pointer_width` that promote a 32-bit target into a 64-bit one.
     (
-        #[cfg(enable_64_bit = $($enable_64bit:tt)+ )]
+        #[cfg(enable_64_bit = $($enable_64_bit:tt)+ )]
         16 => { $( $tokens16:tt )* }
         32 => { $( $tokens32:tt )* }
         64 => { $( $tokens64:tt )* }
@@ -211,14 +211,14 @@ macro_rules! cpubits {
             (
                 (all(
                     target_pointer_width = "32",
-                    not($( $enable_64bit )+)
+                    not($( $enable_64_bit )+)
                 ))
                 ( $( $tokens32 )* )
             ),
             (
                 (any(
                     target_pointer_width = "64",
-                    $( $enable_64bit )+
+                    $( $enable_64_bit )+
                 ))
                 ( $( $tokens64 )* )
             ),
