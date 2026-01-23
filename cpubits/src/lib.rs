@@ -100,7 +100,7 @@
 /// certain targets from 32-bit to 64-bit ones.
 ///
 /// This 64-bit promotion occurs if `any` of the following `cfg`s are true:
-/// - ARMv7: `all(target_arch = "arm", not(target_feature = "thumb-mode"))`
+/// - ARMv7: `all(target_arch = "arm", target_feature = "v7")`
 /// - WASM: `target_arch = "wasm32"`
 #[macro_export]
 macro_rules! cpubits {
@@ -184,7 +184,7 @@ macro_rules! cpubits {
             // `cfg` selector for 64-bit target overrides
             #[cfg(enable_64_bit = any(
                 // ARMv7
-                all(target_arch = "arm", not(target_feature = "thumb-mode")),
+                all(target_arch = "arm", target_feature = "v7"),
                 // WASM
                 target_arch = "wasm32",
             ))]
@@ -321,7 +321,7 @@ mod tests {
         // Duplicated 64-bit override predicates need to go here
         if cfg!(any(
             // ARMv7
-            all(target_arch = "arm", not(target_feature = "thumb-mode")),
+            all(target_arch = "arm", target_feature = "v7"),
             // WASM
             target_arch = "wasm32"
         )) {
@@ -337,7 +337,7 @@ mod tests {
     }
 
     /// Explicit test for ARMv7 so we can see the predicate is working
-    #[cfg(all(target_arch = "arm", not(target_feature = "thumb-mode")))]
+    #[cfg(all(target_arch = "arm", target_feature = "v7"))]
     #[test]
     fn cpubits_on_armv7_is_64bit() {
         assert_eq!(CPUBITS, 64);
