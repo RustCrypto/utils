@@ -13,7 +13,7 @@ categories = ["cryptography", "no-std"]
 description = "Padding and unpadding of messages divided into blocks."
 
 [dependencies]
-hybrid-array = "0.4.3"
+hybrid-array = "0.4.6"
 
 [lints]
 workspace = true
