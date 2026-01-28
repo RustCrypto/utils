@@ -45,7 +45,17 @@ macro_rules! new {
             pub struct InitToken(());
 
             impl InitToken {
-                /// Get initialized value
+                /// Initialize token, performing CPU feature detection.
+                pub fn init() -> Self {
+                    init()
+                }
+
+                /// Initialize token and return a `bool` indicating if the feature is supported.
+                pub fn init_get() -> (Self, bool) {
+                    init_get()
+                }
+
+                /// Get initialized value.
                 #[inline(always)]
                 pub fn get(&self) -> bool {
                     $crate::__unless_target_features! {
