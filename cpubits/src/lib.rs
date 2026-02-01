@@ -4,7 +4,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
-#![allow(clippy::doc_markdown)]
+#![warn(clippy::pedantic)]
 
 //! # Supported bit sizes
 //!
@@ -17,6 +17,48 @@
 //!
 //! ```text
 //! expected values for `target_pointer_width` are: `16`, `32`, and `64`
+//! ```
+//!
+//! # Overriding the selection result via `cfg`
+//!
+//! This crate supports overriding its detection heuristics via an explicit `cfg` setting:
+//!
+//! - `cpubits = "16"`: force 16-bit
+//! - `cpubits = "32"`: force 32-bit
+//! - `cpubits = "64"`: force 64-bit
+//!
+//! This can be useful for testing different backends, and also in the event you would like to
+//! override the default detection result (in which case we would appreciate it if you opened an
+//! issue and let us know why).
+//!
+//! You can set `cfg` via the `RUSTFLAGS` environment variable:
+//!
+//! ```console
+//! $ RUSTFLAGS='--cfg cpubits="64"' cargo build --release
+//! ```
+//!
+//! Or you can persistently configure it for your project in `.cargo/config.toml`:
+//!
+//! ```toml
+//! # In .cargo/config.toml
+//! [build]
+//! rustflags = ['--cfg', 'cpubits="64"']
+//! ```
+//!
+//! ## Lint configuration for `cfg(cpubits)`
+//!
+//! If you are using the `cpubits!` macro you will notice the following warning being emitted:
+//!
+//! ```text
+//! warning: unexpected `cfg` condition name: `cpubits`
+//! ```
+//!
+//! You will need to add the following configuration to your `Cargo.toml` to silence the warning:
+//!
+//! ```toml
+//! [lints.rust.unexpected_cfgs]
+//! level = "warn"
+//! check-cfg = ['cfg(cpubits, values("16", "32", "64"))']
 //! ```
 
 // End of toplevel rustdoc, beginning of macro documentation. We put the detailed docs on the macro
@@ -46,6 +88,11 @@
 ///     64 => { pub type Word = u64; }
 /// }
 /// ```
+///
+/// NOTE: rustc will complain: "warning: unexpected `cfg` condition name: `cpubits`"
+///
+/// See the [lint configuration for `cfg(cpubits)`](./index.html#lint-configuration-for-cfgcpubits)
+/// documentation for how to silence the warning.
 ///
 /// ## Grouping multiple bit sizes
 ///
@@ -100,8 +147,8 @@
 /// certain targets from 32-bit to 64-bit ones.
 ///
 /// This 64-bit promotion occurs if `any` of the following `cfg`s are true:
-/// - ARMv7: `all(target_arch = "arm", target_feature = "v7")`
-/// - WASM: `target_arch = "wasm32"`
+/// - `armv7`: `all(target_arch = "arm", target_feature = "v7")`
+/// - `wasm32`: `target_arch = "wasm32"`
 #[macro_export]
 macro_rules! cpubits {
     // Only run the given block if we have selected a 16-bit word size, i.e. the code will be
@@ -204,22 +251,35 @@ macro_rules! cpubits {
     ) => {
         $crate::cfg_if! {
             @__items () ;
+            // The following are effectively `if`/`else` clauses in a Lispy syntax, where each
+            // 2-tuple is `( ( predicate ) ( body ) )`. The first clause with a matching predicate
+            // is taken and the rest are ignored just like `if`/`else`.
+            //
+            // We first match on each of the explicit overrides, and if none of them are configured
+            // apply our heuristic logic which allows certain targets to be overridden to use
+            // 64-bit backends, as configured in the `enable_64_bit` predicate above.
+            (
+                ( cpubits = "16" )
+                ( $( $tokens16 )* )
+            ),
+            (
+                ( cpubits = "32" )
+                ( $( $tokens32 )* )
+            ),
+            (
+                ( cpubits = "64" )
+                ( $( $tokens64 )* )
+            ),
             (
                 ( target_pointer_width = "16" )
                 ( $( $tokens16 )* )
             ),
             (
-                (all(
-                    target_pointer_width = "32",
-                    not($( $enable_64_bit )+)
-                ))
+                ( all(target_pointer_width = "32", not($( $enable_64_bit )+)) )
                 ( $( $tokens32 )* )
             ),
             (
-                (any(
-                    target_pointer_width = "64",
-                    $( $enable_64_bit )+
-                ))
+                ( any(target_pointer_width = "64", $( $enable_64_bit )+) )
                 ( $( $tokens64 )* )
             ),
             (
@@ -317,6 +377,7 @@ mod tests {
     use super::CPUBITS;
 
     /// Return the expected number of bits for the target.
+    #[cfg(not(any(cpubits = "16", cpubits = "32", cpubits = "64")))]
     fn expected_bits() -> u32 {
         // Duplicated 64-bit override predicates need to go here
         if cfg!(any(
@@ -331,6 +392,7 @@ mod tests {
         }
     }
 
+    #[cfg(not(any(cpubits = "16", cpubits = "32", cpubits = "64")))]
     #[test]
     fn cpubits_works() {
         assert_eq!(CPUBITS, expected_bits());
@@ -351,6 +413,7 @@ mod tests {
     }
 
     /// Test for the `16 | 32` syntax.
+    #[cfg(not(any(cpubits = "16", cpubits = "32", cpubits = "64")))]
     #[test]
     fn cpubits_16_or_32_vs_64() {
         const BITS: u32 = {
@@ -365,5 +428,11 @@ mod tests {
             64 => assert_eq!(64, BITS),
             bits => unreachable!("#{bits}-bits should be one of: 16, 32, 64"),
         }
+    }
+
+    #[cfg(cpubits = "32")]
+    #[test]
+    fn cpubits_32_bit_override() {
+        assert_eq!(CPUBITS, 32);
     }
 }
