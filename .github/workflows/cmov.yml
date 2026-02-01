@@ -26,30 +26,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  minimal-versions:
-    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
-    with:
-      working-directory: ${{ github.workflow }}
-
-  build:
-    runs-on: ubuntu-latest
+  build-no-std:
     strategy:
       matrix:
-        rust:
-          - 1.85.0 # MSRV
-          - stable
         target:
+          - riscv32i-unknown-none-elf
           - thumbv7em-none-eabi
-          - wasm32-unknown-unknown
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ matrix.rust }}
+          toolchain: stable
           targets: ${{ matrix.target }}
       - uses: RustCrypto/actions/cargo-hack-install@master
-      - run: cargo build --target ${{ matrix.target }}
+      - run: cargo build --target ${{ matrix.target }} --all-features
+      - run: cargo build --target ${{ matrix.target }} --all-features --release
+
+  minimal-versions:
+    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
+    with:
+      working-directory: ${{ github.workflow }}
 
   test:
     strategy:
@@ -163,3 +161,18 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - run: rustup component add miri && cargo miri setup
       - run: cargo miri test --target ${{ matrix.target }} --all-features --lib
+
+  # Test WASM using `wasmtime`
+  test-wasm:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TARGET_WASM32_WASIP1_RUNNER: "wasmtime"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: bytecodealliance/actions/wasmtime/setup@v1
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-wasip1
+      - run: cargo test --target wasm32-wasip1 --all-features
+      - run: cargo test --target wasm32-wasip1 --all-features --release
