@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/ctutils.yml"
+      - "cmov/**"
       - "ctutils/**"
       - "Cargo.*"
   push:
@@ -46,11 +47,10 @@ jobs:
       - run: cargo build --target ${{ matrix.target }}
       - run: cargo build --target ${{ matrix.target }} --features alloc
 
-  # Disabled until there's a stable `cmov` v0.5.0 release
-  #  minimal-versions:
-  #    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
-  #    with:
-  #      working-directory: ${{ github.workflow }}
+  minimal-versions:
+    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
+    with:
+      working-directory: ${{ github.workflow }}
 
   test:
     runs-on: ubuntu-latest
