@@ -55,23 +55,23 @@ jobs:
     strategy:
       matrix:
         include:
-          # 32-bit Linux
+          # `x86` Linux
           - target: i686-unknown-linux-gnu
             platform: ubuntu-latest
             rust: 1.85.0 # MSRV
             deps: sudo apt update && sudo apt install gcc-multilib
 
-          # 64-bit Linux
+          # `x86_64` Linux
           - target: x86_64-unknown-linux-gnu
             platform: ubuntu-latest
             rust: 1.85.0 # MSRV
 
-          # 64-bit Windows
+          # `x86_64` Windows
           - target: x86_64-pc-windows-msvc
             platform: windows-latest
             rust: 1.85.0 # MSRV
 
-          # 64-bit macOS
+          # `x86_64` macOS
           - target: x86_64-apple-darwin
             platform: macos-latest
             rust: 1.85.0 # MSRV
@@ -138,7 +138,9 @@ jobs:
     strategy:
       matrix:
         target:
+          - armv7-unknown-linux-gnueabi
           - powerpc-unknown-linux-gnu
+          - riscv64gc-unknown-linux-gnu
           - s390x-unknown-linux-gnu
           - x86_64-unknown-linux-gnu
     steps:
