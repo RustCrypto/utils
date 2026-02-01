@@ -122,13 +122,19 @@ fn maskne64(x: u64, y: u64) -> u64 {
 }
 
 /// Return a `u32::MAX` mask if `condition` is non-zero, otherwise return zero for a zero input.
-#[cfg(not(any(target_arch = "arm", target_arch = "riscv32", target_arch = "riscv64")))]
+#[cfg(any(
+    miri,
+    not(any(target_arch = "arm", target_arch = "riscv32", target_arch = "riscv64"))
+))]
 fn masknz32(condition: u32) -> u32 {
     masknz!(condition: u32)
 }
 
 /// Return a `u64::MAX` mask if `condition` is non-zero, otherwise return zero for a zero input.
-#[cfg(not(any(target_arch = "arm", target_arch = "riscv32", target_arch = "riscv64")))]
+#[cfg(any(
+    miri,
+    not(any(target_arch = "arm", target_arch = "riscv32", target_arch = "riscv64"))
+))]
 fn masknz64(condition: u64) -> u64 {
     masknz!(condition: u64)
 }
@@ -138,7 +144,7 @@ fn masknz64(condition: u64) -> u64 {
 /// This is written in assembly both for performance and because we've had problematic code
 /// generation in this routine in the past which lead to the insertion of a branch, which using
 /// assembly should guarantee won't happen again in the future (CVE-2026-23519).
-#[cfg(target_arch = "arm")]
+#[cfg(all(target_arch = "arm", not(miri)))]
 fn masknz32(condition: u32) -> u32 {
     let mut mask: u32;
     unsafe {
@@ -154,7 +160,7 @@ fn masknz32(condition: u32) -> u32 {
 }
 
 /// Optimized mask generation for riscv32 targets.
-#[cfg(target_arch = "riscv32")]
+#[cfg(all(target_arch = "riscv32", not(miri)))]
 fn masknz32(condition: u32) -> u32 {
     let mut mask: u32;
     unsafe {
@@ -170,13 +176,13 @@ fn masknz32(condition: u32) -> u32 {
 }
 
 /// Optimized mask generation for riscv32 targets.
-#[cfg(target_arch = "riscv64")]
+#[cfg(all(target_arch = "riscv64", not(miri)))]
 fn masknz32(condition: u32) -> u32 {
     (masknz64(condition.into()) & 0xFFFF_FFFF) as u32
 }
 
-/// Optimized mask generation for riscv32 targets.
-#[cfg(target_arch = "riscv64")]
+/// Optimized mask generation for riscv64 targets.
+#[cfg(all(target_arch = "riscv64", not(miri)))]
 fn masknz64(condition: u64) -> u64 {
     let mut mask: u64;
     unsafe {
@@ -192,7 +198,7 @@ fn masknz64(condition: u64) -> u64 {
 }
 
 /// 64-bit wrapper for targets that implement 32-bit mask generation in assembly.
-#[cfg(any(target_arch = "arm", target_arch = "riscv32"))]
+#[cfg(all(any(target_arch = "arm", target_arch = "riscv32"), not(miri)))]
 fn masknz64(condition: u64) -> u64 {
     let lo = masknz32((condition & 0xFFFF_FFFF) as u32);
     let hi = masknz32((condition >> 32) as u32);
