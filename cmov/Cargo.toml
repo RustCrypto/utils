@@ -17,7 +17,7 @@ wrappers for the CMOV family of instructions on x86/x86_64 and CSEL on AArch64, 
 portable "best-effort" pure Rust fallback implementation.
 """
 
-[dev-dependencies]
+[target.'cfg(any(unix, windows))'.dev-dependencies]
 proptest = "1.9"
 
 [lints]

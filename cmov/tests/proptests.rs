@@ -1,5 +1,7 @@
 //! `cmov` property-based tests: randomized with shrinking.
 
+#![cfg(any(unix, windows))]
+
 /// Write the proptests for an integer type.
 macro_rules! int_proptests {
     ( $($int:ident),+ ) => {
