@@ -21,27 +21,38 @@ jobs:
     strategy:
       matrix:
         include:
-          # 32-bit Linux
+          # `aarch64` Linux
+          - target: aarch64-unknown-linux-gnu
+            rust: 1.85.0 # MSRV
+            runner: ubuntu-24.04-arm
+          - target: aarch64-unknown-linux-gnu
+            rust: stable
+            runner: ubuntu-24.04-arm
+
+          # `aarch64` macOS
+          - target: aarch64-apple-darwin
+            rust: 1.85.0 # MSRV
+            runner: macos-latest
+          - target: aarch64-apple-darwin
+            rust: stable
+            runner: macos-latest
+
+          # `x86` Linux (32-bit)
           - target: i686-unknown-linux-gnu
-            platform: ubuntu-latest
+            runner: ubuntu-latest
             rust: 1.85.0 # MSRV
             deps: sudo apt update && sudo apt install gcc-multilib
 
-          # 64-bit Linux
+          # `x86_64` Linux
           - target: x86_64-unknown-linux-gnu
-            platform: ubuntu-latest
+            runner: ubuntu-latest
             rust: 1.85.0 # MSRV
 
-          # 64-bit Windows
+          # `x86_64` Windows
           - target: x86_64-pc-windows-msvc
-            platform: windows-latest
+            runner: windows-latest
             rust: 1.85.0 # MSRV
-
-          # 64-bit macOS
-          - target: x86_64-apple-darwin
-            platform: macos-latest
-            rust: 1.85.0 # MSRV
-    runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner != '' && matrix.runner || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v6
       - uses: RustCrypto/actions/cargo-cache@master
@@ -87,3 +98,16 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: wasm32-wasip1
       - run: cargo test --target wasm32-wasip1
+
+  # Test `cpubits="32"` on a 64-bit target
+  test-override-32-on-64:
+    env:
+      RUSTFLAGS: '-Dwarnings --cfg cpubits="32"'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - run: cargo test

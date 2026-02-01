@@ -15,5 +15,6 @@ target CPU, which in some cases may differ from its address size a.k.a.
 `target_pointer_width`. Implemented as `macro_rules!`
 """
 
-[lints]
-workspace = true
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = ['cfg(cpubits, values("16", "32", "64"))']
