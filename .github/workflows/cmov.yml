@@ -55,27 +55,47 @@ jobs:
     strategy:
       matrix:
         include:
-          # `x86` Linux
+          # `aarch64` Linux
+          - target: aarch64-unknown-linux-gnu
+            rust: 1.85.0 # MSRV
+            runner: ubuntu-24.04-arm
+          - target: aarch64-unknown-linux-gnu
+            rust: stable
+            runner: ubuntu-24.04-arm
+
+          # `aarch64` macOS
+          - target: aarch64-apple-darwin
+            rust: 1.85.0 # MSRV
+            runner: macos-latest
+          - target: aarch64-apple-darwin
+            rust: stable
+            runner: macos-latest
+
+          # `x86` Linux (32-bit)
           - target: i686-unknown-linux-gnu
             platform: ubuntu-latest
             rust: 1.85.0 # MSRV
+            deps: sudo apt update && sudo apt install gcc-multilib
+          - target: i686-unknown-linux-gnu
+            platform: ubuntu-latest
+            rust: stable
             deps: sudo apt update && sudo apt install gcc-multilib
 
           # `x86_64` Linux
           - target: x86_64-unknown-linux-gnu
             platform: ubuntu-latest
             rust: 1.85.0 # MSRV
+          - target: x86_64-unknown-linux-gnu
+            platform: ubuntu-latest
+            rust: stable
 
           # `x86_64` Windows
           - target: x86_64-pc-windows-msvc
             platform: windows-latest
             rust: 1.85.0 # MSRV
-
-          # `x86_64` macOS
-          - target: x86_64-apple-darwin
-            platform: macos-latest
-            rust: 1.85.0 # MSRV
-
+          - target: x86_64-pc-windows-msvc
+            platform: windows-latest
+            rust: stable
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v6
@@ -106,11 +126,6 @@ jobs:
             rust: 1.85.0 # MSRV
           - target: armv7-unknown-linux-gnueabi
             rust: stable # MSRV
-          # ARM64
-          - target: aarch64-unknown-linux-gnu
-            rust: 1.85.0 # MSRV
-          - target: aarch64-unknown-linux-gnu
-            rust: stable
           # PPC32
           - target: powerpc-unknown-linux-gnu
             rust: 1.85.0 # MSRV
