@@ -197,6 +197,30 @@ macro_rules! cpubits {
         }
     };
 
+    // Select between 16-bit and 32-bit options, where no code will be generated for 64-bit targets
+    (
+        16 => { $( $tokens16:tt )* }
+        32 => { $( $tokens32:tt )* }
+    ) => {
+        $crate::cpubits! {
+            16 => { $( $tokens16 )* }
+            32 => { $( $tokens32 )* }
+            64 => { }
+        }
+    };
+
+    // Select between 32-bit and 64-bit options, where no code will be generated for 16-bit targets
+    (
+        32 => { $( $tokens32:tt )* }
+        64 => { $( $tokens64:tt )* }
+    ) => {
+        $crate::cpubits! {
+            16 => { }
+            32 => { $( $tokens32 )* }
+            64 => { $( $tokens64 )* }
+        }
+    };
+
     // Select between 16-bit and 32-bit options, where 64-bit will use the 32-bit option
     (
         16 => { $( $tokens16:tt )* }
@@ -253,7 +277,7 @@ macro_rules! cpubits {
             @__items () ;
             // The following are effectively `if`/`else` clauses in a Lispy syntax, where each
             // 2-tuple is `( ( predicate ) ( body ) )`. The first clause with a matching predicate
-            // is taken and the rest are ignored just like `if`/`else`.
+            // is taken and its body executed and the rest are ignored just like `if`/`else`.
             //
             // We first match on each of the explicit overrides, and if none of them are configured
             // apply our heuristic logic which allows certain targets to be overridden to use
