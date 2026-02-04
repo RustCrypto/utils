@@ -1,6 +1,6 @@
 [package]
 name = "cpufeatures"
-version = "0.3.0-pre"
+version = "0.3.0"
 authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.85"
