@@ -18,7 +18,7 @@ This crate is intended as a stopgap until Rust [RFC 2725] adding first-class
 target feature detection macros to `libcore` is implemented.
 
 ## Example
-```
+```rust
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub mod x86_backend {
     // This macro creates `cpuid_aes_sha` module
