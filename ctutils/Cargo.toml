@@ -23,7 +23,7 @@ cmov = "0.5.1"
 subtle = { version = "2", optional = true, default-features = false }
 
 [dev-dependencies]
-proptest = "1.9"
+proptest = "1.10"
 
 [features]
 alloc = []

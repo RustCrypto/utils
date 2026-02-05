@@ -18,7 +18,7 @@ portable "best-effort" pure Rust fallback implementation.
 """
 
 [target.'cfg(any(unix, windows))'.dev-dependencies]
-proptest = "1.9"
+proptest = "1.10"
 
 [lints]
 workspace = true
