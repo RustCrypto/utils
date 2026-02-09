@@ -6,8 +6,6 @@ on:
       - README.md
   push:
     branches: master
-    paths-ignore:
-      - README.md
 
 permissions:
   contents: read
