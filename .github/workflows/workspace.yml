@@ -44,3 +44,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: crate-ci/typos@v1
+
+  lock:
+    name: Check Cargo.lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check --workspace
+      - run: test "$(git status --porcelain)" == ""
