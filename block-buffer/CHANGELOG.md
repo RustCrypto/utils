@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `BlockSizes` trait implemented for sizes bigger than `U0` and smaller than `U256` ([#1455])
 
 ### Changed
-- Block size used in `BlockBuffer` and `ReadBuffer` is now bound by `BlockSizes`  ([#1455])
+- Block sizes used by `BlockBuffer` and `ReadBuffer` are now bound by `BlockSizes` ([#1455])
 
 [#1455]: https://github.com/RustCrypto/utils/pull/1455
 
