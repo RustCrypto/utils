@@ -1,15 +1,15 @@
-use super::{Array, ArraySize, Error};
+use super::{Array, BlockSizes, Error};
 use core::fmt;
 
 /// Buffer for reading block-generated data.
-pub struct ReadBuffer<BS: ArraySize> {
+pub struct ReadBuffer<BS: BlockSizes> {
     /// The first byte of the block is used as cursor position.
     /// `&buffer[usize::from(buffer[0])..]` is interpreted as unread bytes.
     /// The cursor position is always bigger than zero and smaller than or equal to block size.
     buffer: Array<u8, BS>,
 }
 
-impl<BS: ArraySize> fmt::Debug for ReadBuffer<BS> {
+impl<BS: BlockSizes> fmt::Debug for ReadBuffer<BS> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ReadBuffer")
             .field("remaining_data", &self.remaining())
@@ -17,14 +17,9 @@ impl<BS: ArraySize> fmt::Debug for ReadBuffer<BS> {
     }
 }
 
-impl<BS: ArraySize> Default for ReadBuffer<BS> {
+impl<BS: BlockSizes> Default for ReadBuffer<BS> {
     #[inline]
     fn default() -> Self {
-        assert!(
-            BS::USIZE != 0 && BS::USIZE < 256,
-            "buffer block size must be bigger than zero and smaller than 256"
-        );
-
         let buffer = Default::default();
         let mut res = Self { buffer };
         // SAFETY: `BS::USIZE` satisfies the `set_pos_unchecked` safety contract
@@ -33,7 +28,7 @@ impl<BS: ArraySize> Default for ReadBuffer<BS> {
     }
 }
 
-impl<BS: ArraySize> Clone for ReadBuffer<BS> {
+impl<BS: BlockSizes> Clone for ReadBuffer<BS> {
     #[inline]
     fn clone(&self) -> Self {
         let buffer = self.buffer.clone();
@@ -41,7 +36,7 @@ impl<BS: ArraySize> Clone for ReadBuffer<BS> {
     }
 }
 
-impl<BS: ArraySize> ReadBuffer<BS> {
+impl<BS: BlockSizes> ReadBuffer<BS> {
     /// Return current cursor position, i.e. how many bytes were read from the buffer.
     #[inline(always)]
     pub fn get_pos(&self) -> usize {
@@ -176,7 +171,7 @@ impl<BS: ArraySize> ReadBuffer<BS> {
 }
 
 #[cfg(feature = "zeroize")]
-impl<BS: ArraySize> Drop for ReadBuffer<BS> {
+impl<BS: BlockSizes> Drop for ReadBuffer<BS> {
     fn drop(&mut self) {
         use zeroize::Zeroize;
         self.buffer.zeroize();
@@ -184,4 +179,4 @@ impl<BS: ArraySize> Drop for ReadBuffer<BS> {
 }
 
 #[cfg(feature = "zeroize")]
-impl<BS: ArraySize> zeroize::ZeroizeOnDrop for ReadBuffer<BS> {}
+impl<BS: BlockSizes> zeroize::ZeroizeOnDrop for ReadBuffer<BS> {}

@@ -1,4 +1,7 @@
-use hybrid_array::sizes::{U0, U1};
+use hybrid_array::{
+    sizes::{U0, U1, U256},
+    typenum::{IsLess, NonZero, True, Unsigned},
+};
 
 use super::{Array, ArraySize};
 use core::{mem::MaybeUninit, ptr};
@@ -96,3 +99,8 @@ impl Sealed for super::Lazy {
         }
     }
 }
+
+/// Sealed trait implemented for sizes from `U1` to `U255`.
+pub trait BlockSizes {}
+
+impl<T: Unsigned> BlockSizes for T where Self: IsLess<U256, Output = True> + NonZero {}
