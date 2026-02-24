@@ -53,6 +53,11 @@ mod sealed;
 
 pub use read::ReadBuffer;
 
+/// Trait implemented for supported block sizes, i.e. for types from `U1` to `U255`.
+pub trait BlockSizes: ArraySize + sealed::BlockSizes {}
+
+impl<T: ArraySize + sealed::BlockSizes> BlockSizes for T {}
+
 /// Trait for buffer kinds.
 pub trait BufferKind: sealed::Sealed {}
 
@@ -86,24 +91,14 @@ impl fmt::Display for Error {
 }
 
 /// Buffer for block processing of data.
-pub struct BlockBuffer<BS: ArraySize, K: BufferKind> {
+pub struct BlockBuffer<BS: BlockSizes, K: BufferKind> {
     buffer: MaybeUninit<Array<u8, BS>>,
     pos: K::Pos,
 }
 
-impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
-    /// This associated constant is used to assert block size correctness at compile time.
-    const BLOCK_SIZE_ASSERT: bool = {
-        assert!(BS::USIZE != 0, "Block size can not be equal to zero!");
-        assert!(BS::USIZE <= 255, "Block size can not be bigger than 255!");
-        true
-    };
-}
-
-impl<BS: ArraySize, K: BufferKind> Default for BlockBuffer<BS, K> {
+impl<BS: BlockSizes, K: BufferKind> Default for BlockBuffer<BS, K> {
     #[inline]
     fn default() -> Self {
-        assert!(Self::BLOCK_SIZE_ASSERT);
         let mut buffer = MaybeUninit::uninit();
         let mut pos = Default::default();
         K::set_pos(&mut buffer, &mut pos, 0);
@@ -111,7 +106,7 @@ impl<BS: ArraySize, K: BufferKind> Default for BlockBuffer<BS, K> {
     }
 }
 
-impl<BS: ArraySize, K: BufferKind> Clone for BlockBuffer<BS, K> {
+impl<BS: BlockSizes, K: BufferKind> Clone for BlockBuffer<BS, K> {
     #[inline]
     fn clone(&self) -> Self {
         // SAFETY: `BlockBuffer` does not implement `Drop` (i.e. it could be a `Copy` type),
@@ -120,7 +115,7 @@ impl<BS: ArraySize, K: BufferKind> Clone for BlockBuffer<BS, K> {
     }
 }
 
-impl<BS: ArraySize, K: BufferKind> fmt::Debug for BlockBuffer<BS, K> {
+impl<BS: BlockSizes, K: BufferKind> fmt::Debug for BlockBuffer<BS, K> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         f.debug_struct(K::NAME)
             .field("pos", &self.get_pos())
@@ -130,7 +125,7 @@ impl<BS: ArraySize, K: BufferKind> fmt::Debug for BlockBuffer<BS, K> {
     }
 }
 
-impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
+impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
     /// Create new buffer from slice.
     ///
     /// # Panics
@@ -148,10 +143,6 @@ impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K> {
     /// If slice length is not valid for used buffer kind.
     #[inline(always)]
     pub fn try_new(buf: &[u8]) -> Result<Self, Error> {
-        const {
-            assert!(Self::BLOCK_SIZE_ASSERT);
-        }
-
         if !K::invariant(buf.len(), BS::USIZE) {
             return Err(Error);
         }
@@ -318,7 +309,7 @@ pub type SerializedBufferSize<BS, K> = Sum<BS, <K as sealed::Sealed>::Overhead>;
 /// `BlockBuffer` serialized as a byte array.
 pub type SerializedBuffer<BS, K> = Array<u8, SerializedBufferSize<BS, K>>;
 
-impl<BS: ArraySize, K: BufferKind> BlockBuffer<BS, K>
+impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K>
 where
     BS: core::ops::Add<K::Overhead>,
     Sum<BS, K::Overhead>: ArraySize,
@@ -337,7 +328,7 @@ where
     /// Deserialize buffer from a byte array.
     ///
     /// # Errors
-    /// If algorithm-specific invariant fails to hold
+    /// If `buf` does not represent a valid serialization of `BlockBuffer`.
     pub fn deserialize(buf: &SerializedBuffer<BS, K>) -> Result<Self, Error> {
         let (pos, block) = buf.split_at(1);
         let pos = usize::from(pos[0]);
@@ -358,7 +349,7 @@ where
     }
 }
 
-impl<BS: ArraySize> BlockBuffer<BS, Eager> {
+impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
     /// Compress remaining data after padding it with `delim`, zeros and
     /// the `suffix` bytes. If there is not enough unused space, `compress`
     /// will be called twice.
@@ -413,7 +404,7 @@ impl<BS: ArraySize> BlockBuffer<BS, Eager> {
 }
 
 #[cfg(feature = "zeroize")]
-impl<BS: ArraySize, K: BufferKind> Zeroize for BlockBuffer<BS, K> {
+impl<BS: BlockSizes, K: BufferKind> Zeroize for BlockBuffer<BS, K> {
     #[inline]
     fn zeroize(&mut self) {
         self.buffer.zeroize();
@@ -421,7 +412,7 @@ impl<BS: ArraySize, K: BufferKind> Zeroize for BlockBuffer<BS, K> {
     }
 }
 
-impl<BS: ArraySize, K: BufferKind> Drop for BlockBuffer<BS, K> {
+impl<BS: BlockSizes, K: BufferKind> Drop for BlockBuffer<BS, K> {
     #[inline]
     fn drop(&mut self) {
         #[cfg(feature = "zeroize")]
@@ -430,4 +421,4 @@ impl<BS: ArraySize, K: BufferKind> Drop for BlockBuffer<BS, K> {
 }
 
 #[cfg(feature = "zeroize")]
-impl<BS: ArraySize, K: BufferKind> ZeroizeOnDrop for BlockBuffer<BS, K> {}
+impl<BS: BlockSizes, K: BufferKind> ZeroizeOnDrop for BlockBuffer<BS, K> {}
