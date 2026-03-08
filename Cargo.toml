@@ -27,6 +27,7 @@ opt-level = 2
 
 [patch.crates-io]
 cmov = { path = "cmov" }
+zeroize_derive = { path = "zeroize_derive" }
 
 [workspace.lints.clippy]
 borrow_as_ptr = "warn"
