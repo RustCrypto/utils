@@ -17,4 +17,4 @@ digest = "0.11"
 
 [dev-dependencies]
 sha2 = "0.11"
-sha3 = "0.11.0-rc.9"
+sha3 = "0.11"
