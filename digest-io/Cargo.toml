@@ -13,8 +13,8 @@ categories = ["cryptography"]
 description = "std::io-compatibility wrappers for traits defined in the digest crate"
 
 [dependencies]
-digest = "0.11.0-rc.5"
+digest = "0.11"
 
 [dev-dependencies]
-sha2 = "0.11.0-pre.5"
-sha3 = "0.11.0-pre.5"
+sha2 = "0.11"
+sha3 = "0.11"
