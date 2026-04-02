@@ -6,8 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.4.1 (2026-04-02)
 ### Added
+- `isize`/`usize` and `NonZero*` trait impls ([#1416])
 - `subtle` migration guide ([#1465])
 
+[#1416]: https://github.com/RustCrypto/utils/pull/1416
 [#1465]: https://github.com/RustCrypto/utils/pull/1465
 
 ## 0.4.0 (2026-01-19)
