@@ -259,7 +259,7 @@ macro_rules! cpubits {
                 // WASM
                 target_arch = "wasm32",
             ))]
-            16 => { $( $tokens32 )* }
+            16 => { $( $tokens16 )* }
             32 => { $( $tokens32 )* }
             64 => { $( $tokens64 )* }
         }
