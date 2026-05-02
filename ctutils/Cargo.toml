@@ -8,7 +8,7 @@ architecture-specific predication intrinsics. Heavily inspired by the `subtle` c
 version = "0.4.2"
 authors = ["RustCrypto Developers"]
 license = "Apache-2.0 OR MIT"
-homepage = "https://github.com/RustCrypto/utils/tree/master/ctselect"
+homepage = "https://github.com/RustCrypto/utils/tree/master/ctutils"
 repository = "https://github.com/RustCrypto/utils"
 categories = ["cryptography", "no-std"]
 keywords = ["constant-time", "crypto", "intrinsics"]
