@@ -10,7 +10,7 @@ pub use hybrid_array as array;
 use core::marker::PhantomData;
 use hybrid_array::{Array, ArraySize};
 
-/// Cursor for implementing sponge-based absorbtion and squeezing.
+/// Cursor for implementing sponge-based absorption and squeezing.
 ///
 /// This type wraps `u8` and enforces that its value is always smaller than `Rate`.
 ///
