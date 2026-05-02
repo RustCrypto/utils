@@ -464,6 +464,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sponge-cursor"
+version = "0.1.0"
+dependencies = [
+ "hex-literal 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hybrid-array",
+ "zeroize 1.8.2",
+]
+
+[[package]]
 name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

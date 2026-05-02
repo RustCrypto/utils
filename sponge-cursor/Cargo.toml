@@ -1,0 +1,23 @@
+[package]
+name = "sponge-cursor"
+version = "0.1.0"
+authors = ["RustCrypto Developers"]
+edition = "2024"
+rust-version = "1.85"
+documentation = "https://docs.rs/sponge-cursor"
+readme = "README.md"
+repository = "https://github.com/RustCrypto/utils"
+license = "MIT OR Apache-2.0"
+keywords = ["block", "buffer"]
+categories = ["cryptography", "no-std"]
+description = "Cursor for sponge-based absorption and squeezing"
+
+[dependencies]
+hybrid-array = "0.4"
+zeroize = { version = "1.4", optional = true, default-features = false }
+
+[dev-dependencies]
+hex-literal = "1"
+
+[lints]
+workspace = true
