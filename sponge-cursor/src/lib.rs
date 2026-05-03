@@ -37,6 +37,21 @@ impl<Rate: ArraySize> Default for SpongeCursor<Rate> {
 }
 
 impl<Rate: ArraySize> SpongeCursor<Rate> {
+    /// Create new cursor with the provided position.
+    ///
+    /// Returns `None` if `pos` is bigger or equal to `Rate`.
+    #[must_use]
+    pub fn new(pos: u8) -> Option<Self> {
+        if usize::from(pos) < Rate::USIZE {
+            Some(Self {
+                pos,
+                _pd: PhantomData,
+            })
+        } else {
+            None
+        }
+    }
+
     /// Absorb bytes from `data` into a `u64`-based state using little ednian byte order.
     ///
     /// Size of state MUST be greater or equal to `Rate`. Using an invalid `N` will result in
