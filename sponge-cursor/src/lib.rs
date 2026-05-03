@@ -113,7 +113,7 @@ impl<Rate: ArraySize> SpongeCursor<Rate> {
                 head
             };
 
-            xor_in::<N, Rate>(state, pos, head);
+            xor_into::<N, Rate>(state, pos, head);
 
             if is_partial {
                 self.pos = u8::try_from(pos + head.len()).expect("the sum is smaller than Rate");
@@ -139,7 +139,7 @@ impl<Rate: ArraySize> SpongeCursor<Rate> {
         }
 
         if !tail.is_empty() {
-            xor_in::<N, Rate>(state, 0, tail);
+            xor_into::<N, Rate>(state, 0, tail);
         }
 
         self.pos = u8::try_from(tail.len()).expect("tail.len() is smaller than Rate");
@@ -208,7 +208,7 @@ impl<Rate: ArraySize> zeroize::Zeroize for SpongeCursor<Rate> {
 }
 
 #[inline(always)]
-fn xor_in<const N: usize, Rate: ArraySize>(state: &mut [u64; N], offset: usize, data: &[u8]) {
+fn xor_into<const N: usize, Rate: ArraySize>(state: &mut [u64; N], offset: usize, data: &[u8]) {
     const {
         assert!(size_of::<Array<u8, Rate>>() <= size_of::<[u64; N]>());
         assert!(Rate::USIZE % size_of::<u64>() == 0);
