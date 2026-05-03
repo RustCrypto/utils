@@ -52,6 +52,33 @@ impl<Rate: ArraySize> SpongeCursor<Rate> {
         }
     }
 
+    /// Get current cursor position as `u8`.
+    #[must_use]
+    #[inline(always)]
+    pub fn raw_pos(&self) -> u8 {
+        debug_assert!(self.pos < Rate::U8);
+        if self.pos < Rate::U8 {
+            self.pos
+        } else {
+            // SAFETY: the type enforces that `pos` is always smaller than `Rate`
+            unsafe { core::hint::unreachable_unchecked() };
+        }
+    }
+
+    /// Get current cursor position.
+    #[must_use]
+    #[inline(always)]
+    pub fn pos(&self) -> usize {
+        let pos = usize::from(self.pos);
+        debug_assert!(pos < Rate::USIZE);
+        if pos < Rate::USIZE {
+            pos
+        } else {
+            // SAFETY: the type enforces that `pos` is always smaller than `Rate`
+            unsafe { core::hint::unreachable_unchecked() };
+        }
+    }
+
     /// Absorb bytes from `data` into a `u64`-based state using little ednian byte order.
     ///
     /// Size of state MUST be greater or equal to `Rate`. Using an invalid `N` will result in
@@ -170,20 +197,6 @@ impl<Rate: ArraySize> SpongeCursor<Rate> {
         }
 
         self.pos = u8::try_from(tail.len()).expect("tail.len() is smaller than Rate");
-    }
-
-    /// Get current cursor position.
-    #[must_use]
-    #[inline(always)]
-    pub fn pos(&self) -> usize {
-        let pos = usize::from(self.pos);
-        debug_assert!(pos < Rate::USIZE);
-        if pos < Rate::USIZE {
-            pos
-        } else {
-            // SAFETY: the type enforces that `pos` is always smaller than `Rate`
-            unsafe { core::hint::unreachable_unchecked() };
-        }
     }
 }
 
