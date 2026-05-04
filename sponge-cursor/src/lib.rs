@@ -107,7 +107,7 @@ impl<const RATE: usize> SpongeCursor<RATE> {
                 head
             };
 
-            utils::xor_into_state::<N, RATE>(state, pos, head);
+            utils::absorb_partial::<N, RATE>(state, pos, head);
 
             if is_partial {
                 self.pos = u8::try_from(pos + head.len()).expect("the sum is smaller than Rate");
@@ -121,19 +121,13 @@ impl<const RATE: usize> SpongeCursor<RATE> {
         let tail = blocks.remainder();
 
         for block in blocks {
-            let chunks = block.chunks_exact(size_of::<u64>());
-            assert!(chunks.remainder().is_empty());
-
-            for (dst, chunk) in state.iter_mut().zip(chunks) {
-                let chunk = chunk.try_into().expect("chunk has correct length");
-                *dst ^= u64::from_le_bytes(chunk);
-            }
-
+            let block: &[u8; RATE] = block.try_into().expect("block has correct size");
+            utils::absorb_full(state, block);
             sponge(state);
         }
 
         if !tail.is_empty() {
-            utils::xor_into_state::<N, RATE>(state, 0, tail);
+            utils::absorb_partial::<N, RATE>(state, 0, tail);
         }
 
         self.pos = u8::try_from(tail.len()).expect("tail.len() is smaller than RATE");
@@ -171,6 +165,7 @@ impl<const RATE: usize> SpongeCursor<RATE> {
         );
     }
 
+    #[inline(always)]
     fn squeeze_inner_u64_le<const N: usize>(
         &mut self,
         state: &mut [u64; N],
