@@ -5,13 +5,13 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
 
-mod utils;
+mod u64_le_utils;
 
 /// Cursor for implementing sponge-based absorption and squeezing.
 ///
-/// This type wraps `u8` and enforces that its value is always smaller than `Rate`.
+/// This type wraps `u8` and enforces that its value is always smaller than `RATE`.
 ///
-/// `Rate` MUST be smaller than `U256`, trying to initialize cursor with an invalid rate will
+/// `RATE` MUST be smaller than `256`, trying to initialize cursor with an invalid rate will
 /// result in a compilation error.
 #[derive(Debug, Clone)]
 pub struct SpongeCursor<const RATE: usize> {
@@ -30,11 +30,11 @@ impl<const RATE: usize> Default for SpongeCursor<RATE> {
 }
 
 // Note that the methods should compile into a panic-free code,
-// see: https://rust.godbolt.org/z/3v4zWr4ox
+// see: https://rust.godbolt.org/z/r93WE8zq3
 impl<const RATE: usize> SpongeCursor<RATE> {
     /// Create new cursor with the provided position.
     ///
-    /// Returns `None` if `pos` is bigger or equal to `Rate`.
+    /// Returns `None` if `pos` is bigger or equal to `RATE`.
     #[must_use]
     pub fn new(pos: u8) -> Option<Self> {
         if usize::from(pos) < RATE {
@@ -54,7 +54,7 @@ impl<const RATE: usize> SpongeCursor<RATE> {
         if self.pos < rate_u8 {
             self.pos
         } else {
-            // SAFETY: the type enforces that `pos` is always smaller than `Rate`
+            // SAFETY: the type enforces that `pos` is always smaller than `RATE`
             unsafe { core::hint::unreachable_unchecked() };
         }
     }
@@ -68,19 +68,25 @@ impl<const RATE: usize> SpongeCursor<RATE> {
         if pos < RATE {
             pos
         } else {
-            // SAFETY: the type enforces that `pos` is always smaller than `Rate`
+            // SAFETY: the type enforces that `pos` is always smaller than `RATE`
             unsafe { core::hint::unreachable_unchecked() };
         }
     }
 
-    /// Absorb bytes from `data` into a `u64`-based state using little ednian byte order.
+    /// Set new cursor position.
     ///
-    /// Size of state MUST be greater or equal to `Rate`. Using an invalid `N` will result in
-    /// a compilation error.
-    #[allow(
-        clippy::missing_panics_doc,
-        reason = "the method is panic-free, see: https://rust.godbolt.org/z/88Wf1qEsr"
-    )]
+    /// # Panics
+    /// If `new_pos` is greater or equal to `RATE`.
+    fn set_pos(&mut self, new_pos: usize) {
+        assert!(new_pos < RATE);
+        self.pos = u8::try_from(new_pos).expect("`new_pos` is smaller than `RATE`");
+    }
+
+    /// Absorb bytes from `data` into `state` using little-endian byte order.
+    ///
+    /// Size of `state` in bytes MUST be greater or equal to `RATE`.
+    /// Using an invalid `N` will result in a compilation error.
+    #[allow(clippy::missing_panics_doc, reason = "the method is panic-free")]
     #[inline]
     pub fn absorb_u64_le<const N: usize>(
         &mut self,
@@ -96,23 +102,19 @@ impl<const RATE: usize> SpongeCursor<RATE> {
 
         if self.pos != 0 {
             let pos = self.pos();
-            let rem_len = RATE - pos;
+            let rem_len = RATE
+                .checked_sub(pos)
+                .expect("`pos` is always smaller than `RATE`");
 
-            let is_partial = data.len() < rem_len;
-            let head = if is_partial {
-                data
-            } else {
-                let (head, tail) = data.split_at(rem_len);
-                data = tail;
-                head
-            };
-
-            utils::absorb_partial::<N, RATE>(state, pos, head);
-
-            if is_partial {
-                self.pos = u8::try_from(pos + head.len()).expect("the sum is smaller than Rate");
+            if data.len() < rem_len {
+                u64_le_utils::absorb_partial::<N, RATE>(state, pos, data);
+                self.set_pos(pos + data.len());
                 return;
             }
+
+            let (head, tail) = data.split_at(rem_len);
+            data = tail;
+            u64_le_utils::absorb_partial::<N, RATE>(state, pos, head);
 
             sponge(state);
         }
@@ -121,19 +123,23 @@ impl<const RATE: usize> SpongeCursor<RATE> {
         let tail = blocks.remainder();
 
         for block in blocks {
-            let block: &[u8; RATE] = block.try_into().expect("block has correct size");
-            utils::absorb_full(state, block);
+            let block: &[u8; RATE] = block.try_into().expect("`block` has correct size");
+            u64_le_utils::absorb_full(state, block);
             sponge(state);
         }
 
         if !tail.is_empty() {
-            utils::absorb_partial::<N, RATE>(state, 0, tail);
+            u64_le_utils::absorb_partial::<N, RATE>(state, 0, tail);
         }
 
-        self.pos = u8::try_from(tail.len()).expect("tail.len() is smaller than RATE");
+        self.set_pos(tail.len());
     }
 
-    /// Squeeze data by reading it into `buf`.
+    /// Squeeze data from `state` by reading it into `buf` using little-endian byte order.
+    ///
+    /// Size of `state` in bytes MUST be greater or equal to `RATE`.
+    /// Using an invalid `N` will result in a compilation error.
+    #[inline]
     pub fn squeeze_read_u64_le<const N: usize>(
         &mut self,
         state: &mut [u64; N],
@@ -144,12 +150,16 @@ impl<const RATE: usize> SpongeCursor<RATE> {
             state,
             sponge,
             buf,
-            utils::squeeze_read_partial::<N, RATE>,
-            utils::squeeze_read_full,
+            u64_le_utils::squeeze_read_partial::<N, RATE>,
+            u64_le_utils::squeeze_read_full,
         );
     }
 
-    /// Squeeze data by XOR-ing it with data in `buf`.
+    /// Squeeze data from `state` by XOR-ing it with data in `buf` using little-endian byte order.
+    ///
+    /// Size of `state` in bytes MUST be greater or equal to `RATE`.
+    /// Using an invalid `N` will result in a compilation error.
+    #[inline]
     pub fn squeeze_xor_u64_le<const N: usize>(
         &mut self,
         state: &mut [u64; N],
@@ -160,11 +170,12 @@ impl<const RATE: usize> SpongeCursor<RATE> {
             state,
             sponge,
             buf,
-            utils::squeeze_xor_partial::<N, RATE>,
-            utils::squeeze_xor_full,
+            u64_le_utils::squeeze_xor_partial::<N, RATE>,
+            u64_le_utils::squeeze_xor_full,
         );
     }
 
+    /// Squeeze data by calling custom functions using little-endian byte order.
     #[inline(always)]
     fn squeeze_inner_u64_le<const N: usize>(
         &mut self,
@@ -186,7 +197,7 @@ impl<const RATE: usize> SpongeCursor<RATE> {
 
             if buf.len() < rem_len {
                 process_partial(state, pos, buf);
-                self.pos = u8::try_from(pos + buf.len()).expect("the sum is smaller than RATE");
+                self.set_pos(pos + buf.len());
                 return;
             }
 
@@ -200,7 +211,7 @@ impl<const RATE: usize> SpongeCursor<RATE> {
 
         for block in &mut blocks {
             sponge(state);
-            let block = block.try_into().expect("block has correct size");
+            let block = block.try_into().expect("`block` has correct size");
             process_full(state, block);
         }
 
@@ -211,7 +222,7 @@ impl<const RATE: usize> SpongeCursor<RATE> {
             process_partial(state, 0, tail);
         }
 
-        self.pos = u8::try_from(tail.len()).expect("tail.len() is smaller than RATE");
+        self.set_pos(tail.len());
     }
 }
 
