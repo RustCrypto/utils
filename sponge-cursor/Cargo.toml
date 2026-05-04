@@ -13,7 +13,6 @@ categories = ["cryptography", "no-std"]
 description = "Cursor for sponge-based absorption and squeezing"
 
 [dependencies]
-hybrid-array = "0.4"
 zeroize = { version = "1.4", optional = true, default-features = false }
 
 [dev-dependencies]

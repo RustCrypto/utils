@@ -468,7 +468,6 @@ name = "sponge-cursor"
 version = "0.1.0"
 dependencies = [
  "hex-literal 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "hybrid-array",
  "zeroize 1.8.2",
 ]
 
