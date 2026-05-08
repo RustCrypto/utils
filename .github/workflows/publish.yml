@@ -14,6 +14,7 @@ on:
       'digest-io-v*',
       'hex-literal-v*',
       'inout-v*',
+      'sponge-cursor-v*',
       'zeroize-v*'
     ]
 
