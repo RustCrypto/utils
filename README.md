@@ -21,8 +21,9 @@ This repository contains various utility crates used in the RustCrypto project.
 | [`dbl`] | [![crates.io](https://img.shields.io/crates/v/dbl.svg)](https://crates.io/crates/dbl) | [![Documentation](https://docs.rs/dbl/badge.svg)](https://docs.rs/dbl) | Double operation in Galois Field (GF) |
 | [`digest-io`] | [![crates.io](https://img.shields.io/crates/v/digest-io.svg)](https://crates.io/crates/digest-io) | [![Documentation](https://docs.rs/digest-io/badge.svg)](https://docs.rs/digest-io) | `std::io`-compatibility wrappers for traits defined in the `digest` crate |
 | [`hex-literal`] | [![crates.io](https://img.shields.io/crates/v/hex-literal.svg)](https://crates.io/crates/hex-literal) | [![Documentation](https://docs.rs/hex-literal/badge.svg)](https://docs.rs/hex-literal) | A macro for converting hexadecimal strings to a byte array at compile time |
-| [`inout`] | [![crates.io](https://img.shields.io/crates/v/inout.svg)](https://crates.io/crates/inout) | [![Documentation](https://docs.rs/inout/badge.svg)](https://docs.rs/inout) | Custom reference types for code generic over in-place and buffer-to-buffer modes of operation. |
-| [`wycheproof2blb`] |  |  | | Utility for converting [Wycheproof] test vectors to the blobby format |
+| [`inout`] | [![crates.io](https://img.shields.io/crates/v/inout.svg)](https://crates.io/crates/inout) | [![Documentation](https://docs.rs/inout/badge.svg)](https://docs.rs/inout) | Custom reference types for code generic over in-place and buffer-to-buffer modes of operation |
+| [`sponge-cursor`] | [![crates.io](https://img.shields.io/crates/v/sponge-cursor.svg)](https://crates.io/crates/sponge-cursor) | [![Documentation](https://docs.rs/sponge-cursor/badge.svg)](https://docs.rs/sponge-cursor) | Cursor for sponge-based absorption and squeezing |
+| [`wycheproof2blb`] |  |  | Utility for converting [Wycheproof] test vectors to the blobby format |
 | [`zeroize`] | [![crates.io](https://img.shields.io/crates/v/zeroize.svg)](https://crates.io/crates/zeroize) | [![Documentation](https://docs.rs/zeroize/badge.svg)](https://docs.rs/zeroize) | Securely zero memory while avoiding compiler optimizations |
 
 ## License
@@ -60,6 +61,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 [`digest-io`]: ./digest-io
 [`hex-literal`]: ./hex-literal
 [`inout`]: ./inout
+[`sponge-cursor`]: ./sponge-cursor
 [`wycheproof2blb`]: ./wycheproof2blb
 [`zeroize`]: ./zeroize
 
