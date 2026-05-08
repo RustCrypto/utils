@@ -80,15 +80,15 @@ fn keccak_test() {
 
         let expected_pos = (SHORT_DATA.len() + DATA.len()) % 136;
         for &chunk_size in CHUNK_SIZES {
-            let mut state_cpy = state;
-            let mut cursor_cpy = cursor.clone();
+            let mut state_copy = state;
+            let mut cursor_copy = cursor.clone();
 
             for chunk in DATA.chunks(chunk_size) {
-                cursor_cpy.absorb_u64_le(&mut state_cpy, f1600, chunk);
+                cursor_copy.absorb_u64_le(&mut state_copy, f1600, chunk);
             }
-            assert_eq!(state_cpy, STATE1);
-            assert_eq!(cursor_cpy.pos(), expected_pos);
-            assert_eq!(usize::from(cursor_cpy.raw_pos()), expected_pos);
+            assert_eq!(state_copy, STATE1);
+            assert_eq!(cursor_copy.pos(), expected_pos);
+            assert_eq!(usize::from(cursor_copy.raw_pos()), expected_pos);
         }
 
         {
@@ -111,10 +111,10 @@ fn keccak_test() {
         for &chunk_size in CHUNK_SIZES {
             let mut buf = [0u8; DATA_LEN];
             cursor = Default::default();
-            let mut state_cpy = state;
+            let mut state_copy = state;
 
             for chunk in buf.chunks_mut(chunk_size) {
-                cursor.squeeze_read_u64_le(&mut state_cpy, f1600, chunk);
+                cursor.squeeze_read_u64_le(&mut state_copy, f1600, chunk);
             }
 
             assert_eq!(&buf, SQUEEZE_DATA);
@@ -124,10 +124,10 @@ fn keccak_test() {
         for &chunk_size in CHUNK_SIZES {
             let mut buf = DATA;
             cursor = Default::default();
-            let mut state_cpy = state;
+            let mut state_copy = state;
 
             for chunk in buf.chunks_mut(chunk_size) {
-                cursor.squeeze_xor_u64_le(&mut state_cpy, f1600, chunk);
+                cursor.squeeze_xor_u64_le(&mut state_copy, f1600, chunk);
             }
 
             assert_eq!(buf, expected);
