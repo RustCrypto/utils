@@ -78,6 +78,6 @@ jobs:
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: nightly
           components: miri
       - run: cargo miri test --all-features --target ${{ matrix.target }}
