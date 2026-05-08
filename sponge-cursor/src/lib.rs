@@ -13,7 +13,7 @@ mod u64_le_utils;
 ///
 /// `RATE` MUST be smaller than `256`, trying to initialize cursor with an invalid rate will
 /// result in a compilation error.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct SpongeCursor<const RATE: usize> {
     pos: u8,
 }

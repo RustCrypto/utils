@@ -16,7 +16,7 @@ description = "Cursor for sponge-based absorption and squeezing"
 zeroize = { version = "1.4", optional = true, default-features = false }
 
 [dev-dependencies]
-hex-literal = "1"
+keccak = "0.2"
 
 [lints]
 workspace = true
