@@ -11,6 +11,7 @@ members = [
     "dbl",
     "hex-literal",
     "inout",
+    "sponge-cursor",
     "wycheproof2blb",
     "zeroize",
     "zeroize_derive",
