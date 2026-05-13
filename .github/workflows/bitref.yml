@@ -1,0 +1,135 @@
+name: bitref
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/bitref.yml"
+      - "bitref/**"
+      - "Cargo.*"
+  push:
+    branches: master
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: bitref
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-Dwarnings"
+
+# Cancels CI jobs when new commits are pushed to a PR branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build-no-std:
+    strategy:
+      matrix:
+        target:
+          - riscv32i-unknown-none-elf
+          - thumbv7em-none-eabi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+      - uses: RustCrypto/actions/cargo-hack-install@master
+      - run: cargo build --target ${{ matrix.target }}
+
+  minimal-versions:
+    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
+    with:
+      working-directory: ${{ github.workflow }}
+
+  test:
+    strategy:
+      matrix:
+        include:
+          - rust: 1.85.0 # MSRV
+          - rust: stable
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - run: cargo test
+
+  # Test using `cargo careful`
+  test-careful:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo install cargo-careful
+      - run: cargo careful test
+
+  # Cross-compiled tests
+  test-cross:
+    strategy:
+      matrix:
+        include:
+          # ARM32
+          - target: armv7-unknown-linux-gnueabi
+            rust: 1.85.0 # MSRV
+          - target: armv7-unknown-linux-gnueabi
+            rust: stable # MSRV
+          # PPC32
+          - target: powerpc-unknown-linux-gnu
+            rust: 1.85.0 # MSRV
+          - target: powerpc-unknown-linux-gnu
+            rust: stable
+          # RISCV64
+          - target: riscv64gc-unknown-linux-gnu
+            rust: stable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - uses: RustCrypto/actions/cross-install@master
+      - run: cross test --target ${{ matrix.target }}
+
+  # Test using `cargo miri`
+  test-miri:
+    runs-on: ubuntu-latest
+    env:
+      MIRIFLAGS: "-Zmiri-tree-borrows -Zmiri-strict-provenance -Zmiri-symbolic-alignment-check -Zmiri-backtrace=full"
+    strategy:
+      matrix:
+        target:
+          - armv7-unknown-linux-gnueabi
+          - powerpc-unknown-linux-gnu
+          - riscv64gc-unknown-linux-gnu
+          - s390x-unknown-linux-gnu
+          - x86_64-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: rustup component add miri && cargo miri setup
+      - run: cargo miri test --target ${{ matrix.target }}
+
+  # Test WASM using `wasmtime`
+  test-wasm:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TARGET_WASM32_WASIP1_RUNNER: "wasmtime"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: bytecodealliance/actions/wasmtime/setup@v1
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-wasip1
+      - run: cargo test --target wasm32-wasip1

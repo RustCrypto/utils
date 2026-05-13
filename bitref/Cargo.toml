@@ -1,0 +1,20 @@
+[package]
+name = "bitref"
+description = "Reference types for bitstrings with bit-level slicing support"
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+license = "Apache-2.0 OR MIT"
+homepage = "https://github.com/RustCrypto/utils/pull/1481"
+repository = "https://github.com/RustCrypto/utils"
+categories = ["data-structures"]
+keywords = ["bits"]
+readme = "README.md"
+edition = "2024"
+rust-version = "1.85"
+
+[lints]
+workspace = true
+
+[target.'cfg(any(unix, windows))'.dev-dependencies]
+criterion = { version = "0.7", features = ["html_reports"] }
+proptest = "1.11"
