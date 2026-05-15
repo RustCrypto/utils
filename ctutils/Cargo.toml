@@ -20,7 +20,7 @@ rust-version = "1.85"
 cmov = "0.5.3"
 
 # optional dependencies
-subtle = { version = "2", optional = true, default-features = false }
+subtle = { version = "2.6", optional = true, default-features = false }
 
 [dev-dependencies]
 proptest = "1.11"
