@@ -56,7 +56,7 @@ macro_rules! csel64 {
     };
 }
 
-/// Conditional select equality test using 32-bit `:w` registers and 
+/// Conditional select equality test using 32-bit `:w` registers and
 /// correctly handling unspecified upper bits of 16 bit inputs
 macro_rules! cseleq16 {
     ($instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
