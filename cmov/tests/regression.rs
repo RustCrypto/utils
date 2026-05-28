@@ -1,8 +1,9 @@
 //! Tests for previous bugs in the implementation.
 
-use std::hint::black_box;
+#![allow(clippy::cast_possible_truncation, reason = "test")]
 
 use cmov::{Cmov, CmovEq};
+use core::hint::black_box;
 
 #[test]
 fn u64_cmoveq() {
