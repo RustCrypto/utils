@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.4 (2026-05-28)
+### Security
+- Fix [GHSA-3rjw-m598-pq24]: `Cmov`/`CmovEq` on `aarch64` can produce wrong results if high-bits of registers are set ([dba6c355])
+
+[GHSA-3rjw-m598-pq24]: https://github.com/RustCrypto/utils/security/advisories/GHSA-3rjw-m598-pq24
+[dba6c355]: https://github.com/RustCrypto/utils/commit/dba6c355c9f241e3726d5ec2a68f9f3b519f6063
+
 ## 0.5.3 (2026-04-02)
 ### Added
 - Impl `Cmov`/`CmovEq` for `NonZeroUsize`/`NonZeroIsize` ([#1415])
