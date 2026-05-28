@@ -3,10 +3,10 @@ use core::arch::asm;
 
 /// Conditional select
 macro_rules! csel {
-    ($cmp:expr, $csel:expr, $dst:expr, $src:expr, $condition:expr) => {
+    ($tst:expr, $csel:expr, $dst:expr, $src:expr, $condition:expr) => {
         unsafe {
             asm! {
-                "cmp {0:w}, 0",
+                $tst,
                 $csel,
                 in(reg) $condition,
                 inlateout(reg) *$dst,
@@ -45,14 +45,30 @@ macro_rules! cseleq {
 /// Conditional select using 32-bit `:w` registers
 macro_rules! csel32 {
     ($csel:expr, $dst:expr, $src:expr, $condition:expr) => {
-        csel!("cmp {0:w}, 0", $csel, $dst, $src, $condition)
+        csel!("tst {0:w}, 0xff", $csel, $dst, $src, $condition)
     };
 }
 
 /// Conditional select using 64-bit `:x` registers
 macro_rules! csel64 {
     ($csel:expr, $dst:expr, $src:expr, $condition:expr) => {
-        csel!("cmp {0:x}, 0", $csel, $dst, $src, $condition)
+        csel!("tst {0:x}, 0xff", $csel, $dst, $src, $condition)
+    };
+}
+
+/// Conditional select equality test using 32-bit `:w` registers and 
+/// correctly handling unspecified upper bits of 16 bit inputs
+macro_rules! cseleq16 {
+    ($instruction:expr, $lhs:expr, $rhs:expr, $condition:expr, $dst:expr) => {
+        cseleq!(
+            "eor {0:w}, {1:w}, {2:w}",
+            "tst {0:w}, 0xffff",
+            $instruction,
+            $lhs,
+            $rhs,
+            $condition,
+            $dst
+        )
     };
 }
 
@@ -129,12 +145,12 @@ impl Cmov for u64 {
 impl CmovEq for u16 {
     #[inline]
     fn cmovne(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cseleq32!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
+        cseleq16!("csel {3:w}, {4:w}, {5:w}, NE", self, rhs, input, output);
     }
 
     #[inline]
     fn cmoveq(&self, rhs: &Self, input: Condition, output: &mut Condition) {
-        cseleq32!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
+        cseleq16!("csel {3:w}, {4:w}, {5:w}, EQ", self, rhs, input, output);
     }
 }
 
