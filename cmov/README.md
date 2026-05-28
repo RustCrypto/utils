@@ -73,6 +73,7 @@ USE AT YOUR OWN RISK!
 Below are security issues this crate has experienced in the past:
 
 - [RUSTSEC-2026-0003]: Non-constant-time code generation on ARM32 targets
+- [GHSA-3rjw-m598-pq24]: `Cmov`/`CmovEq` on ARM64 can produce wrong results if high-bits of registers are set
 
 ## Minimum Supported Rust Version (MSRV) Policy
 
@@ -120,3 +121,4 @@ dual licensed as above, without any additional terms or conditions.
 [`ctutils`]: https://docs.rs/ctutils
 [open an issue]: https://github.com/RustCrypto/utils/issues
 [RUSTSEC-2026-0003]: https://rustsec.org/advisories/RUSTSEC-2026-0003.html
+[GHSA-3rjw-m598-pq24]: https://github.com/RustCrypto/utils/security/advisories/GHSA-3rjw-m598-pq24
