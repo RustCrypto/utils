@@ -110,8 +110,16 @@ impl<BS: BlockSizes> ReadBuffer<BS> {
         }
         assert!(read_len < BS::USIZE);
 
-        gen_block(&mut self.buffer);
-        read_fn(&self.buffer[..read_len]);
+        let g = ResetGuard(self);
+        let buf = &mut g.0.buffer;
+
+        // Note that generated block is likely to break the `ReadBuffer` invariant.
+        // We restore it using `set_pos_unchecked` below and in case if one of the closures
+        // panic the buffer gets reset by the guard.
+        gen_block(buf);
+        read_fn(&buf[..read_len]);
+
+        core::mem::forget(g);
 
         // We checked that `read_len` satisfies the `set_pos_unchecked` safety contract
         unsafe { self.set_pos_unchecked(read_len) };
@@ -180,3 +188,12 @@ impl<BS: BlockSizes> Drop for ReadBuffer<BS> {
 
 #[cfg(feature = "zeroize")]
 impl<BS: BlockSizes> zeroize::ZeroizeOnDrop for ReadBuffer<BS> {}
+
+/// Resets the referenced buffer on drop.
+struct ResetGuard<'a, BS: BlockSizes>(&'a mut ReadBuffer<BS>);
+
+impl<BS: BlockSizes> Drop for ResetGuard<'_, BS> {
+    fn drop(&mut self) {
+        self.0.reset();
+    }
+}

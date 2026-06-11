@@ -184,12 +184,18 @@ impl<BS: BlockSizes, K: BufferKind> BlockBuffer<BS, K> {
         if pos != 0 {
             let (left, right) = input.split_at(rem);
             input = right;
+
+            let g = ResetGuard(self);
+            let buf = &mut g.0.buffer;
             // SAFETY: length of `left` is equal to number of remaining bytes in `buffer`,
             // so we can copy data into it and process `buffer` as fully initialized block.
+            // Note that this code can temporarily break the eager buffer invariant,
+            // but we reset the buffer immediately after `compress` using `Drop` impl of
+            // `ResetGuard`, so this code is safe even if `compress` panics.
             let block = unsafe {
-                let buf_ptr = self.buffer.as_mut_ptr().cast::<u8>().add(pos);
+                let buf_ptr = buf.as_mut_ptr().cast::<u8>().add(pos);
                 ptr::copy_nonoverlapping(left.as_ptr(), buf_ptr, left.len());
-                self.buffer.assume_init_ref()
+                buf.assume_init_ref()
             };
             compress(slice::from_ref(block));
         }
@@ -363,22 +369,34 @@ impl<BS: BlockSizes> BlockBuffer<BS, Eager> {
         suffix: &[u8],
         mut compress: impl FnMut(&Array<u8, BS>),
     ) {
-        assert!(suffix.len() <= BS::USIZE, "suffix is too long");
         let pos = self.get_pos();
-        let mut buf = self.pad_with_zeros();
-        buf[pos] = delim;
+        let size = self.size();
+        // Number of bytes remaining in the buffer after `delim` is written to it
+        // This never underflows since for eager buffers `size` is always greater than `pos`.
+        let pad_len = size - pos - 1;
 
-        let n = self.size() - suffix.len();
-        if self.size() - pos - 1 < suffix.len() {
-            compress(&buf);
+        let suffix_dst_pos = size
+            .checked_sub(suffix.len())
+            .expect("suffix must be smaller than buffer block size");
+
+        let g = ResetGuard(self);
+        // SAFETY: we fully initialize the buffer. Note that we may temporarily break
+        // the buffer invariant, but we restore it using `ResetGuard`,
+        // which works even if `compress` panics.
+        let buf = unsafe {
+            let p: *mut u8 = g.0.buffer.as_mut_ptr().cast::<u8>().add(pos);
+            ptr::write(p, delim);
+            ptr::write_bytes(p.add(1), 0, pad_len);
+            g.0.buffer.assume_init_mut()
+        };
+
+        if pad_len < suffix.len() {
+            compress(buf);
             buf.fill(0);
-            buf[n..].copy_from_slice(suffix);
-            compress(&buf);
-        } else {
-            buf[n..].copy_from_slice(suffix);
-            compress(&buf);
         }
-        self.reset();
+
+        buf[suffix_dst_pos..].copy_from_slice(suffix);
+        compress(buf);
     }
 
     /// Pad message with 0x80, zeros and 64-bit message length using
@@ -422,3 +440,12 @@ impl<BS: BlockSizes, K: BufferKind> Drop for BlockBuffer<BS, K> {
 
 #[cfg(feature = "zeroize")]
 impl<BS: BlockSizes, K: BufferKind> ZeroizeOnDrop for BlockBuffer<BS, K> {}
+
+/// Resets the referenced buffer on drop.
+struct ResetGuard<'a, BS: BlockSizes, K: BufferKind>(&'a mut BlockBuffer<BS, K>);
+
+impl<BS: BlockSizes, K: BufferKind> Drop for ResetGuard<'_, BS, K> {
+    fn drop(&mut self) {
+        self.0.reset();
+    }
+}

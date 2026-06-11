@@ -9,8 +9,11 @@ use block_buffer::{
 };
 use hex_literal::hex;
 
+use core::{array, panic::AssertUnwindSafe};
+use std::panic::catch_unwind;
+
 #[test]
-fn test_eager_digest_pad() {
+fn test_eager_digest() {
     let mut buf = EagerBuffer::<U4>::default();
     let inputs = [
         &b"01234567"[..],
@@ -45,7 +48,7 @@ fn test_eager_digest_pad() {
 }
 
 #[test]
-fn test_lazy_digest_pad() {
+fn test_lazy_digest() {
     let mut buf = LazyBuffer::<U4>::default();
     let inputs = [
         &b"01234567"[..],
@@ -76,6 +79,38 @@ fn test_lazy_digest_pad() {
     }
     assert_eq!(buf.pad_with_zeros()[..], b"s\0\0\0"[..]);
     assert_eq!(buf.get_pos(), 0);
+}
+
+#[test]
+fn digest_pad_combinations() {
+    let delim = 0x80;
+    let data: [u8; 7] = array::from_fn(|i| u8::try_from(i).unwrap());
+    let suffix: [u8; 7] = array::from_fn(|i| u8::try_from(i + 0x10).unwrap());
+
+    for data_len in 0..data.len() {
+        for suffix_len in 0..suffix.len() {
+            let data = &data[..data_len];
+            let suffix = &suffix[..suffix_len];
+            let mut buf = EagerBuffer::<U8>::default();
+
+            buf.digest_blocks(data, |_| panic!("should not be called"));
+
+            let mut accum = Vec::with_capacity(2 * buf.size());
+            buf.digest_pad(delim, suffix, |block| accum.extend_from_slice(block));
+
+            assert!(accum.len() <= 2 * buf.size());
+            assert_eq!(buf.get_pos(), 0);
+
+            let (res_data, rem) = accum.split_at(data_len);
+            let (res_delim, rem) = rem.split_at(1);
+            let (res_zeros, res_suffix) = rem.split_at(rem.len() - suffix_len);
+
+            assert_eq!(res_data, data);
+            assert_eq!(res_delim, &[delim]);
+            assert!(res_zeros.iter().all(|&b| b == 0));
+            assert_eq!(res_suffix, suffix);
+        }
+    }
 }
 
 #[test]
@@ -343,4 +378,58 @@ fn test_read_serialize() {
     assert!(Buf::deserialize(&buf).is_err());
     let buf = Array([4, 0, 0, 1]);
     assert!(Buf::deserialize(&buf).is_err());
+}
+
+#[test]
+fn eager_buffer_exception_safety() {
+    let mut buf = EagerBuffer::<U4>::default();
+
+    let res = catch_unwind(AssertUnwindSafe(|| {
+        buf.digest_blocks(b"ab", |_| {});
+        buf.digest_blocks(b"cd", |_| panic!("compression panic"));
+    }));
+
+    assert!(res.is_err());
+    let _ = buf.get_pos();
+
+    let mut buf = EagerBuffer::<U4>::default();
+
+    let res = catch_unwind(AssertUnwindSafe(|| {
+        buf.digest_pad(0x80, &[0xFF; 2], |_| panic!("compression panic"));
+    }));
+
+    assert!(res.is_err());
+    let _ = buf.get_pos();
+}
+
+#[test]
+fn read_buffer_exception_safety() {
+    let mut buf = ReadBuffer::<U4>::default();
+
+    let res = catch_unwind(AssertUnwindSafe(|| {
+        buf.write_block(
+            1,
+            |block| {
+                block[0] = 0xFF;
+                panic!("block generation panic");
+            },
+            |_| {},
+        );
+    }));
+
+    assert!(res.is_err());
+    let _ = buf.get_pos();
+
+    let mut buf = ReadBuffer::<U4>::default();
+
+    let res = catch_unwind(AssertUnwindSafe(|| {
+        buf.write_block(
+            1,
+            |block| block.0 = [0xFF; 4],
+            |_| panic!("data read panic"),
+        );
+    }));
+
+    assert!(res.is_err());
+    let _ = buf.get_pos();
 }
