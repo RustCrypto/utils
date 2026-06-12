@@ -29,7 +29,7 @@ std = ["alloc"]
 
 aarch64 = [] # NOTE: vestigial no-op feature; AArch64 support is always enabled now
 derive = ["zeroize_derive"]
-simd = [] # NOTE: MSRV 1.72
+simd = [] # NOTE: vestigial no-op feature; always enabled
 
 [lints]
 workspace = true
