@@ -766,7 +766,7 @@ dependencies = [
 
 [[package]]
 name = "zeroize_derive"
-version = "1.5.0-pre"
+version = "1.5.0"
 dependencies = [
  "proc-macro2",
  "quote",
