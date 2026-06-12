@@ -42,7 +42,7 @@ Requires Rust **1.85** or newer.
 In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope for this crate's
 semantic versioning guarantees).
 
-## Usage
+## Example
 
 ```
 use zeroize::Zeroize;
