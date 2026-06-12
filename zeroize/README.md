@@ -2,9 +2,10 @@
 
 [![Crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
+[![Build Status][build-image]][build-link]
 ![Apache 2.0/MIT Licensed][license-image]
 ![MSRV][rustc-image]
-[![Build Status][build-image]][build-link]
+[![Project Chat][chat-image]][chat-link]
 
 Securely zero memory (a.k.a. [zeroize]) while avoiding compiler optimizations.
 
@@ -34,6 +35,27 @@ thereof, implemented in pure Rust with no usage of FFI or assembly.
 - No functionality besides securely zeroing memory!
 - (Optional) Custom derive support for zeroing complex structures
 
+## Minimum Supported Rust Version
+
+Requires Rust **1.85** or newer.
+
+In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope for this crate's
+semantic versioning guarantees).
+
+## Usage
+
+```
+use zeroize::Zeroize;
+
+// Protip: don't embed secrets in your source code.
+// This is just an example.
+let mut secret = b"Air shield password: 1,2,3,4,5".to_vec();
+// [ ... ] open the air shield here
+
+// Now that we're done using the secret, zero it out.
+secret.zeroize();
+```
+
 ## License
 
 Licensed under either of:
@@ -53,12 +75,14 @@ dual licensed as above, without any additional terms or conditions.
 
 [crate-image]: https://img.shields.io/crates/v/zeroize.svg
 [crate-link]: https://crates.io/crates/zeroize
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml/badge.svg?branch=master
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml?query=branch:master
 [docs-image]: https://docs.rs/zeroize/badge.svg
 [docs-link]: https://docs.rs/zeroize/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [rustc-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
-[build-image]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml/badge.svg?branch=master
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/zeroize.yml?query=branch:master
+[chat-image]: https://img.shields.io/badge/zulip-join_chat-blue.svg
+[chat-link]: https://rustcrypto.zulipchat.com/#narrow/stream/260052-utils
 
 [//]: # (general links)
 

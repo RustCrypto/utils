@@ -1,53 +1,13 @@
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![doc = include_str!("../README.md")]
 #![doc(
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
-#![allow(clippy::undocumented_unsafe_blocks)] // TODO(tarcieri): document all unsafe blocks
+#![allow(clippy::undocumented_unsafe_blocks, reason = "TODO")]
 
-//! Securely zero memory with a simple trait ([`Zeroize`]) built on stable Rust
-//! primitives which guarantee the operation will not be "optimized away".
-//!
-//! ## About
-//!
-//! [Zeroing memory securely is hard] - compilers optimize for performance, and
-//! in doing so they love to "optimize away" unnecessary zeroing calls. There are
-//! many documented "tricks" to attempt to avoid these optimizations and ensure
-//! that a zeroing routine is performed reliably.
-//!
-//! This crate isn't about tricks: it uses [`core::ptr::write_volatile`]
-//! and [`core::sync::atomic`] memory fences to provide easy-to-use, portable
-//! zeroing behavior which works on all of Rust's core number types and slices
-//! thereof, implemented in pure Rust with no usage of FFI or assembly.
-//!
-//! - No insecure fallbacks!
-//! - No dependencies!
-//! - No FFI or inline assembly! **WASM friendly** (and tested)!
-//! - `#![no_std]` i.e. **embedded-friendly**!
-//! - No functionality besides securely zeroing memory!
-//! - (Optional) Custom derive support for zeroing complex structures
-//!
-//! ## Minimum Supported Rust Version
-//!
-//! Requires Rust **1.85** or newer.
-//!
-//! In the future, we reserve the right to change MSRV (i.e. MSRV is out-of-scope for this crate's
-//! semantic versioning guarantees).
-//!
-//! ## Usage
-//!
-//! ```
-//! use zeroize::Zeroize;
-//!
-//! // Protip: don't embed secrets in your source code.
-//! // This is just an example.
-//! let mut secret = b"Air shield password: 1,2,3,4,5".to_vec();
-//! // [ ... ] open the air shield here
-//!
-//! // Now that we're done using the secret, zero it out.
-//! secret.zeroize();
-//! ```
+//! ## Supported types
 //!
 //! The [`Zeroize`] trait is impl'd on all of Rust's core scalar types including
 //! integers, floats, `bool`, and `char`.
@@ -628,7 +588,7 @@ impl Zeroize for CString {
 /// `Zeroizing` is a wrapper for any `Z: Zeroize` type which implements a
 /// `Drop` handler which zeroizes dropped values.
 ///
-/// Zeroizing<T> is defined with `repr(transparent)`, which means it is
+/// `Zeroizing<T>` is defined with `repr(transparent)`, which means it is
 /// guaranteed to have the same physical representation as the underlying type.
 #[derive(Debug, Default, Eq, PartialEq)]
 #[repr(transparent)]
