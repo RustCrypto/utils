@@ -19,8 +19,8 @@ even WASM!
 """
 
 [dependencies]
-serde = { version = "1.0", default-features = false, optional = true }
-zeroize_derive = { version = "1.5.0-pre", optional = true }
+serde = { version = "1", default-features = false, optional = true }
+zeroize_derive = { version = "1.5", optional = true }
 
 [features]
 default = ["alloc"]

@@ -15,7 +15,8 @@ on:
       'hex-literal-v*',
       'inout-v*',
       'sponge-cursor-v*',
-      'zeroize-v*'
+      'zeroize-v*',
+      'zeroize_derive-v*'
     ]
 
 jobs:
