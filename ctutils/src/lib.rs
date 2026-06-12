@@ -4,7 +4,7 @@
     html_logo_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg",
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/meta/master/logo.svg"
 )]
-#![forbid(unsafe_code)] // `unsafe` should go in `cmov`
+#![forbid(unsafe_code, reason = "`unsafe` should go in `cmov`")]
 #![warn(
     clippy::arithmetic_side_effects,
     clippy::integer_division_remainder_used,
