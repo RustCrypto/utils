@@ -7,7 +7,33 @@
 )]
 #![allow(clippy::undocumented_unsafe_blocks, reason = "TODO")]
 
-//! ## Supported types
+//! ## Usage
+//!
+//! ### Traits
+//!
+//! The [`Zeroize`] trait is the core API of this crate. It's intended to be impl'd on values that
+//! may-or-may-not contain secrets, for example the `zeroize` crate itself defines them on the
+//! core integers e.g. `u8`, `u16`, `i8`, `i16`, as well as arrays thereof. Its core API is
+//! [`Zeroize::zeroize`], a method which takes `&mut self` and writes over the type's internal
+//! memory with some placeholder value, typically some form of `0`.
+//!
+//! The [`DefaultIsZeroes`] marker trait can be impl'd on types which have a [`Default`] impl that
+//! can be used for [`Zeroize`]. Types which implement this trait receive a blanket impl of the
+//! [`Zeroize`] trait.
+//!
+//! We recommend that types which always contain secrets, and especially ones which need to maintain
+//! complex invariants, do NOT impl the [`Zeroize`] trait, but instead provide a [`Drop`] impl which
+//! takes care of erasing the secret values from memory directly. Such types can mark that they're
+//! doing this with the [`ZeroizeOnDrop`] marker trait. Note that [`ZeroizeOnDrop`] is *just* a
+//! marker trait, and making it actually work requires actually providing a [`Drop`] impl which
+//! takes care of zeroizing secrets.
+//!
+//! Why not impl [`Zeroize`] for such types, e.g. a `SecretKey` type? The problem is [`Zeroize`]
+//! would effectively leave such types in an invalid state, and a sort of use-after-zeroize
+//! condition becomes possible. For that reason, we recommend these types automatically handle
+//! zeroization in their [`Drop`] handler alone.
+//!
+//! ### Supported types
 //!
 //! The [`Zeroize`] trait is impl'd on all of Rust's core scalar types including
 //! integers, floats, `bool`, and `char`.
@@ -31,7 +57,7 @@
 //! impl [`Default`], which implements [`Zeroize`] by overwriting a value with
 //! the default value.
 //!
-//! ## Custom Derive Support
+//! ### Custom Derive Support
 //!
 //! This crate has custom derive support for the `Zeroize` trait,
 //! gated under the `zeroize` crate's `zeroize_derive` Cargo feature,
@@ -92,7 +118,7 @@
 //! # }
 //! ```
 //!
-//! ## `Zeroizing<Z>`: wrapper for zeroizing arbitrary values on drop
+//! ### `Zeroizing<Z>`: wrapper for zeroizing arbitrary values on drop
 //!
 //! `Zeroizing<Z: Zeroize>` is a generic wrapper type that impls `Deref`
 //! and `DerefMut`, allowing access to an inner value of type `Z`, and also
@@ -117,26 +143,14 @@
 //!
 //! ## What guarantees does this crate provide?
 //!
-//! This crate guarantees the following:
+//! This crate guarantees the zeroing operation can't be "optimized away" by the compiler, as
+//! ensured by LLVM's volatile semantics.
 //!
-//! 1. The zeroing operation can't be "optimized away" by the compiler.
-//! 2. All subsequent reads to memory will see "zeroized" values.
-//!
-//! LLVM's volatile semantics ensure #1 is true.
-//!
-//! Additionally, thanks to work by the [Unsafe Code Guidelines Working Group],
-//! we can now fairly confidently say #2 is true as well. Previously there were
-//! worries that the approach used by this crate (mixing volatile and
+//! Previously there were worries that the approach used by this crate (mixing volatile and
 //! non-volatile accesses) was undefined behavior due to language contained
 //! in the documentation for `write_volatile`, however after some discussion
-//! [these remarks have been removed] and the specific usage pattern in this
-//! crate is considered to be well-defined.
-//!
-//! Additionally this crate leverages [`core::sync::atomic::compiler_fence`]
-//! with the strictest ordering
-//! ([`Ordering::SeqCst`]) as a
-//! precaution to help ensure reads are not reordered before memory has been
-//! zeroed.
+//! within the [Unsafe Code Guidelines Working Group], [these remarks have been removed] and the
+//! specific usage pattern in this crate is considered to be well-defined.
 //!
 //! All of that said, there is still potential for microarchitectural attacks
 //! (ala Spectre/Meltdown) to leak "zeroized" secrets through covert channels.
@@ -145,30 +159,27 @@
 //!
 //! ## Stack/Heap Zeroing Notes
 //!
-//! This crate can be used to zero values from either the stack or the heap.
+//! This crate can be used to zero values from either the stack or the heap. We recommend storing
+//! sensitive data on the heap whenever possible to reduce the potential for making copies in memory
+//! via Rust move semantics, however note that stack spilling and other optimizations may leave
+//! temporary copies of data from the heap on the stack.
 //!
-//! However, be aware several operations in Rust can unintentionally leave
-//! copies of data in memory. This includes but is not limited to:
+//! [`zeroize_stack`] can be used to zeroize stack memory.
 //!
-//! - Moves and [`Copy`]
-//! - Heap reallocation when using [`Vec`] and [`String`]
-//! - Borrowers of a reference making copies of the data
+//! [`Pin`][`core::pin::Pin`] can be leveraged in conjunction with this crate to ensure data kept
+//! on the stack isn't moved.
 //!
-//! [`Pin`][`core::pin::Pin`] can be leveraged in conjunction with this crate
-//! to ensure data kept on the stack isn't moved.
+//! The `Zeroize` impls for `Vec`, `String` and `CString` zeroize the entire capacity of their
+//! backing buffer, but cannot guarantee copies of the data were not previously made by buffer
+//! reallocation. It's therefore important when attempting to zeroize such buffers to initialize
+//! them to the correct capacity, and take care to prevent subsequent reallocation.
 //!
-//! The `Zeroize` impls for `Vec`, `String` and `CString` zeroize the entire
-//! capacity of their backing buffer, but cannot guarantee copies of the data
-//! were not previously made by buffer reallocation. It's therefore important
-//! when attempting to zeroize such buffers to initialize them to the correct
-//! capacity, and take care to prevent subsequent reallocation.
-//!
-//! The `secrecy` crate provides higher-level abstractions for eliminating
+//! The [`secrecy`] crate provides higher-level abstractions for eliminating
 //! usage patterns which can cause reallocations:
 //!
-//! <https://crates.io/crates/secrecy>
+//! [`secrecy`]: https://docs.rs/secrecy
 //!
-//! ## What about: clearing registers, mlock, mprotect, etc?
+//! ## What about: clearing registers, `mlock()`, `mprotect()`, etc?
 //!
 //! This crate is focused on providing simple, unobtrusive support for reliably
 //! zeroing memory using the best approach possible on stable Rust.
@@ -189,7 +200,6 @@
 //! `unsafe` memory protection systems and just trying to make the best memory
 //! zeroing crate available.
 //!
-//! [Zeroing memory securely is hard]: http://www.daemonology.net/blog/2014-09-04-how-to-zero-a-buffer.html
 //! [Unsafe Code Guidelines Working Group]: https://github.com/rust-lang/unsafe-code-guidelines
 //! [these remarks have been removed]: https://github.com/rust-lang/rust/pull/60972
 //! [good cryptographic hygiene]: https://github.com/veorq/cryptocoding#clean-memory-of-secret-data
@@ -197,7 +207,6 @@
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
-
 #[cfg(feature = "std")]
 extern crate std;
 
