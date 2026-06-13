@@ -599,9 +599,15 @@ impl Zeroize for CString {
 ///
 /// `Zeroizing<T>` is defined with `repr(transparent)`, which means it is
 /// guaranteed to have the same physical representation as the underlying type.
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Default, Eq, PartialEq)]
 #[repr(transparent)]
 pub struct Zeroizing<Z: Zeroize + ?Sized>(Z);
+
+impl<Z: Zeroize + ?Sized> core::fmt::Debug for Zeroizing<Z> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Zeroizing").finish_non_exhaustive()
+    }
+}
 
 impl<Z> Zeroizing<Z>
 where
