@@ -52,6 +52,7 @@ impl<T> InOutBufReserved<'_, '_, T> {
     ///   must be valid for both reads and writes for `out_len * mem::size_of::<T>()`
     ///   many bytes.
     /// - `in_ptr` and `out_ptr` must be either equal or non-overlapping.
+    /// - `in_len` must be less than or equal to `out_len` (i.e. `in_len <= out_len`).
     /// - If `in_ptr` and `out_ptr` are equal, then the memory referenced by
     ///   them must not be accessed through any other pointer (not derived from
     ///   the return value) for the duration of lifetime 'a. Both read and write
