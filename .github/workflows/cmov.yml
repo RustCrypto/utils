@@ -34,7 +34,7 @@ jobs:
           - thumbv7em-none-eabi
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -92,7 +92,7 @@ jobs:
             rust: stable
     runs-on: ${{ matrix.runner != '' && matrix.runner || 'ubuntu-latest' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -105,7 +105,7 @@ jobs:
   test-careful:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@nightly
       - run: cargo install cargo-careful
       - run: cargo careful test --all-features
@@ -130,7 +130,7 @@ jobs:
             rust: stable
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: RustCrypto/actions/cargo-cache@master
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -153,7 +153,7 @@ jobs:
           - s390x-unknown-linux-gnu
           - x86_64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@nightly
       - run: rustup component add miri && cargo miri setup
       - run: cargo miri test --target ${{ matrix.target }} --all-features --lib
@@ -164,7 +164,7 @@ jobs:
     env:
       CARGO_TARGET_WASM32_WASIP1_RUNNER: "wasmtime"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: bytecodealliance/actions/wasmtime/setup@v1
       - uses: dtolnay/rust-toolchain@master
         with:
