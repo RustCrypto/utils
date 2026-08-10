@@ -10,8 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detection of the `avx` target feature ([#1511])
 - Use `::MAX` constant instead of deprecated `::max_value()` associated method ([#1515])
 
+### Changed
+- Use compile-time target feature detection under Miri ([#1513])
+
 [#1511]: https://github.com/RustCrypto/utils/pull/1511
 [#1515]: https://github.com/RustCrypto/utils/pull/1515
+[#1513]: https://github.com/RustCrypto/utils/pull/1513
 
 ## 0.3.0 (2026-02-05)
 ### Added
