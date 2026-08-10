@@ -8,8 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.3.1 (UNRELEASED)
 ### Fixed
 - Detection of the `avx` target feature ([#1511])
+- Use `::MAX` constant instead of deprecated `::max_value()` associated method ([#1515])
 
 [#1511]: https://github.com/RustCrypto/utils/pull/1511
+[#1515]: https://github.com/RustCrypto/utils/pull/1515
 
 ## 0.3.0 (2026-02-05)
 ### Added
