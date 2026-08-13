@@ -1,14 +1,35 @@
 use digest::{Digest, FixedOutputReset, Output, Reset};
 use std::io;
 
+#[cfg(feature = "tokio")]
+use {
+    std::{
+        pin::Pin,
+        task::{Context, Poll},
+    },
+    tokio::io::AsyncWrite,
+};
+
 /// Abstraction over a writer which hashes the data being written.
+#[cfg(not(feature = "tokio"))]
 #[derive(Debug)]
-pub struct HashWriter<D: Digest, W: io::Write> {
+pub struct HashWriter<D, W> {
     writer: W,
     hasher: D,
 }
 
-impl<D: Digest, W: io::Write> HashWriter<D, W> {
+#[cfg(feature = "tokio")]
+pin_project_lite::pin_project! {
+    /// Abstraction over a writer which hashes the data being written.
+    #[derive(Debug)]
+    pub struct HashWriter<D, W> {
+        #[pin]
+        writer: W,
+        hasher: D,
+    }
+}
+
+impl<D: Digest, W> HashWriter<D, W> {
     /// Construct a new `HashWriter` given an existing `writer` by value.
     pub fn new(writer: W) -> Self {
         Self::new_from_parts(D::new(), writer)
@@ -77,7 +98,7 @@ impl<D: Digest, W: io::Write> HashWriter<D, W> {
     }
 }
 
-impl<D: Digest + Clone, W: io::Write + Clone> Clone for HashWriter<D, W> {
+impl<D: Digest + Clone, W: Clone> Clone for HashWriter<D, W> {
     fn clone(&self) -> HashWriter<D, W> {
         HashWriter {
             writer: self.writer.clone(),
@@ -102,6 +123,32 @@ impl<D: Digest, W: io::Write> io::Write for HashWriter<D, W> {
     }
 }
 
+#[cfg(feature = "tokio")]
+impl<D: Digest, W: AsyncWrite> AsyncWrite for HashWriter<D, W> {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        let this = self.project();
+        let result = this.writer.poll_write(cx, buf);
+        if let Poll::Ready(Ok(n)) = result {
+            if n > 0 {
+                this.hasher.update(&buf[..n]);
+            }
+        }
+        result
+    }
+
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.project().writer.poll_flush(cx)
+    }
+
+    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.project().writer.poll_shutdown(cx)
+    }
+}
+
 impl<D: Digest + FixedOutputReset, W: io::Write> HashWriter<D, W> {
     /// Retrieve result and reset hasher instance.
     pub fn finalize_reset(&mut self) -> Output<D> {
@@ -114,8 +161,40 @@ impl<D: Digest + FixedOutputReset, W: io::Write> HashWriter<D, W> {
     }
 }
 
-impl<D: Digest + Reset, W: io::Write> Reset for HashWriter<D, W> {
+impl<D: Digest + Reset, W> Reset for HashWriter<D, W> {
     fn reset(&mut self) {
         Digest::reset(&mut self.hasher)
+    }
+}
+
+#[cfg(all(test, feature = "tokio"))]
+mod tokio_tests {
+    use super::HashWriter;
+    use bytes::Bytes;
+    use digest::Digest;
+    use futures::stream;
+    use sha2::Sha256;
+    use tokio::io::AsyncWriteExt;
+    use tokio_util::io::StreamReader;
+
+    #[tokio::test]
+    async fn test_async_write() {
+        let data = b"the quick brown fox jumps over the lazy dog".repeat(1000);
+
+        // Feed the stream chunk by chunk with an odd sized buffer.
+        let chunks = stream::iter(
+            data.chunks(37)
+                .map(|c| Ok::<_, std::io::Error>(Bytes::copy_from_slice(c)))
+                .collect::<Vec<_>>(),
+        );
+        let mut source = StreamReader::new(chunks);
+
+        let mut writer = HashWriter::<Sha256, _>::new(Vec::new());
+        tokio::io::copy(&mut source, &mut writer).await.unwrap();
+        writer.flush().await.unwrap();
+
+        let (hasher, sink) = writer.into_parts();
+        assert_eq!(sink, data);
+        assert_eq!(hasher.finalize(), Sha256::digest(&data));
     }
 }

@@ -7,7 +7,7 @@
 ![Rust Version][rustc-image]
 [![Project Chat][chat-image]][chat-link]
 
-Wrappers for compatibility between `std::io` and `digest` traits.
+Wrappers for compatibility between `std::io`, `tokio::io` and `digest` traits.
 
 ## Examples
 
@@ -84,6 +84,30 @@ fn main() -> io::Result<()> {
     // Get the resulting hash over read data
     let hash = reader.finalize();
     println!("Data: {buf:?}");
+    println!("Hash: {hash:?}");
+    Ok(())
+}
+```
+
+Simultaneously reading and hashing file data asynchronously (requires the
+`tokio` feature):
+```rust,ignore
+use digest_io::HashReader;
+use sha2::Sha256;
+use tokio::{fs::File, io};
+
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> io::Result<()> {
+    // Create new hashing reader
+    let f = File::open("Cargo.toml").await?;
+    let mut reader = HashReader::<Sha256, File>::new(f);
+
+    // Copy all data out of the file without buffering it up front
+    let mut sink = Vec::new();
+    io::copy(&mut reader, &mut sink).await?;
+
+    // Get the resulting hash over the read data
+    let hash = reader.finalize();
     println!("Hash: {hash:?}");
     Ok(())
 }

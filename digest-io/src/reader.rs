@@ -1,14 +1,35 @@
 use digest::{Digest, FixedOutputReset, Output, Reset};
 use std::io;
 
+#[cfg(feature = "tokio")]
+use {
+    std::{
+        pin::Pin,
+        task::{Context, Poll},
+    },
+    tokio::io::{AsyncRead, ReadBuf},
+};
+
 /// Abstraction over a reader which hashes the data being read
+#[cfg(not(feature = "tokio"))]
 #[derive(Debug)]
-pub struct HashReader<D: Digest, R: io::Read> {
+pub struct HashReader<D, R> {
     reader: R,
     hasher: D,
 }
 
-impl<D: Digest, R: io::Read> HashReader<D, R> {
+#[cfg(feature = "tokio")]
+pin_project_lite::pin_project! {
+    /// Abstraction over a reader which hashes the data being read
+    #[derive(Debug)]
+    pub struct HashReader<D, R> {
+        #[pin]
+        reader: R,
+        hasher: D,
+    }
+}
+
+impl<D: Digest, R> HashReader<D, R> {
     /// Construct a new `HashReader` given an existing `reader` by value.
     pub fn new(reader: R) -> Self {
         Self::new_from_parts(D::new(), reader)
@@ -76,7 +97,7 @@ impl<D: Digest, R: io::Read> HashReader<D, R> {
     }
 }
 
-impl<D: Digest + Clone, R: io::Read + Clone> Clone for HashReader<D, R> {
+impl<D: Digest + Clone, R: Clone> Clone for HashReader<D, R> {
     fn clone(&self) -> HashReader<D, R> {
         HashReader {
             reader: self.reader.clone(),
@@ -97,6 +118,27 @@ impl<D: Digest, R: io::Read> io::Read for HashReader<D, R> {
     }
 }
 
+#[cfg(feature = "tokio")]
+impl<D: Digest, R: AsyncRead> AsyncRead for HashReader<D, R> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
+        let this = self.project();
+        let filled_before = buf.filled().len();
+        let result = this.reader.poll_read(cx, buf);
+        if let Poll::Ready(Ok(())) = result {
+            let filled_after = buf.filled().len();
+            if filled_after > filled_before {
+                this.hasher
+                    .update(&buf.filled()[filled_before..filled_after]);
+            }
+        }
+        result
+    }
+}
+
 impl<D: Digest + FixedOutputReset, R: io::Read> HashReader<D, R> {
     /// Retrieve result and reset hasher instance.
     pub fn finalize_reset(&mut self) -> Output<D> {
@@ -109,7 +151,7 @@ impl<D: Digest + FixedOutputReset, R: io::Read> HashReader<D, R> {
     }
 }
 
-impl<D: Digest + Reset, R: io::Read> Reset for HashReader<D, R> {
+impl<D: Digest + Reset, R> Reset for HashReader<D, R> {
     fn reset(&mut self) {
         Digest::reset(&mut self.hasher)
     }
@@ -132,5 +174,33 @@ impl<D: Digest, R: io::BufRead> HashReader<D, R> {
 
             self.reader.consume(count);
         }
+    }
+}
+
+#[cfg(all(test, feature = "tokio"))]
+mod tokio_tests {
+    use super::HashReader;
+    use bytes::Bytes;
+    use digest::Digest;
+    use futures::stream;
+    use sha2::Sha256;
+    use tokio_util::io::StreamReader;
+
+    #[tokio::test]
+    async fn test_async_read() {
+        let data = b"the quick brown fox jumps over the lazy dog".repeat(1000);
+
+        // Feed the stream chunk by chunk with an odd sized buffer.
+        let chunks = stream::iter(
+            data.chunks(37)
+                .map(|c| Ok::<_, std::io::Error>(Bytes::copy_from_slice(c)))
+                .collect::<Vec<_>>(),
+        );
+        let mut reader = HashReader::<Sha256, _>::new(StreamReader::new(chunks));
+        let mut sink = Vec::new();
+        tokio::io::copy(&mut reader, &mut sink).await.unwrap();
+
+        assert_eq!(sink, data);
+        assert_eq!(reader.finalize(), Sha256::digest(&data));
     }
 }

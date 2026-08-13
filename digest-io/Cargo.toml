@@ -14,7 +14,20 @@ description = "std::io-compatibility wrappers for traits defined in the digest c
 
 [dependencies]
 digest = "0.11"
+pin-project-lite = { version = "0.2", optional = true }
+tokio = { version = "1", default-features = false, features = ["io-util"], optional = true }
 
 [dev-dependencies]
+bytes = "1"
+futures = "0.3"
 sha2 = "0.11"
 sha3 = "0.11"
+tokio = { version = "1", features = ["macros", "rt"] }
+tokio-util = { version = "0.7", features = ["io"] }
+
+[features]
+tokio = ["dep:tokio", "dep:pin-project-lite"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
