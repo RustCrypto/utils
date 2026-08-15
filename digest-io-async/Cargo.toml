@@ -1,0 +1,29 @@
+[package]
+name = "digest-io-async"
+version = "0.1.0"
+authors = ["RustCrypto Developers"]
+edition = "2024"
+rust-version = "1.85"
+documentation = "https://docs.rs/digest-io-async"
+readme = "README.md"
+repository = "https://github.com/RustCrypto/utils"
+license = "MIT OR Apache-2.0"
+keywords = ["crypto", "digest", "wrappers", "async", "tokio"]
+categories = ["cryptography", "asynchronous"]
+description = "Async I/O compatibility wrappers for traits defined in the digest crate"
+
+[dependencies]
+digest = "0.11"
+pin-project-lite = "0.2"
+tokio = { version = "1", default-features = false, features = ["io-util"] }
+
+[dev-dependencies]
+bytes = "1"
+futures = "0.3"
+sha2 = "0.11"
+tokio = { version = "1", features = ["macros", "rt"] }
+tokio-util = { version = "0.7", features = ["io"] }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
