@@ -21,6 +21,7 @@ exclude = [
     "aarch64-dit",
     # Results in circular dependencies
     "digest-io",
+    "digest-io-async",
 ]
 
 [profile.dev]
