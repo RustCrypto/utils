@@ -10,5 +10,4 @@
 mod reader;
 mod writer;
 
-pub use self::{reader::HashReader,
- writer::HashWriter};
+pub use self::{reader::HashReader, writer::HashWriter};
