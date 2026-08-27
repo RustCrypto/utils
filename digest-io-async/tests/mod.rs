@@ -1,4 +1,4 @@
-use crate::{HashReader, HashWriter};
+use digest_io_async::{HashReader, HashWriter};
 use bytes::Bytes;
 use digest::Digest;
 use futures::stream;
