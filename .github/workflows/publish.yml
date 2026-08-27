@@ -11,6 +11,7 @@ on:
       'cpufeatures-v*',
       'ctutils-v*',
       'dbl-v*',
+      'digest-io-async-v*',
       'digest-io-v*',
       'hex-literal-v*',
       'inout-v*',
