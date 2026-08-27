@@ -1,8 +1,9 @@
-use digest_io_async::{HashReader, HashWriter};
 use bytes::Bytes;
 use digest::Digest;
+use digest_io_async::{HashReader, HashWriter};
 use futures::stream;
 use sha2::Sha256;
+use tokio::io::AsyncWriteExt;
 use tokio_util::io::StreamReader;
 
 #[tokio::test]
