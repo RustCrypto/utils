@@ -3,6 +3,7 @@ name: cpubits
 on:
   pull_request:
     paths:
+      - ".github/workflows/cpubits.yml"
       - "cpubits/**"
       - "Cargo.*"
   push:

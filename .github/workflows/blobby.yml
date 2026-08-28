@@ -3,6 +3,7 @@ name: blobby
 on:
   pull_request:
     paths:
+      - ".github/workflows/blobby.yml"
       - "blobby/**"
       - "Cargo.*"
   push:

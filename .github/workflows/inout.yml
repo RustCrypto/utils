@@ -3,6 +3,7 @@ name: inout
 on:
   pull_request:
     paths:
+      - ".github/workflows/inout.yml"
       - "inout/**"
       - "Cargo.*"
   push:

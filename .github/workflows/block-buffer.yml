@@ -3,6 +3,7 @@ name: block-buffer
 on:
   pull_request:
     paths:
+      - ".github/workflows/block-buffer.yml"
       - "block-buffer/**"
       - "Cargo.*"
   push:

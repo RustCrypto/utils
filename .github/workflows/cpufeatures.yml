@@ -3,6 +3,7 @@ name: cpufeatures
 on:
   pull_request:
     paths:
+      - ".github/workflows/cpufeatures.yml"
       - "cpufeatures/**"
       - "Cargo.*"
   push:

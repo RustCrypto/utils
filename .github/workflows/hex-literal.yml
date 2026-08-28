@@ -3,6 +3,7 @@ name: hex-literal
 on:
   pull_request:
     paths:
+      - ".github/workflows/hex-literal.yml"
       - "hex-literal/**"
       - "Cargo.*"
   push:
