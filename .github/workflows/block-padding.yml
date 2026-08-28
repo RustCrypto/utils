@@ -3,6 +3,7 @@ name: block-padding
 on:
   pull_request:
     paths:
+      - ".github/workflows/block-padding.yml"
       - "block-padding/**"
       - "Cargo.*"
   push:

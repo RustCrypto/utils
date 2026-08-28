@@ -3,6 +3,7 @@ name: digest-io-async
 on:
   pull_request:
       paths:
+        - ".github/workflows/digest-io-async.yml"
         - "digest-io-async/**"
         - "Cargo.*"
   push:

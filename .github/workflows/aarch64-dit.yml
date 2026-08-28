@@ -3,6 +3,7 @@ name: aarch64-dit
 on:
   pull_request:
     paths:
+      - ".github/workflows/aarch64-dit.yml"
       - "aarch64-dit/**"
       - "Cargo.*"
   push:
