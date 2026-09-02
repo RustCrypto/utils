@@ -152,13 +152,17 @@ __expand_check_macro! {
     ("avx512vl", "zmm", 1, ebx, 31),
     ("avx512vbmi", "zmm", 1, ecx, 1),
     ("avx512vbmi2", "zmm", 1, ecx, 6),
-    ("gfni", "zmm", 1, ecx, 8),
-    ("vaes", "zmm", 1, ecx, 9),
-    ("vpclmulqdq", "zmm", 1, ecx, 10),
+    // The 512-bit/EVEX-512 forms of GFNI/VAES/VPCLMULQDQ additionally
+    // require `avx512f`, which consumers dispatching that form must check
+    // separately; the bits below only certify the legacy-SSE (gfni) or
+    // VEX-128/256 (vaes, vpclmulqdq) forms, which need at most `ymm` state.
+    ("gfni", "", 1, ecx, 8),
+    ("vaes", "ymm", 1, ecx, 9),
+    ("vpclmulqdq", "ymm", 1, ecx, 10),
     ("avx512bitalg", "zmm", 1, ecx, 12),
     ("avx512vpopcntdq", "zmm", 1, ecx, 14),
 
     ("sha512", "ymm", 2, eax, 0),
-    ("sm3", "xmm", 2, eax, 1),
+    ("sm3", "ymm", 2, eax, 1),
     ("sm4", "ymm", 2, eax, 2),
 }
