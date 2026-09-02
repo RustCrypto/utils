@@ -91,6 +91,33 @@ macro_rules! __detect_target_features {
     }};
 }
 
+/// Check the XSAVE state a feature's encodings require.
+///
+/// Register bits are listed here:
+/// <https://wiki.osdev.org/CPU_Registers_x86#Extended_Control_Registers>
+///
+/// There is deliberately no catch-all arm: an XSAVE tag outside the four
+/// below is a compile error rather than a silently skipped check.
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __xsave_state {
+    ($cr:expr, "") => {
+        true
+    };
+    // Bit 1
+    ($cr:expr, "xmm") => {
+        $crate::__xgetbv!($cr, 0b10)
+    };
+    // Bits 1 and 2
+    ($cr:expr, "ymm") => {
+        $crate::__xgetbv!($cr, 0b110)
+    };
+    // Bits 1, 2, 5, 6, and 7
+    ($cr:expr, "zmm") => {
+        $crate::__xgetbv!($cr, 0b1110_0110)
+    };
+}
+
 /// Check that OS supports required SIMD registers
 #[macro_export]
 #[doc(hidden)]
@@ -117,8 +144,30 @@ macro_rules! __xgetbv {
     }};
 }
 
+/// Accept only the four known XSAVE tags. Used to validate the table below at
+/// its definition, so a mistyped tag is an error here rather than in whichever
+/// downstream crate first happens to check that feature.
+macro_rules! __assert_xsave_tag {
+    ("") => {
+        ()
+    };
+    ("xmm") => {
+        ()
+    };
+    ("ymm") => {
+        ()
+    };
+    ("zmm") => {
+        ()
+    };
+}
+
 macro_rules! __expand_check_macro {
     ($(($name:tt, $reg_cap:tt $(, $i:expr, $reg:ident, $offset:expr)*)),* $(,)?) => {
+        $(
+            const _: () = __assert_xsave_tag!($reg_cap);
+        )*
+
         #[macro_export]
         #[doc(hidden)]
         macro_rules! check {
@@ -126,16 +175,7 @@ macro_rules! __expand_check_macro {
                 ($cr:expr, $name) => {{
                     // Register bits are listed here:
                     // https://wiki.osdev.org/CPU_Registers_x86#Extended_Control_Registers
-                    let reg_cap = match $reg_cap {
-                        // Bit 1
-                        "xmm" => $crate::__xgetbv!($cr, 0b10),
-                        // Bits 1 and 2
-                        "ymm" => $crate::__xgetbv!($cr, 0b110),
-                        // Bits 1, 2, 5, 6, and 7
-                        "zmm" => $crate::__xgetbv!($cr, 0b1110_0110),
-                        _ => true,
-                    };
-                    reg_cap
+                    $crate::__xsave_state!($cr, $reg_cap)
                     $(
                         & ($cr[$i].$reg & (1 << $offset) != 0)
                     )*
