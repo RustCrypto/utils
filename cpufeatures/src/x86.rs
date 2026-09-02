@@ -46,8 +46,23 @@ macro_rules! __detect_target_features {
             __cpuid_count(leaf, sub_leaf)
         }
 
+        const ZERO: CpuidResult = CpuidResult { eax: 0, ebx: 0, ecx: 0, edx: 0 };
+
         let cr = unsafe {
-            [cpuid(1), cpuid_count(7, 0), cpuid_count(7, 1)]
+            // Querying a leaf beyond the CPU's maximum supported basic leaf
+            // does not return zero: the CPU instead re-returns the highest
+            // supported leaf's data (Intel SDM Vol. 2A, "CPUID"), which
+            // `check!` would otherwise misinterpret as feature bits.
+            let max_leaf = cpuid(0).eax;
+            let leaf1 = if max_leaf >= 1 { cpuid(1) } else { ZERO };
+            let leaf7_0 = if max_leaf >= 7 { cpuid_count(7, 0) } else { ZERO };
+            let leaf7_1 = if max_leaf >= 7 && leaf7_0.eax >= 1 {
+                cpuid_count(7, 1)
+            } else {
+                ZERO
+            };
+
+            [leaf1, leaf7_0, leaf7_1]
         };
 
         $($crate::check!(cr, $tf) & )+ true
