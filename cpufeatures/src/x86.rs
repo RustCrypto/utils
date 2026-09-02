@@ -183,8 +183,8 @@ __expand_check_macro! {
     // separately; the bits below only certify the legacy-SSE (gfni) or
     // VEX-128/256 (vaes, vpclmulqdq) forms, which need at most `ymm` state.
     ("gfni", "", 1, ecx, 8),
-    ("vaes", "ymm", 1, ecx, 9),
-    ("vpclmulqdq", "ymm", 1, ecx, 10),
+    ("vaes", "ymm", 1, ecx, 9, 0, ecx, 28),
+    ("vpclmulqdq", "ymm", 1, ecx, 10, 0, ecx, 28),
     ("avx512bitalg", "zmm", 1, ecx, 12),
     ("avx512vpopcntdq", "zmm", 1, ecx, 14),
 
