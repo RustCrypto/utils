@@ -28,42 +28,64 @@ macro_rules! __unless_target_features {
     }};
 }
 
+#[cfg(target_arch = "x86")]
+use core::arch::x86::CpuidResult;
+#[cfg(target_arch = "x86_64")]
+use core::arch::x86_64::CpuidResult;
+
+const ZERO_CPUID: CpuidResult = CpuidResult {
+    eax: 0,
+    ebx: 0,
+    ecx: 0,
+    edx: 0,
+};
+
+/// Collect the CPUID leaves used for feature detection: leaf 1, and leaf 7
+/// subleaves 0 and 1.
+///
+/// Querying a leaf beyond the CPU's maximum supported basic leaf does not
+/// return zero: the CPU instead re-returns the highest supported leaf's data
+/// (Intel SDM Vol. 2A, "CPUID"), which `check!` would otherwise misinterpret
+/// as feature bits. The CPUID sources are parameterized so this guard can be
+/// exercised with synthetic data in tests.
+#[doc(hidden)]
+pub fn __collect_leaves(
+    cpuid: impl Fn(u32) -> CpuidResult,
+    cpuid_count: impl Fn(u32, u32) -> CpuidResult,
+) -> [CpuidResult; 3] {
+    let max_leaf = cpuid(0).eax;
+
+    let leaf1 = if max_leaf >= 1 { cpuid(1) } else { ZERO_CPUID };
+    let leaf7_0 = if max_leaf >= 7 {
+        cpuid_count(7, 0)
+    } else {
+        ZERO_CPUID
+    };
+    // `max_leaf >= 7` is redundant here (leaf7_0 is zeroed otherwise, so its
+    // eax cannot reach 1) but is kept to state the precondition explicitly.
+    let leaf7_1 = if max_leaf >= 7 && leaf7_0.eax >= 1 {
+        cpuid_count(7, 1)
+    } else {
+        ZERO_CPUID
+    };
+
+    [leaf1, leaf7_0, leaf7_1]
+}
+
 /// Use CPUID to detect the presence of all supplied target features.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __detect_target_features {
     ($($tf:tt),+) => {{
         #[cfg(target_arch = "x86")]
-        use core::arch::x86::{__cpuid, __cpuid_count, CpuidResult};
+        use core::arch::x86::{__cpuid, __cpuid_count};
         #[cfg(target_arch = "x86_64")]
-        use core::arch::x86_64::{__cpuid, __cpuid_count, CpuidResult};
+        use core::arch::x86_64::{__cpuid, __cpuid_count};
 
-        unsafe fn cpuid(leaf: u32) -> CpuidResult {
-            __cpuid(leaf)
-        }
-
-        unsafe fn cpuid_count(leaf: u32, sub_leaf: u32) -> CpuidResult {
-            __cpuid_count(leaf, sub_leaf)
-        }
-
-        const ZERO: CpuidResult = CpuidResult { eax: 0, ebx: 0, ecx: 0, edx: 0 };
-
-        let cr = unsafe {
-            // Querying a leaf beyond the CPU's maximum supported basic leaf
-            // does not return zero: the CPU instead re-returns the highest
-            // supported leaf's data (Intel SDM Vol. 2A, "CPUID"), which
-            // `check!` would otherwise misinterpret as feature bits.
-            let max_leaf = cpuid(0).eax;
-            let leaf1 = if max_leaf >= 1 { cpuid(1) } else { ZERO };
-            let leaf7_0 = if max_leaf >= 7 { cpuid_count(7, 0) } else { ZERO };
-            let leaf7_1 = if max_leaf >= 7 && leaf7_0.eax >= 1 {
-                cpuid_count(7, 1)
-            } else {
-                ZERO
-            };
-
-            [leaf1, leaf7_0, leaf7_1]
-        };
+        let cr = $crate::x86::__collect_leaves(
+            |leaf| unsafe { __cpuid(leaf) },
+            |leaf, sub_leaf| unsafe { __cpuid_count(leaf, sub_leaf) },
+        );
 
         $($crate::check!(cr, $tf) & )+ true
     }};
@@ -83,6 +105,10 @@ macro_rules! __xgetbv {
         let xmask = 0b11 << 26;
         let xsave = $cr[0].ecx & xmask == xmask;
         if xsave {
+            // SAFETY: `xsave` above confirms CPUID.1:ECX bits 26 and 27
+            // (XSAVE and OSXSAVE) are both set, so XGETBV is supported by
+            // the CPU and enabled by the OS. ECX = 0 is always a valid
+            // XCR index.
             let xcr0 = unsafe { arch::_xgetbv(arch::_XCR_XFEATURE_ENABLED_MASK) };
             (xcr0 & $mask) == $mask
         } else {
@@ -165,4 +191,139 @@ __expand_check_macro! {
     ("sha512", "ymm", 2, eax, 0),
     ("sm3", "ymm", 2, eax, 1),
     ("sm4", "ymm", 2, eax, 2),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CpuidResult;
+    use super::{__collect_leaves, ZERO_CPUID};
+
+    fn leaf(eax: u32, ebx: u32, ecx: u32) -> CpuidResult {
+        CpuidResult {
+            eax,
+            ebx,
+            ecx,
+            edx: 0,
+        }
+    }
+
+    fn r(eax: u32, ecx: u32) -> CpuidResult {
+        CpuidResult {
+            eax,
+            ebx: 0,
+            ecx,
+            edx: 0,
+        }
+    }
+
+    fn is_zero(c: &CpuidResult) -> bool {
+        c.eax == 0 && c.ebx == 0 && c.ecx == 0 && c.edx == 0
+    }
+
+    /// A CPU reporting no basic leaves must not have leaf 1 read.
+    #[test]
+    fn leaf1_zeroed_when_max_leaf_is_zero() {
+        let cr = __collect_leaves(|_| r(0, 0xdead_beef), |_, _| r(0, 0xdead_beef));
+        assert!(is_zero(&cr[0]));
+    }
+
+    /// Below leaf 7 the CPU aliases to its highest leaf; those bits must
+    /// not reach `check!` as leaf 7 feature bits.
+    #[test]
+    fn leaf7_zeroed_when_max_leaf_below_7() {
+        let cr = __collect_leaves(
+            |leaf| {
+                if leaf == 0 {
+                    r(1, 0)
+                } else {
+                    r(0, 0xffff_ffff)
+                }
+            },
+            |_, _| r(0, 0xffff_ffff),
+        );
+        assert!(is_zero(&cr[1]), "leaf 7 subleaf 0 must be zeroed");
+        assert!(is_zero(&cr[2]), "leaf 7 subleaf 1 must be zeroed");
+    }
+
+    /// Subleaf 1 is only valid when subleaf 0 reports it.
+    #[test]
+    fn subleaf1_zeroed_when_subleaf0_reports_none() {
+        let cr = __collect_leaves(
+            |_| r(7, 0),
+            |leaf, sub| {
+                assert!(!(leaf == 7 && sub == 1), "subleaf 1 must not be queried");
+                r(0, 0x1234)
+            },
+        );
+        assert_eq!(cr[1].ecx, 0x1234);
+        assert!(is_zero(&cr[2]));
+    }
+
+    /// Subleaf 1 is read through when subleaf 0 reports it supported.
+    #[test]
+    fn subleaf1_read_when_supported() {
+        let cr = __collect_leaves(
+            |_| r(7, 0),
+            |leaf, sub| match (leaf, sub) {
+                (7, 0) => r(1, 0xaaaa),
+                (7, 1) => r(0, 0xbbbb),
+                _ => ZERO_CPUID,
+            },
+        );
+        assert_eq!(cr[1].ecx, 0xaaaa);
+        assert_eq!(cr[2].ecx, 0xbbbb);
+    }
+
+    /// Leaf 1 is still read at the boundary, and is read from leaf 1.
+    #[test]
+    fn leaf1_read_when_max_leaf_is_exactly_1() {
+        let cr = __collect_leaves(
+            |l| match l {
+                0 => r(1, 0),
+                1 => r(0, 0xc0de),
+                _ => r(0, 0xbad0),
+            },
+            |_, _| r(0xffff_ffff, 0xffff_ffff),
+        );
+        assert_eq!(cr[0].ecx, 0xc0de, "leaf 1 must be read when max_leaf == 1");
+        assert!(is_zero(&cr[1]));
+        assert!(is_zero(&cr[2]));
+    }
+
+    /// The leaf 7 guard boundary is 7, not 6.
+    #[test]
+    fn leaf7_zeroed_when_max_leaf_is_exactly_6() {
+        let cr = __collect_leaves(
+            |l| if l == 0 { r(6, 0) } else { r(0, 0xffff_ffff) },
+            |_, _| r(0xffff_ffff, 0xffff_ffff),
+        );
+        assert!(is_zero(&cr[1]), "leaf 7 subleaf 0 must be zeroed");
+        assert!(is_zero(&cr[2]), "leaf 7 subleaf 1 must be zeroed");
+    }
+
+    /// With XSAVE/OSXSAVE clear, only the tags requiring no extended state
+    /// can report present. `gfni` is now one of them; `vaes`, `vpclmulqdq`
+    /// and `avx512f` are not.
+    #[test]
+    fn xsave_state_requirements_per_tag() {
+        // Leaf 1 ECX bits 26, 27 (XSAVE, OSXSAVE) deliberately clear, so
+        // `__xgetbv!` short-circuits to false without executing XGETBV.
+        // Every relevant CPUID feature bit is set, so the only thing that
+        // can distinguish these is the XSAVE tag.
+        let cr = [
+            leaf(0, 0, 0),
+            leaf(0, 1 << 16, (1 << 8) | (1 << 9) | (1 << 10)),
+            ZERO_CPUID,
+        ];
+        assert!(check!(cr, "gfni"), "gfni must not require XSAVE state");
+        assert!(!check!(cr, "vaes"), "vaes must require ymm state");
+        assert!(
+            !check!(cr, "vpclmulqdq"),
+            "vpclmulqdq must require ymm state"
+        );
+        assert!(
+            !check!(cr, "avx512f"),
+            "avx512f must still require zmm state"
+        );
+    }
 }
