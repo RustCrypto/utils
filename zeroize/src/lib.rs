@@ -523,7 +523,7 @@ where
 {
     /// "Best effort" zeroization for `Vec`.
     ///
-    /// Ensures the entire capacity of the `Vec` is zeroed. Cannot ensure that
+    /// Call `Zeroize` on all `Vec` elements and spare capacity. Cannot ensure that
     /// previous reallocations did not leave values on the heap.
     fn zeroize(&mut self) {
         // Zero the spare (uninitialized) capacity first, i.e. everything
