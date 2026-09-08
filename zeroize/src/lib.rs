@@ -523,17 +523,20 @@ where
 {
     /// "Best effort" zeroization for `Vec`.
     ///
-    /// Ensures the entire capacity of the `Vec` is zeroed. Cannot ensure that
+    /// Call `Zeroize` on all `Vec` elements and spare capacity. Cannot ensure that
     /// previous reallocations did not leave values on the heap.
     fn zeroize(&mut self) {
+        // Zero the spare (uninitialized) capacity first, i.e. everything
+        // beyond `len`. This must happen before `clear()` resets `len` to 0,
+        // otherwise `spare_capacity_mut()` would cover the whole allocation
+        // and re-zero the initialized elements a second time below.
+        self.spare_capacity_mut().zeroize();
+
         // Zeroize all the initialized elements.
         self.iter_mut().zeroize();
 
-        // Set the Vec's length to 0 and drop all the elements.
+        // Set the Vec's length to 0 and drop all the (already-zeroized) elements.
         self.clear();
-
-        // Zero the full capacity of `Vec`.
-        self.spare_capacity_mut().zeroize();
     }
 }
 
