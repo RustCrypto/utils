@@ -41,6 +41,7 @@ struct SecretBox<S: Zeroize>(Box<S>);
 impl<S: Zeroize> SecretBox<S> {
     fn new(val: S) -> Self {
         let mut b = Box::new(val);
+        // TODO(MSRV-1.98): use `Box::as_mut_ptr`
         let p: *mut S = &raw mut *b;
         REG_PTR.store(p.cast(), Relaxed);
         Self(b)
@@ -58,6 +59,7 @@ struct ObserveSecretBox<S: Default>(Box<S>);
 impl<S: Default> ObserveSecretBox<S> {
     fn new(val: S) -> Self {
         let mut b = Box::new(val);
+        // TODO(MSRV-1.98): use `Box::as_mut_ptr`
         let p: *mut S = &raw mut *b;
         REG_PTR.store(p.cast(), Relaxed);
         Self(b)
