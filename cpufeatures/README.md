@@ -68,6 +68,7 @@ Linux, iOS, and macOS/ARM only (ARM64 does not support OS-independent feature de
 Target features:
 
 - `aes`*
+- `crc`
 - `sha2`*
 - `sha3`*
 
