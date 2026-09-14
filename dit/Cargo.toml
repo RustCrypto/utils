@@ -1,10 +1,10 @@
 [package]
-name = "aarch64-dit"
-version = "0.2.0-pre"
+name = "dit"
+version = "0.0.0"
 authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.85"
-documentation = "https://docs.rs/aarch64-dit"
+documentation = "https://docs.rs/dit"
 readme = "README.md"
 repository = "https://github.com/RustCrypto/utils"
 license = "Apache-2.0 OR MIT"

@@ -99,6 +99,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "dit"
+version = "0.0.0"
+dependencies = [
+ "cpufeatures 0.3.1",
+]
+
+[[package]]
 name = "errno"
 version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"

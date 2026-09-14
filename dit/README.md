@@ -1,4 +1,4 @@
-# [RustCrypto]: AArch64 Data-Independent Timing (DIT)
+# [RustCrypto]: Data-Independent Timing (DIT)
 
 [![Crate][crate-image]][crate-link]
 [![Docs][docs-image]][docs-link]
@@ -36,14 +36,14 @@ additional terms or conditions.
 
 [//]: # (badges)
 
-[crate-image]: https://img.shields.io/crates/v/aarch64-dit.svg
-[crate-link]: https://crates.io/crates/aarch64-dit
-[docs-image]: https://docs.rs/aarch64-dit/badge.svg
-[docs-link]: https://docs.rs/aarch64-dit/
+[crate-image]: https://img.shields.io/crates/v/dit.svg
+[crate-link]: https://crates.io/crates/dit
+[docs-image]: https://docs.rs/dit/badge.svg
+[docs-link]: https://docs.rs/dit/
 [license-image]: https://img.shields.io/badge/license-Apache2.0/MIT-blue.svg
 [msrv-image]: https://img.shields.io/badge/rustc-1.85+-blue.svg
-[build-image]: https://github.com/RustCrypto/utils/actions/workflows/aarch64-dit.yml/badge.svg?branch=master
-[build-link]: https://github.com/RustCrypto/utils/actions/workflows/aarch64-dit.yml?query=branch:master
+[build-image]: https://github.com/RustCrypto/utils/actions/workflows/dit.yml/badge.svg?branch=master
+[build-link]: https://github.com/RustCrypto/utils/actions/workflows/dit.yml?query=branch:master
 
 [//]: # (links)
 
