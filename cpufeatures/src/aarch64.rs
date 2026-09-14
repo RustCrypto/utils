@@ -144,7 +144,7 @@ macro_rules! check {
     ("sb") => {
         // https://support.arm.com/documentation/ddi0487/mb/-Part-B-The-AArch64-Application-Level-Architecture/-Chapter-B2-The-AArch64-Application-Level-Memory-Model/-B2-6-Memory-barriers/-B2-6-3-Speculation-Barrier
         unsafe {
-            $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_SB\0")
+            $crate::aarch64::try_sysctlbyname(b"hw.optional.arm.FEAT_SB\0")
         }
     };
 }
