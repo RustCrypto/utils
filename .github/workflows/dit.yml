@@ -1,10 +1,10 @@
-name: aarch64-dit
+name: dit
 
 on:
   pull_request:
     paths:
-      - ".github/workflows/aarch64-dit.yml"
-      - "aarch64-dit/**"
+      - ".github/workflows/dit.yml"
+      - "dit/**"
       - "Cargo.*"
   push:
     branches: master
@@ -14,7 +14,7 @@ permissions:
 
 defaults:
   run:
-    working-directory: aarch64-dit
+    working-directory: dit
 
 env:
   CARGO_INCREMENTAL: 0

@@ -9,7 +9,7 @@
 //! ## Usage
 //!
 //! ```
-//! use aarch64_dit::Dit;
+//! use dit::Dit;
 //!
 //! let dit = Dit::init();
 //! assert!(!dit.is_enabled());
@@ -17,21 +17,22 @@
 //! assert!(dit.is_enabled());
 //! ```
 
-#[cfg(not(target_arch = "aarch64"))]
-compile_error!("This crate only builds on `aarch64` targets");
-
+#[cfg(target_arch = "aarch64")]
 use core::arch::asm;
 
+#[cfg(target_arch = "aarch64")]
 cpufeatures::new!(dit_supported, "dit");
 
 /// Data-Independent Timing: support for enabling features of AArch64 CPUs which improve
 /// constant-time operation.
 pub struct Dit {
+    #[cfg(target_arch = "aarch64")]
     supported: dit_supported::InitToken,
 }
 
 impl Dit {
     /// Initialize Data-Independent Timing using runtime CPU feature detection.
+    #[cfg(target_arch = "aarch64")]
     pub fn init() -> Self {
         Self {
             supported: dit_supported::init(),
@@ -41,6 +42,7 @@ impl Dit {
     /// Enable Data-Independent Timing (if available).
     ///
     /// Returns an RAII guard that will return DIT to its previous state when dropped.
+    #[cfg(target_arch = "aarch64")]
     #[must_use]
     pub fn enable(&self) -> Guard<'_> {
         let was_enabled = if self.is_supported() {
@@ -57,20 +59,25 @@ impl Dit {
 
     /// Check if DIT has been enabled.
     pub fn is_enabled(&self) -> bool {
+        #[cfg(target_arch = "aarch64")]
         if self.is_supported() {
-            unsafe { get_dit_enabled() }
-        } else {
-            false
+            return unsafe { get_dit_enabled() };
         }
+
+        false
     }
 
     /// Check if DIT is supported by this CPU.
     pub fn is_supported(&self) -> bool {
-        self.supported.get()
+        #[cfg(target_arch = "aarch64")]
+        return self.supported.get();
+        #[cfg(not(target_arch = "aarch64"))]
+        false
     }
 }
 
 /// RAII guard which returns DIT to its previous state when dropped.
+#[cfg(target_arch = "aarch64")]
 pub struct Guard<'a> {
     /// DIT implementation.
     dit: &'a Dit,
@@ -79,6 +86,7 @@ pub struct Guard<'a> {
     was_enabled: bool,
 }
 
+#[cfg(target_arch = "aarch64")]
 impl Drop for Guard<'_> {
     fn drop(&mut self) {
         if self.dit.supported.get() {
@@ -88,6 +96,7 @@ impl Drop for Guard<'_> {
 }
 
 /// Detect if DIT is enabled for the current thread by checking the processor state register.
+#[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "dit")]
 unsafe fn get_dit_enabled() -> bool {
     let mut dit: u64;
@@ -104,6 +113,7 @@ unsafe fn get_dit_enabled() -> bool {
 /// Enable DIT for the current thread.
 ///
 /// Returns the previous DIT state prior to enabling DIT.
+#[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "dit")]
 unsafe fn set_dit_enabled() -> bool {
     unsafe {
@@ -114,6 +124,7 @@ unsafe fn set_dit_enabled() -> bool {
 }
 
 /// Restore DIT state depending on the enabled bit.
+#[cfg(target_arch = "aarch64")]
 #[target_feature(enable = "dit")]
 unsafe fn restore_dit(enabled: bool) {
     if !enabled {
@@ -122,9 +133,10 @@ unsafe fn restore_dit(enabled: bool) {
     }
 }
 
+#[cfg(target_arch = "aarch64")]
 #[cfg(test)]
 mod tests {
-    use super::{get_dit_enabled, restore_dit, set_dit_enabled, Dit};
+    use super::{Dit, get_dit_enabled, restore_dit, set_dit_enabled};
     cpufeatures::new!(dit_supported, "dit");
 
     #[test]

@@ -2,7 +2,6 @@ name: Publish to crates.io
 on:
   push:
     tags: [
-      'aarch64-dit-v*',
       'blobby-v*',
       'block-buffer-v*',
       'block-padding-v*',
@@ -13,6 +12,7 @@ on:
       'dbl-v*',
       'digest-io-async-v*',
       'digest-io-v*',
+      'dit-v*',
       'hex-literal-v*',
       'inout-v*',
       'sponge-cursor-v*',
