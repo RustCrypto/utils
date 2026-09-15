@@ -1,6 +1,6 @@
 [package]
 name = "dit"
-version = "0.0.0"
+version = "0.0.1-alpha"
 authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.85"
