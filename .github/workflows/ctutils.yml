@@ -9,6 +9,7 @@ on:
       - "Cargo.*"
   push:
     branches: master
+  workflow_dispatch:
 
 permissions:
   contents: read
