@@ -20,6 +20,21 @@ macro_rules! __unless_target_features {
     };
 }
 
+// Whether target features can be detected at run time. Detection uses `getauxval` on Linux
+// and Android and `sysctlbyname` on Apple platforms; elsewhere `__detect_target_features!`
+// below is a constant `false`.
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __runtime_detection_available {
+    () => {
+        cfg!(any(
+            target_os = "linux",
+            target_os = "android",
+            target_vendor = "apple"
+        ))
+    };
+}
+
 // Linux runtime detection of target CPU features using `getauxval`.
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[macro_export]
