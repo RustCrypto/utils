@@ -158,8 +158,7 @@ impl<T> CtOption<T> {
     #[must_use]
     #[track_caller]
     pub const fn expect_ref(&self, msg: &str) -> &T {
-        // TODO(tarcieri): use `self.is_some().to_bool()` when MSRV is 1.86
-        assert!(self.is_some.to_bool_vartime(), "{}", msg);
+        assert!(self.is_some.to_bool(), "{}", msg);
         self.as_inner_unchecked()
     }
 
@@ -222,8 +221,7 @@ impl<T> CtOption<T> {
     where
         T: Copy,
     {
-        // TODO(tarcieri): use `self.is_some().to_bool()` when MSRV is 1.86
-        if self.is_some.to_bool_vartime() {
+        if self.is_some.to_bool() {
             Some(self.value)
         } else {
             None
@@ -693,7 +691,7 @@ mod tests {
         // Don't actually use this! It's just a test function implemented in variable-time
         #[allow(clippy::trivially_copy_pass_by_ref)]
         const fn select_vartime(a: &u8, b: &u8, choice: Choice) -> u8 {
-            if choice.to_bool_vartime() { *b } else { *a }
+            if choice.to_bool() { *b } else { *a }
         }
 
         assert_eq!(
