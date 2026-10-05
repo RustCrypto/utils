@@ -14,7 +14,7 @@ categories = ["cryptography", "no-std"]
 keywords = ["constant-time", "crypto", "intrinsics"]
 readme = "README.md"
 edition = "2024"
-rust-version = "1.86"
+rust-version = "1.87"
 
 [dependencies]
 cmov = "0.5.3"

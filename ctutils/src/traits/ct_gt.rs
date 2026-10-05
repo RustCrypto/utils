@@ -55,13 +55,11 @@ impl CtGt for cmp::Ordering {
     #[inline]
     #[allow(clippy::arithmetic_side_effects, clippy::cast_sign_loss)]
     fn ct_gt(&self, other: &Self) -> Choice {
-        // No impl of `CtGt` for `i8`, so use `u8`
-        // TODO(tarcieri): use `cast_signed` when MSRV is 1.87
         let a = (*self as i8) + 1;
         let b = (*other as i8) + 1;
 
-        // TODO(tarcieri): use `cast_unsigned` when MSRV is 1.87
-        (a as u8).ct_gt(&(b as u8))
+        // No impl of `CtGt` for `i8`, so use `u8`
+        a.cast_unsigned().ct_gt(&b.cast_unsigned())
     }
 }
 
