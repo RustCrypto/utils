@@ -148,6 +148,24 @@ jobs:
       - run: cross test --target ${{ matrix.target }}
       - run: cross test --target ${{ matrix.target }} --all-features
 
+  # Test using `cargo miri`
+  miri:
+    runs-on: ubuntu-latest
+    env:
+      MIRIFLAGS: "-Zmiri-symbolic-alignment-check -Zmiri-strict-provenance"
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - s390x-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly-2026-08-23
+      - run: rustup component add miri
+      - run: cargo miri test --target ${{ matrix.target }} --all-features --lib
+
   # Tests for x86-64 `simd` support
   x86:
     strategy:
