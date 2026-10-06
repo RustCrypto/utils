@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 1.9.1 (UNRELEASED)
 ### Fixed
 - False positive failures in proxy allocator test ([#1538])
+- Potential uninitialized memory read in fallback code used by `optimization_barrier` ([#1551])
 
 [#1538]: https://github.com/RustCrypto/utils/pull/1538
+[#1551]: https://github.com/RustCrypto/utils/pull/1551
 
 ## 1.9.0 (2026-06-12)
 ### Added
