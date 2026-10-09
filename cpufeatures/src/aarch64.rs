@@ -56,7 +56,7 @@ macro_rules! __expand_check_macro {
         macro_rules! check {
             $(
                 ($hwcaps:expr, $name) => {
-                    (($hwcaps & $crate::aarch64::hwcaps::$hwcap) != 0)
+                    (($hwcaps & $crate::aarch64::hwcaps::$hwcap) == $crate::aarch64::hwcaps::$hwcap)
                 };
             )*
         }

@@ -94,7 +94,12 @@ macro_rules! __expand_check_macro {
                         "zmm" => $crate::__xgetbv!($cr, 0b1110_0110),
                         _ => true,
                     };
-                    reg_cap
+                    reg_cap & $crate::check!(@cpuid $cr, $name)
+                }};
+
+                // CPU feature bits are checked separately so tests can supply synthetic capabilities.
+                (@cpuid $cr:expr, $name) => {{
+                    true
                     $(
                         & ($cr[$i].$reg & (1 << $offset) != 0)
                     )*
@@ -104,6 +109,8 @@ macro_rules! __expand_check_macro {
     };
 }
 
+// Rust enables FMA and F16C with every AVX-512 target feature, but AVX-512F
+// does not guarantee either extension. Each AVX-512 entry requires both bits.
 __expand_check_macro! {
     ("sse3", "", 0, ecx, 0),
     ("pclmulqdq", "", 0, ecx, 1),
@@ -124,24 +131,24 @@ __expand_check_macro! {
     ("bmi1", "", 1, ebx, 3),
     ("bmi2", "", 1, ebx, 8),
     ("avx2", "ymm", 1, ebx, 5, 0, ecx, 28),
-    ("avx512f", "zmm", 1, ebx, 16),
-    ("avx512dq", "zmm", 1, ebx, 17),
+    ("avx512f", "zmm", 1, ebx, 16, 0, ecx, 12, 0, ecx, 29),
+    ("avx512dq", "zmm", 1, ebx, 17, 0, ecx, 12, 0, ecx, 29),
     ("rdseed", "", 1, ebx, 18),
     ("adx", "", 1, ebx, 19),
-    ("avx512ifma", "zmm", 1, ebx, 21),
-    ("avx512pf", "zmm", 1, ebx, 26),
-    ("avx512er", "zmm", 1, ebx, 27),
-    ("avx512cd", "zmm", 1, ebx, 28),
+    ("avx512ifma", "zmm", 1, ebx, 21, 0, ecx, 12, 0, ecx, 29),
+    ("avx512pf", "zmm", 1, ebx, 26, 0, ecx, 12, 0, ecx, 29),
+    ("avx512er", "zmm", 1, ebx, 27, 0, ecx, 12, 0, ecx, 29),
+    ("avx512cd", "zmm", 1, ebx, 28, 0, ecx, 12, 0, ecx, 29),
     ("sha", "", 1, ebx, 29),
-    ("avx512bw", "zmm", 1, ebx, 30),
-    ("avx512vl", "zmm", 1, ebx, 31),
-    ("avx512vbmi", "zmm", 1, ecx, 1),
-    ("avx512vbmi2", "zmm", 1, ecx, 6),
+    ("avx512bw", "zmm", 1, ebx, 30, 0, ecx, 12, 0, ecx, 29),
+    ("avx512vl", "zmm", 1, ebx, 31, 0, ecx, 12, 0, ecx, 29),
+    ("avx512vbmi", "zmm", 1, ecx, 1, 0, ecx, 12, 0, ecx, 29),
+    ("avx512vbmi2", "zmm", 1, ecx, 6, 0, ecx, 12, 0, ecx, 29),
     ("gfni", "zmm", 1, ecx, 8),
     ("vaes", "zmm", 1, ecx, 9),
     ("vpclmulqdq", "zmm", 1, ecx, 10),
-    ("avx512bitalg", "zmm", 1, ecx, 12),
-    ("avx512vpopcntdq", "zmm", 1, ecx, 14),
+    ("avx512bitalg", "zmm", 1, ecx, 12, 0, ecx, 12, 0, ecx, 29),
+    ("avx512vpopcntdq", "zmm", 1, ecx, 14, 0, ecx, 12, 0, ecx, 29),
 
     ("sha512", "ymm", 2, eax, 0),
     ("sm3", "xmm", 2, eax, 1),
