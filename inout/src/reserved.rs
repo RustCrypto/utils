@@ -208,10 +208,8 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
             return Err(PadError);
         }
         // SAFETY: we checked that the out buffer has enough bytes in reserve
-        let tail_out: &mut Array<u8, BS> = unsafe {
-            let tail_out_ptr = out_ptr.add(blocks_byte_len);
-            &mut *(tail_out_ptr.cast())
-        };
+        let tail_out_ptr = unsafe { out_ptr.add(blocks_byte_len) };
+        let tail_out: *mut Array<u8, BS> = tail_out_ptr.cast();
 
         let tail_inout = Some((tail_block, tail_out));
 
@@ -224,7 +222,7 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
 #[allow(clippy::type_complexity)]
 pub struct PaddedInOutBuf<'inp, 'out, BS: ArraySize> {
     blocks: InOutBuf<'inp, 'out, Array<u8, BS>>,
-    tail_inout: Option<(Array<u8, BS>, &'out mut Array<u8, BS>)>,
+    tail_inout: Option<(Array<u8, BS>, *mut Array<u8, BS>)>,
 }
 
 #[cfg(feature = "block-padding")]
@@ -242,7 +240,8 @@ impl<'out, BS: ArraySize> PaddedInOutBuf<'_, 'out, BS> {
     pub fn get_tail_block(&mut self) -> Option<InOut<'_, '_, Array<u8, BS>>> {
         self.tail_inout.as_mut().map(|(in_block, out_block)| {
             let in_block = &*in_block;
-            let out_block = &mut **out_block;
+            // SAFETY: `out_block` was derived from the output pointer in `into_padded_blocks` and is in bounds.
+            let out_block = unsafe { &mut **out_block };
             InOut::from((in_block, out_block))
         })
     }
@@ -269,6 +268,7 @@ mod test {
 
     use super::*;
 
+    // Regression test for a Miri stacked borrows violation due to tail_inout still being borrowed from out_ptr in into_out
     #[test]
     fn padded_inout() {
         let mut buf = [0xFF; 48];
