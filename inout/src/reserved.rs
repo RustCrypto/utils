@@ -262,3 +262,36 @@ impl<'out, BS: ArraySize> PaddedInOutBuf<'_, 'out, BS> {
         unsafe { slice::from_raw_parts(out_ptr as *const u8, res_len) }
     }
 }
+
+#[cfg(all(test, feature = "block-padding"))]
+mod test {
+    use hybrid_array::sizes::U16;
+
+    use super::*;
+
+    #[test]
+    fn padded_inout() {
+        let mut buf = [0xFF; 48];
+        let inout_buf = InOutBufReserved::from_mut_slice(&mut buf, 46).unwrap();
+        let mut padded_blocks = inout_buf
+            .into_padded_blocks::<block_padding::Iso7816, U16>()
+            .unwrap();
+
+        assert_eq!(padded_blocks.get_blocks().len(), 2);
+        padded_blocks
+            .get_blocks()
+            .get_out()
+            .iter()
+            .flatten()
+            .for_each(|x| assert_eq!(*x, 0xFF));
+
+        let Some(tail) = padded_blocks.get_tail_block() else {
+            panic!("expected a tail block");
+        };
+        let arr_unpadded = block_padding::Iso7816::unpad(tail.get_in()).unwrap();
+        assert_eq!(arr_unpadded, &[0xFF; 14]);
+
+        let out = padded_blocks.into_out();
+        assert_eq!(out, &[0xFF; 48]);
+    }
+}
