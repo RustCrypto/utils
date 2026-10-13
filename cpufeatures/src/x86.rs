@@ -47,7 +47,13 @@ macro_rules! __detect_target_features {
         }
 
         let cr = unsafe {
-            [cpuid(1), cpuid_count(7, 0), cpuid_count(7, 1)]
+            [
+                cpuid(1),
+                cpuid_count(7, 0),
+                cpuid_count(7, 1),
+                cpuid(0),
+                cpuid_count(0x24, 0),
+            ]
         };
 
         $($crate::check!(cr, $tf) & )+ true
@@ -81,6 +87,23 @@ macro_rules! __expand_check_macro {
         #[macro_export]
         #[doc(hidden)]
         macro_rules! check {
+            ($cr:expr, "avx10.1") => {{
+                $crate::__xgetbv!($cr, 0b1110_0110)
+                    & ($cr[3].eax >= 0x24)
+                    & ($cr[2].edx & (1 << 19) != 0)
+                    & (($cr[4].ebx & 0xff) >= 1)
+                    & (($cr[4].ebx & (1 << 18)) != 0)
+            }};
+            ($cr:expr, "avx10.2") => {{
+                $crate::__xgetbv!($cr, 0b1110_0110)
+                    & ($cr[3].eax >= 0x24)
+                    & ($cr[2].edx & (1 << 19) != 0)
+                    & (($cr[4].ebx & 0xff) >= 2)
+                    & (($cr[4].ebx & (1 << 18)) != 0)
+                    & ($cr[2].eax & (1 << 4) != 0)
+                    & ($cr[2].edx & (1 << 4) != 0)
+                    & ($cr[2].edx & (1 << 10) != 0)
+            }};
             $(
                 ($cr:expr, $name) => {{
                     // Register bits are listed here:

@@ -101,6 +101,8 @@ Target features:
 - `adx`
 - `aes`
 - `avx`
+- `avx10.1`*
+- `avx10.2`*
 - `avx2`
 - `avx512bw`*
 - `avx512cd`*
