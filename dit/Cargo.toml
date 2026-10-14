@@ -5,15 +5,17 @@ authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.85"
 documentation = "https://docs.rs/dit"
-readme = "README.md"
 repository = "https://github.com/RustCrypto/utils"
 license = "Apache-2.0 OR MIT"
 keywords = ["crypto", "intrinsics"]
 categories = ["cryptography", "hardware-support", "no-std"]
 description = "Wrappers for enabling/disabling the Data Independent Timing (DIT) feature on AArch64 CPUs"
 
-[dependencies]
+[target.'cfg(target_arch = "aarch64")'.dependencies]
 cpufeatures = { version = "0.3.0-pre", path = "../cpufeatures" }
 
 [package.metadata.docs.rs]
 default-target = "aarch64-unknown-linux-gnu"
+
+# Do not inherent workspace lints
+[lints]

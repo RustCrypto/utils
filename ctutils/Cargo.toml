@@ -1,20 +1,19 @@
 [package]
 name = "ctutils"
+version = "0.4.3"
+authors = ["RustCrypto Developers"]
+edition = "2024"
+rust-version = "1.87"
+documentation = "https://docs.rs/ctutils"
+repository = "https://github.com/RustCrypto/utils"
+license = "Apache-2.0 OR MIT"
+keywords = ["constant-time", "crypto", "intrinsics"]
+categories = ["cryptography", "no-std"]
 description = """
 Constant-time utility library with selection and equality testing support targeting cryptographic
 applications. Supports `const fn` where appropriate. Built on the `cmov` crate which provides
 architecture-specific predication intrinsics. Heavily inspired by the `subtle` crate.
 """
-version = "0.4.3"
-authors = ["RustCrypto Developers"]
-license = "Apache-2.0 OR MIT"
-homepage = "https://github.com/RustCrypto/utils/tree/master/ctutils"
-repository = "https://github.com/RustCrypto/utils"
-categories = ["cryptography", "no-std"]
-keywords = ["constant-time", "crypto", "intrinsics"]
-readme = "README.md"
-edition = "2024"
-rust-version = "1.87"
 
 [dependencies]
 cmov = "0.5.3"
