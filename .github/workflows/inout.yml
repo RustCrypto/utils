@@ -69,8 +69,7 @@ jobs:
       - run: cargo test --features block-padding
       - run: cargo test --all-features
 
-  # Test using `cargo miri`
-  test-miri:
+  miri:
     runs-on: ubuntu-latest
     env:
       MIRIFLAGS: "-Zmiri-symbolic-alignment-check -Zmiri-strict-provenance"
@@ -79,5 +78,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: miri
-      - run: cargo miri setup
       - run: cargo miri test --all-features
