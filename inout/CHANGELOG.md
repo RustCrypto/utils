@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.2.3 (UNRELEASED)
 ### Fixed
 - List of safety pre-conditions in `InOutBufReserved::from_raw` docs ([#1502])
-- Miri Stacked Borrows violation ([#1556])
+- Miri Stacked Borrows violation in `PaddedInOutBuf` ([#1556])
 
 [#1502]: https://github.com/RustCrypto/utils/pull/1502
 [#1556]: https://github.com/RustCrypto/utils/pull/1556
