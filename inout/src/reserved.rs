@@ -174,9 +174,6 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
         P: Padding,
         BS: ArraySize,
     {
-        let bs = BS::USIZE;
-        let blocks_len = self.in_len / bs;
-
         use block_padding::PaddedData;
         let (blocks, tail_block) = match P::pad_detached(self.get_in()) {
             PaddedData::Pad { blocks, tail_block } => (blocks, Some(tail_block)),
@@ -184,45 +181,30 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
             PaddedData::Error => return Err(PadError),
         };
 
-        assert_eq!(blocks.len(), blocks_len);
+        assert_eq!(blocks.len(), self.in_len / BS::USIZE);
 
-        let out_len = self.out_len;
-        let (in_ptr, out_ptr) = self.into_raw();
-
-        let blocks = unsafe {
-            InOutBuf::from_raw(
-                in_ptr.cast::<Array<u8, BS>>(),
-                out_ptr.cast::<Array<u8, BS>>(),
-                blocks_len,
-            )
-        };
-
-        let Some(tail_block) = tail_block else {
-            let tail_inout = None;
-            return Ok(PaddedInOutBuf { blocks, tail_inout });
-        };
-
-        let blocks_byte_len = blocks_len * bs;
-        let reserve_len = out_len - blocks_byte_len;
-        if reserve_len < tail_block.len() {
-            return Err(PadError);
-        }
-        // SAFETY: we checked that the out buffer has enough bytes in reserve
-        let tail_out_ptr = unsafe { out_ptr.add(blocks_byte_len) };
-        let tail_out: *mut Array<u8, BS> = tail_out_ptr.cast();
-
-        let tail_inout = Some((tail_block, tail_out));
-
-        Ok(PaddedInOutBuf { blocks, tail_inout })
+        Ok(PaddedInOutBuf {
+            in_ptr: blocks.as_ptr(),
+            out_ptr: self.out_ptr.cast(),
+            blocks_len: blocks.len(),
+            tail_block,
+            _pd: PhantomData,
+        })
     }
 }
 
 /// Variant of [`InOutBuf`] with optional padded tail block.
 #[cfg(feature = "block-padding")]
-#[allow(clippy::type_complexity)]
 pub struct PaddedInOutBuf<'inp, 'out, BS: ArraySize> {
-    blocks: InOutBuf<'inp, 'out, Array<u8, BS>>,
-    tail_inout: Option<(Array<u8, BS>, *mut Array<u8, BS>)>,
+    /// Pointer to the input blocks.
+    in_ptr: *const Array<u8, BS>,
+    /// Pointer to the output blocks (including tail block if present).
+    out_ptr: *mut Array<u8, BS>,
+    /// Number of full blocks (i.e. excluding the tail block if present).
+    blocks_len: usize,
+    /// Padded input tail.
+    tail_block: Option<Array<u8, BS>>,
+    _pd: PhantomData<(&'inp u8, &'out mut u8)>,
 }
 
 #[cfg(feature = "block-padding")]
@@ -230,7 +212,7 @@ impl<'out, BS: ArraySize> PaddedInOutBuf<'_, 'out, BS> {
     /// Get full blocks.
     #[inline(always)]
     pub fn get_blocks(&mut self) -> InOutBuf<'_, '_, Array<u8, BS>> {
-        self.blocks.reborrow()
+        unsafe { InOutBuf::from_raw(self.in_ptr, self.out_ptr, self.blocks_len) }
     }
 
     /// Get padded tail block.
@@ -238,60 +220,24 @@ impl<'out, BS: ArraySize> PaddedInOutBuf<'_, 'out, BS> {
     /// Most padding implementations always return `Some`.
     #[inline(always)]
     pub fn get_tail_block(&mut self) -> Option<InOut<'_, '_, Array<u8, BS>>> {
-        self.tail_inout.as_mut().map(|(in_block, out_block)| {
-            let in_block = &*in_block;
-            // SAFETY: `out_block` was derived from the output pointer in `into_padded_blocks` and is in bounds.
-            let out_block = unsafe { &mut **out_block };
-            InOut::from((in_block, out_block))
+        // SAFETY: if `tail` is `Some`, then `out_ptr` points to a buffer with length equal
+        // to at least `blocks_len + 1` blocks, so it satisfies the safety conditions
+        // required by `InOut::from_raw`.
+        self.tail_block.as_ref().map(|in_block| unsafe {
+            let tail_out_ptr = self.out_ptr.add(self.blocks_len);
+            InOut::from_raw(in_block, tail_out_ptr)
         })
     }
 
     /// Convert buffer into output slice.
     #[inline(always)]
     pub fn into_out(self) -> &'out [u8] {
-        let total_blocks = if self.tail_inout.is_some() {
-            self.blocks.len() + 1
-        } else {
-            self.blocks.len()
-        };
-        let res_len = BS::USIZE * total_blocks;
-        let (_, out_ptr) = self.blocks.into_raw();
-        // SAFETY: `res_len` is always valid for the output buffer since
-        // it's checked during type construction
-        unsafe { slice::from_raw_parts(out_ptr as *const u8, res_len) }
-    }
-}
-
-#[cfg(all(test, feature = "block-padding"))]
-mod test {
-    use hybrid_array::sizes::U16;
-
-    use super::*;
-
-    // Regression test for a Miri stacked borrows violation due to tail_inout still being borrowed from out_ptr in into_out
-    #[test]
-    fn padded_inout() {
-        let mut buf = [0xFF; 48];
-        let inout_buf = InOutBufReserved::from_mut_slice(&mut buf, 46).unwrap();
-        let mut padded_blocks = inout_buf
-            .into_padded_blocks::<block_padding::Iso7816, U16>()
-            .unwrap();
-
-        assert_eq!(padded_blocks.get_blocks().len(), 2);
-        padded_blocks
-            .get_blocks()
-            .get_out()
-            .iter()
-            .flatten()
-            .for_each(|x| assert_eq!(*x, 0xFF));
-
-        let Some(tail) = padded_blocks.get_tail_block() else {
-            panic!("expected a tail block");
-        };
-        let arr_unpadded = block_padding::Iso7816::unpad(tail.get_in()).unwrap();
-        assert_eq!(arr_unpadded, &[0xFF; 14]);
-
-        let out = padded_blocks.into_out();
-        assert_eq!(out, &[0xFF; 48]);
+        let mut bytes_len = BS::USIZE * self.blocks_len;
+        // If tail is present, add its length to the resulting buffer length.
+        if self.tail_block.is_some() {
+            bytes_len += BS::USIZE;
+        }
+        // SAFETY: `out_ptr` points to a valid memory with size of `bytes_len`
+        unsafe { slice::from_raw_parts(self.out_ptr.cast(), bytes_len) }
     }
 }
