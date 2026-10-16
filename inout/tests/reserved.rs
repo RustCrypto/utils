@@ -40,7 +40,7 @@ fn reserved_invalid_lengths() {
         for out_len in 0..buf.len() {
             let out_buf = &mut buf[..out_len];
 
-            let reserved = match InOutBufReserved::from_slices(&msg, out_buf) {
+            let reserved = match InOutBufReserved::from_slices(msg, out_buf) {
                 Ok(r) => r,
                 Err(_) => {
                     assert!(msg_len > out_len);
