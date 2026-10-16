@@ -175,13 +175,30 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
         BS: ArraySize,
     {
         use block_padding::PaddedData;
+        let out_blocks_len = self.out_len / BS::USIZE;
+
         let (blocks, tail_block) = match P::pad_detached(self.get_in()) {
-            PaddedData::Pad { blocks, tail_block } => (blocks, Some(tail_block)),
-            PaddedData::NoPad { blocks } => (blocks, None),
+            PaddedData::Pad { blocks, tail_block } => {
+                // If tail block is present, the output buffer must contain
+                // at least `blocks.len() + 1` full blocks
+                if out_blocks_len <= blocks.len() {
+                    return Err(PadError);
+                }
+                (blocks, Some(tail_block))
+            }
+            PaddedData::NoPad { blocks } => {
+                // If tail block is not present, the output buffer must contain
+                // at least `blocks.len()` full blocks
+                if out_blocks_len < blocks.len() {
+                    return Err(PadError);
+                }
+                (blocks, None)
+            }
             PaddedData::Error => return Err(PadError),
         };
 
-        assert_eq!(blocks.len(), self.in_len / BS::USIZE);
+        // This invariant must hold for all valid padding implementations.
+        debug_assert_eq!(blocks.len(), self.in_len / BS::USIZE);
 
         Ok(PaddedInOutBuf {
             in_ptr: blocks.as_ptr(),
