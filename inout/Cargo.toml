@@ -1,6 +1,6 @@
 [package]
 name = "inout"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.85"
