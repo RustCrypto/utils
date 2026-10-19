@@ -168,7 +168,6 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
     /// # Errors
     /// If the padding is invalid
     #[inline(always)]
-    #[allow(clippy::missing_panics_doc)]
     pub fn into_padded_blocks<P, BS>(self) -> Result<PaddedInOutBuf<'inp, 'out, BS>, PadError>
     where
         P: Padding,
@@ -197,8 +196,12 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
             PaddedData::Error => return Err(PadError),
         };
 
-        // This invariant must hold for all valid padding implementations.
-        debug_assert_eq!(blocks.len(), self.in_len / BS::USIZE);
+        // These invariants must hold for all valid padding implementations.
+        let expected_ptr = blocks.as_ptr().cast() == self.in_ptr;
+        let expected_len = blocks.len() == (self.in_len / BS::USIZE);
+        if !(expected_ptr && expected_len) {
+            return Err(PadError);
+        }
 
         Ok(PaddedInOutBuf {
             in_ptr: blocks.as_ptr(),
