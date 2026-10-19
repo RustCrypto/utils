@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.2.5 (2026-10-19)
 ### Fixed
 - Return `PadError` from `InOutBufReserved::into_padded_blocks`
-  for incorrect `Padding` implementations  ([#1562])
+  for incorrect `Padding` implementations  ([#1563])
 
-[#1562]: https://github.com/RustCrypto/utils/pull/1562
+[#1563]: https://github.com/RustCrypto/utils/pull/1563
 
 ## 0.2.4 (2026-10-16)
 ### Fixed
