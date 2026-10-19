@@ -197,9 +197,10 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
         };
 
         // These invariants must hold for all valid padding implementations.
-        let expected_ptr = blocks.as_ptr().cast() == self.in_ptr;
-        let expected_len = blocks.len() == (self.in_len / BS::USIZE);
-        if !(expected_ptr && expected_len) {
+        if blocks.as_ptr().cast() != self.in_ptr {
+            return Err(PadError);
+        }
+        if blocks.len() != self.in_len / BS::USIZE {
             return Err(PadError);
         }
 
