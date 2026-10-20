@@ -14,7 +14,6 @@ pub mod aarch64;
 #[doc(hidden)]
 pub mod loongarch64;
 
-#[cfg(not(miri))]
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
 

@@ -128,22 +128,39 @@ Target features:
 - `aes`
 - `avx`
 - `avx2`
+- `avxifma`
+- `avxneconvert`
+- `avxvnni`
+- `avxvnniint8`
+- `avxvnniint16`
+- `avx512bf16`
 - `avx512bw`*
 - `avx512cd`*
 - `avx512dq`*
 - `avx512er`*
 - `avx512f`*
+- `avx512fp16`
 - `avx512ifma`*
 - `avx512pf`*
 - `avx512vl`*
 - `avx512vbmi`*
 - `avx512vbmi2`*
+- `avx512vnni`
+- `avx512vp2intersect`
 - `bmi1`
 - `bmi2`
+- `cmpxchg16b`
+- `ermsb`*
+- `f16c`
 - `fma`
+- `fxsr`
+- `lahfsahf`*
+- `lzcnt`
 - `mmx`
+- `movbe`
 - `pclmulqdq`
 - `popcnt`
+- `prfchw`*
 - `rdrand`
 - `rdseed`
 - `sgx`
@@ -157,6 +174,10 @@ Target features:
 - `sha512`
 - `sm3`
 - `sm4`
+- `xsave`
+- `xsavec`
+- `xsaveopt`
+- `xsaves`
 
 If you would like detection support for a target feature which is not on
 this list, please [open a GitHub issue][github-issue].
