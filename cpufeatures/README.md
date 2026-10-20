@@ -61,15 +61,41 @@ calls, thus runtime overhead for them is minimal.
 *NOTE: target features with an asterisk are unstable (nightly-only) and subject
 to change to match upstream name changes in the Rust standard library.*
 
+Detection accepts these names even if enabling a feature needs a newer compiler.
+
 ### `aarch64`
 
-Linux, iOS, and macOS/ARM only (ARM64 does not support OS-independent feature detection)
+Runtime detection is available on Linux, Android, iOS and macOS.
 
 Target features:
 
 - `aes`*
+- `bf16`
+- `crc`
+- `cssc`*
+- `f32mm`
+- `f64mm`
+- `faminmax`*
+- `fcma`
+- `fhm`
+- `frintts`
+- `i8mm`
+- `jsconv`
+- `lse2`*
+- `lut`*
+- `mops`*
+- `neon`
+- `rand`
 - `sha2`*
 - `sha3`*
+- `sve`
+- `sve-b16b16`*
+- `sve2`
+- `sve2-aes`
+- `sve2-bitperm`
+- `sve2-sha3`
+- `sve2-sm4`
+- `sve2p1`*
 
 ### `loongarch64`
 

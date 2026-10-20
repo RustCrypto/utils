@@ -5,7 +5,6 @@
     html_favicon_url = "https://raw.githubusercontent.com/RustCrypto/media/6ee8e381/logo.svg"
 )]
 
-#[cfg(not(miri))]
 #[cfg(target_arch = "aarch64")]
 #[doc(hidden)]
 pub mod aarch64;
