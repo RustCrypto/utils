@@ -1,0 +1,5 @@
+[toolchain]
+# Pinned so that driver builds are reproducible, since they rely on the unstable `-Zbuild-std`
+channel = "nightly-2026-10-06"
+profile = "minimal"
+components = ["rust-src"]

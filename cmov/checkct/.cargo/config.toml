@@ -1,0 +1,19 @@
+[build]
+target = [
+    "riscv32imac-unknown-none-elf",
+    "thumbv6m-none-eabi",
+    "thumbv7em-none-eabihf",
+    "x86_64-unknown-linux-gnu",
+]
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C", "linker=rust-lld",
+    "-C", "linker-flavor=ld.lld",
+    "-C", "relocation-model=static",
+]
+
+[unstable]
+unstable-options = true
+build-std = ["core", "panic_abort"]
+build-std-features = ["compiler-builtins-mem"]
