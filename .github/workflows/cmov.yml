@@ -45,6 +45,15 @@ jobs:
       - run: cargo build --target ${{ matrix.target }} --all-features
       - run: cargo build --target ${{ matrix.target }} --all-features --release
 
+  checkct:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Ledger-Donjon/cargo-checkct@85271e5ce9eab9ba895c62c8b5d4129810a635a0
+        with:
+          directory: cmov
+          timeout: 120
+
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
     with:
