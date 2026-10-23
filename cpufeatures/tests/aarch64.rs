@@ -2,7 +2,7 @@
 
 #![cfg(target_arch = "aarch64")]
 
-cpufeatures::new!(armcaps, "aes", "sha2", "sha3", "sm4");
+cpufeatures::new!(armcaps, "aes", "crc", "sha2", "sha3", "sm4");
 
 #[test]
 fn init() {
