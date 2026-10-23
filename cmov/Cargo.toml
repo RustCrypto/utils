@@ -9,6 +9,7 @@ repository = "https://github.com/RustCrypto/utils"
 license = "Apache-2.0 OR MIT"
 keywords = ["constant-time", "crypto", "intrinsics"]
 categories = ["cryptography", "hardware-support", "no-std"]
+exclude = ["checkct"]
 description = """
 Conditional move CPU intrinsics which are guaranteed on major platforms (ARM32/ARM64, x86/x86_64,
 RISC-V) to execute in constant-time and not be rewritten as branches by the compiler. Provides

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.4 (2026-10-23)
+### Security
+- Fix and verify `Choice::to_*_mask` constant-time codegen ([#1567])
+- Fix constant-time `u128` comparisons on 32-bit targets ([#1568])
+
+[#1567]: https://github.com/RustCrypto/utils/pull/1567
+[#1568]: https://github.com/RustCrypto/utils/pull/1568
+
 ## 0.4.3 (2026-10-06)
 ### Changed
 - Make `Choice::{to_bool, to_u8}` into `const fn` ([#1547])
