@@ -1,0 +1,13 @@
+[package]
+name = "driver"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[dependencies]
+checkct_macros = { path = "../checkct_macros" }
+ctutils = { path = "../.." }
+# RNG traits supplied by cargo-checkct's generated rng.rs.
+rand_core = "0.10"
+rand_core_09 = { package = "rand_core", version = "0.9" }
+rand_core_06 = { package = "rand_core", version = "0.6" }

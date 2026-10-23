@@ -429,7 +429,7 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn to_u8_mask(self) -> u8 {
-        self.0.wrapping_neg()
+        self.to_u8().wrapping_neg()
     }
 
     /// Create a `u16` bitmask.
@@ -440,7 +440,7 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn to_u16_mask(self) -> u16 {
-        (self.0 as u16).wrapping_neg()
+        (self.to_u8() as u16).wrapping_neg()
     }
 
     /// Create a `u32` bitmask.
@@ -451,7 +451,7 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn to_u32_mask(self) -> u32 {
-        (self.0 as u32).wrapping_neg()
+        (self.to_u8() as u32).wrapping_neg()
     }
 
     /// Create a `u64` bitmask.
@@ -462,7 +462,7 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn to_u64_mask(self) -> u64 {
-        (self.0 as u64).wrapping_neg()
+        (self.to_u8() as u64).wrapping_neg()
     }
 
     /// Create a `u128` bitmask.
@@ -473,7 +473,7 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn to_u128_mask(self) -> u128 {
-        (self.0 as u128).wrapping_neg()
+        (self.to_u8() as u128).wrapping_neg()
     }
 }
 

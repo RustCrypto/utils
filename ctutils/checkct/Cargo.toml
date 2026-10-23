@@ -1,0 +1,12 @@
+cargo-features = ["panic-immediate-abort"]
+
+[workspace]
+members = ["driver"]
+resolver = "2"
+
+[profile.release]
+debug = true
+panic = "immediate-abort"
+
+[patch.crates-io]
+cmov = { path = "../../cmov" }
