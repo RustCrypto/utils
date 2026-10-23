@@ -126,6 +126,8 @@ mod choice;
 mod ct_option;
 mod traits;
 
+pub mod primitives;
+
 pub use choice::Choice;
 pub use ct_option::CtOption;
 pub use traits::{

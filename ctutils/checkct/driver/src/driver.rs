@@ -11,6 +11,8 @@ macro_rules! private_integer {
     }};
 }
 
+mod primitives;
+
 macro_rules! scalar_checks {
     ($module:ident, $ty:ty, $from_lsb:ident, $from_lt:ident, $select:ident) => {
         mod $module {
