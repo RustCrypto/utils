@@ -1,5 +1,8 @@
 //! `cmov` property-based tests: randomized with shrinking.
 
+use ctutils::{Choice, CtGt, CtLt};
+use proptest::prelude::*;
+
 /// Write the proptests for an integer type.
 macro_rules! int_proptests {
     ( $($int:ident),+ ) => {
@@ -56,3 +59,16 @@ macro_rules! int_proptests {
 }
 
 int_proptests!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
+
+proptest::proptest! {
+    #[test]
+    fn from_u128_comparison(
+        x in any::<u128>(),
+        y in any::<u128>(),
+    ) {
+        prop_assert_eq!(x < y, Choice::from_u128_lt(x, y).to_bool());
+        prop_assert_eq!(x <= y, Choice::from_u128_le(x, y).to_bool());
+        prop_assert_eq!(x < y, x.ct_lt(&y).to_bool());
+        prop_assert_eq!(x > y, x.ct_gt(&y).to_bool());
+    }
+}
