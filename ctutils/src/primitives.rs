@@ -7,7 +7,9 @@
 //! be checked for the target and compiler in use.
 //!
 //! Native zero counts are used when supported and advertised by the target configuration.
+
 use crate::Choice;
+use core::hint::black_box;
 
 /// Bitwise less-than-or equal: returns `1` if `x <= y`, and otherwise returns `0`.
 ///
@@ -54,7 +56,7 @@ macro_rules! comparison_primitives {
         pub(crate) const fn $le(lhs: $ty, rhs: $ty) -> Choice {
             let bit = bitle!(lhs, rhs, <$ty>::BITS);
             #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
-            let bit = core::hint::black_box(bit);
+            let bit = black_box(bit);
             Choice::$from_lsb(bit)
         }
 
@@ -69,7 +71,7 @@ macro_rules! comparison_primitives {
         pub(crate) const fn $lt(lhs: $ty, rhs: $ty) -> Choice {
             let bit = bitlt!(lhs, rhs, <$ty>::BITS);
             #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
-            let bit = core::hint::black_box(bit);
+            let bit = black_box(bit);
             Choice::$from_lsb(bit)
         }
 
@@ -77,7 +79,7 @@ macro_rules! comparison_primitives {
         pub(crate) const fn $nz(value: $ty) -> Choice {
             let bit = bitnz!(value, <$ty>::BITS);
             #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
-            let bit = core::hint::black_box(bit);
+            let bit = black_box(bit);
             Choice::$from_lsb(bit)
         }
     };
@@ -100,7 +102,7 @@ macro_rules! borrowing_sub_primitives {
             // optimization on older compilers: https://github.com/rust-lang/rust/issues/149522
             // Keep the full-width bit opaque before narrowing it to Choice, so a caller's
             // masked add-back cannot be folded into a secret-dependent branch.
-            let borrow = core::hint::black_box(bitborrow!(lhs, rhs, difference, <$ty>::BITS));
+            let borrow = black_box(bitborrow!(lhs, rhs, difference, <$ty>::BITS));
             (difference, Choice::$from_lsb(borrow))
         }
     };
