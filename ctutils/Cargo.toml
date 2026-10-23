@@ -1,6 +1,6 @@
 [package]
 name = "ctutils"
-version = "0.4.3"
+version = "0.4.4"
 authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.87"
@@ -9,6 +9,7 @@ repository = "https://github.com/RustCrypto/utils"
 license = "Apache-2.0 OR MIT"
 keywords = ["constant-time", "crypto", "intrinsics"]
 categories = ["cryptography", "no-std"]
+exclude = ["checkct"]
 description = """
 Constant-time utility library with selection and equality testing support targeting cryptographic
 applications. Supports `const fn` where appropriate. Built on the `cmov` crate which provides
