@@ -19,6 +19,8 @@ macro_rules! bitle {
 }
 
 /// Outgoing borrow bit for a wrapping `x - y - borrow_in` result.
+///
+/// See "Hacker's Delight", 2nd edition, section 2-13 (Overflow detection)
 macro_rules! bitborrow {
     ($x:expr, $y:expr, $result:expr, $bits:expr) => {
         (((!$x) & $y) | (((!$x) | $y) & $result)) >> ($bits - 1)
