@@ -17,7 +17,7 @@ version = "0.5.4"
 
 [[package]]
 name = "ctutils"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "cmov",
 ]
