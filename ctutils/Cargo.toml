@@ -1,6 +1,6 @@
 [package]
 name = "ctutils"
-version = "0.4.4"
+version = "0.4.5"
 authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.87"
