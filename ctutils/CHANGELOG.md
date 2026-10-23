@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.5 (2026-10-23)
+### Added
+- `primitives` module ([#1570], [#1572])
+
+### Fixed
+- Harden Thumb-1 comparisons and `Choice` composition ([#1571])
+
+[#1570]: https://github.com/RustCrypto/utils/pull/1570
+[#1571]: https://github.com/RustCrypto/utils/pull/1571
+[#1572]: https://github.com/RustCrypto/utils/pull/1572
+
 ## 0.4.4 (2026-10-23)
 ### Security
 - Fix and verify `Choice::to_*_mask` constant-time codegen ([#1567])
