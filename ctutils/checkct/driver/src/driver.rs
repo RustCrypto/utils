@@ -11,6 +11,7 @@ macro_rules! private_integer {
     }};
 }
 
+mod predicates;
 mod primitives;
 
 macro_rules! scalar_checks {

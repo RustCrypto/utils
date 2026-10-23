@@ -62,6 +62,22 @@ int_proptests!(i8, i16, i32, i64, i128, u8, u16, u32, u64, u128);
 
 proptest::proptest! {
     #[test]
+    fn from_u32_comparison(x in any::<u32>(), y in any::<u32>()) {
+        prop_assert_eq!(x == y, Choice::from_u32_eq(x, y).to_bool());
+        prop_assert_eq!(x <= y, Choice::from_u32_le(x, y).to_bool());
+        prop_assert_eq!(x < y, Choice::from_u32_lt(x, y).to_bool());
+        prop_assert_eq!(x != 0, Choice::from_u32_nz(x).to_bool());
+    }
+
+    #[test]
+    fn from_u64_comparison(x in any::<u64>(), y in any::<u64>()) {
+        prop_assert_eq!(x == y, Choice::from_u64_eq(x, y).to_bool());
+        prop_assert_eq!(x <= y, Choice::from_u64_le(x, y).to_bool());
+        prop_assert_eq!(x < y, Choice::from_u64_lt(x, y).to_bool());
+        prop_assert_eq!(x != 0, Choice::from_u64_nz(x).to_bool());
+    }
+
+    #[test]
     fn from_u128_comparison(
         x in any::<u128>(),
         y in any::<u128>(),
