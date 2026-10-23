@@ -37,31 +37,31 @@ macro_rules! scalar_checks {
                 Choice::$from_lsb(condition).$select(a, b)
             }
 
-            /// A single shift-and-subtract division step, as used in crypto-bigint.
             /// Keep the comparison and selection together to test their optimization.
+            /// Selecting the minimum avoids native arithmetic unrelated to ctutils.
             #[checkct]
             pub fn choice_select_after_lt() {
                 let (a, b, _) = inputs();
-                black_box(subtract_if_ge(a, b));
+                black_box(select_min(a, b));
             }
 
             #[inline(never)]
-            fn subtract_if_ge(a: $ty, b: $ty) -> $ty {
+            fn select_min(a: $ty, b: $ty) -> $ty {
                 let choice = Choice::$from_lt(a, b);
-                choice.$select(a.wrapping_sub(b), a)
+                choice.$select(b, a)
             }
 
             /// Compare the const helper with the cmov-backed trait on the same expression.
             #[checkct]
             pub fn ct_select_after_lt() {
                 let (a, b, _) = inputs();
-                black_box(subtract_if_ge_with_ct_select(a, b));
+                black_box(select_min_with_ct_select(a, b));
             }
 
             #[inline(never)]
-            fn subtract_if_ge_with_ct_select(a: $ty, b: $ty) -> $ty {
+            fn select_min_with_ct_select(a: $ty, b: $ty) -> $ty {
                 let choice = Choice::$from_lt(a, b);
-                a.wrapping_sub(b).ct_select(&a, choice)
+                b.ct_select(&a, choice)
             }
         }
     };
@@ -71,4 +71,38 @@ scalar_checks!(u8_ops, u8, from_u8_lsb, from_u8_lt, select_u8);
 scalar_checks!(u16_ops, u16, from_u16_lsb, from_u16_lt, select_u16);
 scalar_checks!(u32_ops, u32, from_u32_lsb, from_u32_lt, select_u32);
 scalar_checks!(u64_ops, u64, from_u64_lsb, from_u64_lt, select_u64);
-// TODO: scalar_checks!(u128_ops, u128, from_u128_lsb, from_u128_lt, select_u128);
+scalar_checks!(u128_ops, u128, from_u128_lsb, from_u128_lt, select_u128);
+
+mod u128_comparisons {
+    use super::*;
+    use ctutils::{CtGt, CtLt};
+
+    fn inputs() -> (u128, u128) {
+        black_box(PublicRng.next_u32());
+        (private_integer!(u128), private_integer!(u128))
+    }
+
+    #[checkct]
+    pub fn choice_lt() {
+        let (a, b) = inputs();
+        black_box(Choice::from_u128_lt(a, b).to_u8());
+    }
+
+    #[checkct]
+    pub fn choice_le() {
+        let (a, b) = inputs();
+        black_box(Choice::from_u128_le(a, b).to_u8());
+    }
+
+    #[checkct]
+    pub fn ct_lt() {
+        let (a, b) = inputs();
+        black_box(a.ct_lt(&b).to_u8());
+    }
+
+    #[checkct]
+    pub fn ct_gt() {
+        let (a, b) = inputs();
+        black_box(a.ct_gt(&b).to_u8());
+    }
+}
