@@ -18,12 +18,19 @@ macro_rules! bitle {
     };
 }
 
+/// Outgoing borrow bit for a wrapping `x - y - borrow_in` result.
+macro_rules! bitborrow {
+    ($x:expr, $y:expr, $result:expr, $bits:expr) => {
+        (((!$x) & $y) | (((!$x) | $y) & $result)) >> ($bits - 1)
+    };
+}
+
 /// Bitwise less-than: returns `1` if `x < y`, and otherwise returns `0`.
 ///
 /// See "Hacker's Delight" 2nd edition, section 2-12 (Comparison predicates)
 macro_rules! bitlt {
     ($x:expr, $y:expr, $bits:expr) => {
-        (((!$x) & $y) | (((!$x) | $y) & $x.wrapping_sub($y))) >> ($bits - 1)
+        $crate::primitives::bitborrow!($x, $y, ($x).wrapping_sub($y), $bits)
     };
 }
 
@@ -34,7 +41,7 @@ macro_rules! bitnz {
     };
 }
 
-pub(crate) use {bitle, bitlt, bitnz};
+pub(crate) use {bitborrow, bitle, bitlt, bitnz};
 
 // Keep the comparison bit opaque before narrowing it to Choice's byte representation.
 // ARM targets without pointer-width atomics cover Thumb-1 on Rust 1.87, which does not
@@ -76,6 +83,29 @@ macro_rules! comparison_primitives {
 
 comparison_primitives!(u32, le_u32, lt_u32, nz_u32, from_u32_lsb);
 comparison_primitives!(u64, le_u64, lt_u64, nz_u64, from_u64_lsb);
+
+macro_rules! borrowing_sub_primitives {
+    ($ty:ty, $sub:ident, $from_lsb:ident) => {
+        /// Subtract `rhs` and an incoming borrow from `lhs`.
+        ///
+        /// Returns the wrapping difference and [`Choice::TRUE`] if the subtraction underflows.
+        /// The incoming `borrow` subtracts one when true and zero when false.
+        #[inline]
+        #[must_use]
+        pub const fn $sub(lhs: $ty, rhs: $ty, borrow: Choice) -> ($ty, Choice) {
+            let difference = lhs.wrapping_sub(rhs).wrapping_sub(borrow.to_u8() as $ty);
+            // Keep all arithmetic in the operand type: widening can trigger incorrect
+            // optimization on older compilers: https://github.com/rust-lang/rust/issues/149522
+            // Keep the full-width bit opaque before narrowing it to Choice, so a caller's
+            // masked add-back cannot be folded into a secret-dependent branch.
+            let borrow = core::hint::black_box(bitborrow!(lhs, rhs, difference, <$ty>::BITS));
+            (difference, Choice::$from_lsb(borrow))
+        }
+    };
+}
+
+borrowing_sub_primitives!(u32, borrowing_sub_u32, from_u32_lsb);
+borrowing_sub_primitives!(u64, borrowing_sub_u64, from_u64_lsb);
 
 /// Count leading zero bits, returning 32 if `value` is zero.
 #[inline]
@@ -236,6 +266,12 @@ mod tests {
 
     // Keep all public entrypoints usable by const callers such as crypto-bigint.
     const _: () = {
+        assert!(borrowing_sub_u32(0, 0, Choice::TRUE).0 == u32::MAX);
+        assert!(borrowing_sub_u32(0, 0, Choice::TRUE).1.to_bool());
+        assert!(borrowing_sub_u64(0, 0, Choice::TRUE).0 == u64::MAX);
+        assert!(borrowing_sub_u64(0, 0, Choice::TRUE).1.to_bool());
+        assert!(!borrowing_sub_u32(1, 0, Choice::TRUE).1.to_bool());
+        assert!(!borrowing_sub_u64(1, 0, Choice::TRUE).1.to_bool());
         assert!(leading_zeros_u32(0) == 32);
         assert!(trailing_zeros_u32(0) == 32);
         assert!(leading_zeros_u64(0) == 64);
@@ -269,6 +305,35 @@ mod tests {
             }
         }
     }
+
+    macro_rules! subtraction_tests {
+        ($test:ident, $ty:ty, $sub:ident) => {
+            #[test]
+            fn $test() {
+                let half = 1 << (<$ty>::BITS >> 1);
+                let high = 1 << (<$ty>::BITS - 1);
+                let values = [0, 1, half - 1, half, half + 1, high - 1, high, <$ty>::MAX];
+                for lhs in values {
+                    for rhs in values {
+                        for incoming in [false, true] {
+                            let (expected, first_borrow) = lhs.overflowing_sub(rhs);
+                            let (expected, second_borrow) =
+                                expected.overflowing_sub(<$ty>::from(incoming));
+                            let (difference, borrow) =
+                                $sub(lhs, rhs, Choice::from_u8_lsb(u8::from(incoming)));
+                            assert_eq!(
+                                (difference, borrow.to_bool()),
+                                (expected, first_borrow | second_borrow)
+                            );
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    subtraction_tests!(sub_u32, u32, borrowing_sub_u32);
+    subtraction_tests!(sub_u64, u64, borrowing_sub_u64);
 
     macro_rules! addition_tests {
         ($test:ident, $ty:ty, $add:ident) => {
