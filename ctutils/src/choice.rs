@@ -1,33 +1,9 @@
+use crate::primitives::{bitle, bitlt, bitnz};
 use crate::{CtAssign, CtAssignSlice, CtEq, CtEqSlice, CtSelectUsingCtAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
 #[cfg(feature = "subtle")]
 use crate::CtSelect;
-
-/// Bitwise less-than-or equal: returns `1` if `x <= y`, and otherwise returns `0`.
-///
-/// See "Hacker's Delight" 2nd edition, section 2-12 (Comparison predicates)
-macro_rules! bitle {
-    ($x:expr, $y:expr, $bits:expr) => {
-        (((!$x) | $y) & (($x ^ $y) | !($y.wrapping_sub($x)))) >> ($bits - 1)
-    };
-}
-
-/// Bitwise less-than: returns `1` if `x < y`, and otherwise returns `0`.
-///
-/// See "Hacker's Delight" 2nd edition, section 2-12 (Comparison predicates)
-macro_rules! bitlt {
-    ($x:expr, $y:expr, $bits:expr) => {
-        (((!$x) & $y) | (((!$x) | $y) & $x.wrapping_sub($y))) >> ($bits - 1)
-    };
-}
-
-/// Bitwise non-zero: returns `1` if `x != 0`, and otherwise returns `0`.
-macro_rules! bitnz {
-    ($value:expr, $bits:expr) => {
-        ($value | $value.wrapping_neg()) >> ($bits - 1)
-    };
-}
 
 /// Constant-time analogue of `bool` providing a "best effort" optimization barrier.
 ///
@@ -56,7 +32,15 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn and(self, rhs: Choice) -> Choice {
-        Self(self.0 & rhs.0)
+        #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
+        {
+            // Keep loop-carried predicates from becoming a short-circuiting boolean.
+            Self(self.to_u8() & rhs.to_u8())
+        }
+        #[cfg(not(all(target_arch = "arm", not(target_has_atomic = "ptr"))))]
+        {
+            Self(self.0 & rhs.0)
+        }
     }
 
     /// Apply an `or` conditional to the given [`Choice`]s.
@@ -199,7 +183,7 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn from_u32_le(x: u32, y: u32) -> Self {
-        Self::from_u32_lsb(bitle!(x, y, u32::BITS))
+        crate::primitives::le_u32(x, y)
     }
 
     /// Initialize from the least significant bit of a `u32`.
@@ -213,14 +197,14 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn from_u32_lt(x: u32, y: u32) -> Self {
-        Self::from_u32_lsb(bitlt!(x, y, u32::BITS))
+        crate::primitives::lt_u32(x, y)
     }
 
     /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
     #[must_use]
     pub const fn from_u32_nz(value: u32) -> Self {
-        Self::from_u32_lsb(bitnz!(value, u32::BITS))
+        crate::primitives::nz_u32(value)
     }
 
     // u64
@@ -236,7 +220,7 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn from_u64_le(x: u64, y: u64) -> Self {
-        Self::from_u64_lsb(bitle!(x, y, u64::BITS))
+        crate::primitives::le_u64(x, y)
     }
 
     /// Initialize from the least significant bit of a `u64`.
@@ -250,14 +234,14 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn from_u64_lt(x: u64, y: u64) -> Self {
-        Self::from_u64_lsb(bitlt!(x, y, u64::BITS))
+        crate::primitives::lt_u64(x, y)
     }
 
     /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
     #[inline]
     #[must_use]
     pub const fn from_u64_nz(value: u64) -> Self {
-        Self::from_u64_lsb(bitnz!(value, u64::BITS))
+        crate::primitives::nz_u64(value)
     }
 
     // u128

@@ -9,6 +9,74 @@
 //! Native zero counts are used when supported and advertised by the target configuration.
 use crate::Choice;
 
+/// Bitwise less-than-or equal: returns `1` if `x <= y`, and otherwise returns `0`.
+///
+/// See "Hacker's Delight" 2nd edition, section 2-12 (Comparison predicates)
+macro_rules! bitle {
+    ($x:expr, $y:expr, $bits:expr) => {
+        (((!$x) | $y) & (($x ^ $y) | !($y.wrapping_sub($x)))) >> ($bits - 1)
+    };
+}
+
+/// Bitwise less-than: returns `1` if `x < y`, and otherwise returns `0`.
+///
+/// See "Hacker's Delight" 2nd edition, section 2-12 (Comparison predicates)
+macro_rules! bitlt {
+    ($x:expr, $y:expr, $bits:expr) => {
+        (((!$x) & $y) | (((!$x) | $y) & $x.wrapping_sub($y))) >> ($bits - 1)
+    };
+}
+
+/// Bitwise non-zero: returns `1` if `x != 0`, and otherwise returns `0`.
+macro_rules! bitnz {
+    ($value:expr, $bits:expr) => {
+        ($value | $value.wrapping_neg()) >> ($bits - 1)
+    };
+}
+
+pub(crate) use {bitle, bitlt, bitnz};
+
+// Keep the comparison bit opaque before narrowing it to Choice's byte representation.
+// ARM targets without pointer-width atomics cover Thumb-1 on Rust 1.87, which does not
+// advertise `thumb2` as a target feature. The other targets retain the original lowering.
+macro_rules! comparison_primitives {
+    ($ty:ty, $le:ident, $lt:ident, $nz:ident, $from_lsb:ident) => {
+        #[inline(always)]
+        pub(crate) const fn $le(lhs: $ty, rhs: $ty) -> Choice {
+            let bit = bitle!(lhs, rhs, <$ty>::BITS);
+            #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
+            let bit = core::hint::black_box(bit);
+            Choice::$from_lsb(bit)
+        }
+
+        #[cfg_attr(
+            all(target_arch = "arm", not(target_has_atomic = "ptr")),
+            inline(never)
+        )]
+        #[cfg_attr(
+            not(all(target_arch = "arm", not(target_has_atomic = "ptr"))),
+            inline(always)
+        )]
+        pub(crate) const fn $lt(lhs: $ty, rhs: $ty) -> Choice {
+            let bit = bitlt!(lhs, rhs, <$ty>::BITS);
+            #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
+            let bit = core::hint::black_box(bit);
+            Choice::$from_lsb(bit)
+        }
+
+        #[inline(always)]
+        pub(crate) const fn $nz(value: $ty) -> Choice {
+            let bit = bitnz!(value, <$ty>::BITS);
+            #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
+            let bit = core::hint::black_box(bit);
+            Choice::$from_lsb(bit)
+        }
+    };
+}
+
+comparison_primitives!(u32, le_u32, lt_u32, nz_u32, from_u32_lsb);
+comparison_primitives!(u64, le_u64, lt_u64, nz_u64, from_u64_lsb);
+
 /// Count leading zero bits, returning 32 if `value` is zero.
 #[inline]
 #[must_use]
