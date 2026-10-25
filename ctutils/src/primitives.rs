@@ -89,7 +89,7 @@ comparison_primitives!(u32, le_u32, lt_u32, nz_u32, from_u32_lsb);
 comparison_primitives!(u64, le_u64, lt_u64, nz_u64, from_u64_lsb);
 
 macro_rules! borrowing_sub_primitives {
-    ($ty:ty, $sub:ident, $from_lsb:ident) => {
+    ($ty:ty, $sub:ident, $sub_mask:ident, $sub_inner:ident, $from_lsb:ident) => {
         /// Subtract `rhs` and an incoming borrow from `lhs`.
         ///
         /// Returns the wrapping difference and [`Choice::TRUE`] if the subtraction underflows.
@@ -97,19 +97,53 @@ macro_rules! borrowing_sub_primitives {
         #[inline]
         #[must_use]
         pub const fn $sub(lhs: $ty, rhs: $ty, borrow: Choice) -> ($ty, Choice) {
-            let difference = lhs.wrapping_sub(rhs).wrapping_sub(borrow.to_u8() as $ty);
+            let (difference, borrow) = $sub_inner(lhs, rhs, borrow.to_u8() as $ty);
+            (difference, Choice::$from_lsb(borrow))
+        }
+
+        /// Subtract `rhs` and an incoming borrow from `lhs`, using word-sized borrow masks.
+        ///
+        /// The incoming borrow is the most significant bit of `borrow`; all other bits are ignored.
+        /// Returns the wrapping difference and an all-ones mask if the subtraction underflows,
+        /// or zero otherwise.
+        ///
+        /// The outgoing mask can be passed directly to the next limb's subtraction, avoiding
+        /// conversions to and from [`Choice`] at each step of a multi-limb subtraction.
+        #[inline]
+        #[must_use]
+        pub const fn $sub_mask(lhs: $ty, rhs: $ty, borrow: $ty) -> ($ty, $ty) {
+            let (difference, borrow) = $sub_inner(lhs, rhs, borrow >> (<$ty>::BITS - 1));
+            (difference, borrow.wrapping_neg())
+        }
+
+        // The incoming borrow must be zero or one; the outgoing borrow is also zero or one.
+        #[inline(always)]
+        const fn $sub_inner(lhs: $ty, rhs: $ty, borrow: $ty) -> ($ty, $ty) {
+            let difference = lhs.wrapping_sub(rhs).wrapping_sub(borrow);
             // Keep all arithmetic in the operand type: widening can trigger incorrect
             // optimization on older compilers: https://github.com/rust-lang/rust/issues/149522
-            // Keep the full-width bit opaque before narrowing it to Choice, so a caller's
-            // masked add-back cannot be folded into a secret-dependent branch.
+            // Keep the full-width bit opaque before forming a mask or narrowing it to Choice,
+            // so a caller's masked add-back cannot be folded into a secret-dependent branch.
             let borrow = black_box(bitborrow!(lhs, rhs, difference, <$ty>::BITS));
-            (difference, Choice::$from_lsb(borrow))
+            (difference, borrow)
         }
     };
 }
 
-borrowing_sub_primitives!(u32, borrowing_sub_u32, from_u32_lsb);
-borrowing_sub_primitives!(u64, borrowing_sub_u64, from_u64_lsb);
+borrowing_sub_primitives!(
+    u32,
+    borrowing_sub_u32,
+    borrowing_sub_mask_u32,
+    borrowing_sub_inner_u32,
+    from_u32_lsb
+);
+borrowing_sub_primitives!(
+    u64,
+    borrowing_sub_u64,
+    borrowing_sub_mask_u64,
+    borrowing_sub_inner_u64,
+    from_u64_lsb
+);
 
 /// Count leading zero bits, returning 32 if `value` is zero.
 #[inline]
@@ -276,6 +310,12 @@ mod tests {
         assert!(borrowing_sub_u64(0, 0, Choice::TRUE).1.to_bool());
         assert!(!borrowing_sub_u32(1, 0, Choice::TRUE).1.to_bool());
         assert!(!borrowing_sub_u64(1, 0, Choice::TRUE).1.to_bool());
+        assert!(borrowing_sub_mask_u32(0, 0, u32::MAX).0 == u32::MAX);
+        assert!(borrowing_sub_mask_u32(0, 0, u32::MAX).1 == u32::MAX);
+        assert!(borrowing_sub_mask_u64(0, 0, u64::MAX).0 == u64::MAX);
+        assert!(borrowing_sub_mask_u64(0, 0, u64::MAX).1 == u64::MAX);
+        assert!(borrowing_sub_mask_u32(1, 0, u32::MAX).1 == 0);
+        assert!(borrowing_sub_mask_u64(1, 0, u64::MAX).1 == 0);
         assert!(leading_zeros_u32(0) == 32);
         assert!(trailing_zeros_u32(0) == 32);
         assert!(leading_zeros_u64(0) == 64);
@@ -311,7 +351,7 @@ mod tests {
     }
 
     macro_rules! subtraction_tests {
-        ($test:ident, $ty:ty, $sub:ident) => {
+        ($test:ident, $ty:ty, $sub:ident, $sub_mask:ident) => {
             #[test]
             fn $test() {
                 let half = 1 << (<$ty>::BITS >> 1);
@@ -319,7 +359,9 @@ mod tests {
                 let values = [0, 1, half - 1, half, half + 1, high - 1, high, <$ty>::MAX];
                 for lhs in values {
                     for rhs in values {
-                        for incoming in [false, true] {
+                        // Include noncanonical masks: only the most significant bit matters.
+                        for mask in [0, 1, high - 1, high, <$ty>::MAX - 1, <$ty>::MAX] {
+                            let incoming = mask >> (<$ty>::BITS - 1) != 0;
                             let (expected, first_borrow) = lhs.overflowing_sub(rhs);
                             let (expected, second_borrow) =
                                 expected.overflowing_sub(<$ty>::from(incoming));
@@ -329,6 +371,13 @@ mod tests {
                                 (difference, borrow.to_bool()),
                                 (expected, first_borrow | second_borrow)
                             );
+                            assert_eq!(
+                                $sub_mask(lhs, rhs, mask),
+                                (
+                                    expected,
+                                    <$ty>::from(first_borrow | second_borrow).wrapping_neg()
+                                )
+                            );
                         }
                     }
                 }
@@ -336,8 +385,21 @@ mod tests {
         };
     }
 
-    subtraction_tests!(sub_u32, u32, borrowing_sub_u32);
-    subtraction_tests!(sub_u64, u64, borrowing_sub_u64);
+    subtraction_tests!(sub_u32, u32, borrowing_sub_u32, borrowing_sub_mask_u32);
+    subtraction_tests!(sub_u64, u64, borrowing_sub_u64, borrowing_sub_mask_u64);
+
+    #[test]
+    fn sub_mask_propagates_borrow() {
+        let (lo, borrow) = borrowing_sub_mask_u32(0, 1, 0);
+        let (mid, borrow) = borrowing_sub_mask_u32(0, 0, borrow);
+        assert_eq!((lo, mid, borrow), (u32::MAX, u32::MAX, u32::MAX));
+        assert_eq!(borrowing_sub_mask_u32(1, 0, borrow), (0, 0));
+
+        let (lo, borrow) = borrowing_sub_mask_u64(0, 1, 0);
+        let (mid, borrow) = borrowing_sub_mask_u64(0, 0, borrow);
+        assert_eq!((lo, mid, borrow), (u64::MAX, u64::MAX, u64::MAX));
+        assert_eq!(borrowing_sub_mask_u64(1, 0, borrow), (0, 0));
+    }
 
     macro_rules! addition_tests {
         ($test:ident, $ty:ty, $add:ident) => {
