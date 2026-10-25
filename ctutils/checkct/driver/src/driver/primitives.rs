@@ -145,3 +145,72 @@ macro_rules! subtraction_checks {
 
 subtraction_checks!(u32_sub, u32, borrowing_sub_u32, to_u32_mask);
 subtraction_checks!(u64_sub, u64, borrowing_sub_u64, to_u64_mask);
+
+macro_rules! subtraction_mask_checks {
+    ($module:ident, $ty:ty, $sub:ident) => {
+        mod $module {
+            use super::*;
+
+            #[checkct]
+            pub fn borrowing_sub_mask() {
+                black_box(PublicRng.next_u32());
+                black_box(primitives::$sub(
+                    private_integer!($ty),
+                    private_integer!($ty),
+                    private_integer!($ty),
+                ));
+            }
+
+            #[checkct]
+            pub fn borrowing_sub_mask_zero_borrow() {
+                black_box(PublicRng.next_u32());
+                black_box(primitives::$sub(
+                    private_integer!($ty),
+                    private_integer!($ty),
+                    0,
+                ));
+            }
+
+            #[checkct]
+            pub fn borrowing_sub_mask_limbs() {
+                black_box(PublicRng.next_u32());
+                let lhs = [private_integer!($ty), private_integer!($ty)];
+                let rhs = [private_integer!($ty), private_integer!($ty)];
+                let mut borrow = private_integer!($ty);
+                let mut difference = [0; 2];
+                for i in 0..2 {
+                    (difference[i], borrow) = primitives::$sub(lhs[i], rhs[i], borrow);
+                }
+                black_box((difference, borrow));
+            }
+
+            /// Discarding the final borrow can change how the subtraction is optimized.
+            #[checkct]
+            pub fn wrapping_sub_mask_limbs() {
+                black_box(PublicRng.next_u32());
+                let lhs = [private_integer!($ty), private_integer!($ty)];
+                let rhs = [private_integer!($ty), private_integer!($ty)];
+                let mut borrow = 0;
+                let mut difference = [0; 2];
+                for i in 0..2 {
+                    (difference[i], borrow) = primitives::$sub(lhs[i], rhs[i], borrow);
+                }
+                black_box(difference);
+            }
+
+            /// Keep the subtraction and masked add-back together to test their optimization.
+            #[checkct]
+            pub fn borrowing_sub_mask_add_back() {
+                black_box(PublicRng.next_u32());
+                let lhs = private_integer!($ty);
+                let rhs = private_integer!($ty);
+                let incoming = private_integer!($ty);
+                let (difference, borrow) = primitives::$sub(lhs, rhs, incoming);
+                black_box(difference.wrapping_add(rhs & borrow));
+            }
+        }
+    };
+}
+
+subtraction_mask_checks!(u32_sub_mask, u32, borrowing_sub_mask_u32);
+subtraction_mask_checks!(u64_sub_mask, u64, borrowing_sub_mask_u64);
