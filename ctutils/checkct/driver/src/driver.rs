@@ -11,6 +11,9 @@ macro_rules! private_integer {
     }};
 }
 
+mod comparisons;
+mod composition;
+mod negation;
 mod predicates;
 mod primitives;
 
@@ -56,7 +59,7 @@ macro_rules! scalar_checks {
 
             /// Compare the const helper with the cmov-backed trait on the same expression.
             #[checkct]
-            pub fn ct_select_after_lt() {
+            pub fn ct_select_after_choice_lt() {
                 let (a, b, _) = inputs();
                 black_box(select_min_with_ct_select(a, b));
             }
