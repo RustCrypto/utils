@@ -69,7 +69,7 @@ macro_rules! comparison_primitives {
             inline(always)
         )]
         pub(crate) const fn $lt(lhs: $ty, rhs: $ty) -> Choice {
-            let bit = bitlt!(lhs, rhs, <$ty>::BITS);
+            let bit = $crate::primitives::bitlt!(lhs, rhs, <$ty>::BITS);
             #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
             let bit = black_box(bit);
             Choice::$from_lsb(bit)

@@ -1,4 +1,4 @@
-use crate::primitives::{bitle, bitlt, bitnz};
+use crate::primitives::{bitle, bitnz};
 use crate::{CtAssign, CtAssignSlice, CtEq, CtEqSlice, CtSelectUsingCtAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
@@ -123,7 +123,15 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn from_u8_lt(x: u8, y: u8) -> Self {
-        Self::from_u8_lsb(bitlt!(x, y, u8::BITS))
+        // On Thumb-1, constant specialization can turn a narrow comparison into a branch.
+        #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
+        {
+            Self::from_u32_lt(x as u32, y as u32)
+        }
+        #[cfg(not(all(target_arch = "arm", not(target_has_atomic = "ptr"))))]
+        {
+            Self::from_u8_lsb(crate::primitives::bitlt!(x, y, u8::BITS))
+        }
     }
 
     /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
@@ -160,7 +168,15 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn from_u16_lt(x: u16, y: u16) -> Self {
-        Self::from_u16_lsb(bitlt!(x, y, u16::BITS))
+        // Use the same hardening as the word-sized comparison on Thumb-1.
+        #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
+        {
+            Self::from_u32_lt(x as u32, y as u32)
+        }
+        #[cfg(not(all(target_arch = "arm", not(target_has_atomic = "ptr"))))]
+        {
+            Self::from_u16_lsb(crate::primitives::bitlt!(x, y, u16::BITS))
+        }
     }
 
     /// Returns [`Choice::TRUE`] if `value != 0`, and [`Choice::FALSE`] otherwise.
@@ -284,7 +300,7 @@ impl Choice {
         }
         #[cfg(not(target_pointer_width = "32"))]
         {
-            Self::from_u128_lsb(bitlt!(x, y, u128::BITS))
+            Self::from_u128_lsb(crate::primitives::bitlt!(x, y, u128::BITS))
         }
     }
 

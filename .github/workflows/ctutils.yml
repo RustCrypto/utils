@@ -50,6 +50,11 @@ jobs:
 
   checkct:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        overflow-checks: ["false", "true"]
+    env:
+      CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: ${{ matrix.overflow-checks }}
     steps:
       - uses: actions/checkout@v7
       - uses: Ledger-Donjon/cargo-checkct@85271e5ce9eab9ba895c62c8b5d4129810a635a0
@@ -80,6 +85,9 @@ jobs:
       - run: cargo test --features subtle
       - run: cargo test --all-features
       - run: cargo test --all-features --release
+      - run: cargo test --all-features --release
+        env:
+          CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: true
 
   # Test using `cargo careful`
   test-careful:

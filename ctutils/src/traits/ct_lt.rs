@@ -11,22 +11,58 @@ pub trait CtLt {
     fn ct_lt(&self, other: &Self) -> Choice;
 }
 
-// Impl `CtLt` using overflowing subtraction
 macro_rules! impl_unsigned_ct_lt {
-    ( $($uint:ty),+ ) => {
+    ( $(($uint:ty, $from_lt:ident)),+ ) => {
         $(
             impl CtLt for $uint {
                 #[inline]
                 fn ct_lt(&self, other: &Self) -> Choice {
-                    let (_, overflow) = self.overflowing_sub(*other);
-                    Choice(overflow.into())
+                    // Thumb-1 can branch when converting an overflowing subtraction's borrow flag
+                    // into a byte, before `Choice`'s barrier or selection is reached.
+                    // Reuse the hardened constructors there.
+                    #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
+                    {
+                        Choice::$from_lt(*self, *other)
+                    }
+                    // Retain native subtraction on other targets.
+                    #[cfg(not(all(target_arch = "arm", not(target_has_atomic = "ptr"))))]
+                    {
+                        let (_, overflow) = self.overflowing_sub(*other);
+                        Choice(overflow.into())
+                    }
                 }
             }
         )+
     };
 }
 
-impl_unsigned_ct_lt!(u8, u16, u32, u64, usize);
+impl_unsigned_ct_lt!((u8, from_u8_lt), (u16, from_u16_lt), (u32, from_u32_lt));
+
+#[cfg(not(target_arch = "riscv32"))]
+impl_unsigned_ct_lt!((u64, from_u64_lt));
+
+#[cfg(target_arch = "riscv32")]
+impl CtLt for u64 {
+    #[inline]
+    fn ct_lt(&self, other: &Self) -> Choice {
+        // Native wide comparison can short-circuit after caller specialization.
+        Choice::from_u64_lt(*self, *other)
+    }
+}
+
+impl CtLt for usize {
+    #[inline]
+    #[allow(clippy::cast_possible_truncation, reason = "matches pointer width")]
+    fn ct_lt(&self, other: &Self) -> Choice {
+        #[cfg(target_pointer_width = "16")]
+        let (a, b) = (*self as u16, *other as u16);
+        #[cfg(target_pointer_width = "32")]
+        let (a, b) = (*self as u32, *other as u32);
+        #[cfg(target_pointer_width = "64")]
+        let (a, b) = (*self as u64, *other as u64);
+        a.ct_lt(&b)
+    }
+}
 
 impl CtLt for u128 {
     #[inline]

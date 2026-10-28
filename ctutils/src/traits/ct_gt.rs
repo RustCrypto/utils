@@ -1,4 +1,4 @@
-use crate::Choice;
+use crate::{Choice, CtLt};
 use core::{
     cmp,
     num::{NonZeroU8, NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize},
@@ -11,29 +11,21 @@ pub trait CtGt {
     fn ct_gt(&self, other: &Self) -> Choice;
 }
 
-// Impl `CtGt` using overflowing subtraction
+// Share the target-specific comparison hardening with `CtLt`.
 macro_rules! impl_unsigned_ct_gt {
     ( $($uint:ty),+ ) => {
         $(
             impl CtGt for $uint {
                 #[inline]
                 fn ct_gt(&self, other: &Self) -> Choice {
-                    let (_, overflow) = other.overflowing_sub(*self);
-                    Choice(overflow.into())
+                    other.ct_lt(self)
                 }
             }
         )+
     };
 }
 
-impl_unsigned_ct_gt!(u8, u16, u32, u64, usize);
-
-impl CtGt for u128 {
-    #[inline]
-    fn ct_gt(&self, other: &Self) -> Choice {
-        Choice::from_u128_lt(*other, *self)
-    }
-}
+impl_unsigned_ct_gt!(u8, u16, u32, u64, u128, usize);
 
 /// Impl `CtGt` for `NonZero<T>` by calling `NonZero::get`.
 macro_rules! impl_ct_gt_for_nonzero_integer {

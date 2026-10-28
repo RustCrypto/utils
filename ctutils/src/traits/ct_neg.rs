@@ -5,6 +5,9 @@ use core::num::{
 };
 
 /// Constant-time conditional negation: negates a value when `choice` is [`Choice::TRUE`].
+///
+/// Integer implementations use wrapping negation, including signed and non-zero integers.
+/// Negating a signed integer's minimum value therefore returns that value.
 pub trait CtNeg: Sized {
     /// Conditionally negate `self`, returning `-self` if `choice` is [`Choice::TRUE`], or `self`
     /// otherwise.
@@ -24,15 +27,13 @@ macro_rules! impl_signed_ct_neg {
         $(
             impl CtNeg for $int {
                 #[inline]
-                #[allow(clippy::arithmetic_side_effects)]
                 fn ct_neg(&self, choice: Choice) -> Self {
-                    self.ct_select(&-*self, choice)
+                    self.ct_select(&self.wrapping_neg(), choice)
                 }
 
                 #[inline]
-                #[allow(clippy::arithmetic_side_effects)]
                 fn ct_neg_assign(&mut self, choice: Choice) {
-                    self.ct_assign(&-*self, choice)
+                    self.ct_assign(&self.wrapping_neg(), choice)
                 }
             }
         )+
@@ -128,6 +129,17 @@ mod tests {
                         x.ct_neg_assign(Choice::TRUE);
                         assert_eq!(-n, x);
                     }
+
+                    #[test]
+                    fn ct_neg_min() {
+                        let min = <$int>::MIN;
+                        for choice in [Choice::FALSE, Choice::TRUE] {
+                            assert_eq!(min.ct_neg(choice), min);
+                            let mut value = min;
+                            value.ct_neg_assign(choice);
+                            assert_eq!(value, min);
+                        }
+                    }
                 }
              )+
         };
@@ -164,4 +176,31 @@ mod tests {
 
     signed_ct_neg_tests!(i8, i16, i32, i64, i128, isize);
     unsigned_ct_neg_tests!(u8, u16, u32, u64, u128, usize);
+
+    macro_rules! nonzero_signed_ct_neg_tests {
+        ($(($test:ident, $ty:ty, $int:ty)),+ $(,)?) => {
+            $(
+                #[test]
+                fn $test() {
+                    use crate::{Choice, CtNeg};
+                    let min = <$ty>::new(<$int>::MIN).expect("MIN is non-zero");
+                    for choice in [Choice::FALSE, Choice::TRUE] {
+                        assert_eq!(min.ct_neg(choice), min);
+                        let mut value = min;
+                        value.ct_neg_assign(choice);
+                        assert_eq!(value, min);
+                    }
+                }
+            )+
+        };
+    }
+
+    nonzero_signed_ct_neg_tests!(
+        (nonzero_i8_min, core::num::NonZeroI8, i8),
+        (nonzero_i16_min, core::num::NonZeroI16, i16),
+        (nonzero_i32_min, core::num::NonZeroI32, i32),
+        (nonzero_i64_min, core::num::NonZeroI64, i64),
+        (nonzero_i128_min, core::num::NonZeroI128, i128),
+        (nonzero_isize_min, core::num::NonZeroIsize, isize),
+    );
 }
