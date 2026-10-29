@@ -28,6 +28,22 @@ macro_rules! __unless_target_features {
     }};
 }
 
+/// Whether target features can be detected at run time.
+///
+/// CPUID is not available on SGX. Freestanding and UEFI targets do not support SIMD
+/// features with default compilation flags.
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __runtime_detection_available {
+    () => {
+        cfg!(not(any(
+            target_env = "sgx",
+            target_os = "none",
+            target_os = "uefi"
+        )))
+    };
+}
+
 /// Use CPUID to detect the presence of all supplied target features.
 #[macro_export]
 #[doc(hidden)]
