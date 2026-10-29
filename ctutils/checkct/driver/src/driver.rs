@@ -14,6 +14,7 @@ macro_rules! private_integer {
 mod comparisons;
 mod composition;
 mod negation;
+mod nonzero;
 mod predicates;
 mod primitives;
 
