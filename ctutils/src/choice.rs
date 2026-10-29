@@ -1,4 +1,4 @@
-use crate::primitives::{bitle, bitnz};
+use crate::primitives::bitle;
 use crate::{CtAssign, CtAssignSlice, CtEq, CtEqSlice, CtSelectUsingCtAssign};
 use core::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Not};
 
@@ -138,7 +138,7 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn from_u8_nz(value: u8) -> Self {
-        Self::from_u8_lsb(bitnz!(value, u8::BITS))
+        crate::primitives::nz_u8(value)
     }
 
     // u16
@@ -183,7 +183,7 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn from_u16_nz(value: u16) -> Self {
-        Self::from_u16_lsb(bitnz!(value, u16::BITS))
+        crate::primitives::nz_u16(value)
     }
 
     // u32
@@ -323,7 +323,7 @@ impl Choice {
     #[inline]
     #[must_use]
     pub const fn from_u128_nz(value: u128) -> Self {
-        Self::from_u128_lsb(bitnz!(value, u128::BITS))
+        crate::primitives::nz_u128(value)
     }
 
     //

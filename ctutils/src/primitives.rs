@@ -45,7 +45,34 @@ macro_rules! bitnz {
     };
 }
 
-pub(crate) use {bitborrow, bitle, bitlt, bitnz};
+pub(crate) use {bitborrow, bitle, bitlt};
+
+// Shared by every nonzero constructor, including the widths which do not use
+// comparison_primitives. A result barrier alone does not prevent specialization
+// of the arithmetic which computes the predicate.
+macro_rules! nonzero_primitive {
+    ($ty:ty, $nz:ident, $from_lsb:ident) => {
+        #[inline(always)]
+        pub(crate) const fn $nz(value: $ty) -> Choice {
+            // Hide caller range information before computing the predicate.
+            // For example, a shifted value or signed mask can otherwise turn
+            // the nonzero test into a secret-dependent comparison branch.
+            #[cfg(any(
+                target_arch = "riscv32",
+                all(target_arch = "arm", not(target_has_atomic = "ptr"))
+            ))]
+            let value = black_box(value);
+            let bit = bitnz!(value, <$ty>::BITS);
+            #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
+            let bit = black_box(bit);
+            Choice::$from_lsb(bit)
+        }
+    };
+}
+
+nonzero_primitive!(u8, nz_u8, from_u8_lsb);
+nonzero_primitive!(u16, nz_u16, from_u16_lsb);
+nonzero_primitive!(u128, nz_u128, from_u128_lsb);
 
 // Keep the comparison bit opaque before narrowing it to Choice's byte representation.
 // ARM targets without pointer-width atomics cover Thumb-1 on Rust 1.87, which does not
@@ -75,13 +102,7 @@ macro_rules! comparison_primitives {
             Choice::$from_lsb(bit)
         }
 
-        #[inline(always)]
-        pub(crate) const fn $nz(value: $ty) -> Choice {
-            let bit = bitnz!(value, <$ty>::BITS);
-            #[cfg(all(target_arch = "arm", not(target_has_atomic = "ptr")))]
-            let bit = black_box(bit);
-            Choice::$from_lsb(bit)
-        }
+        nonzero_primitive!($ty, $nz, $from_lsb);
     };
 }
 
