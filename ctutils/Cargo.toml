@@ -1,6 +1,6 @@
 [package]
 name = "ctutils"
-version = "0.4.6"
+version = "0.4.7"
 authors = ["RustCrypto Developers"]
 edition = "2024"
 rust-version = "1.87"
@@ -17,7 +17,7 @@ architecture-specific predication intrinsics. Heavily inspired by the `subtle` c
 """
 
 [dependencies]
-cmov = "0.5.3"
+cmov = "0.5.4"
 
 # optional dependencies
 subtle = { version = "2.6", optional = true, default-features = false }
