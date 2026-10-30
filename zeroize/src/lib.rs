@@ -141,6 +141,24 @@
 //! # use_secret()
 //! ```
 //!
+//! ### `ZeroizingRef<'a, Z>`: borrowed zeroizing guard
+//!
+//! `ZeroizingRef<'a, Z: Zeroize + ?Sized>` temporarily wraps a mutable reference
+//! and zeroizes the referenced value when the guard is dropped:
+//!
+//! ```
+//! use zeroize::ZeroizingRef;
+//!
+//! let mut secret = [1u8, 2, 3, 4];
+//!
+//! {
+//!     let mut secret = ZeroizingRef::new(secret.as_mut_slice());
+//!     secret[0] = 42;
+//! }
+//!
+//! assert_eq!(secret, [0u8; 4]);
+//! ```
+//!
 //! ## What guarantees does this crate provide?
 //!
 //! This crate guarantees the zeroing operation can't be "optimized away" by the compiler, as
@@ -695,6 +713,95 @@ where
 impl<Z> ZeroizeOnDrop for Zeroizing<Z> where Z: Zeroize + ?Sized {}
 
 impl<Z> Drop for Zeroizing<Z>
+where
+    Z: Zeroize + ?Sized,
+{
+    fn drop(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+/// Borrowed guard which zeroizes its referenced value when dropped.
+///
+/// Unlike [`Zeroizing`], this type does not take ownership of the value it
+/// protects. This is useful for zeroizing reusable buffers after temporarily
+/// storing sensitive data in them.
+pub struct ZeroizingRef<'a, Z: Zeroize + ?Sized>(&'a mut Z);
+
+impl<'a, Z> ZeroizingRef<'a, Z>
+where
+    Z: Zeroize + ?Sized,
+{
+    /// Borrow a value inside a guard which ensures it will be zeroized when
+    /// the guard is dropped.
+    #[inline(always)]
+    pub fn new(value: &'a mut Z) -> Self {
+        Self(value)
+    }
+}
+
+impl<Z: Zeroize + ?Sized> core::fmt::Debug for ZeroizingRef<'_, Z> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("ZeroizingRef").finish_non_exhaustive()
+    }
+}
+
+impl<Z> ops::Deref for ZeroizingRef<'_, Z>
+where
+    Z: Zeroize + ?Sized,
+{
+    type Target = Z;
+
+    #[inline(always)]
+    fn deref(&self) -> &Z {
+        self.0
+    }
+}
+
+impl<Z> ops::DerefMut for ZeroizingRef<'_, Z>
+where
+    Z: Zeroize + ?Sized,
+{
+    #[inline(always)]
+    fn deref_mut(&mut self) -> &mut Z {
+        self.0
+    }
+}
+
+impl<T, Z> AsRef<T> for ZeroizingRef<'_, Z>
+where
+    T: ?Sized,
+    Z: AsRef<T> + Zeroize + ?Sized,
+{
+    #[inline(always)]
+    fn as_ref(&self) -> &T {
+        self.0.as_ref()
+    }
+}
+
+impl<T, Z> AsMut<T> for ZeroizingRef<'_, Z>
+where
+    T: ?Sized,
+    Z: AsMut<T> + Zeroize + ?Sized,
+{
+    #[inline(always)]
+    fn as_mut(&mut self) -> &mut T {
+        self.0.as_mut()
+    }
+}
+
+impl<Z> Zeroize for ZeroizingRef<'_, Z>
+where
+    Z: Zeroize + ?Sized,
+{
+    fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+
+impl<Z> ZeroizeOnDrop for ZeroizingRef<'_, Z> where Z: Zeroize + ?Sized {}
+
+impl<Z> Drop for ZeroizingRef<'_, Z>
 where
     Z: Zeroize + ?Sized,
 {

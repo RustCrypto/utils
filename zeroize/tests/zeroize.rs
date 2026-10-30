@@ -215,6 +215,18 @@ fn asref() {
     let _asref: &[u8] = buffer.as_ref();
 }
 
+#[test]
+fn zeroizing_ref() {
+    let mut buffer = [1u8, 2, 3, 4];
+
+    {
+        let mut guard = ZeroizingRef::new(buffer.as_mut_slice());
+        guard[0] = 42;
+    }
+
+    assert_eq!(buffer, [0u8; 4]);
+}
+
 #[cfg(feature = "alloc")]
 #[test]
 fn box_unsized_zeroizing() {
