@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Detect ARM64 NEON, CRC, CSSC, BF16, SVE, LSE2, MOPS and floating-point extensions.
+- Detect x86 SIMD prerequisites, AVX2/AVX-512 extensions, XSAVE variants and ERMSB/PREFETCHW memory hints.
+
+### Fixed
+- Return false for unavailable Apple capability keys.
+- Check all required ARM64 capability bits and x86 CPU and OS state.
+- Check CPUID limits before reading leaves and subleaves.
+- Require an `unsafe` context to check register state from supplied CPUID data.
+
 ## 0.3.1 (2026-08-26)
 ### Changed
 - Use compile-time target feature detection under Miri ([#1513])
