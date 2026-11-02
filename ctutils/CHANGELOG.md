@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.8 (2026-11-02)
+### Security
+- Additional Thumb-1 (Cortex-M0) and RISCV32 CT hardening for non-zero comparisons ([#1582])
+
+[#1582]: https://github.com/RustCrypto/utils/pull/1582
+
 ## 0.4.7 (2026-10-29)
 ### Security
 - Thumb-1 (Cortex-M0) and RISCV32 constant-time hardening ([#1580])
