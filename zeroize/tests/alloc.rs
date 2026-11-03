@@ -7,7 +7,10 @@ use core::{
 };
 use zeroize::Zeroize;
 
-use std::alloc::System;
+use std::{
+    alloc::System,
+    sync::{Mutex, MutexGuard, PoisonError},
+};
 
 static REG_PTR: AtomicPtr<u8> = AtomicPtr::new(ptr::null_mut());
 
@@ -15,6 +18,13 @@ static REG_PTR: AtomicPtr<u8> = AtomicPtr::new(ptr::null_mut());
 ///
 /// The allocator can't assert itself, since `GlobalAlloc` methods must not unwind.
 static NOT_ZEROIZED: AtomicBool = AtomicBool::new(false);
+
+/// `REG_PTR` is global, so tests which use it must not run concurrently.
+static REG_LOCK: Mutex<()> = Mutex::new(());
+
+fn lock() -> MutexGuard<'static, ()> {
+    REG_LOCK.lock().unwrap_or_else(PoisonError::into_inner)
+}
 
 /// Assert the registered allocation has been freed, and that it was zeroized when it was.
 fn assert_checked() {
@@ -91,6 +101,8 @@ impl<S: Default> Drop for ObserveSecretBox<S> {
 
 #[test]
 fn proxy_alloc_test() {
+    let _guard = lock();
+
     let b1 = SecretBox::new([u128::MAX; 10]);
     core::hint::black_box(&b1);
     drop(b1);
