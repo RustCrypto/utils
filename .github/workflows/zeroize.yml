@@ -164,7 +164,7 @@ jobs:
         with:
           toolchain: nightly-2026-08-23
       - run: rustup component add miri
-      - run: cargo miri test --target ${{ matrix.target }} --all-features --lib
+      - run: cargo miri test --target ${{ matrix.target }} --all-features
 
   # Tests for x86-64 `simd` support
   x86:
