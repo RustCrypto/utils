@@ -75,7 +75,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-          targets: x86_64-apple-darwin
       - run: cargo test
 
   # Windows tests
@@ -98,7 +97,7 @@ jobs:
           targets: ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }}
 
-  # Cross-compiled tests
+  # Linux ARM64 tests
   cross:
     strategy:
       matrix:
@@ -108,7 +107,7 @@ jobs:
             rust: 1.85.0 # MSRV
           - target: aarch64-unknown-linux-gnu
             rust: stable
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v7
       - uses: RustCrypto/actions/cargo-cache@master
@@ -116,8 +115,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
-      - uses: RustCrypto/actions/cross-install@master
-      - run: cross test --target ${{ matrix.target }}
+      - run: cargo test --target ${{ matrix.target }}
 
   # Build-only tests
   build-only:
