@@ -15,9 +15,6 @@ use core::{
 use std::sync::Arc;
 use zeroize::*;
 
-#[cfg(feature = "std")]
-use std::ffi::CString;
-
 #[derive(Clone, Debug, PartialEq)]
 struct ZeroizedOnDrop(u64);
 
@@ -170,29 +167,6 @@ fn zeroize_string_entire_capacity() {
     unsafe { as_vec.set_len(as_vec.capacity()) };
 
     assert!(as_vec.iter().all(|byte| *byte == 0));
-}
-
-// TODO(tarcieri): debug flaky test (with potential UB?) See: RustCrypto/utils#774
-#[cfg(feature = "std")]
-#[ignore]
-#[test]
-fn zeroize_c_string() {
-    let mut cstring = CString::new("Hello, world!").expect("CString::new failed");
-    let orig_len = cstring.as_bytes().len();
-    let orig_ptr = cstring.as_bytes().as_ptr();
-    cstring.zeroize();
-    // This doesn't quite test that the original memory has been cleared, but only that
-    // cstring now owns an empty buffer
-    assert!(cstring.as_bytes().is_empty());
-    for i in 0..orig_len {
-        unsafe {
-            // Using a simple deref, only one iteration of the loop is performed
-            // presumably because after zeroize, the internal buffer has a length of one/
-            // `read_volatile` seems to "fix" this
-            // Note that this is very likely UB
-            assert_eq!(orig_ptr.add(i).read_volatile(), 0);
-        }
-    }
 }
 
 #[cfg(feature = "alloc")]
