@@ -123,3 +123,21 @@ fn proxy_alloc_test() {
     drop(b4);
     assert_checked();
 }
+
+#[cfg(feature = "std")]
+#[test]
+fn cstring_zeroize_test() {
+    use std::ffi::CString;
+
+    let _guard = lock();
+
+    let mut cstring = CString::new("Hello, world!").expect("CString::new failed");
+    // Register the original heap buffer. `zeroize` shrinks it to fit the lone nul byte; since
+    // `ProxyAllocator` uses the default `GlobalAlloc::realloc` (alloc, copy, dealloc), that
+    // frees the original buffer, which must contain only zeroes by then.
+    REG_PTR.store(cstring.as_ptr().cast_mut().cast(), Relaxed);
+
+    cstring.zeroize();
+    assert_checked();
+    assert_eq!(cstring.as_bytes_with_nul(), &[0]);
+}
