@@ -18,6 +18,16 @@ macro_rules! __unless_target_features {
     };
 }
 
+// Whether target features can be detected at run time. Off Linux `__detect_target_features!`
+// below is a constant `false`.
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __runtime_detection_available {
+    () => {
+        cfg!(target_os = "linux")
+    };
+}
+
 // Linux runtime detection of target CPU features using `getauxval`.
 #[cfg(target_os = "linux")]
 #[macro_export]
