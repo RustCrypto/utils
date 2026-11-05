@@ -254,7 +254,7 @@ macro_rules! parse_into_structs {
             }
 
             const ITEM_FIELDS: usize = 0 $( + {
-                let $field: (); let _ = $field;
+                #[cfg(any())] { $field }
                 1
             })*;
 
