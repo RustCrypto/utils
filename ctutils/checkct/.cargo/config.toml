@@ -1,5 +1,6 @@
 [build]
 target = [
+    "aarch64-unknown-none",
     "riscv32imac-unknown-none-elf",
     "thumbv6m-none-eabi",
     "thumbv7em-none-eabihf",
