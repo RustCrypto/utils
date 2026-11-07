@@ -77,6 +77,8 @@ fn reserved_invalid_lengths() {
     }
 }
 
+/// Regression test for
+/// <https://github.com/RustCrypto/utils/security/advisories/GHSA-2943-gp7x-qg39>
 #[test]
 fn read_write_split_reserved() {
     let mut buf = [0x11u8; 32];
@@ -88,6 +90,8 @@ fn read_write_split_reserved() {
     }
 }
 
+/// Regression test for
+/// <https://github.com/RustCrypto/utils/security/advisories/GHSA-2943-gp7x-qg39>
 #[test]
 fn read_write_into_padded_blocks() {
     let mut buf2 = [0x11u8; 48];
