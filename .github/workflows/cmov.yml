@@ -49,10 +49,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: Ledger-Donjon/cargo-checkct@85271e5ce9eab9ba895c62c8b5d4129810a635a0
+      - uses: RustCrypto/cargo-checkct@main
         with:
           directory: cmov
           timeout: 120
+          checks: control-flow,memory-access,dividend,divisor
 
   minimal-versions:
     uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
