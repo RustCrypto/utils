@@ -1,9 +1,7 @@
-cargo-features = ["panic-immediate-abort"]
-
 [workspace]
 members = ["driver"]
 resolver = "2"
 
 [profile.release]
 debug = true
-panic = "immediate-abort"
+panic = "abort"
