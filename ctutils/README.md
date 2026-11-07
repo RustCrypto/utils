@@ -45,6 +45,39 @@ Many features of this crate are extractions from the [`crypto-bigint`] crate, wh
 core logic as `const fn` and needed solutions for implementing constant-time code despite the
 unique constraints it imposes.
 
+## Supported CPU architectures
+
+This crate is designed to operate in constant-time on the following CPU
+architectures:
+
+- `arm` (32-bit)
+- `aarch64`
+- `riscv32` ✅️
+- `riscv64`️
+- `thumbv6` ✅
+- `thumbv7` (with checks for `thumbv7em` ✅)
+- `x86`️
+- `x86_64` ✅
+- `wasm32`
+
+✅: indicates architectures where we use [`cargo checkct`] / [BINSEC] in CI to
+ensure that, for functions with `checkct` assertions, changes do not introduce
+variable-time operations.
+
+Please [file a security advisory] if you notice non-constant-time CPU
+instructions (e.g. branches, secret-dependent address calculations) being
+generated on any of the architectures.
+
+Other architectures are officially unsupported, however a use-at-your-own-risk
+portable fallback implementation based on bitwise arithmetic and `black_box` is
+provided without constant-time codegen guarantees. Please do not open issues
+about codegen problems on unsupported CPU architectures: they will be closed
+noting they're unsupported. If you would like such problems addressed, please
+open a pull request that addresses the issue instead.
+
+You can also open an issue to request first-class support for native
+predication instructions on other architectures we don't currently support.
+
 ## ⚠️ Security Warning
 
 The implementation contained in this crate has never been independently audited!
@@ -95,4 +128,5 @@ dual licensed as above, without any additional terms or conditions.
 [`cmov`]: https://docs.rs/cmov
 [`subtle`]: https://docs.rs/subtle
 [`crypto-bigint`]: https://docs.rs/crypto-bigint
+[file a security advisory]: https://github.com/RustCrypto/utils/security/advisories/new
 [RUSTSEC-2026-0385]: https://rustsec.org/advisories/RUSTSEC-2026-0385.html
