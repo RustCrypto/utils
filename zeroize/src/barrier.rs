@@ -7,8 +7,7 @@
 /// i.e. `aarch64`, `arm`, `arm64ec`, `loongarch64`, `riscv32`, `riscv64`, `s390x`, `x86`, and
 /// `x86_64`.
 ///
-/// On all other targets it's implemented using [`core::hint::black_box`] and custom `black_box`
-/// implemented using `#[inline(never)]` and `read_volatile`.
+/// On all other targets it's implemented using [`core::hint::black_box`].
 ///
 /// # Examples
 /// ```
@@ -86,19 +85,5 @@ pub fn optimization_barrier<T: ?Sized>(val: &T) {
             target_arch = "x86_64",
         )
     )))]
-    {
-        /// Custom version of `core::hint::black_box` implemented using
-        /// `#[inline(never)]` and `read_volatile`.
-        #[inline(never)]
-        fn custom_black_box(p: *const u8) {
-            use core::mem::MaybeUninit;
-
-            let _: MaybeUninit<u8> = unsafe { core::ptr::read_volatile(p.cast()) };
-        }
-
-        core::hint::black_box(val);
-        if size_of_val(val) > 0 {
-            custom_black_box(core::ptr::from_ref(val).cast::<u8>());
-        }
-    }
+    core::hint::black_box(val);
 }
