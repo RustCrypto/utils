@@ -253,8 +253,11 @@ macro_rules! parse_into_structs {
                 }
             }
 
+            // TODO: use `${count(field)}` on stabilization of `macro_metavar_expr`:
+            // https://github.com/rust-lang/rust/issues/83527
             const ITEM_FIELDS: usize = 0 $( + {
-                let $field: (); let _ = $field;
+                let $field = ();
+                let _ = $field;
                 1
             })*;
 
