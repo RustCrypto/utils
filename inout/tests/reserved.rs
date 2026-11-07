@@ -76,3 +76,29 @@ fn reserved_invalid_lengths() {
         }
     }
 }
+
+/// Regression test for
+/// <https://github.com/RustCrypto/utils/security/advisories/GHSA-2943-gp7x-qg39>
+#[test]
+fn read_write_split_reserved() {
+    let mut buf = [0x11u8; 32];
+    let mut r = InOutBufReserved::from_mut_slice(&mut buf, 16).unwrap();
+    let (mut body, _tag) = r.split_reserved();
+    for i in 0..body.len() {
+        let x = body.get_in()[i];
+        body.get_out()[i] = x ^ 0x5A;
+    }
+}
+
+/// Regression test for
+/// <https://github.com/RustCrypto/utils/security/advisories/GHSA-2943-gp7x-qg39>
+#[test]
+fn read_write_into_padded_blocks() {
+    let mut buf2 = [0x11u8; 48];
+    let r2 = InOutBufReserved::from_mut_slice(&mut buf2, 32).unwrap();
+    let mut p = r2.into_padded_blocks::<Pkcs7, U16>().unwrap();
+    let mut blocks = p.get_blocks();
+    let mut b0 = blocks.get(0);
+    b0.get_out()[0] = 0xAA;
+    let _ = b0.get_in()[0];
+}

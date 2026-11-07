@@ -104,16 +104,13 @@ impl<T> InOutBufReserved<'_, '_, T> {
     /// Split buffer into `InOutBuf` with input length and mutable slice pointing to
     /// the remaining reserved suffix.
     pub fn split_reserved(&mut self) -> (InOutBuf<'_, '_, T>, &mut [T]) {
-        let in_len = self.get_in_len();
-        let out_len = self.get_out_len();
-        let in_ptr = self.get_in().as_ptr();
-        let out_ptr = self.get_out().as_mut_ptr();
         // This never underflows because the type ensures that `out_len` is
         // bigger or equal to `in_len`.
-        let tail_len = out_len - in_len;
+        let tail_len = self.out_len - self.in_len;
         unsafe {
-            let body = InOutBuf::from_raw(in_ptr, out_ptr, in_len);
-            let tail = slice::from_raw_parts_mut(out_ptr.add(in_len), tail_len);
+            let body = InOutBuf::from_raw(self.in_ptr, self.out_ptr, self.in_len);
+            let tail_ptr = self.out_ptr.add(self.in_len);
+            let tail = slice::from_raw_parts_mut(tail_ptr, tail_len);
             (body, tail)
         }
     }
@@ -205,7 +202,7 @@ impl<'inp, 'out> InOutBufReserved<'inp, 'out, u8> {
         }
 
         Ok(PaddedInOutBuf {
-            in_ptr: blocks.as_ptr(),
+            in_ptr: self.in_ptr.cast(),
             out_ptr: self.out_ptr.cast(),
             blocks_len: blocks.len(),
             tail_block,
