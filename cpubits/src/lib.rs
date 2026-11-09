@@ -155,7 +155,7 @@ macro_rules! cpubits {
     // ignored on 32-bit and 64-bit platforms.
     ( 16 => { $( $tokens:tt )* } ) => {
         $crate::cpubits! {
-            16 => { $( $tokens )* },
+            16 => { $( $tokens )* }
             32 | 64 => { }
         }
     };
