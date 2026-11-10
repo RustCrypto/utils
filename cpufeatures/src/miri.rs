@@ -1,6 +1,6 @@
 //! Miri uses CPU features enabled at compile time.
 
-#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[cfg(target_arch = "loongarch64")]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __unless_target_features {

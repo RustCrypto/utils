@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Detect ARM64 NEON, CRC, CSSC, BF16, SVE, LSE2, MOPS and floating-point extensions.
 - Detect ARM64 dot product, FP16, and LSE.
+- Detect ARM64 SME, FP8, FPMR, pointer authentication, and memory extensions.
 - Detect x86 AVX2 and AVX-512 extensions, XSAVE variants, ERMSB, and PREFETCHW.
 - Detect x86 RTM and check the forced-abort flag.
 - Detect x86 AVX10, APX, Key Locker, direct stores, and AMD extensions.

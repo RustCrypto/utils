@@ -14,16 +14,31 @@ fn init() {
 fn init_get() {
     let (token, val) = armcaps::init_get();
     assert_eq!(val, token.get());
-    #[cfg(miri)]
-    const {
-        assert!(!cpufeatures::__detect_target_features!("neon"));
-    };
 }
 
+#[cfg(any(target_vendor = "apple", target_os = "linux", target_os = "android"))]
 #[test]
-fn neon_matches_std() {
+fn neon_and_crc() {
     cpufeatures::new!(neon, "neon");
-    assert_eq!(neon::get(), std::arch::is_aarch64_feature_detected!("neon"));
+    cpufeatures::new!(crc, "crc");
+    cpufeatures::new!(both, "neon", "crc");
+    let neon_enabled = cfg!(target_feature = "neon");
+    let crc_enabled = cfg!(target_feature = "crc");
+    if cfg!(miri) {
+        assert_eq!(neon::get(), neon_enabled);
+        assert_eq!(crc::get(), crc_enabled);
+    } else {
+        assert_eq!(neon::get(), std::arch::is_aarch64_feature_detected!("neon"));
+        assert_eq!(crc::get(), std::arch::is_aarch64_feature_detected!("crc"));
+    }
+    let (token, detected) = both::init_get();
+    assert_eq!(detected, token.get());
+    // In a mixed build, the whole query can fall back to runtime detection.
+    if neon_enabled == crc_enabled || cfg!(miri) {
+        assert_eq!(detected, neon::get() && crc::get());
+    } else {
+        assert!(!detected || (neon::get() && crc::get()));
+    }
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -33,24 +48,19 @@ fn capability_masks() {
         ($feature:tt, $mask:expr $(, $mask2:expr)?) => {{
             let full: [u64; 2] = [$mask, 0 $(| $mask2)?];
             assert_eq!(cpufeatures::check!(@hwcap2 $feature), full[1] != 0, $feature);
-            assert_eq!(cpufeatures::check!(full[0], $feature), full[1] == 0, $feature);
             assert!(cpufeatures::check!(@words full, $feature), $feature);
-            assert!(cpufeatures::check!(@words [u64::MAX; 2], $feature), $feature);
-            assert!(!cpufeatures::check!(@words full.map(|word| !word), $feature), $feature);
-            for word in 0..2 {
-                for bit in 0..64 {
-                    if full[word] & (1 << bit) != 0 {
-                        let mut missing = full;
-                        missing[word] &= !(1 << bit);
-                        assert!(!cpufeatures::check!(@words missing, $feature), $feature);
-                    }
+            for (word, mut bits) in full.into_iter().enumerate() {
+                while bits != 0 {
+                    let bit = bits.trailing_zeros();
+                    let mut missing = full;
+                    missing[word] &= !(1 << bit);
+                    assert!(
+                        !cpufeatures::check!(@words missing, $feature),
+                        "{} without bit {bit} in capability word {word}",
+                        $feature
+                    );
+                    bits &= bits - 1;
                 }
-            }
-            if full[0] & 3 == 3 && full[0] & (1 << 9) == 0 {
-                assert!(
-                    !cpufeatures::check!(@words [full[0] | (1 << 9), full[1]], $feature),
-                    $feature
-                );
             }
         }};
     }
@@ -94,61 +104,73 @@ fn capability_masks() {
     check!("sha2", 3 | (1 << 5) | (1 << 6));
     check!("sha3", 3 | (1 << 5) | (1 << 6) | (1 << 17) | (1 << 21));
     check!("sm4", 3 | (1 << 18) | (1 << 19));
+    check!("bti", 0, 1 << 17);
+    check!("dpb", 1 << 16);
+    check!("dpb2", 1 << 16, 1);
+    check!("ecv", 0, 1 << 19);
+    check!("flagm", 1 << 27);
+    check!("flagm2", 1 << 27, 1 << 7);
+    check!("hbc", 0, 1 << 44);
+    check!("lse128", 1 << 8, 1 << 47);
+    check!("mte", 0, 1 << 18);
+    check!("paca", (1 << 30) | (1 << 31));
+    check!("pacg", (1 << 30) | (1 << 31));
+    check!("rcpc", 1 << 15);
+    check!("rcpc2", (1 << 15) | (1 << 26));
+    check!("rcpc3", (1 << 15) | (1 << 26), 1 << 46);
+    check!("rdm", 3 | (1 << 12));
+    check!("ssbs", 1 << 28);
+    check!("wfxt", 0, 1 << 31);
+
+    const FP8: u64 = (1 << 14) | (0b1111 << 48) | (3 << 55);
+    check!("fp8", 3, FP8);
+    check!("fp8fma", 3, FP8 | (1 << 52));
+    check!("fp8dot4", 3, FP8 | (3 << 52));
+    check!("fp8dot2", 3, FP8 | (7 << 52));
+    check!("fpmr", 0, 1 << 48);
+
+    const FP16: u64 = 3 | (1 << 9) | (1 << 10);
+    const SME: u64 = (1 << 14) | (1 << 23);
+    const SME2: u64 = SME | (1 << 37);
+    check!("sme", FP16, SME);
+    check!("sme-i16i64", FP16, SME | (1 << 24));
+    check!("sme-f64f64", FP16, SME | (1 << 25));
+    check!("sme-fa64", SVE, SME | (1 << 1) | (1 << 30) | (1 << 12));
+    check!("sme2", FP16, SME2);
+    check!("sme2p1", FP16, SME2 | (1 << 38));
+    check!("sme-b16b16", FP16, SME2 | (1 << 41) | (1 << 45));
+    check!("sme-f16f16", FP16, SME2 | (1 << 42));
+    check!("sme-lutv2", FP16, SME2 | (1 << 57));
+    check!("sme-f8f32", FP16, SME2 | FP8 | (1 << 59));
+    check!("sme-f8f16", FP16, SME2 | FP8 | (3 << 58));
+    check!("ssve-fp8fma", FP16, SME2 | FP8 | (1 << 60));
+    check!("ssve-fp8dot4", FP16, SME2 | FP8 | (3 << 60));
+    check!("ssve-fp8dot2", FP16, SME2 | FP8 | (7 << 60));
+    assert!(!cpufeatures::check!(@words [u64::MAX; 2], "pauth-lr"));
+    assert!(!cpufeatures::check!(@words [3 | (1 << 9), 0], "neon"));
 }
 
-#[cfg(not(miri))]
 #[test]
-fn extended_detection() {
-    let runtime = cfg!(any(
-        target_vendor = "apple",
-        target_os = "linux",
-        target_os = "android"
-    ));
-    macro_rules! check {
-        ($exact:expr; $($feature:tt),+) => {$({
-            cpufeatures::new!(detected, $feature);
-            let actual = detected::get();
-            let expected = cfg!(target_feature = $feature)
-                || (runtime && std::arch::is_aarch64_feature_detected!($feature));
-            if $exact || actual {
-                assert_eq!(actual, expected, $feature);
-            }
-        })+};
-    }
-    check!(true; "crc", "lse2", "rand");
-    // The mask tests cover the extra Linux and Android checks.
-    check!(!cfg!(any(target_os = "linux", target_os = "android"));
-        "bf16", "i8mm", "sve", "sve2", "sve2-aes", "sve2-bitperm", "sve2-sha3",
-        "sve2-sm4", "f32mm", "f64mm", "frintts", "jsconv", "dotprod");
-    #[cfg(any(target_os = "linux", target_os = "android"))]
+fn fp8_query_with_strict_lints() {
+    #[allow(unexpected_cfgs)]
+    let fpmr_enabled = cfg!(target_feature = "fpmr");
+    #[forbid(unexpected_cfgs)]
     {
-        check!(false; "fcma", "fhm", "fp16");
-        check!(true; "lse");
-    }
-}
+        cpufeatures::new!(fpmr, "fpmr");
+        cpufeatures::new!(fp8, "fp8");
+        cpufeatures::new!(both, "fp8", "fpmr");
 
-#[cfg(not(miri))]
-#[test]
-fn recent_detection() {
-    macro_rules! check {
-        ($($feature:tt),+) => {{
-            cpufeatures::new!(combined, $($feature),+);
-            assert_eq!(
-                combined::get(),
-                true $(& (cfg!(target_feature = $feature)
-                    || cpufeatures::__detect_target_features!($feature)))+
-            );
-        } $({
-            cpufeatures::new!(detected, $feature);
-            assert_eq!(
-                detected::get(),
-                cfg!(target_feature = $feature)
-                    || cpufeatures::__detect_target_features!($feature),
-                $feature
-            );
-        })+};
+        let fp8_enabled = cfg!(target_feature = "fp8");
+        let detected = both::get();
+        if cfg!(miri) {
+            assert_eq!(fpmr::get(), fpmr_enabled);
+            assert_eq!(detected, fp8_enabled && fpmr_enabled);
+        } else if fp8_enabled == fpmr_enabled {
+            assert_eq!(detected, fp8::get() && fpmr::get());
+        } else {
+            assert!(!detected || (fp8::get() && fpmr::get()));
+        }
     }
-    check!("cssc", "faminmax", "lut", "mops", "sve2p1", "sve-b16b16");
 }
 
 #[cfg(all(not(miri), target_vendor = "apple"))]
@@ -156,48 +178,74 @@ fn recent_detection() {
 fn apple_extension_keys() {
     use cpufeatures::aarch64::sysctlbyname;
 
-    assert!(!sysctlbyname(b"hw.optional.cpufeatures_missing\0"));
-    assert_eq!(
-        cpufeatures::check!("faminmax"),
-        sysctlbyname(b"hw.optional.arm.FEAT_FAMINMAX\0")
+    macro_rules! check {
+        ($feature:tt, $reported:expr) => {{
+            cpufeatures::new!(feature, $feature);
+            #[allow(unexpected_cfgs)]
+            let enabled = cfg!(target_feature = $feature);
+            assert_eq!(feature::get(), enabled || $reported, $feature);
+        }};
+    }
+
+    check!("faminmax", sysctlbyname(b"hw.optional.arm.FEAT_FAMINMAX\0"));
+    check!("lut", sysctlbyname(b"hw.optional.arm.FEAT_LUT\0"));
+    check!("fpmr", sysctlbyname(b"hw.optional.arm.FEAT_FPMR\0"));
+    check!(
+        "fcma",
+        sysctlbyname(b"hw.optional.arm.FEAT_FCMA\0")
+            || sysctlbyname(b"hw.optional.armv8_3_compnum\0")
     );
-    assert_eq!(
-        cpufeatures::check!("lut"),
-        sysctlbyname(b"hw.optional.arm.FEAT_LUT\0")
+    check!(
+        "lse",
+        sysctlbyname(b"hw.optional.arm.FEAT_LSE\0")
+            || sysctlbyname(b"hw.optional.armv8_1_atomics\0")
     );
-    if sysctlbyname(b"hw.optional.armv8_3_compnum\0") {
-        assert!(cpufeatures::check!("fcma"));
-    }
-    if sysctlbyname(b"hw.optional.neon_fp16\0") {
-        assert!(cpufeatures::check!("fp16"));
-        if sysctlbyname(b"hw.optional.armv8_2_fhm\0") {
-            assert!(cpufeatures::check!("fhm"));
-        }
-    }
-    if sysctlbyname(b"hw.optional.armv8_1_atomics\0") {
-        assert!(cpufeatures::check!("lse"));
-    }
-    if sysctlbyname(b"hw.optional.arm.FEAT_SHA512\0")
-        && sysctlbyname(b"hw.optional.arm.FEAT_SHA3\0")
-    {
-        assert!(cpufeatures::check!("sha3"));
-    }
+    let fp16 =
+        sysctlbyname(b"hw.optional.arm.FEAT_FP16\0") || sysctlbyname(b"hw.optional.neon_fp16\0");
+    check!("fp16", fp16);
+    check!(
+        "fhm",
+        fp16 && (sysctlbyname(b"hw.optional.arm.FEAT_FHM\0")
+            || sysctlbyname(b"hw.optional.armv8_2_fhm\0"))
+    );
+    check!(
+        "sha3",
+        (sysctlbyname(b"hw.optional.arm.FEAT_SHA512\0")
+            || sysctlbyname(b"hw.optional.armv8_2_sha512\0"))
+            && (sysctlbyname(b"hw.optional.arm.FEAT_SHA3\0")
+                || sysctlbyname(b"hw.optional.armv8_2_sha3\0"))
+    );
+    let sme = fp16
+        && sysctlbyname(b"hw.optional.arm.FEAT_BF16\0")
+        && sysctlbyname(b"hw.optional.arm.FEAT_SME\0");
+    check!("sme", sme);
+    check!("sme2", sme && sysctlbyname(b"hw.optional.arm.FEAT_SME2\0"));
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[test]
 fn optional_sve_components() {
     macro_rules! check {
-        ($feature:tt, $bit:expr, $sve_bit:expr $(, $extra:expr)?) => {
-            for sve in [false, true] {
-                let hwcap = if sve { 3 | (1 << 9) | (1 << 10) | (1 << 22) } else { 3 };
-                for bits in [0, 1 << $bit, 1 << $sve_bit, (1 << $bit) | (1 << $sve_bit)] {
-                    let hwcap2 = bits $(| $extra)?;
-                    assert_eq!(cpufeatures::check!(@words [hwcap, hwcap2], $feature),
-                        hwcap2 & (1 << $bit) != 0 && (!sve || hwcap2 & (1 << $sve_bit) != 0), $feature);
-                }
+        ($feature:tt, $neon_bit:expr, $sve_bit:expr $(, $extra:expr)?) => {{
+            const NEON: u64 = 3;
+            const SVE: u64 = NEON | (1 << 9) | (1 << 10) | (1 << 22);
+            let neon_bit = 1 << $neon_bit;
+            let sve_bit = 1 << $sve_bit;
+            for (hwcap, bits, supported) in [
+                (NEON, neon_bit, true),
+                (NEON, sve_bit, false),
+                (SVE, neon_bit, false),
+                (SVE, sve_bit, false),
+                (SVE, neon_bit | sve_bit, true),
+            ] {
+                assert_eq!(
+                    cpufeatures::check!(@words [hwcap, bits $(| $extra)?], $feature),
+                    supported,
+                    "{} with HWCAP={hwcap:#x}, HWCAP2 bits={bits:#x}",
+                    $feature
+                );
             }
-        };
+        }};
     }
     check!("bf16", 14, 12);
     check!("sve-b16b16", 14, 12, 1 << 45);

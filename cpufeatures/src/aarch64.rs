@@ -4,21 +4,31 @@
 //! unprivileged userspace code, so this implementation relies on OS-specific
 //! APIs for feature detection.
 
-// Evaluate the given `$body` expression any of the supplied target features
-// are not enabled. Otherwise returns true.
-#[cfg(not(miri))]
+include!(concat!(env!("OUT_DIR"), "/feature_cfg.rs"));
+
+// Use features enabled at compile time or detect them at runtime.
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __unless_target_features {
-    ($($tf:tt),+ => $body:expr ) => {
-        {
-            #[cfg(not(all($(target_feature=$tf,)*)))]
-            $body
-
-            #[cfg(all($(target_feature=$tf,)*))]
-            true
-        }
+    ($($tf:tt),+ => $body:expr) => {
+        $crate::__feature_cfg!([$($tf),+] [$($tf,)+] => $body)
     };
+    (@check [$($tf:tt),+] => $body:expr) => {{
+        #[cfg(not(all($(target_feature=$tf,)*)))]
+        {
+            $crate::__unless_target_features!(@runtime $body)
+        }
+
+        #[cfg(all($(target_feature=$tf,)*))]
+        true
+    }};
+    (@runtime $body:expr) => {{
+        #[cfg(not(miri))]
+        $body
+
+        #[cfg(miri)]
+        false
+    }};
 }
 
 // Linux runtime detection of target CPU features using `getauxval`.
@@ -35,7 +45,7 @@ macro_rules! __detect_target_features {
         let detected = $($crate::check!(@words hwcaps, $tf) & )+ true;
         #[cfg(target_os = "android")]
         let detected = detected
-            && (!(false $(|| matches!($tf, "lse" | "fp16" | "fhm" | "dotprod"))+)
+            && ((true $(&& matches!($tf, "neon" | "crc" | "aes" | "sha2"))+)
                 || !$crate::aarch64::is_exynos9810());
         detected
     }};
@@ -88,6 +98,16 @@ macro_rules! __expand_check_macro {
         #[macro_export]
         #[doc(hidden)]
         macro_rules! check {
+            // Linux has no capability bit for FEAT_PAuth_LR.
+            (@hwcap2 "pauth-lr") => { false };
+            (@words $hwcaps:expr, "pauth-lr") => {{
+                let _ = $hwcaps;
+                false
+            }};
+            ($hwcaps:expr, "pauth-lr") => {{
+                let _ = $hwcaps;
+                false
+            }};
             $(
                 (@hwcap2 $name) => { false $(|| $crate::aarch64::hwcaps::$hwcap2 != 0)? };
                 ($hwcaps:expr, $name) => { $crate::check!(@words [$hwcaps, 0], $name) };
@@ -95,16 +115,15 @@ macro_rules! __expand_check_macro {
                     use $crate::aarch64::hwcaps as caps;
                     let [hwcap, hwcap2] = $hwcaps;
                     let mask = caps::$hwcap;
+                    let mask2 = 0 $(| caps::$hwcap2)?;
                     hwcap & mask == mask
-                        $( && hwcap2 & caps::$hwcap2 == caps::$hwcap2)?
+                        && hwcap2 & mask2 == mask2
                         // When scalar FP16 is present, Rust also requires vector FP16.
                         && (mask & 3 != 3 || hwcap & (1 << 9) == 0 || hwcap & (1 << 10) != 0)
-                        // When SVE is present, also check its BF16 and I8MM flags.
-                        && match $name {
-                            "bf16" | "sve-b16b16" if hwcap & caps::SVE == caps::SVE => hwcap2 & caps::SVE_BF16 != 0,
-                            "i8mm" if hwcap & caps::SVE == caps::SVE => hwcap2 & caps::SVE_I8MM != 0,
-                            _ => true,
-                        }
+                        // If SVE is available, require its BF16 or I8MM flag too.
+                        && (hwcap & caps::SVE != caps::SVE
+                            || ((mask2 & caps::BF16 == 0 || hwcap2 & caps::SVE_BF16 != 0)
+                                && (mask2 & caps::I8MM == 0 || hwcap2 & caps::SVE_I8MM != 0)))
                 }};
             )*
         }
@@ -117,6 +136,22 @@ __expand_check_macro! {
     ("neon",   NEON),
     ("crc",    CRC),
     ("cssc",   NONE, CSSC),
+    ("bti",    NONE, BTI),
+    ("dpb",    DPB),
+    ("dpb2",   DPB, DPB2),
+    ("ecv",    NONE, ECV),
+    ("flagm",  FLAGM),
+    ("flagm2", FLAGM, FLAGM2),
+    ("hbc",    NONE, HBC),
+    ("mte",    NONE, MTE),
+    ("paca",   PAUTH),
+    ("pacg",   PAUTH),
+    ("rcpc",   RCPC),
+    ("rcpc2",  RCPC2),
+    ("rcpc3",  RCPC2, RCPC3),
+    ("rdm",    RDM),
+    ("ssbs",   SSBS),
+    ("wfxt",   NONE, WFXT),
     ("dotprod", DOTPROD),
     ("bf16",   NEON, BF16),
     ("i8mm",   NEON, I8MM),
@@ -125,6 +160,7 @@ __expand_check_macro! {
     ("fhm",    FHM),
     ("jsconv", JSCVT),
     ("lse",    LSE),
+    ("lse128", LSE, LSE128),
     ("lse2",   LSE2),
     ("mops",   NONE, MOPS),
     ("sve-b16b16", NEON, SVE_B16B16),
@@ -141,6 +177,25 @@ __expand_check_macro! {
     ("sve2-sm4", SVE_SM4, SVE2_SM4),
     ("f32mm",  SVE, F32MM),
     ("f64mm",  SVE, F64MM),
+    ("fp8",    NEON, FP8),
+    ("fp8fma", NEON, FP8FMA),
+    ("fp8dot4", NEON, FP8DOT4),
+    ("fp8dot2", NEON, FP8DOT2),
+    ("fpmr",   NONE, FPMR),
+    ("sme",    FP16, SME),
+    ("sme-i16i64", FP16, SME_I16I64),
+    ("sme-f64f64", FP16, SME_F64F64),
+    ("sme-fa64", SVE, SME_FA64),
+    ("sme2",   FP16, SME2),
+    ("sme2p1", FP16, SME2P1),
+    ("sme-b16b16", FP16, SME_B16B16),
+    ("sme-f16f16", FP16, SME_F16F16),
+    ("sme-lutv2", FP16, SME_LUTV2),
+    ("sme-f8f32", FP16, SME_F8F32),
+    ("sme-f8f16", FP16, SME_F8F16),
+    ("ssve-fp8fma", FP16, SSVE_FP8FMA),
+    ("ssve-fp8dot4", FP16, SSVE_FP8DOT4),
+    ("ssve-fp8dot2", FP16, SSVE_FP8DOT2),
     ("aes",    AES),    // Enable AES support.
     ("dit",    DIT),    // Enable Data-Independent Timing support.
     ("sha2",   SHA2),   // Enable SHA1 and SHA256 support.
@@ -171,6 +226,13 @@ pub mod hwcaps {
     pub const CRC: c_ulong = libc::HWCAP_CRC32;
     pub const DOTPROD: c_ulong = NEON | libc::HWCAP_ASIMDDP;
     pub const LSE: c_ulong = libc::HWCAP_ATOMICS;
+    pub const DPB: c_ulong = 1 << 16;
+    pub const FLAGM: c_ulong = 1 << 27;
+    pub const PAUTH: c_ulong = (1 << 30) | (1 << 31);
+    pub const RCPC: c_ulong = 1 << 15;
+    pub const RCPC2: c_ulong = RCPC | (1 << 26);
+    pub const RDM: c_ulong = NEON | (1 << 12);
+    pub const SSBS: c_ulong = 1 << 28;
     pub const LSE2: c_ulong = 1 << 25;
     pub const FP16: c_ulong = NEON | libc::HWCAP_FPHP | libc::HWCAP_ASIMDHP;
     pub const SVE: c_ulong = FP16 | libc::HWCAP_SVE;
@@ -201,6 +263,35 @@ pub mod hwcaps {
     pub const LUT: c_ulong = 1 << 49;
     pub const RAND: c_ulong = 1 << 16;
     pub const SVE2P1: c_ulong = SVE2 | (1 << 36);
+    pub const BTI: c_ulong = 1 << 17;
+    pub const DPB2: c_ulong = 1;
+    pub const ECV: c_ulong = 1 << 19;
+    pub const FLAGM2: c_ulong = 1 << 7;
+    pub const HBC: c_ulong = 1 << 44;
+    pub const LSE128: c_ulong = 1 << 47;
+    pub const FPMR: c_ulong = 1 << 48;
+    pub const MTE: c_ulong = 1 << 18;
+    pub const RCPC3: c_ulong = 1 << 46;
+    pub const WFXT: c_ulong = 1 << 31;
+    // FEAT_FP8 requires conversions and both FP8 formats.
+    pub const FP8: c_ulong = BF16 | FPMR | LUT | FAMINMAX | (1 << 51) | (1 << 55) | (1 << 56);
+    pub const FP8FMA: c_ulong = FP8 | (1 << 52);
+    pub const FP8DOT4: c_ulong = FP8FMA | (1 << 53);
+    pub const FP8DOT2: c_ulong = FP8DOT4 | (1 << 54);
+    pub const SME: c_ulong = BF16 | (1 << 23);
+    pub const SME_I16I64: c_ulong = SME | (1 << 24);
+    pub const SME_F64F64: c_ulong = SME | (1 << 25);
+    pub const SME_FA64: c_ulong = SME | SVE2 | (1 << 30);
+    pub const SME2: c_ulong = SME | (1 << 37);
+    pub const SME2P1: c_ulong = SME2 | (1 << 38);
+    pub const SME_B16B16: c_ulong = SME2 | SVE_B16B16 | (1 << 41);
+    pub const SME_F16F16: c_ulong = SME2 | (1 << 42);
+    pub const SME_LUTV2: c_ulong = SME2 | (1 << 57);
+    pub const SME_F8F32: c_ulong = SME2 | FP8 | (1 << 59);
+    pub const SME_F8F16: c_ulong = SME_F8F32 | (1 << 58);
+    pub const SSVE_FP8FMA: c_ulong = SME2 | FP8 | (1 << 60);
+    pub const SSVE_FP8DOT4: c_ulong = SSVE_FP8FMA | (1 << 61);
+    pub const SSVE_FP8DOT2: c_ulong = SSVE_FP8DOT4 | (1 << 62);
 }
 
 // Apple ARM64 provides NEON, AES, SHA-1, and SHA-256.
@@ -212,6 +303,113 @@ pub mod hwcaps {
 #[macro_export]
 #[doc(hidden)]
 macro_rules! check {
+    (@feat $name:literal) => {
+        $crate::aarch64::sysctlbyname(concat!("hw.optional.arm.FEAT_", $name, "\0").as_bytes())
+    };
+    ("bti") => {
+        $crate::check!(@feat "BTI")
+    };
+    ("dpb") => {
+        $crate::check!(@feat "DPB")
+    };
+    ("dpb2") => {
+        $crate::check!("dpb") && $crate::check!(@feat "DPB2")
+    };
+    ("ecv") => {
+        $crate::check!(@feat "ECV")
+    };
+    ("flagm") => {
+        $crate::check!(@feat "FlagM")
+    };
+    ("flagm2") => {
+        $crate::check!("flagm") && $crate::check!(@feat "FlagM2")
+    };
+    ("hbc") => {
+        $crate::check!(@feat "HBC")
+    };
+    ("mte") => {
+        $crate::check!(@feat "MTE") && $crate::check!(@feat "MTE2")
+    };
+    ("paca") => {
+        $crate::check!(@feat "PAuth")
+    };
+    ("pacg") => {
+        $crate::check!("paca")
+    };
+    ("pauth-lr") => {
+        $crate::check!("paca") && $crate::check!(@feat "PAuth_LR")
+    };
+    ("rcpc") => {
+        $crate::check!(@feat "LRCPC")
+    };
+    ("rcpc2") => {
+        $crate::check!("rcpc") && $crate::check!(@feat "LRCPC2")
+    };
+    ("rcpc3") => { false };
+    ("rdm") => {
+        $crate::check!(@feat "RDM")
+    };
+    ("ssbs") => {
+        $crate::check!(@feat "SSBS")
+    };
+    ("wfxt") => {
+        $crate::check!(@feat "WFxT")
+    };
+    ("lse128") => { false };
+    ("fp8") => {
+        $crate::check!("bf16")
+            && $crate::check!("lut")
+            && $crate::check!("faminmax")
+            && $crate::check!("fpmr")
+            && $crate::check!(@feat "FP8")
+    };
+    ("fp8fma") => { false };
+    ("fp8dot4") => { false };
+    ("fp8dot2") => { false };
+    ("fpmr") => {
+        $crate::check!(@feat "FPMR")
+    };
+    ("sme") => {
+        $crate::check!("bf16")
+            && $crate::check!("fp16")
+            && $crate::check!(@feat "SME")
+    };
+    ("sme-i16i64") => {
+        $crate::check!("sme") && $crate::check!(@feat "SME_I16I64")
+    };
+    ("sme-f64f64") => {
+        $crate::check!("sme") && $crate::check!(@feat "SME_F64F64")
+    };
+    ("sme-fa64") => { false };
+    ("sme2") => {
+        $crate::check!("sme") && $crate::check!(@feat "SME2")
+    };
+    ("sme2p1") => {
+        $crate::check!("sme2") && $crate::check!(@feat "SME2p1")
+    };
+    ("sme-b16b16") => {
+        $crate::check!("sme2")
+            && $crate::check!("sve-b16b16")
+            && $crate::check!(@feat "SME_B16B16")
+    };
+    ("sme-f16f16") => {
+        $crate::check!("sme2") && $crate::check!(@feat "SME_F16F16")
+    };
+    ("sme-lutv2") => {
+        $crate::check!("sme2") && $crate::check!(@feat "SME_LUTv2")
+    };
+    ("sme-f8f32") => {
+        $crate::check!("sme2")
+            && $crate::check!("fp8")
+            && $crate::check!(@feat "SME_F8F32")
+    };
+    ("sme-f8f16") => {
+        $crate::check!("sme-f8f32") && $crate::check!(@feat "SME_F8F16")
+    };
+    ("ssve-fp8fma") => { false };
+    ("ssve-fp8dot4") => { false };
+    ("ssve-fp8dot2") => { false };
+
     ("neon") => {
         true
     };
@@ -350,6 +548,32 @@ fn sysctlbyname_with(
 #[cfg(all(test, target_vendor = "apple"))]
 mod tests {
     extern crate std;
+
+    #[cfg(all(target_os = "macos", not(miri)))]
+    #[test]
+    fn sysctl_reads_existing_and_missing_keys() {
+        assert!(!super::sysctlbyname(b"hw.optional.cpufeatures_missing\0"));
+
+        // Query a CPU count so the test needs no optional CPU features.
+        let name = c"hw.ncpu";
+        let mut count = 0u32;
+        let mut size = size_of::<u32>();
+        // SAFETY: The name is NUL terminated, and count and size describe a
+        // writable buffer. Null newp and zero newlen make this read-only.
+        let rc = unsafe {
+            libc::sysctlbyname(
+                name.as_ptr(),
+                core::ptr::from_mut(&mut count).cast(),
+                &raw mut size,
+                core::ptr::null_mut(),
+                0,
+            )
+        };
+        assert_eq!(
+            super::sysctlbyname(name.to_bytes_with_nul()),
+            rc == 0 && size == size_of::<u32>() && count > 0
+        );
+    }
 
     #[test]
     fn sysctl_results() {

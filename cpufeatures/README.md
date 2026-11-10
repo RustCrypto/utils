@@ -64,34 +64,72 @@ Compile-time support depends on the Rust version and target.
 ### `aarch64`
 
 Runtime detection supports Linux, Android, and Apple platforms.
+The operating system reports which features are available.
+If rustc has no compile-time flag for `fpmr`, the crate checks it at runtime.
 
 Target features:
 
 - `aes`
 - `bf16`
+- `bti`
 - `crc`
 - `cssc`
 - `dit`
 - `dotprod`
+- `dpb`
+- `dpb2`
+- `ecv`
 - `f32mm`
 - `f64mm`
 - `faminmax`
 - `fcma`
 - `fhm`
+- `flagm`
+- `flagm2`
 - `fp16`
+- `fp8`
+- `fp8dot2`
+- `fp8dot4`
+- `fp8fma`
+- `fpmr`
 - `frintts`
+- `hbc`
 - `i8mm`
 - `jsconv`
 - `lse`
+- `lse128`
 - `lse2`
 - `lut`
 - `mops`
+- `mte`
 - `neon`
+- `paca`
+- `pacg`
+- `pauth-lr`
 - `rand`
+- `rcpc`
+- `rcpc2`
+- `rcpc3`
+- `rdm`
 - `sb`
 - `sha2`
 - `sha3`
 - `sm4`
+- `sme`
+- `sme-b16b16`
+- `sme-f16f16`
+- `sme-f64f64`
+- `sme-f8f16`
+- `sme-f8f32`
+- `sme-fa64`
+- `sme-i16i64`
+- `sme-lutv2`
+- `sme2`
+- `sme2p1`
+- `ssbs`
+- `ssve-fp8dot2`
+- `ssve-fp8dot4`
+- `ssve-fp8fma`
 - `sve`
 - `sve-b16b16`
 - `sve2`
@@ -100,6 +138,7 @@ Target features:
 - `sve2-sha3`
 - `sve2-sm4`
 - `sve2p1`
+- `wfxt`
 
 ### `loongarch64`
 

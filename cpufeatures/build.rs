@@ -27,6 +27,7 @@ fn main() {
         .expect("Cargo did not set CARGO_CFG_TARGET_ARCH")
         .as_str()
     {
+        "aarch64" => ("aarch64-unknown-linux-gnu", &["fpmr"]),
         "x86" => ("i686-unknown-linux-gnu", X86),
         "x86_64" => ("x86_64-unknown-linux-gnu", X86),
         _ => return,
