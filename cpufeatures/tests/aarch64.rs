@@ -47,18 +47,24 @@ fn capability_masks() {
                 }
             }
             if full[0] & 3 == 3 && full[0] & (1 << 9) == 0 {
-                assert!(!cpufeatures::check!(@words [full[0] | (1 << 9), full[1]], $feature), $feature);
+                assert!(
+                    !cpufeatures::check!(@words [full[0] | (1 << 9), full[1]], $feature),
+                    $feature
+                );
             }
         }};
     }
     check!("neon", 3);
+    check!("dotprod", 3 | (1 << 20));
     check!("fcma", 3 | (1 << 14));
+    check!("fp16", 3 | (1 << 9) | (1 << 10));
     check!("fhm", 3 | (1 << 9) | (1 << 10) | (1 << 23));
     check!("jsconv", 3 | (1 << 13));
     check!("sve-b16b16", 3, (1 << 14) | (1 << 45));
     const SVE: u64 = 3 | (1 << 9) | (1 << 10) | (1 << 22);
     check!("crc", 1 << 7);
     check!("cssc", 0, 1 << 34);
+    check!("lse", 1 << 8);
     check!("lse2", 1 << 25);
     check!("mops", 0, 1 << 43);
     check!("bf16", 3, 1 << 14);
@@ -99,30 +105,26 @@ fn extended_detection() {
         target_os = "android"
     ));
     macro_rules! check {
-        ($($feature:tt),+) => {$({
+        ($exact:expr; $($feature:tt),+) => {$({
             cpufeatures::new!(detected, $feature);
-            assert_eq!(detected::get(), cfg!(target_feature = $feature) || (runtime && std::arch::is_aarch64_feature_detected!($feature)), $feature);
+            let actual = detected::get();
+            let expected = cfg!(target_feature = $feature)
+                || (runtime && std::arch::is_aarch64_feature_detected!($feature));
+            if $exact || actual {
+                assert_eq!(actual, expected, $feature);
+            }
         })+};
     }
-    check!(
-        "crc",
-        "bf16",
-        "i8mm",
-        "sve",
-        "sve2",
-        "sve2-aes",
-        "sve2-bitperm",
-        "sve2-sha3",
-        "sve2-sm4",
-        "f32mm",
-        "f64mm",
-        "fcma",
-        "fhm",
-        "jsconv",
-        "lse2",
-        "frintts",
-        "rand"
-    );
+    check!(true; "crc", "lse2", "rand");
+    // The mask tests cover the extra Linux and Android checks.
+    check!(!cfg!(any(target_os = "linux", target_os = "android"));
+        "bf16", "i8mm", "sve", "sve2", "sve2-aes", "sve2-bitperm", "sve2-sha3",
+        "sve2-sm4", "f32mm", "f64mm", "frintts", "jsconv", "dotprod");
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    {
+        check!(false; "fcma", "fhm", "fp16");
+        check!(true; "lse");
+    }
 }
 
 #[cfg(not(miri))]
@@ -131,17 +133,55 @@ fn recent_detection() {
     macro_rules! check {
         ($($feature:tt),+) => {{
             cpufeatures::new!(combined, $($feature),+);
-            assert_eq!(combined::get(), true $(& (cfg!(target_feature = $feature) || cpufeatures::__detect_target_features!($feature)))+);
+            assert_eq!(
+                combined::get(),
+                true $(& (cfg!(target_feature = $feature)
+                    || cpufeatures::__detect_target_features!($feature)))+
+            );
         } $({
             cpufeatures::new!(detected, $feature);
-            assert_eq!(detected::get(), cfg!(target_feature = $feature) || cpufeatures::__detect_target_features!($feature), $feature);
+            assert_eq!(
+                detected::get(),
+                cfg!(target_feature = $feature)
+                    || cpufeatures::__detect_target_features!($feature),
+                $feature
+            );
         })+};
     }
     check!("cssc", "faminmax", "lut", "mops", "sve2p1", "sve-b16b16");
-    #[cfg(target_vendor = "apple")]
-    assert!(!cpufeatures::aarch64::sysctlbyname(
-        b"hw.optional.cpufeatures_missing\0"
-    ));
+}
+
+#[cfg(all(not(miri), target_vendor = "apple"))]
+#[test]
+fn apple_extension_keys() {
+    use cpufeatures::aarch64::sysctlbyname;
+
+    assert!(!sysctlbyname(b"hw.optional.cpufeatures_missing\0"));
+    assert_eq!(
+        cpufeatures::check!("faminmax"),
+        sysctlbyname(b"hw.optional.arm.FEAT_FAMINMAX\0")
+    );
+    assert_eq!(
+        cpufeatures::check!("lut"),
+        sysctlbyname(b"hw.optional.arm.FEAT_LUT\0")
+    );
+    if sysctlbyname(b"hw.optional.armv8_3_compnum\0") {
+        assert!(cpufeatures::check!("fcma"));
+    }
+    if sysctlbyname(b"hw.optional.neon_fp16\0") {
+        assert!(cpufeatures::check!("fp16"));
+        if sysctlbyname(b"hw.optional.armv8_2_fhm\0") {
+            assert!(cpufeatures::check!("fhm"));
+        }
+    }
+    if sysctlbyname(b"hw.optional.armv8_1_atomics\0") {
+        assert!(cpufeatures::check!("lse"));
+    }
+    if sysctlbyname(b"hw.optional.arm.FEAT_SHA512\0")
+        && sysctlbyname(b"hw.optional.arm.FEAT_SHA3\0")
+    {
+        assert!(cpufeatures::check!("sha3"));
+    }
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]

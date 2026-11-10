@@ -65,7 +65,7 @@ Detection accepts these names even if enabling a feature needs a newer compiler.
 
 ### `aarch64`
 
-Runtime detection is available on Linux, Android, iOS and macOS.
+Runtime detection supports Linux, Android, and Apple platforms.
 
 Target features:
 
@@ -73,21 +73,27 @@ Target features:
 - `bf16`
 - `crc`
 - `cssc`*
+- `dit`
+- `dotprod`
 - `f32mm`
 - `f64mm`
 - `faminmax`*
 - `fcma`
 - `fhm`
+- `fp16`
 - `frintts`
 - `i8mm`
 - `jsconv`
+- `lse`
 - `lse2`*
 - `lut`*
 - `mops`*
 - `neon`
 - `rand`
+- `sb`
 - `sha2`*
 - `sha3`*
+- `sm4`
 - `sve`
 - `sve-b16b16`*
 - `sve2`

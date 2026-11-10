@@ -32,11 +32,16 @@ macro_rules! __detect_target_features {
             $crate::aarch64::getauxval_hwcap2()
         } else { 0 };
         let hwcaps = [$crate::aarch64::getauxval_hwcap(), hwcap2];
-        $($crate::check!(@words hwcaps, $tf) & )+ true
+        let detected = $($crate::check!(@words hwcaps, $tf) & )+ true;
+        #[cfg(target_os = "android")]
+        let detected = detected
+            && (!(false $(|| matches!($tf, "lse" | "fp16" | "fhm" | "dotprod"))+)
+                || !$crate::aarch64::is_exynos9810());
+        detected
     }};
 }
 
-/// Linux helper function for calling `getauxval` to get `AT_HWCAP`.
+/// Read `AT_HWCAP` with `getauxval`.
 #[cfg(any(target_os = "linux", target_os = "android"))]
 #[must_use]
 pub fn getauxval_hwcap() -> u64 {
@@ -54,6 +59,15 @@ pub fn getauxval_hwcap2() -> u64 {
 fn getauxval(kind: libc::c_ulong) -> u64 {
     // SAFETY: getauxval returns an integer and requires no pointers.
     unsafe { libc::getauxval(kind) }
+}
+
+/// Older Exynos 9810 kernels report features that some cores lack.
+#[cfg(all(target_os = "android", not(miri)))]
+pub fn is_exynos9810() -> bool {
+    let mut arch = [0_u8; libc::PROP_VALUE_MAX as usize];
+    // SAFETY: The property name ends in NUL and the buffer holds PROP_VALUE_MAX bytes.
+    let len = unsafe { libc::__system_property_get(c"ro.arch".as_ptr(), arch.as_mut_ptr().cast()) };
+    len > 0 && arch.starts_with(b"exynos9810")
 }
 
 // Apple platform's runtime detection of target CPU features using `sysctlbyname`.
@@ -103,11 +117,14 @@ __expand_check_macro! {
     ("neon",   NEON),
     ("crc",    CRC),
     ("cssc",   NONE, CSSC),
+    ("dotprod", DOTPROD),
     ("bf16",   NEON, BF16),
     ("i8mm",   NEON, I8MM),
     ("fcma",   FCMA),
+    ("fp16",   FP16),
     ("fhm",    FHM),
     ("jsconv", JSCVT),
+    ("lse",    LSE),
     ("lse2",   LSE2),
     ("mops",   NONE, MOPS),
     ("sve-b16b16", NEON, SVE_B16B16),
@@ -152,6 +169,8 @@ pub mod hwcaps {
     pub const SM4: c_ulong = NEON | libc::HWCAP_SM3 | libc::HWCAP_SM4;
     pub const SB: c_ulong = libc::HWCAP_SB;
     pub const CRC: c_ulong = libc::HWCAP_CRC32;
+    pub const DOTPROD: c_ulong = NEON | libc::HWCAP_ASIMDDP;
+    pub const LSE: c_ulong = libc::HWCAP_ATOMICS;
     pub const LSE2: c_ulong = 1 << 25;
     pub const FP16: c_ulong = NEON | libc::HWCAP_FPHP | libc::HWCAP_ASIMDHP;
     pub const SVE: c_ulong = FP16 | libc::HWCAP_SVE;
@@ -184,14 +203,8 @@ pub mod hwcaps {
     pub const SVE2P1: c_ulong = SVE2 | (1 << 36);
 }
 
-// Apple OS (macOS, iOS, watchOS, and tvOS) `check!` macro.
-//
-// NOTE: several of these instructions (e.g. `aes`, `sha2`) can be assumed to
-// be present on all Apple ARM64 hardware.
-//
-// Newer CPU instructions now have nodes within sysctl's `hw.optional`
-// namespace, however the ones that do not can safely be assumed to be
-// present on all Apple ARM64 devices, now and for the foreseeable future.
+// Apple ARM64 provides NEON, AES, SHA-1, and SHA-256.
+// Read sysctl for optional features.
 //
 // See discussion on this issue for more information:
 // <https://github.com/RustCrypto/utils/issues/378>
@@ -209,6 +222,9 @@ macro_rules! check {
     ("cssc") => {
         $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_CSSC\0")
     };
+    ("dotprod") => {
+        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_DotProd\0")
+    };
     ("bf16") => {
         $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_BF16\0")
     };
@@ -217,10 +233,16 @@ macro_rules! check {
     };
     ("fcma") => {
         $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FCMA\0")
+            || $crate::aarch64::sysctlbyname(b"hw.optional.armv8_3_compnum\0")
+    };
+    ("fp16") => {
+        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FP16\0")
+            || $crate::aarch64::sysctlbyname(b"hw.optional.neon_fp16\0")
     };
     ("fhm") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FP16\0")
-            && $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FHM\0")
+        $crate::check!("fp16")
+            && ($crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FHM\0")
+                || $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_fhm\0"))
     };
     ("jsconv") => {
         $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_JSCVT\0")
@@ -232,13 +254,21 @@ macro_rules! check {
     ("frintts") => {
         $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FRINTTS\0")
     };
+    ("lse") => {
+        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_LSE\0")
+            || $crate::aarch64::sysctlbyname(b"hw.optional.armv8_1_atomics\0")
+    };
     ("lse2") => {
         $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_LSE2\0")
     };
     // No public Apple capability key is documented for MOPS.
     ("mops") => { false };
-    ("faminmax") => { false };
-    ("lut") => { false };
+    ("faminmax") => {
+        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FAMINMAX\0")
+    };
+    ("lut") => {
+        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_LUT\0")
+    };
     ("rand") => { false };
     ("sve2p1") => { false };
     ("sve") => { false };
@@ -260,9 +290,11 @@ macro_rules! check {
         true
     };
     ("sha3") => {
-        // `sha3` target feature implies SHA-512 as well
-        $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha512\0")
-            && $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha3\0")
+        // Rust's `sha3` feature requires SHA-512.
+        ($crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_SHA512\0")
+            || $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha512\0"))
+            && ($crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_SHA3\0")
+                || $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha3\0"))
     };
     ("sm4") => {
         false
