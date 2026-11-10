@@ -47,8 +47,16 @@ macro_rules! __detect_target_features {
         let leaves = $leaves;
         let zero = CpuidResult { eax: 0, ebx: 0, ecx: 0, edx: 0 };
         let info = cpuid(0, 0);
-        let vendor = (info.ebx.to_le_bytes(), info.edx.to_le_bytes(), info.ecx.to_le_bytes());
-        let intel = vendor == (*b"Genu", *b"ineI", *b"ntel");
+        // Split vendor IDs at compile time to avoid a bcmp call on i686.
+        const fn vendor_words(id: &[u8; 12]) -> (u32, u32, u32) {
+            (
+                u32::from_le_bytes([id[0], id[1], id[2], id[3]]),
+                u32::from_le_bytes([id[4], id[5], id[6], id[7]]),
+                u32::from_le_bytes([id[8], id[9], id[10], id[11]]),
+            )
+        }
+        let vendor = (info.ebx, info.edx, info.ecx);
+        let intel = vendor == const { vendor_words(b"GenuineIntel") };
         let max = info.eax;
         let mut basic = if max >= 1 { cpuid(1, 0) } else { zero };
         // Intel erratum R85: Pentium 4 LD0 reports CX16 without supporting it.
@@ -67,8 +75,8 @@ macro_rules! __detect_target_features {
         } else { zero };
         let extended = if leaves & (1 << 3) != 0 && cpuid(0x8000_0000, 0).eax >= 0x8000_0001 {
             let mut extended = cpuid(0x8000_0001, 0);
-            if vendor != (*b"Auth", *b"enti", *b"cAMD")
-                && vendor != (*b"Hygo", *b"nGen", *b"uine")
+            if vendor != const { vendor_words(b"AuthenticAMD") }
+                && vendor != const { vendor_words(b"HygonGenuine") }
             {
                 extended.ecx &= !((1 << 6) | (1 << 11) | (1 << 16) | (1 << 21));
             }
@@ -186,33 +194,31 @@ macro_rules! __expand_check_macro {
                 }};
                 ($cr:expr, $name, $os:expr) => {{
                     let cr = $cr;
-                    // Check Rust's requirements for AVX and AVX-512.
-                    let avx = (1 << 0) | (1 << 9) | (1 << 19) | (1 << 20)
-                        | (1 << 26) | (1 << 27) | (1 << 28);
+                    // Check Rust's prerequisites and the required XCR0 bits.
+                    let avx = (1 << 0) | (1 << 9) | (1 << 19) | (1 << 20) | (1 << 28);
                     let sse = (1 << 25) | (1 << 26);
                     let avx512_ecx = (1 << 12) | (1 << 29);
                     let avx512_ebx = (1 << 5) | (1 << 16);
-                    let registers = match $reg_cap {
-                        "x86_64" => cfg!(target_arch = "x86_64"),
-                        "xsave" => cr[0].ecx & (3 << 26) == 3 << 26,
-                        "apx" => cfg!(target_arch = "x86_64") && cr[0].ecx & (3 << 26) == 3 << 26,
-                        "sse2" => cr[0].edx & sse == sse,
+                    let xsave = cr[0].ecx & (3 << 26) == 3 << 26;
+                    let sse2 = cr[0].edx & sse == sse;
+                    let ymm = xsave && sse2 && cr[0].ecx & avx == avx;
+                    let (supported, mask) = match $reg_cap {
+                        "x86_64" => (cfg!(target_arch = "x86_64"), 0),
+                        "xsave" => (xsave, 0),
+                        "apx" => (cfg!(target_arch = "x86_64") && xsave, 1 << 19),
+                        "sse2" => (sse2, 0),
                         // Microcode can force every RTM transaction to abort.
-                        "rtm" => cr[1].edx & (1 << 11) == 0,
-                        "ymm" | "zmm" => cr[0].ecx & avx == avx && cr[0].edx & sse == sse,
-                        _ => true,
+                        "rtm" => (cr[1].edx & (1 << 11) == 0, 0),
+                        "ymm" => (ymm, 0b110),
+                        "zmm" => (
+                            ymm && cr[0].ecx & avx512_ecx == avx512_ecx
+                                && cr[1].ebx & avx512_ebx == avx512_ebx,
+                            0b1110_0110,
+                        ),
+                        _ => (true, 0),
                     };
-                    let mask = match $reg_cap {
-                        "ymm" => 0b110,
-                        "zmm" => 0b1110_0110,
-                        "apx" => 1 << 19,
-                        _ => 0,
-                    };
-                    registers
+                    supported
                         $(& (cr[$i].$reg & (1 << $offset) != 0))*
-                        && ($reg_cap != "zmm"
-                            || (cr[0].ecx & avx512_ecx == avx512_ecx
-                                && cr[1].ebx & avx512_ebx == avx512_ebx))
                         && $crate::check!(@version $name, cr)
                         && (mask == 0 || ($os)(mask))
                 }};
@@ -225,7 +231,7 @@ __expand_check_macro! {
     ("sse3", "", 0, ecx, 0),
     ("pclmulqdq", "sse2", 0, ecx, 1),
     ("ssse3", "", 0, ecx, 9),
-    ("fma", "ymm", 0, ecx, 12, 0, ecx, 28),
+    ("fma", "ymm", 0, ecx, 12),
     ("cmpxchg16b", "x86_64", 0, ecx, 13),
     ("sse4.1", "", 0, ecx, 19),
     ("sse4.2", "", 0, ecx, 20),
@@ -233,7 +239,7 @@ __expand_check_macro! {
     ("popcnt", "", 0, ecx, 23),
     ("aes", "sse2", 0, ecx, 25),
     ("xsave", "xsave"),
-    ("avx", "ymm", 0, ecx, 28),
+    ("avx", "ymm"),
     ("f16c", "ymm", 0, ecx, 29),
     ("rdrand", "", 0, ecx, 30),
 
@@ -245,7 +251,7 @@ __expand_check_macro! {
 
     ("sgx", "", 1, ebx, 2),
     ("bmi1", "", 1, ebx, 3),
-    ("avx2", "ymm", 1, ebx, 5, 0, ecx, 28),
+    ("avx2", "ymm", 1, ebx, 5),
     ("bmi2", "", 1, ebx, 8),
     ("ermsb", "", 1, ebx, 9),
     ("rtm", "rtm", 1, ebx, 11),
