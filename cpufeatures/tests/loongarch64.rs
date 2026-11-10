@@ -1,6 +1,7 @@
 //! `loongarch64` tests
 
 #![cfg(target_arch = "loongarch64")]
+#![no_std]
 
 cpufeatures::new!(
     lacaps,
