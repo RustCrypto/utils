@@ -104,13 +104,11 @@ macro_rules! __expand_check_macro {
                 let _ = $hwcaps;
                 false
             }};
-            ($hwcaps:expr, "pauth-lr") => {{
-                let _ = $hwcaps;
-                false
-            }};
+            ($hwcaps:expr, $feature:tt) => {
+                $crate::check!(@words [$hwcaps, 0], $feature)
+            };
             $(
                 (@hwcap2 $name) => { false $(|| $crate::aarch64::hwcaps::$hwcap2 != 0)? };
-                ($hwcaps:expr, $name) => { $crate::check!(@words [$hwcaps, 0], $name) };
                 (@words $hwcaps:expr, $name) => {{
                     use $crate::aarch64::hwcaps as caps;
                     let [hwcap, hwcap2] = $hwcaps;
@@ -415,57 +413,57 @@ macro_rules! check {
     };
     ("crc") => {
         $crate::aarch64::sysctlbyname(b"hw.optional.armv8_crc32\0")
-            || $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_CRC32\0")
+            || $crate::check!(@feat "CRC32")
     };
     ("cssc") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_CSSC\0")
+        $crate::check!(@feat "CSSC")
     };
     ("dotprod") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_DotProd\0")
+        $crate::check!(@feat "DotProd")
     };
     ("bf16") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_BF16\0")
+        $crate::check!(@feat "BF16")
     };
     ("i8mm") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_I8MM\0")
+        $crate::check!(@feat "I8MM")
     };
     ("fcma") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FCMA\0")
+        $crate::check!(@feat "FCMA")
             || $crate::aarch64::sysctlbyname(b"hw.optional.armv8_3_compnum\0")
     };
     ("fp16") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FP16\0")
+        $crate::check!(@feat "FP16")
             || $crate::aarch64::sysctlbyname(b"hw.optional.neon_fp16\0")
     };
     ("fhm") => {
         $crate::check!("fp16")
-            && ($crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FHM\0")
+            && ($crate::check!(@feat "FHM")
                 || $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_fhm\0"))
     };
     ("jsconv") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_JSCVT\0")
+        $crate::check!(@feat "JSCVT")
     };
     ("sve-b16b16") => {
         $crate::check!("bf16")
-            && $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_SVE_B16B16\0")
+            && $crate::check!(@feat "SVE_B16B16")
     };
     ("frintts") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FRINTTS\0")
+        $crate::check!(@feat "FRINTTS")
     };
     ("lse") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_LSE\0")
+        $crate::check!(@feat "LSE")
             || $crate::aarch64::sysctlbyname(b"hw.optional.armv8_1_atomics\0")
     };
     ("lse2") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_LSE2\0")
+        $crate::check!(@feat "LSE2")
     };
     // No public Apple capability key is documented for MOPS.
     ("mops") => { false };
     ("faminmax") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_FAMINMAX\0")
+        $crate::check!(@feat "FAMINMAX")
     };
     ("lut") => {
-        $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_LUT\0")
+        $crate::check!(@feat "LUT")
     };
     ("rand") => { false };
     ("sve2p1") => { false };
@@ -489,9 +487,9 @@ macro_rules! check {
     };
     ("sha3") => {
         // Rust's `sha3` feature requires SHA-512.
-        ($crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_SHA512\0")
+        ($crate::check!(@feat "SHA512")
             || $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha512\0"))
-            && ($crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_SHA3\0")
+            && ($crate::check!(@feat "SHA3")
                 || $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha3\0"))
     };
     ("sm4") => {
@@ -554,25 +552,7 @@ mod tests {
     fn sysctl_reads_existing_and_missing_keys() {
         assert!(!super::sysctlbyname(b"hw.optional.cpufeatures_missing\0"));
 
-        // Query a CPU count so the test needs no optional CPU features.
-        let name = c"hw.ncpu";
-        let mut count = 0u32;
-        let mut size = size_of::<u32>();
-        // SAFETY: The name is NUL terminated, and count and size describe a
-        // writable buffer. Null newp and zero newlen make this read-only.
-        let rc = unsafe {
-            libc::sysctlbyname(
-                name.as_ptr(),
-                core::ptr::from_mut(&mut count).cast(),
-                &raw mut size,
-                core::ptr::null_mut(),
-                0,
-            )
-        };
-        assert_eq!(
-            super::sysctlbyname(name.to_bytes_with_nul()),
-            rc == 0 && size == size_of::<u32>() && count > 0
-        );
+        assert!(super::sysctlbyname(b"hw.ncpu\0"));
     }
 
     #[test]
