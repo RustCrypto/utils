@@ -131,7 +131,10 @@ Target features:
 
 - `adx`
 - `aes`
+- `apxf`
 - `avx`
+- `avx10.1`
+- `avx10.2`
 - `avx2`
 - `avxifma`
 - `avxneconvert`
@@ -156,16 +159,22 @@ Target features:
 - `avx512vpopcntdq`
 - `bmi1`
 - `bmi2`
+- `clflushopt`
 - `cmpxchg16b`
 - `ermsb`
 - `f16c`
 - `fma`
+- `fma4`
 - `fxsr`
 - `gfni`
+- `kl`
 - `lahfsahf`
 - `lzcnt`
 - `mmx`
 - `movbe`
+- `movdir64b`
+- `movdiri`
+- `movrs`
 - `pclmulqdq`
 - `popcnt`
 - `prfchw`
@@ -179,12 +188,17 @@ Target features:
 - `sse3`
 - `sse4.1`
 - `sse4.2`
+- `sse4a`
 - `ssse3`
 - `sha512`
 - `sm3`
 - `sm4`
+- `tbm`
 - `vaes`
 - `vpclmulqdq`
+- `widekl`
+- `x87`
+- `xop`
 - `xsave`
 - `xsavec`
 - `xsaveopt`
@@ -192,6 +206,9 @@ Target features:
 
 `cmpxchg16b` requires 64-bit mode. The crate checks XSAVES and OSXSAVE to detect
 `xsaves`. The instruction itself requires supervisor privilege.
+
+`apxf` also requires 64-bit mode. If rustc does not recognize a listed x86
+feature, the crate checks it at runtime.
 
 If you would like detection support for a target feature which is not on
 this list, please [open a GitHub issue][github-issue].
