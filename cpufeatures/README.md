@@ -58,18 +58,87 @@ calls, thus runtime overhead for them is minimal.
 
 ## Supported target architectures
 
-*NOTE: target features with an asterisk are unstable (nightly-only) and subject
-to change to match upstream name changes in the Rust standard library.*
+Use these feature names with `cpufeatures::new!`.
+Compile-time support depends on the Rust version and target.
 
 ### `aarch64`
 
-Linux, iOS, and macOS/ARM only (ARM64 does not support OS-independent feature detection)
+Runtime detection supports Linux, Android, and Apple platforms.
+The operating system reports which features are available.
+If rustc has no compile-time flag for `fpmr`, the crate checks it at runtime.
 
 Target features:
 
-- `aes`*
-- `sha2`*
-- `sha3`*
+- `aes`
+- `bf16`
+- `bti`
+- `crc`
+- `cssc`
+- `dit`
+- `dotprod`
+- `dpb`
+- `dpb2`
+- `ecv`
+- `f32mm`
+- `f64mm`
+- `faminmax`
+- `fcma`
+- `fhm`
+- `flagm`
+- `flagm2`
+- `fp16`
+- `fp8`
+- `fp8dot2`
+- `fp8dot4`
+- `fp8fma`
+- `fpmr`
+- `frintts`
+- `hbc`
+- `i8mm`
+- `jsconv`
+- `lse`
+- `lse128`
+- `lse2`
+- `lut`
+- `mops`
+- `mte`
+- `neon`
+- `paca`
+- `pacg`
+- `pauth-lr`
+- `rand`
+- `rcpc`
+- `rcpc2`
+- `rcpc3`
+- `rdm`
+- `sb`
+- `sha2`
+- `sha3`
+- `sm4`
+- `sme`
+- `sme-b16b16`
+- `sme-f16f16`
+- `sme-f64f64`
+- `sme-f8f16`
+- `sme-f8f32`
+- `sme-fa64`
+- `sme-i16i64`
+- `sme-lutv2`
+- `sme2`
+- `sme2p1`
+- `ssbs`
+- `ssve-fp8dot2`
+- `ssve-fp8dot4`
+- `ssve-fp8fma`
+- `sve`
+- `sve-b16b16`
+- `sve2`
+- `sve2-aes`
+- `sve2-bitperm`
+- `sve2-sha3`
+- `sve2-sm4`
+- `sve2p1`
+- `wfxt`
 
 ### `loongarch64`
 
@@ -77,49 +146,80 @@ Linux only (`loongarch64` does not support OS-independent feature detection)
 
 Target features:
 
-- `32s`*
-- `f`*
-- `d`*
-- `frecipe`*
-- `div32`*
-- `lsx`*
-- `lasx`*
-- `lam-bh`*
-- `lamcas`*
-- `ld-seq-sa`*
-- `scq`*
-- `lbt`*
-- `lvz`*
-- `ual`*
+- `32s`
+- `f`
+- `d`
+- `frecipe`
+- `div32`
+- `lsx`
+- `lasx`
+- `lam-bh`
+- `lamcas`
+- `ld-seq-sa`
+- `scq`
+- `lbt`
+- `lvz`
+- `ual`
 
 ### `x86`/`x86_64`
 
-OS independent and `no_std`-friendly
+Runtime detection uses CPUID. On SGX, UEFI, and targets with no OS,
+the crate uses only features enabled at compile time.
 
 Target features:
 
 - `adx`
 - `aes`
+- `apxf`
 - `avx`
+- `avx10.1`
+- `avx10.2`
 - `avx2`
-- `avx512bw`*
-- `avx512cd`*
-- `avx512dq`*
-- `avx512er`*
-- `avx512f`*
-- `avx512ifma`*
-- `avx512pf`*
-- `avx512vl`*
-- `avx512vbmi`*
-- `avx512vbmi2`*
+- `avxifma`
+- `avxneconvert`
+- `avxvnni`
+- `avxvnniint8`
+- `avxvnniint16`
+- `avx512bf16`
+- `avx512bitalg`
+- `avx512bw`
+- `avx512cd`
+- `avx512dq`
+- `avx512er`
+- `avx512f`
+- `avx512fp16`
+- `avx512ifma`
+- `avx512pf`
+- `avx512vl`
+- `avx512vbmi`
+- `avx512vbmi2`
+- `avx512vnni`
+- `avx512vp2intersect`
+- `avx512vpopcntdq`
 - `bmi1`
 - `bmi2`
+- `clflushopt`
+- `cmpxchg16b`
+- `ermsb`
+- `f16c`
 - `fma`
+- `fma4`
+- `fxsr`
+- `gfni`
+- `kl`
+- `lahfsahf`
+- `lzcnt`
 - `mmx`
+- `movbe`
+- `movdir64b`
+- `movdiri`
+- `movrs`
 - `pclmulqdq`
 - `popcnt`
+- `prfchw`
 - `rdrand`
 - `rdseed`
+- `rtm`
 - `sgx`
 - `sha`
 - `sse`
@@ -127,10 +227,27 @@ Target features:
 - `sse3`
 - `sse4.1`
 - `sse4.2`
+- `sse4a`
 - `ssse3`
 - `sha512`
 - `sm3`
 - `sm4`
+- `tbm`
+- `vaes`
+- `vpclmulqdq`
+- `widekl`
+- `x87`
+- `xop`
+- `xsave`
+- `xsavec`
+- `xsaveopt`
+- `xsaves`
+
+`cmpxchg16b` requires 64-bit mode. The crate checks XSAVES and OSXSAVE to detect
+`xsaves`. The instruction itself requires supervisor privilege.
+
+`apxf` also requires 64-bit mode. If rustc does not recognize a listed x86
+feature, the crate checks it at runtime.
 
 If you would like detection support for a target feature which is not on
 this list, please [open a GitHub issue][github-issue].

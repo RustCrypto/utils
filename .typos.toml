@@ -6,3 +6,5 @@ extend-exclude = [
 [default.extend-words]
 # Prefix of Conditional MOVe
 "CMO" = "CMO"
+# Arm Scalable Matrix Extension
+"SME" = "SME"

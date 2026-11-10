@@ -1,8 +1,6 @@
-//! Minimal miri support.
-//!
-//! Miri is an interpreter, and though it tries to emulate the target CPU
-//! it does not support any target features.
+//! Miri uses CPU features enabled at compile time.
 
+#[cfg(target_arch = "loongarch64")]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __unless_target_features {
@@ -11,6 +9,7 @@ macro_rules! __unless_target_features {
     };
 }
 
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __detect_target_features {

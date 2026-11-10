@@ -28,7 +28,7 @@ macro_rules! __detect_target_features {
         let cpucfg2: usize;
         let cpucfg3: usize;
         unsafe {
-            std::arch::asm!(
+            core::arch::asm!(
                 "cpucfg {}, {}",
                 "cpucfg {}, {}",
                 "cpucfg {}, {}",
