@@ -9,13 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Detect ARM64 NEON, CRC, CSSC, BF16, SVE, LSE2, MOPS and floating-point extensions.
 - Detect ARM64 dot product, FP16, and LSE.
-- Detect x86 SIMD prerequisites, AVX2/AVX-512 extensions, XSAVE variants and ERMSB/PREFETCHW memory hints.
+- Detect x86 AVX2 and AVX-512 extensions, XSAVE variants, ERMSB, and PREFETCHW.
+- Detect x86 RTM and check the forced-abort flag.
 
 ### Fixed
 - Return false for unavailable Apple capability keys.
 - Check all required ARM64 capability bits and x86 CPU and OS state.
 - Check CPUID limits before reading leaves and subleaves.
 - Require an `unsafe` context to check register state from supplied CPUID data.
+- Reject false x86 feature flags on affected Intel CPUs.
 
 ## 0.3.1 (2026-08-26)
 ### Changed

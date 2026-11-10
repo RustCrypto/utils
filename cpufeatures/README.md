@@ -58,10 +58,8 @@ calls, thus runtime overhead for them is minimal.
 
 ## Supported target architectures
 
-*NOTE: target features with an asterisk are unstable (nightly-only) and subject
-to change to match upstream name changes in the Rust standard library.*
-
-Detection accepts these names even if enabling a feature needs a newer compiler.
+Use these feature names with `cpufeatures::new!`.
+Compile-time support depends on the Rust version and target.
 
 ### `aarch64`
 
@@ -69,15 +67,15 @@ Runtime detection supports Linux, Android, and Apple platforms.
 
 Target features:
 
-- `aes`*
+- `aes`
 - `bf16`
 - `crc`
-- `cssc`*
+- `cssc`
 - `dit`
 - `dotprod`
 - `f32mm`
 - `f64mm`
-- `faminmax`*
+- `faminmax`
 - `fcma`
 - `fhm`
 - `fp16`
@@ -85,23 +83,23 @@ Target features:
 - `i8mm`
 - `jsconv`
 - `lse`
-- `lse2`*
-- `lut`*
-- `mops`*
+- `lse2`
+- `lut`
+- `mops`
 - `neon`
 - `rand`
 - `sb`
-- `sha2`*
-- `sha3`*
+- `sha2`
+- `sha3`
 - `sm4`
 - `sve`
-- `sve-b16b16`*
+- `sve-b16b16`
 - `sve2`
 - `sve2-aes`
 - `sve2-bitperm`
 - `sve2-sha3`
 - `sve2-sm4`
-- `sve2p1`*
+- `sve2p1`
 
 ### `loongarch64`
 
@@ -109,24 +107,25 @@ Linux only (`loongarch64` does not support OS-independent feature detection)
 
 Target features:
 
-- `32s`*
-- `f`*
-- `d`*
-- `frecipe`*
-- `div32`*
-- `lsx`*
-- `lasx`*
-- `lam-bh`*
-- `lamcas`*
-- `ld-seq-sa`*
-- `scq`*
-- `lbt`*
-- `lvz`*
-- `ual`*
+- `32s`
+- `f`
+- `d`
+- `frecipe`
+- `div32`
+- `lsx`
+- `lasx`
+- `lam-bh`
+- `lamcas`
+- `ld-seq-sa`
+- `scq`
+- `lbt`
+- `lvz`
+- `ual`
 
 ### `x86`/`x86_64`
 
-OS independent and `no_std`-friendly
+Runtime detection uses CPUID. On SGX, UEFI, and targets with no OS,
+the crate uses only features enabled at compile time.
 
 Target features:
 
@@ -140,35 +139,39 @@ Target features:
 - `avxvnniint8`
 - `avxvnniint16`
 - `avx512bf16`
-- `avx512bw`*
-- `avx512cd`*
-- `avx512dq`*
-- `avx512er`*
-- `avx512f`*
+- `avx512bitalg`
+- `avx512bw`
+- `avx512cd`
+- `avx512dq`
+- `avx512er`
+- `avx512f`
 - `avx512fp16`
-- `avx512ifma`*
-- `avx512pf`*
-- `avx512vl`*
-- `avx512vbmi`*
-- `avx512vbmi2`*
+- `avx512ifma`
+- `avx512pf`
+- `avx512vl`
+- `avx512vbmi`
+- `avx512vbmi2`
 - `avx512vnni`
 - `avx512vp2intersect`
+- `avx512vpopcntdq`
 - `bmi1`
 - `bmi2`
 - `cmpxchg16b`
-- `ermsb`*
+- `ermsb`
 - `f16c`
 - `fma`
 - `fxsr`
-- `lahfsahf`*
+- `gfni`
+- `lahfsahf`
 - `lzcnt`
 - `mmx`
 - `movbe`
 - `pclmulqdq`
 - `popcnt`
-- `prfchw`*
+- `prfchw`
 - `rdrand`
 - `rdseed`
+- `rtm`
 - `sgx`
 - `sha`
 - `sse`
@@ -180,10 +183,15 @@ Target features:
 - `sha512`
 - `sm3`
 - `sm4`
+- `vaes`
+- `vpclmulqdq`
 - `xsave`
 - `xsavec`
 - `xsaveopt`
 - `xsaves`
+
+`cmpxchg16b` requires 64-bit mode. The crate checks XSAVES and OSXSAVE to detect
+`xsaves`. The instruction itself requires supervisor privilege.
 
 If you would like detection support for a target feature which is not on
 this list, please [open a GitHub issue][github-issue].

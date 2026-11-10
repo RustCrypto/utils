@@ -35,24 +35,42 @@ mod detection {
         }; 5]
     }
 
+    fn cpu_info(max_leaf: u32, vendor: [u8; 12]) -> CpuidResult {
+        CpuidResult {
+            eax: max_leaf,
+            ebx: u32::from_le_bytes(vendor[..4].try_into().unwrap()),
+            edx: u32::from_le_bytes(vendor[4..8].try_into().unwrap()),
+            ecx: u32::from_le_bytes(vendor[8..].try_into().unwrap()),
+        }
+    }
+
     #[test]
     fn cpuid_bounds() {
-        for (max, subleaf, expected) in [(0, 0, 1), (1, 0, 2), (7, 0, 3), (7, 1, 4)] {
+        for (max, subleaf, need_leaf7, need_subleaf, expected) in [
+            (0, 0, true, true, 1),
+            (1, 0, true, true, 2),
+            (7, 0, true, true, 3),
+            (7, 1, true, true, 4),
+            (7, 1, false, true, 4),
+            (7, 1, true, false, 3),
+            (7, 1, false, false, 2),
+        ] {
             let calls = core::cell::RefCell::new(Vec::new());
             let cr = cpufeatures::__detect_target_features!(@cpuid |leaf: u32, sub: u32| {
                 calls.borrow_mut().push((leaf, sub));
-                let eax = match (leaf, sub) { (0, 0) => max, (7, 0) => subleaf, _ => u32::MAX };
+                let eax = match (leaf, sub) {
+                    (0, 0) => max,
+                    (7, 0) => subleaf,
+                    _ => u32::MAX,
+                };
                 CpuidResult { eax, ebx: u32::MAX, ecx: u32::MAX, edx: u32::MAX }
-            }, false, false);
+            }, ((need_leaf7 as u8) << 1) | ((need_subleaf as u8) << 2));
             assert_eq!(
                 calls.into_inner(),
                 [(0, 0), (1, 0), (7, 0), (7, 1)][..expected]
             );
-            for (i, available) in [max >= 1, max >= 7, max >= 7 && subleaf >= 1]
-                .into_iter()
-                .enumerate()
-            {
-                assert_eq!(cr[i].ebx, if available { u32::MAX } else { 0 });
+            for (i, result) in cr[..3].iter().enumerate() {
+                assert_eq!(result.ebx, if i + 1 < expected { u32::MAX } else { 0 });
             }
         }
     }
@@ -67,11 +85,14 @@ mod detection {
                 match leaf {
                     0 => (),
                     0x8000_0000 => result.eax = max,
-                    0x8000_0001 => { assert!(max >= leaf); result.ecx = u32::MAX; },
+                    0x8000_0001 => {
+                        assert!(max >= leaf);
+                        result.ecx = u32::MAX;
+                    },
                     _ => panic!("unexpected CPUID leaf"),
                 }
                 result
-            }, true, false);
+            }, 1 << 3);
             let available = max >= 0x8000_0001;
             assert_eq!(cr[3].ecx, if available { u32::MAX } else { 0 });
             assert_eq!(calls.get(), if available { 3 } else { 2 });
@@ -90,16 +111,61 @@ mod detection {
                             0 => result.eax = max,
                             1 => result.ecx = flags,
                             7 => (),
-                            0xd => { assert_eq!(sub, 1); calls.set(calls.get() + 1); result.eax = 0xb; },
+                            0xd => {
+                                assert_eq!(sub, 1);
+                                calls.set(calls.get() + 1);
+                                result.eax = 0xb;
+                            },
                             _ => panic!("unexpected CPUID leaf"),
                         }
                         result
-                    }, false, requested);
+                    }, (requested as u8) << 4);
                     let available = requested && max >= 0xd && flags == 3 << 26;
                     assert_eq!(cr[4].eax, if available { 0xb } else { 0 });
                     assert_eq!(calls.get(), u32::from(available));
                 }
             }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn cmpxchg16b_rejects_intel_ld0() {
+        for (vendor, signature, supported) in [
+            (*b"GenuineIntel", 0x0f34, false),
+            (*b"GenuineIntel", 0x0f41, true),
+            (*b"AuthenticAMD", 0x0f34, true),
+        ] {
+            let cr = cpufeatures::__detect_target_features!(@cpuid |leaf, subleaf| {
+                match (leaf, subleaf) {
+                    (0, 0) => cpu_info(1, vendor),
+                    (1, 0) => CpuidResult { eax: signature, ebx: 0, ecx: 1 << 13, edx: 0 },
+                    _ => panic!("unexpected CPUID leaf"),
+                }
+            }, 0);
+            assert_eq!(cpufeatures::check!(cr, "cmpxchg16b", |_| false), supported);
+        }
+    }
+
+    #[test]
+    fn bmi_rejects_affected_skylake() {
+        for (vendor, signature, avx, supported) in [
+            (*b"GenuineIntel", 0x406e3, false, false),
+            (*b"GenuineIntel", 0x506e3, false, false),
+            (*b"GenuineIntel", 0x506e3, true, true),
+            (*b"GenuineIntel", 0x90672, false, true),
+            (*b"AuthenticAMD", 0x506e3, false, true),
+        ] {
+            let cr = cpufeatures::__detect_target_features!(@cpuid |leaf, subleaf| {
+                match (leaf, subleaf) {
+                    (0, 0) => cpu_info(7, vendor),
+                    (1, 0) => CpuidResult { eax: signature, ebx: 0, ecx: u32::from(avx) << 28, edx: 0 },
+                    (7, 0) => CpuidResult { eax: 0, ebx: (1 << 3) | (1 << 8), ecx: 0, edx: 0 },
+                    _ => panic!("unexpected CPUID leaf"),
+                }
+            }, cpufeatures::check!(@leaves "bmi1") | cpufeatures::check!(@leaves "bmi2"));
+            assert_eq!(cpufeatures::check!(cr, "bmi1", |_| false), supported);
+            assert_eq!(cpufeatures::check!(cr, "bmi2", |_| false), supported);
         }
     }
 
@@ -142,13 +208,44 @@ mod detection {
     }
 
     #[test]
+    fn bundle_reads_xcr0_once() {
+        let mut cr = registers(u32::MAX);
+        let calls = core::cell::Cell::new(0);
+        let read = |mask| {
+            assert_eq!(mask, 0xe6);
+            calls.set(calls.get() + 1);
+            true
+        };
+
+        assert!(cpufeatures::__detect_target_features!(@check cr, read; "sse2"));
+        assert!(cpufeatures::__detect_target_features!(@check cr, read; "avx2", "avx512f"));
+        assert_eq!(calls.get(), 1);
+        assert!(!cpufeatures::__detect_target_features!(@check cr, |_| false; "avx2", "avx512f"));
+
+        cr[0].ecx &= !(1 << 25);
+        assert!(!cpufeatures::__detect_target_features!(@check cr, read; "avx2", "avx512f", "aes"));
+        assert_eq!(calls.get(), 1);
+    }
+
+    #[test]
+    fn rtm_respects_forced_abort() {
+        let mut cr = registers(0);
+        assert!(!cpufeatures::check!(cr, "rtm", |_| false));
+        cr[1].ebx = 1 << 11;
+        assert!(cpufeatures::check!(cr, "rtm", |_| false));
+        cr[1].edx = 1 << 11;
+        assert!(!cpufeatures::check!(cr, "rtm", |_| false));
+    }
+
+    #[test]
     fn required_bits_and_state() {
         macro_rules! check {
             ($feature:tt, $state:expr; $($i:expr, $reg:ident, $bit:expr);+ $(;)?) => {{
                 let cr = registers(u32::MAX);
                 let mut sparse = registers(0);
                 if $state != 0 {
-                    sparse[0].ecx = (1 << 0) | (1 << 9) | (1 << 19) | (1 << 20) | (1 << 26) | (1 << 27) | (1 << 28);
+                    sparse[0].ecx = (1 << 0) | (1 << 9) | (1 << 19) | (1 << 20)
+                        | (1 << 26) | (1 << 27) | (1 << 28);
                     sparse[0].edx = (1 << 25) | (1 << 26);
                 }
                 if $state == 0xe6 {
@@ -157,32 +254,55 @@ mod detection {
                 }
                 $(sparse[$i].$reg |= 1 << $bit;)+
                 assert!(cpufeatures::check!(sparse, $feature, |_| true), $feature);
-                $(let mut missing = cr;
-                missing[$i].$reg &= !(1 << $bit);
-                assert!(!cpufeatures::check!(missing, $feature, |_| panic!("XGETBV queried")), $feature);)+
+                $(
+                    let mut missing = cr;
+                    missing[$i].$reg &= !(1 << $bit);
+                    assert!(
+                        !cpufeatures::check!(missing, $feature, |_| panic!("XGETBV queried")),
+                        $feature
+                    );
+                )+
                 for state in [0, 2, 4, 6, 0x66, 0xa6, 0xc6, 0xe2, 0xe4, 0xe6] {
-                    assert_eq!(cpufeatures::check!(cr, $feature, |mask| state & mask == mask), state & $state == $state, $feature);
+                    assert_eq!(
+                        cpufeatures::check!(cr, $feature, |mask| state & mask == mask),
+                        state & $state == $state,
+                        $feature
+                    );
                 }
                 if $state == 0 {
-                    assert!(cpufeatures::check!(sparse, $feature, |_| panic!("XGETBV queried")), $feature);
+                    assert!(
+                        cpufeatures::check!(sparse, $feature, |_| panic!("XGETBV queried")),
+                        $feature
+                    );
                 }
                 if $state != 0 {
                     for bit in [0, 9, 12, 19, 20, 26, 27, 28, 29] {
-                        if $state != 0xe6 && matches!(bit, 12 | 29) { continue; }
+                        if $state != 0xe6 && matches!(bit, 12 | 29) {
+                            continue;
+                        }
                         let mut missing = cr;
                         missing[0].ecx &= !(1 << bit);
-                        assert!(!cpufeatures::check!(missing, $feature, |_| panic!("XGETBV queried")), $feature);
+                        assert!(
+                            !cpufeatures::check!(missing, $feature, |_| panic!("XGETBV queried")),
+                            $feature
+                        );
                     }
                     for bit in [25, 26] {
                         let mut missing = cr;
                         missing[0].edx &= !(1 << bit);
-                        assert!(!cpufeatures::check!(missing, $feature, |_| panic!("XGETBV queried")), $feature);
+                        assert!(
+                            !cpufeatures::check!(missing, $feature, |_| panic!("XGETBV queried")),
+                            $feature
+                        );
                     }
                     if $state == 0xe6 {
                         for bit in [5, 16] {
                             let mut missing = cr;
                             missing[1].ebx &= !(1 << bit);
-                            assert!(!cpufeatures::check!(missing, $feature, |_| panic!("XGETBV queried")), $feature);
+                            assert!(
+                                !cpufeatures::check!(missing, $feature, |_| panic!("XGETBV queried")),
+                                $feature
+                            );
                         }
                     }
                 }
@@ -191,7 +311,11 @@ mod detection {
         check!("ermsb", 0; 1, ebx, 9);
         check!("prfchw", 0; 3, ecx, 8);
         check!("fxsr", 0; 0, edx, 24);
+        #[cfg(target_arch = "x86_64")]
         check!("cmpxchg16b", 0; 0, ecx, 13);
+        check!("aes", 0; 0, ecx, 25; 0, edx, 25; 0, edx, 26);
+        check!("pclmulqdq", 0; 0, ecx, 1; 0, edx, 25; 0, edx, 26);
+        check!("sha", 0; 1, ebx, 29; 0, edx, 25; 0, edx, 26);
         check!("movbe", 0; 0, ecx, 22);
         check!("lahfsahf", 0; 3, ecx, 0);
         check!("lzcnt", 0; 3, ecx, 5);
@@ -229,6 +353,18 @@ mod detection {
         check!("avx512vpopcntdq", 0xe6; 1, ecx, 14);
     }
 
+    #[cfg(target_arch = "x86")]
+    #[test]
+    fn cmpxchg16b_requires_64_bit_mode() {
+        cpufeatures::new!(detected, "sse2", "cmpxchg16b");
+        assert!(!detected::get());
+        assert!(!cpufeatures::check!(
+            registers(u32::MAX),
+            "cmpxchg16b",
+            |_| true
+        ));
+    }
+
     #[cfg(all(
         not(miri),
         not(any(target_env = "sgx", target_os = "none", target_os = "uefi"))
@@ -238,13 +374,22 @@ mod detection {
         macro_rules! check {
             ($($feature:tt),+) => {{
                 cpufeatures::new!(combined, $($feature),+);
-                assert_eq!(combined::get(), true $(& (cfg!(target_feature = $feature) || cpufeatures::__detect_target_features!($feature)))+);
+                assert_eq!(
+                    combined::get(),
+                    true $(& (cfg!(target_feature = $feature)
+                        || cpufeatures::__detect_target_features!($feature)))+
+                );
             } $({
                 cpufeatures::new!(detected, $feature);
-                assert_eq!(detected::get(), cfg!(target_feature = $feature) || cpufeatures::__detect_target_features!($feature), $feature);
+                assert_eq!(
+                    detected::get(),
+                    cfg!(target_feature = $feature)
+                        || cpufeatures::__detect_target_features!($feature),
+                    $feature
+                );
             })+};
         }
-        check!("lahfsahf", "ermsb", "prfchw");
+        check!("lahfsahf", "ermsb", "prfchw", "rtm");
         check!("xsave", "xsavec", "xsaveopt", "xsaves");
         check!(
             "avxvnni",
@@ -254,17 +399,26 @@ mod detection {
             "avxvnniint16"
         );
         macro_rules! standard {
-            ($($feature:tt),+) => {$({
+            ($exact:expr; $($feature:tt),+) => {$({
                 cpufeatures::new!(detected, $feature);
-                assert_eq!(detected::get(), std::arch::is_x86_feature_detected!($feature), $feature);
+                let actual = detected::get();
+                let expected = std::arch::is_x86_feature_detected!($feature);
+                if $exact || actual {
+                    assert_eq!(actual, expected, $feature);
+                }
             })+};
         }
-        // Std requires AVX register state for XSAVE. The instructions do not.
+        // Rust's detector also checks AVX state for XSAVE.
         if std::arch::is_x86_feature_detected!("avx") {
-            standard!("xsave", "xsavec", "xsaveopt", "xsaves");
+            standard!(true; "xsave", "xsavec", "xsaveopt", "xsaves");
         }
-        standard!("fxsr", "cmpxchg16b", "f16c", "movbe", "lzcnt");
-        standard!(
+        standard!(true; "fxsr", "movbe", "lzcnt");
+        // The standard detector trusts the CX16 bit on Intel LD0.
+        #[cfg(target_arch = "x86_64")]
+        standard!(false; "cmpxchg16b");
+        // The tests above cover the extra CPUID and XCR0 checks.
+        standard!(false;
+            "f16c",
             "gfni",
             "vaes",
             "vpclmulqdq",
