@@ -116,6 +116,11 @@ jobs:
           toolchain: ${{ matrix.rust }}
           targets: ${{ matrix.target }}
       - run: cargo test --target ${{ matrix.target }}
+      - name: Check Android ARM64
+        if: matrix.rust != 'stable'
+        run: |
+          rustup target add aarch64-linux-android
+          cargo check --locked --tests --target aarch64-linux-android
 
   # Build-only tests
   build-only:
