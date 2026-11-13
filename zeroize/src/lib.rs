@@ -218,7 +218,9 @@ mod aarch64;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
 
+#[cfg(feature = "allocator")]
 mod allocator;
+#[cfg(feature = "allocator")]
 pub use allocator::ZeroizingAllocator;
 
 mod barrier;

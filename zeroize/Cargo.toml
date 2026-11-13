@@ -27,6 +27,7 @@ alloc = []
 std = ["alloc"]
 
 aarch64 = [] # NOTE: vestigial no-op feature; AArch64 support is always enabled now
+allocator = [] # NOTE: bumps MSRV to 1.100
 derive = ["zeroize_derive"]
 simd = [] # NOTE: vestigial no-op feature; always enabled
 

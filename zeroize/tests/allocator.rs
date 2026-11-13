@@ -1,5 +1,7 @@
 //! Tests for uses of ZeroizeAllocator.
 
+#![cfg(feature = "allocator")]
+
 use core::{
     alloc::{AllocError, Allocator, Layout},
     ptr::NonNull,
