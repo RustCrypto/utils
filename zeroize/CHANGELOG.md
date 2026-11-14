@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.9.2 (UNRELEASED)
+### Changed
+- Implement `optimization_barrier` using `core::hint::black_box`
+  on targets without stable `asm!` ([#1592])
+
+[#1592]: https://github.com/RustCrypto/utils/pull/1592
+
 ## 1.9.1 (2026-10-06)
 ### Changed
 - Replace `Zeroizing`'s derived `Debug` with opaque impl ([#1497])
