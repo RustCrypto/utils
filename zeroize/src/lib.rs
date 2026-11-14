@@ -221,6 +221,8 @@ mod x86;
 mod barrier;
 pub use barrier::optimization_barrier;
 
+mod bulk;
+
 mod stack;
 pub use stack::zeroize_stack;
 
@@ -744,24 +746,18 @@ fn volatile_write<T: Copy + Sized>(dst: &mut T, src: T) {
 /// contiguous elements of `T`.
 /// `count` must not be larger than an `isize`.
 /// `dst` being offset by `size_of::<T> * count` bytes must not wrap around the address space.
-/// Also `dst` must be properly aligned.
+/// Also `dst` must be properly aligned and non-null, and the total size must not exceed
+/// `isize::MAX` bytes. The destination need not be initialized.
 #[inline(always)]
 unsafe fn volatile_set<T: Copy + Sized>(dst: *mut T, src: T, count: usize) {
-    // TODO(tarcieri): use `volatile_set_memory` when stabilized
-    for i in 0..count {
-        // Safety:
-        //
-        // This is safe because there is room for at least `count` objects of type `T` in the
-        // allocation pointed to by `dst`, because `count <= isize::MAX` and because
-        // `dst.add(count)` must not wrap around the address space.
-        let ptr = unsafe { dst.add(i) };
-
-        // Safety:
-        //
-        // This is safe, because the pointer is valid and because `dst` is well aligned for `T` and
-        // `ptr` is an offset of `dst` by a multiple of `size_of::<T>()` bytes.
-        unsafe { ptr::write_volatile(ptr, src) };
+    if size_of::<T>() == 0 || count == 0 {
+        return;
     }
+
+    // SAFETY: the caller supplies an aligned, writable allocation of the stated size.
+    // MaybeUninit permits uninitialized destinations, including padding and spare capacity.
+    let dst = unsafe { core::slice::from_raw_parts_mut(dst.cast::<MaybeUninit<T>>(), count) };
+    bulk::fill(dst, MaybeUninit::new(src));
 }
 
 /// Zeroizes a flat type/struct. Only zeroizes the values that it owns, and it does not work on
