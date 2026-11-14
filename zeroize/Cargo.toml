@@ -21,6 +21,9 @@ even WASM!
 serde = { version = "1", default-features = false, optional = true }
 zeroize_derive = { version = "1.5", optional = true }
 
+[dev-dependencies]
+criterion = "0.7"
+
 [features]
 default = ["alloc"]
 alloc = []
@@ -29,6 +32,10 @@ std = ["alloc"]
 aarch64 = [] # NOTE: vestigial no-op feature; AArch64 support is always enabled now
 derive = ["zeroize_derive"]
 simd = [] # NOTE: vestigial no-op feature; always enabled
+
+[[bench]]
+name = "zeroize"
+harness = false
 
 [lints]
 workspace = true
