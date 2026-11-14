@@ -141,6 +141,25 @@
 //! # use_secret()
 //! ```
 //!
+//! ### `ZeroizingAllocator<A>`: an allocator that zeroizes memory on deallocation
+//!
+//! When the `allocator` feature is enabled, the `ZeroizingAllocator<A: Allocator>` type is
+//! available, wrapping another allocator and zeroizing memory on deallocation. Use of this
+//! feature bumps the MSRV to 1.100.
+//!
+//! ```
+//! # #[cfg(feature = "allocator")]
+//! # {
+//! use zeroize::ZeroizingAllocator;
+//!
+//! use std::alloc::System;
+//!
+//! let alloc_helper = ZeroizingAllocator::new(System);
+//! let mut vec_example = Vec::new_in(&alloc_helper);
+//! vec_example.extend([2, 3, 5, 7, 11, 13, 17, 19]);
+//! # }
+//! ```
+//!
 //! ## What guarantees does this crate provide?
 //!
 //! This crate guarantees the zeroing operation can't be "optimized away" by the compiler, as
@@ -217,6 +236,11 @@ pub use zeroize_derive::{Zeroize, ZeroizeOnDrop};
 mod aarch64;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 mod x86;
+
+#[cfg(feature = "allocator")]
+mod allocator;
+#[cfg(feature = "allocator")]
+pub use allocator::ZeroizingAllocator;
 
 mod barrier;
 pub use barrier::optimization_barrier;
