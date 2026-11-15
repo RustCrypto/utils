@@ -8,15 +8,12 @@ use core::mem::size_of;
 pub(crate) fn fill<T: Copy>(dst: &mut [T], src: T) {
     // Target 16-byte chunks
     match size_of::<T>() {
+        0 => {}
         1 => fill_chunked::<_, 16>(dst, src),
         2 => fill_chunked::<_, 8>(dst, src),
         4 => fill_chunked::<_, 4>(dst, src),
         8 => fill_chunked::<_, 2>(dst, src),
-        _ => {
-            for item in dst {
-                volatile_write(item, src);
-            }
-        }
+        _ => write_elements(dst, src),
     }
 }
 
@@ -25,18 +22,16 @@ pub(crate) fn fill<T: Copy>(dst: &mut [T], src: T) {
 fn fill_chunked<T: Copy, const N: usize>(dst: &mut [T], src: T) {
     let (chunks, tail) = as_chunks_mut::<T, N>(dst);
     if !chunks.is_empty() {
-        write_chunks(chunks, [src; N]);
+        write_elements(chunks, [src; N]);
     }
-    for item in tail {
-        volatile_write(item, src);
-    }
+    write_elements(tail, src);
 }
 
-/// Portable backend for writing all complete chunks.
+/// Write individual elements or complete chunks with the same volatile primitive.
 #[inline(always)]
-fn write_chunks<T: Copy, const N: usize>(dst: &mut [[T; N]], pattern: [T; N]) {
-    for chunk in dst {
-        volatile_write(chunk, pattern);
+fn write_elements<T: Copy>(dst: &mut [T], src: T) {
+    for item in dst {
+        volatile_write(item, src);
     }
 }
 
