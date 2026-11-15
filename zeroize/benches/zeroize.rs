@@ -4,7 +4,16 @@
 
 use core::hint::black_box;
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
-use zeroize::Zeroize;
+use zeroize::{Zeroize, optimization_barrier};
+
+#[inline(always)]
+fn write_with_barrier<T: Copy + Default>(buf: &mut [T]) {
+    let zero = T::default();
+    for val in buf.iter_mut() {
+        *val = zero;
+    }
+    optimization_barrier(buf);
+}
 
 fn bench_slices(c: &mut Criterion) {
     let mut group = c.benchmark_group("slice/u8");
@@ -14,11 +23,17 @@ fn bench_slices(c: &mut Criterion) {
         group.bench_function(BenchmarkId::from_parameter(len), |b| {
             b.iter(|| black_box(bytes.as_mut_slice()).zeroize());
         });
+        group.bench_function(BenchmarkId::new("write+barrier", len), |b| {
+            b.iter(|| write_with_barrier(black_box(bytes.as_mut_slice())));
+        });
     }
     let mut bytes = [0xa5u8; 16];
     group.throughput(Throughput::Bytes(16));
     group.bench_function("fixed16", |b| {
         b.iter(|| black_box(&mut bytes).as_mut_slice().zeroize());
+    });
+    group.bench_function("write+barrier/fixed16", |b| {
+        b.iter(|| write_with_barrier(black_box(&mut bytes).as_mut_slice()));
     });
     group.finish();
 }
