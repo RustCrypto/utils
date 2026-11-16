@@ -9,6 +9,10 @@
 
 //! ## Usage
 //!
+//! To securely zero a byte slice, use [`zeroize_bytes`]. It uses an optimized fill followed by an
+//! assembly optimization barrier on supported targets, and portable bulk volatile writes
+//! elsewhere.
+//!
 //! ### Traits
 //!
 //! The [`Zeroize`] trait is the core API of this crate. It's intended to be impl'd on values that
@@ -143,8 +147,9 @@
 //!
 //! ## What guarantees does this crate provide?
 //!
-//! This crate guarantees the zeroing operation can't be "optimized away" by the compiler, as
-//! ensured by LLVM's volatile semantics.
+//! The zeroing implementations in this crate prevent the compiler from eliminating writes
+//! using volatile operations or, on supported targets, assembly optimization barriers.
+//! The barriers allow optimized bulk fills, with volatile writes as a portable fallback.
 //!
 //! Previously there were worries that the approach used by this crate (mixing volatile and
 //! non-volatile accesses) was undefined behavior due to language contained
@@ -222,6 +227,7 @@ mod barrier;
 pub use barrier::optimization_barrier;
 
 mod bulk;
+use bulk::zeroize_byte_ptr;
 
 mod stack;
 pub use stack::zeroize_stack;
@@ -234,7 +240,7 @@ use core::{
         NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU128, NonZeroUsize,
     },
     ops, ptr,
-    slice::{self, IterMut},
+    slice::IterMut,
 };
 
 #[cfg(feature = "alloc")]
@@ -385,7 +391,7 @@ where
         // The memory pointed to by `self` is valid for `size_of::<Self>()` bytes.
         // It is also properly aligned, because `u8` has an alignment of `1`.
         unsafe {
-            volatile_zero(ptr::from_mut::<Self>(self).cast::<u8>(), size_of::<Self>());
+            zeroize_byte_ptr(ptr::from_mut::<Self>(self).cast::<u8>(), size_of::<Self>());
         }
 
         // Ensures self is overwritten with the `None` bit pattern. volatile_write can't be
@@ -429,15 +435,11 @@ impl<Z> Zeroize for [MaybeUninit<Z>] {
 
         // SAFETY: the slice provides exclusive access to `size` bytes, and
         // `MaybeUninit<Z>` permits all-zero bytes, including in padding.
-        unsafe { volatile_zero(self.as_mut_ptr().cast::<u8>(), size) }
+        unsafe { zeroize_byte_ptr(self.as_mut_ptr().cast::<u8>(), size) }
     }
 }
 
 /// Impl [`Zeroize`] on slices of types that can be zeroized with [`Default`].
-///
-/// This impl can eventually be optimized using an memset intrinsic,
-/// such as [`core::intrinsics::volatile_set_memory`]. For that reason the
-/// blanket impl on slices is bounded by [`DefaultIsZeroes`].
 ///
 /// To zeroize a mut slice of `Z: Zeroize` which does not impl
 /// [`DefaultIsZeroes`], call `iter_mut().zeroize()`.
@@ -446,7 +448,7 @@ where
     Z: DefaultIsZeroes,
 {
     fn zeroize(&mut self) {
-        bulk::fill(self, Z::default());
+        bulk::volatile_fill_slice(self, Z::default());
     }
 }
 
@@ -714,36 +716,30 @@ where
     }
 }
 
-/// Perform a volatile write to the destination
-#[inline(always)]
-fn volatile_write<T: Copy + Sized>(dst: &mut T, src: T) {
-    unsafe { ptr::write_volatile(dst, src) }
-}
-
-/// Zero potentially uninitialized memory with volatile byte writes.
+/// Securely zero a byte slice, preventing the compiler from eliminating the writes.
 ///
-/// # Safety
-/// For nonzero `len`, `dst` must be non-null and provide exclusive write access to
-/// `len` bytes within a single allocation. The size must not exceed `isize::MAX`,
-/// and the address range must not wrap. If zeroes are not a valid representation,
-/// the caller must restore a valid value before any typed access or drop.
-#[inline(always)]
-unsafe fn volatile_zero(dst: *mut u8, len: usize) {
-    if len == 0 {
-        return;
-    }
-
-    // SAFETY: the caller supplies exclusive access to the stated range.
-    // `MaybeUninit<u8>` has byte alignment and permits uninitialized bytes.
-    let dst = unsafe { slice::from_raw_parts_mut(dst.cast::<MaybeUninit<u8>>(), len) };
-    bulk::fill(dst, MaybeUninit::new(0));
+/// # Examples
+/// ```
+/// let mut secret = [42u8; 32];
+/// zeroize::zeroize_bytes(&mut secret);
+/// assert_eq!(secret, [0u8; 32]);
+/// ```
+#[inline]
+pub fn zeroize_bytes(bytes: &mut [u8]) {
+    // SAFETY: the slice provides exclusive access to its bytes, and zero is a valid u8.
+    unsafe { zeroize_byte_ptr(bytes.as_mut_ptr(), bytes.len()) }
 }
 
 /// Zeroizes a flat type/struct. Only zeroizes the values that it owns, and it does not work on
 /// dynamically sized values or trait objects. It would be inefficient to use this function on a
 /// type that already implements `ZeroizeOnDrop`.
 ///
+/// Uses the same backend as [`zeroize_bytes`], including for padding and
+/// uninitialized bytes.
+///
 /// # Safety
+/// - For nonzero-sized `F`, `data` must be non-null and provide exclusive access to
+///   `size_of::<F>()` writable bytes within a single allocation.
 /// - The type must not contain references to outside data or dynamically sized data, such as
 ///   `Vec<T>` or `String`.
 /// - Values stored in the type must not have `Drop` impls.
@@ -788,14 +784,20 @@ unsafe fn volatile_zero(dst: *mut u8, len: usize) {
 /// ```
 #[inline(always)]
 pub unsafe fn zeroize_flat_type<F: Sized>(data: *mut F) {
-    let size = size_of::<F>();
-    // Safety:
-    //
-    // This is safe because `size_of<T>()` returns the exact size of the object in memory, and
-    // `data_ptr` points directly to the first byte of the data.
-    unsafe {
-        volatile_zero(data.cast::<u8>(), size);
+    // `zeroize_byte_ptr` requires a non-NULL pointer, but we allow passing NULL pointers for ZSTs
+    if size_of::<F>() == 0 {
+        return;
     }
+
+    // SAFETY: the caller provides exclusive access to the object's bytes and
+    // guarantees that zeroes are valid. The backend permits uninitialized padding.
+    unsafe { zeroize_byte_ptr(data.cast::<u8>(), size_of::<F>()) }
+}
+
+/// Perform a volatile write to the destination
+#[inline(always)]
+fn volatile_write<T: Copy + Sized>(dst: &mut T, src: T) {
+    unsafe { ptr::write_volatile(dst, src) }
 }
 
 /// Internal module used as support for `AssertZeroizeOnDrop`.

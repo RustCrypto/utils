@@ -61,6 +61,18 @@ fn zeroize_byte_arrays() {
 }
 
 #[test]
+fn zeroize_bytes() {
+    for len in [0, 1, 15, 16, 17, 31, 32, 33] {
+        let mut bytes = [42u8; 35];
+        zeroize::zeroize_bytes(&mut bytes[1..1 + len]);
+
+        assert_eq!(bytes[0], 42);
+        assert!(bytes[1..1 + len].iter().all(|&byte| byte == 0));
+        assert!(bytes[1 + len..].iter().all(|&byte| byte == 42));
+    }
+}
+
+#[test]
 fn zeroize_on_drop_byte_arrays() {
     let mut arr = [ZeroizedOnDrop(42); 1];
     unsafe { ptr::drop_in_place(&raw mut arr) };
