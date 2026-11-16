@@ -784,6 +784,11 @@ pub fn zeroize_bytes(bytes: &mut [u8]) {
 /// ```
 #[inline(always)]
 pub unsafe fn zeroize_flat_type<F: Sized>(data: *mut F) {
+    // `zeroize_byte_ptr` requires a non-NULL pointer, but we allow passing NULL pointers for ZSTs
+    if size_of::<F>() == 0 {
+        return;
+    }
+
     // SAFETY: the caller provides exclusive access to the object's bytes and
     // guarantees that zeroes are valid. The backend permits uninitialized padding.
     unsafe { zeroize_byte_ptr(data.cast::<u8>(), size_of::<F>()) }

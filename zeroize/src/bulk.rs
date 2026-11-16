@@ -14,19 +14,16 @@ use core::slice;
 /// typed access or drop.
 #[inline]
 pub(crate) unsafe fn zeroize_byte_ptr(dst: *mut u8, len: usize) {
-    if cfg!(all(
-        not(miri),
-        any(
-            target_arch = "aarch64",
-            target_arch = "arm",
-            target_arch = "arm64ec",
-            target_arch = "loongarch64",
-            target_arch = "riscv32",
-            target_arch = "riscv64",
-            target_arch = "s390x",
-            target_arch = "x86",
-            target_arch = "x86_64",
-        )
+    if cfg!(any(
+        target_arch = "aarch64",
+        target_arch = "arm",
+        target_arch = "arm64ec",
+        target_arch = "loongarch64",
+        target_arch = "riscv32",
+        target_arch = "riscv64",
+        target_arch = "s390x",
+        target_arch = "x86",
+        target_arch = "x86_64",
     )) {
         // SAFETY: the caller supplies exclusive access to `len` writable bytes.
         // `write_bytes` initializes every byte before constructing the slice.
