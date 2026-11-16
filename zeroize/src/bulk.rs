@@ -1,24 +1,20 @@
 //! Bulk byte zeroization and volatile writes of a repeated `Copy` value.
 
 use crate::volatile_write;
-use core::{ptr, slice};
+use core::slice;
 
 /// Zero bytes which may be uninitialized, including padding.
 ///
 /// # Safety
-/// For nonzero `len`, `dst` must be non-NULL and provide exclusive access to `len` writable bytes
-/// within a single allocation.
+/// `dst` must be non-NULL and provide exclusive access to `len` writable bytes within a single
+/// allocation.
 ///
 /// The size must not exceed `isize::MAX` and the address range must not wrap. If zeroes are not a
 /// valid bit pattern for the underlying type, the caller must restore a valid value before any
 /// typed access or drop.
 #[inline]
 pub(crate) unsafe fn zeroize_byte_ptr(dst: *mut u8, len: usize) {
-    if len == 0 {
-        return;
-    }
-
-    #[cfg(all(
+    if cfg!(all(
         not(miri),
         any(
             target_arch = "aarch64",
@@ -31,31 +27,14 @@ pub(crate) unsafe fn zeroize_byte_ptr(dst: *mut u8, len: usize) {
             target_arch = "x86",
             target_arch = "x86_64",
         )
-    ))]
-    {
+    )) {
         // SAFETY: the caller supplies exclusive access to `len` writable bytes.
         // `write_bytes` initializes every byte before constructing the slice.
         unsafe {
-            ptr::write_bytes(dst, 0, len);
+            core::ptr::write_bytes(dst, 0, len);
             crate::optimization_barrier(slice::from_raw_parts(dst, len));
         }
-    }
-
-    #[cfg(not(all(
-        not(miri),
-        any(
-            target_arch = "aarch64",
-            target_arch = "arm",
-            target_arch = "arm64ec",
-            target_arch = "loongarch64",
-            target_arch = "riscv32",
-            target_arch = "riscv64",
-            target_arch = "s390x",
-            target_arch = "x86",
-            target_arch = "x86_64",
-        )
-    )))]
-    {
+    } else {
         use core::mem::MaybeUninit;
 
         // SAFETY: the caller supplies exclusive access to this range. `MaybeUninit<u8>` permits
