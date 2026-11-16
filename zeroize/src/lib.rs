@@ -228,7 +228,6 @@ pub use barrier::optimization_barrier;
 
 mod bulk;
 use bulk::zeroize_byte_ptr;
-pub use bulk::zeroize_bytes;
 
 mod stack;
 pub use stack::zeroize_stack;
@@ -449,7 +448,7 @@ where
     Z: DefaultIsZeroes,
 {
     fn zeroize(&mut self) {
-        bulk::fill_volatile(self, Z::default());
+        bulk::volatile_fill_slice(self, Z::default());
     }
 }
 
@@ -717,10 +716,18 @@ where
     }
 }
 
-/// Perform a volatile write to the destination
-#[inline(always)]
-fn volatile_write<T: Copy + Sized>(dst: &mut T, src: T) {
-    unsafe { ptr::write_volatile(dst, src) }
+/// Securely zero a byte slice, preventing the compiler from eliminating the writes.
+///
+/// # Examples
+/// ```
+/// let mut secret = [42u8; 32];
+/// zeroize::zeroize_bytes(&mut secret);
+/// assert_eq!(secret, [0u8; 32]);
+/// ```
+#[inline]
+pub fn zeroize_bytes(bytes: &mut [u8]) {
+    // SAFETY: the slice provides exclusive access to its bytes, and zero is a valid u8.
+    unsafe { zeroize_byte_ptr(bytes.as_mut_ptr(), bytes.len()) }
 }
 
 /// Zeroizes a flat type/struct. Only zeroizes the values that it owns, and it does not work on
@@ -780,6 +787,12 @@ pub unsafe fn zeroize_flat_type<F: Sized>(data: *mut F) {
     // SAFETY: the caller provides exclusive access to the object's bytes and
     // guarantees that zeroes are valid. The backend permits uninitialized padding.
     unsafe { zeroize_byte_ptr(data.cast::<u8>(), size_of::<F>()) }
+}
+
+/// Perform a volatile write to the destination
+#[inline(always)]
+fn volatile_write<T: Copy + Sized>(dst: &mut T, src: T) {
+    unsafe { ptr::write_volatile(dst, src) }
 }
 
 /// Internal module used as support for `AssertZeroizeOnDrop`.
