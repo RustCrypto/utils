@@ -27,31 +27,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - 1.85.0 # MSRV
-          - stable
-        target:
-          - armv7a-none-eabi
-          - thumbv7em-none-eabi
-          - wasm32-unknown-unknown
-    steps:
-      - uses: actions/checkout@v7
-      - uses: RustCrypto/actions/cargo-cache@master
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
-          targets: ${{ matrix.target }}
-      - run: cargo build --no-default-features --target ${{ matrix.target }}
-
-  minimal-versions:
-    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
-    with:
-      working-directory: ${{ github.workflow }}
-
   test:
     strategy:
       matrix:
@@ -100,28 +75,17 @@ jobs:
       - run: ${{ matrix.deps }}
       - run: cargo test --target ${{ matrix.target }}
 
-  # Custom derive tests
-  test-derive:
+  # Test using `cargo careful`
+  test-careful:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: zeroize_derive
-    strategy:
-      matrix:
-        rust:
-          - 1.85.0 # MSRV
-          - stable
     steps:
       - uses: actions/checkout@v7
-      - uses: RustCrypto/actions/cargo-cache@master
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
-      - run: cargo test
-      - run: cargo test --release
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo install cargo-careful
+      - run: cargo careful test --all-features
 
   # Cross-compiled tests
-  cross:
+  test-cross:
     strategy:
       matrix:
         include:
@@ -148,8 +112,28 @@ jobs:
       - run: cross test --target ${{ matrix.target }}
       - run: cross test --target ${{ matrix.target }} --all-features
 
+  # Custom derive tests
+  test-derive:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: zeroize_derive
+    strategy:
+      matrix:
+        rust:
+          - 1.85.0 # MSRV
+          - stable
+    steps:
+      - uses: actions/checkout@v7
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - run: cargo test
+      - run: cargo test --release
+
   # Test using `cargo miri`
-  miri:
+  test-miri:
     runs-on: ubuntu-latest
     env:
       MIRIFLAGS: "-Zmiri-symbolic-alignment-check -Zmiri-strict-provenance"
@@ -167,7 +151,7 @@ jobs:
       - run: cargo miri test --target ${{ matrix.target }} --all-features --lib
 
   # Tests for x86-64 `simd` support
-  x86:
+  test-x86-simd:
     strategy:
       matrix:
         include:
@@ -186,3 +170,43 @@ jobs:
       - uses: RustCrypto/actions/cross-install@master
       - run: cargo test --target ${{ matrix.target }} --features simd
       - run: cargo test --target ${{ matrix.target }} --all-features
+
+  # Test WASM using `wasmtime`
+  test-wasm:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TARGET_WASM32_WASIP1_RUNNER: "wasmtime"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: bytecodealliance/actions/wasmtime/setup@v1
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-wasip1
+      - run: cargo test --target wasm32-wasip1 --all-features
+      - run: cargo test --target wasm32-wasip1 --all-features --release
+
+  minimal-versions:
+    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
+    with:
+      working-directory: ${{ github.workflow }}
+
+  no_std:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.85.0 # MSRV
+          - stable
+        target:
+          - armv7a-none-eabi
+          - thumbv7em-none-eabi
+          - wasm32-unknown-unknown
+    steps:
+      - uses: actions/checkout@v7
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - run: cargo build --no-default-features --target ${{ matrix.target }}

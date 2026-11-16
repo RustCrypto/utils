@@ -21,7 +21,7 @@ even WASM!
 serde = { version = "1", default-features = false, optional = true }
 zeroize_derive = { version = "1.5", optional = true }
 
-[dev-dependencies]
+[target.'cfg(any(unix, windows))'.dev-dependencies]
 criterion = "0.7"
 
 [features]
