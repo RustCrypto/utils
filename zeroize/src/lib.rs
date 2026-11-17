@@ -448,7 +448,7 @@ where
     Z: DefaultIsZeroes,
 {
     fn zeroize(&mut self) {
-        bulk::volatile_fill_slice(self, Z::default());
+        bulk::fill_slice(self, Z::default());
     }
 }
 

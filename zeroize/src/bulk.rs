@@ -1,7 +1,35 @@
-//! Bulk byte zeroization and volatile writes of a repeated `Copy` value.
+//! Bulk operations over slices and pointers.
 
-use crate::volatile_write;
+use crate::{optimization_barrier, volatile_write};
 use core::slice;
+
+/// Whether this target supports an assembly optimization barrier.
+const HAS_ASM: bool = cfg!(any(
+    target_arch = "aarch64",
+    target_arch = "arm",
+    target_arch = "arm64ec",
+    target_arch = "loongarch64",
+    target_arch = "riscv32",
+    target_arch = "riscv64",
+    target_arch = "s390x",
+    target_arch = "x86",
+    target_arch = "x86_64",
+));
+
+/// Fill a slice using an assembly optimization barrier or portable volatile writes.
+#[inline]
+pub(crate) fn fill_slice<T: Copy>(dst: &mut [T], src: T) {
+    if size_of::<T>() == 0 {
+        return;
+    }
+
+    if HAS_ASM {
+        dst.fill(src);
+        optimization_barrier(dst);
+    } else {
+        volatile_fill_slice(dst, src);
+    }
+}
 
 /// Zero bytes which may be uninitialized, including padding.
 ///
@@ -14,22 +42,12 @@ use core::slice;
 /// typed access or drop.
 #[inline]
 pub(crate) unsafe fn zeroize_byte_ptr(dst: *mut u8, len: usize) {
-    if cfg!(any(
-        target_arch = "aarch64",
-        target_arch = "arm",
-        target_arch = "arm64ec",
-        target_arch = "loongarch64",
-        target_arch = "riscv32",
-        target_arch = "riscv64",
-        target_arch = "s390x",
-        target_arch = "x86",
-        target_arch = "x86_64",
-    )) {
+    if HAS_ASM {
         // SAFETY: the caller supplies exclusive access to `len` writable bytes.
         // `write_bytes` initializes every byte before constructing the slice.
         unsafe {
             core::ptr::write_bytes(dst, 0, len);
-            crate::optimization_barrier(slice::from_raw_parts(dst, len));
+            optimization_barrier(slice::from_raw_parts(dst, len));
         }
     } else {
         use core::mem::MaybeUninit;
@@ -43,7 +61,7 @@ pub(crate) unsafe fn zeroize_byte_ptr(dst: *mut u8, len: usize) {
 
 /// Fill a slice with a repeated value, preserving its type and alignment.
 #[inline(always)]
-pub(crate) fn volatile_fill_slice<T: Copy>(dst: &mut [T], src: T) {
+fn volatile_fill_slice<T: Copy>(dst: &mut [T], src: T) {
     // Target 16-byte chunks
     match size_of::<T>() {
         0 => {}
