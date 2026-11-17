@@ -4,12 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.9.2 (UNRELEASED)
+## 1.9.2 (2026-11-17)
+### Added
+- Optimized `zeroize_bytes` function ([#1604])
+
 ### Changed
 - Implement `optimization_barrier` using `core::hint::black_box`
   on targets without stable `asm!` ([#1592])
+- Optimized slice zeroization ([#1602], [#1603], [#1607])
 
 [#1592]: https://github.com/RustCrypto/utils/pull/1592
+[#1602]: https://github.com/RustCrypto/utils/pull/1602
+[#1603]: https://github.com/RustCrypto/utils/pull/1603
+[#1604]: https://github.com/RustCrypto/utils/pull/1604
+[#1607]: https://github.com/RustCrypto/utils/pull/1607
 
 ## 1.9.1 (2026-10-06)
 ### Changed
