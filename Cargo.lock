@@ -60,7 +60,7 @@ version = "0.12.1"
 dependencies = [
  "hex-literal 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hybrid-array",
- "zeroize 1.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "zeroize 1.9.1",
 ]
 
 [[package]]
@@ -727,7 +727,7 @@ name = "sponge-cursor"
 version = "0.1.0"
 dependencies = [
  "keccak",
- "zeroize 1.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "zeroize 1.9.1",
 ]
 
 [[package]]
@@ -944,17 +944,17 @@ dependencies = [
 [[package]]
 name = "zeroize"
 version = "1.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e13084392c5e4bc371903e2935a5eaeed24905a7511356b883835e18a78f6879"
+
+[[package]]
+name = "zeroize"
+version = "1.9.2"
 dependencies = [
  "criterion",
  "serde",
  "zeroize_derive",
 ]
-
-[[package]]
-name = "zeroize"
-version = "1.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e13084392c5e4bc371903e2935a5eaeed24905a7511356b883835e18a78f6879"
 
 [[package]]
 name = "zeroize_derive"

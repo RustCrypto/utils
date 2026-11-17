@@ -1,6 +1,6 @@
 [package]
 name = "zeroize"
-version = "1.9.1"
+version = "1.9.2"
 authors = ["The RustCrypto Project Developers"]
 edition = "2024"
 rust-version = "1.85"
@@ -14,7 +14,7 @@ Securely clear secrets from memory with a simple trait built on
 stable Rust primitives which guarantee memory is zeroed using an
 operation will not be 'optimized away' by the compiler.
 Uses a portable pure Rust implementation that works everywhere,
-even WASM!
+even WASM, with `asm!` optimizations on select platforms
 """
 
 [dependencies]
