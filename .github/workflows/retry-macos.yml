@@ -1,0 +1,157 @@
+name: Retry macOS runner allocation
+
+on:
+  workflow_run:
+    workflows: [cpufeatures, dit]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  retry:
+    if: >-
+      ((github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_branch == 'master' &&
+        github.event.workflow_run.head_repository.full_name == github.repository) ||
+       github.event.workflow_run.event == 'pull_request') &&
+      (github.event.workflow_run.conclusion == 'failure' ||
+       github.event.workflow_run.conclusion == 'cancelled')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      checks: read
+      pull-requests: read
+    concurrency:
+      group: retry-macos-${{ github.event.workflow_run.id }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const { owner, repo } = context.repo;
+            const repository = `${owner}/${repo}`;
+
+            async function isCurrentTarget() {
+              if (!run.head_repository?.id) return false;
+
+              if (run.event === 'pull_request') {
+                // workflow_run.pull_requests can be empty, including for forks.
+                // Match the live PR by source repository, branch, and commit.
+                const pulls = await github.paginate(github.rest.pulls.list, {
+                  owner, repo, state: 'open', per_page: 100
+                });
+                if (!pulls.some(pr => pr.state === 'open' &&
+                    pr.head.repo?.id === run.head_repository.id &&
+                    pr.head.ref === run.head_branch && pr.head.sha === run.head_sha)) {
+                  core.info('No open PR at this head commit; skipping');
+                  return false;
+                }
+              }
+
+              const recent = await github.paginate(github.rest.actions.listWorkflowRuns, {
+                owner, repo, workflow_id: run.workflow_id,
+                branch: run.head_branch, event: run.event,
+                created: `>=${run.created_at}`, per_page: 100
+              });
+              if (recent.some(other => other.id > run.id &&
+                  other.head_repository?.id === run.head_repository.id)) {
+                core.info('A newer run for this source branch supersedes this one; skipping');
+                return false;
+              }
+              return true;
+            }
+
+            // A newer attempt or a newer push supersedes this event.
+            const { data: current } = await github.rest.actions.getWorkflowRun({
+              owner, repo, run_id: run.id
+            });
+            if (current.status !== 'completed' || current.run_attempt !== run.run_attempt) {
+              core.info('Run has already been restarted; skipping');
+              return;
+            }
+
+            if (!await isCurrentTarget()) return;
+
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              owner, repo, run_id: run.id, filter: 'all', per_page: 100
+            });
+
+            // A job can have multiple executions; only inspect its latest one.
+            const latest = new Map();
+            for (const job of jobs.sort((a, b) =>
+              (b.run_attempt ?? 0) - (a.run_attempt ?? 0) || b.id - a.id)) {
+              if (!latest.has(job.name)) latest.set(job.name, job);
+            }
+
+            if ([...latest.values()].some(job => job.status !== 'completed')) {
+              core.info('Some jobs are not completed yet; skipping');
+              return;
+            }
+
+            const unsuccessful = [...latest.values()].filter(job =>
+              !['success', 'skipped', 'neutral'].includes(job.conclusion));
+            if (unsuccessful.length === 0) return;
+
+            // Reject genuine failures and ambiguous cancellations. Only macOS
+            // jobs with no runner and no steps are possible retry candidates.
+            const candidates = unsuccessful.filter(job =>
+              job.name.startsWith('macos (') &&
+              job.labels?.includes('macos-latest') &&
+              ['failure', 'cancelled'].includes(job.conclusion) &&
+              !job.runner_id && !job.runner_name &&
+              (job.steps?.length ?? 0) === 0);
+            if (candidates.length !== unsuccessful.length) {
+              core.info('Another job failed or was cancelled for a different reason; skipping');
+              return;
+            }
+
+            // GitHub uses the job ID as the check-run ID. Verify the specific
+            // runner-acquisition annotation so manual cancellations are not retried.
+            for (const job of candidates) {
+              let annotations;
+              try {
+                annotations = await github.paginate(github.rest.checks.listAnnotations, {
+                  owner, repo, check_run_id: job.id, per_page: 100
+                });
+              } catch (error) {
+                core.warning(`${job.name}: could not verify runner allocation (${error.message})`);
+                return;
+              }
+              if (!annotations.some(a => a.message?.includes('was not acquired by Runner'))) {
+                core.info(`${job.name}: no runner-acquisition annotation; skipping`);
+                return;
+              }
+            }
+
+            // The PR may have closed or advanced, or a newer run may have started.
+            if (!await isCurrentTarget()) return;
+
+            // A human may have restarted this run while the target was checked.
+            const { data: beforeRerun } = await github.rest.actions.getWorkflowRun({
+              owner, repo, run_id: run.id
+            });
+            if (beforeRerun.status !== 'completed' ||
+                beforeRerun.run_attempt !== run.run_attempt) {
+              core.info('Run was restarted while checking annotations; skipping');
+              return;
+            }
+
+            for (const job of candidates) {
+              // Each execution gets a new job ID. Permit two retries per job.
+              const attempts = new Set(jobs.filter(j => j.name === job.name)
+                .map(j => j.id)).size;
+              if (attempts >= 3) {
+                core.warning(`${job.name}: runner allocation failed ${attempts} times. ` +
+                  `Retry manually: gh run rerun --job ${job.id} --repo ${repository}`);
+                continue;
+              }
+
+              // Rerun one job per completed event; avoid conflicting rerun requests.
+              core.notice(`${job.name}: no hosted runner (attempt ${attempts}/3); retrying`);
+              await github.rest.actions.reRunJobForWorkflowRun({
+                owner, repo, job_id: job.id
+              });
+              return;
+            }
