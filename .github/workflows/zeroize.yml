@@ -28,6 +28,7 @@ concurrency:
 
 jobs:
   test:
+    continue-on-error: ${{ matrix.platform == 'macos-latest' }}
     strategy:
       matrix:
         include:

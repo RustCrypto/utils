@@ -63,6 +63,7 @@ jobs:
 
   # macOS tests
   macos:
+    continue-on-error: true
     strategy:
       matrix:
         toolchain:

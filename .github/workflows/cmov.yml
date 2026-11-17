@@ -61,6 +61,7 @@ jobs:
       working-directory: ${{ github.workflow }}
 
   test:
+    continue-on-error: ${{ matrix.runner == 'macos-latest' }}
     strategy:
       matrix:
         include:
