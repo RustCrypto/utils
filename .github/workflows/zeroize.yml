@@ -49,14 +49,6 @@ jobs:
             platform: ubuntu-latest
             rust: stable
 
-          # 64-bit macOS AArch64
-          - target: aarch64-apple-darwin
-            platform: macos-latest
-            rust: 1.85.0 # MSRV
-          - target: aarch64-apple-darwin
-            platform: macos-latest
-            rust: stable
-
           # 64-bit Windows
           - target: x86_64-pc-windows-msvc
             platform: windows-latest

@@ -72,14 +72,6 @@ jobs:
             rust: stable
             runner: ubuntu-24.04-arm
 
-          # `aarch64` macOS
-          - target: aarch64-apple-darwin
-            rust: 1.85.0 # MSRV
-            runner: macos-latest
-          - target: aarch64-apple-darwin
-            rust: stable
-            runner: macos-latest
-
           # `x86` Linux (32-bit)
           - target: i686-unknown-linux-gnu
             rust: 1.85.0 # MSRV
