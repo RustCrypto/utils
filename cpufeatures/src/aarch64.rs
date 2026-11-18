@@ -67,6 +67,7 @@ macro_rules! __expand_check_macro {
 #[cfg(any(target_os = "linux", target_os = "android"))]
 __expand_check_macro! {
     ("aes",    AES),    // Enable AES support.
+    ("crc",    CRC32),  // Enable CRC32 support.
     ("dit",    DIT),    // Enable Data-Independent Timing support.
     ("sha2",   SHA2),   // Enable SHA1 and SHA256 support.
     ("sha3",   SHA3),   // Enable SHA512 and SHA3 support.
@@ -86,6 +87,7 @@ pub mod hwcaps {
     use libc::c_ulong;
 
     pub const AES: c_ulong = libc::HWCAP_AES | libc::HWCAP_PMULL;
+    pub const CRC32: c_ulong = libc::HWCAP_CRC32;
     pub const DIT: c_ulong = libc::HWCAP_DIT;
     pub const SHA2: c_ulong = libc::HWCAP_SHA2;
     pub const SHA3: c_ulong = libc::HWCAP_SHA3 | libc::HWCAP_SHA512;
@@ -111,10 +113,19 @@ macro_rules! check {
     ("aes") => {
         true
     };
+    ("crc") => {
+        unsafe {
+            // `hw.optional.armv8_crc32` is the legacy name,
+            // `hw.optional.arm.FEAT_CRC32` is the newer FEAT_ name.
+            // Either one reporting present means CRC32 is available.
+            $crate::aarch64::try_sysctlbyname(b"hw.optional.armv8_crc32\0")
+                || $crate::aarch64::try_sysctlbyname(b"hw.optional.arm.FEAT_CRC32\0")
+        }
+    };
     ("dit") => {
         // https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms#Enable-DIT-for-constant-time-cryptographic-operations
         unsafe {
-            $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_DIT\0")
+            $crate::aarch64::try_sysctlbyname(b"hw.optional.arm.FEAT_DIT\0")
         }
     };
     ("sha2") => {
@@ -123,8 +134,8 @@ macro_rules! check {
     ("sha3") => {
         unsafe {
             // `sha3` target feature implies SHA-512 as well
-            $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha512\0")
-                && $crate::aarch64::sysctlbyname(b"hw.optional.armv8_2_sha3\0")
+            $crate::aarch64::try_sysctlbyname(b"hw.optional.armv8_2_sha512\0")
+                && $crate::aarch64::try_sysctlbyname(b"hw.optional.armv8_2_sha3\0")
         }
     };
     ("sm4") => {
@@ -133,12 +144,16 @@ macro_rules! check {
     ("sb") => {
         // https://support.arm.com/documentation/ddi0487/mb/-Part-B-The-AArch64-Application-Level-Architecture/-Chapter-B2-The-AArch64-Application-Level-Memory-Model/-B2-6-Memory-barriers/-B2-6-3-Speculation-Barrier
         unsafe {
-            $crate::aarch64::sysctlbyname(b"hw.optional.arm.FEAT_SB\0")
+            $crate::aarch64::try_sysctlbyname(b"hw.optional.arm.FEAT_SB\0")
         }
     };
 }
 
 /// Apple helper function for calling `sysctlbyname`.
+///
+/// Returns `false` when the named key does not exist
+/// or has an unexpected size, so renamed keys across OS versions degrade
+/// to "unsupported" instead of aborting.
 ///
 /// <https://developer.apple.com/documentation/kernel/1387446-sysctlbyname>
 ///
@@ -146,7 +161,7 @@ macro_rules! check {
 /// If `name` is not NUL terminated
 #[cfg(target_vendor = "apple")]
 #[must_use]
-pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
+pub unsafe fn try_sysctlbyname(name: &[u8]) -> bool {
     assert_eq!(
         name.last().cloned(),
         Some(0),
@@ -161,10 +176,11 @@ pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
     // - `name` is being cast from a valid byte slice we asserted was NUL terminated above.
     // - `value` is a properly-aligned, writable integer.
     // - `size` is initialized to the size of `value` (4-bytes).
-    // - The last two arguments,`newp` and `newlen`, are for setting system parameters, which we
+    // - The last two arguments, `newp` and `newlen`, are for setting system parameters, which we
     //   aren't doing here (and requires root privileges). The docs say the following:
     //   - `newp`: "Specify NULL if you don’t want to set the attribute’s value"
     //   - `newlen`: "Specify 0 if you don’t want to set the attribute’s value"
+    // A nonzero return code (unknown key) or unexpected size maps to `false`.
     let rc = unsafe {
         libc::sysctlbyname(
             name.as_ptr().cast::<i8>(),
@@ -175,8 +191,9 @@ pub unsafe fn sysctlbyname(name: &[u8]) -> bool {
         )
     };
 
-    assert_eq!(size, 4, "unexpected sysctlbyname(3) result size");
-    assert_eq!(rc, 0, "sysctlbyname returned error code: {}", rc);
+    if rc != 0 || size != 4 {
+        return false;
+    }
     value != 0
 }
 
