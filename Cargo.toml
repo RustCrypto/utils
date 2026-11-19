@@ -16,6 +16,7 @@ members = [
     "wycheproof2blb",
     "zeroize",
     "zeroize_derive",
+    "zlint"
 ]
 exclude = [
     # Results in circular dependencies
