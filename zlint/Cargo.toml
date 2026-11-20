@@ -1,0 +1,24 @@
+[package]
+name = "zlint"
+version = "0.0.0"
+authors = ["RustCrypto Developers"]
+edition = "2024"
+rust-version = "1.85"
+documentation = "https://docs.rs/zlint"
+repository = "https://github.com/RustCrypto/utils"
+license = "Apache-2.0 OR MIT"
+keywords = ["constant-time", "crypto", "intrinsics"]
+categories = ["api-bindings", "cryptography", "no-std"]
+exclude = ["checkct"]
+description = "Provides a Rust API for invoking the `zlint` X.509 certificate linter"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true

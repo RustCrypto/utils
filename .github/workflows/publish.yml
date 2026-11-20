@@ -17,7 +17,8 @@ on:
       'inout-v*',
       'sponge-cursor-v*',
       'zeroize-v*',
-      'zeroize_derive-v*'
+      'zeroize_derive-v*',
+      'zlint-v*'
     ]
 
 jobs:
