@@ -17,6 +17,7 @@ on:
       'inout-v*',
       'sponge-cursor-v*',
       'zeroize-v*',
+      'zeroize_allocator-v*',
       'zeroize_derive-v*',
       'zlint-v*'
     ]

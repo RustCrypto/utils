@@ -1,0 +1,163 @@
+name: zeroize_allocator
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/zeroize_allocator.yml"
+      - "zeroize_allocator/**"
+      - "Cargo.*"
+  push:
+    branches: master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: zeroize_allocator
+
+env:
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: "-Dwarnings"
+
+# Cancels CI jobs when new commits are pushed to a PR branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        include:
+          # 32-bit Linux
+          - target: i686-unknown-linux-gnu
+            platform: ubuntu-latest
+            rust: 1.100.0 # MSRV
+            deps: sudo apt update && sudo apt install gcc-multilib
+          - target: i686-unknown-linux-gnu
+            platform: ubuntu-latest
+            rust: stable
+            deps: sudo apt update && sudo apt install gcc-multilib
+
+          # 64-bit Linux
+          - target: x86_64-unknown-linux-gnu
+            platform: ubuntu-latest
+            rust: 1.100.0 # MSRV
+          - target: x86_64-unknown-linux-gnu
+            platform: ubuntu-latest
+            rust: stable
+
+          # 64-bit Windows
+          - target: x86_64-pc-windows-msvc
+            platform: windows-latest
+            rust: 1.100.0 # MSRV
+          - target: x86_64-pc-windows-msvc
+            platform: windows-latest
+            rust: stable
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - run: ${{ matrix.deps }}
+      - run: cargo test --target ${{ matrix.target }}
+
+  # Test using `cargo careful`
+  test-careful:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo install cargo-careful
+      - run: cargo careful test --all-features
+
+  # Cross-compiled tests
+  test-cross:
+    strategy:
+      matrix:
+        include:
+          # AArch64
+          - target: aarch64-unknown-linux-gnu
+            rust: 1.100.0
+          - target: aarch64-unknown-linux-gnu
+            rust: stable
+
+          # PPC32
+          - target: powerpc-unknown-linux-gnu
+            rust: 1.100.0 # MSRV
+          - target: powerpc-unknown-linux-gnu
+            rust: stable
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - uses: RustCrypto/actions/cross-install@master
+      - run: cross test --target ${{ matrix.target }}
+      - run: cross test --target ${{ matrix.target }} --all-features
+
+  # Test using `cargo miri`
+  test-miri:
+    runs-on: ubuntu-latest
+    env:
+      MIRIFLAGS: "-Zmiri-symbolic-alignment-check -Zmiri-strict-provenance"
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - s390x-unknown-linux-gnu
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly-2026-09-26
+      - run: rustup component add miri
+      - run: cargo miri test --target ${{ matrix.target }} --all-features
+
+  # Test WASM using `wasmtime`
+  test-wasm:
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TARGET_WASM32_WASIP1_RUNNER: "wasmtime"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: bytecodealliance/actions/wasmtime/setup@v1
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-wasip1
+      - run: cargo test --target wasm32-wasip1 --all-features
+      - run: cargo test --target wasm32-wasip1 --all-features --release
+
+  minimal-versions:
+    uses: RustCrypto/actions/.github/workflows/minimal-versions.yml@master
+    with:
+      working-directory: ${{ github.workflow }}
+
+  no_std:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - 1.100.0 # MSRV
+          - stable
+        target:
+          - armv7a-none-eabi
+          - thumbv7em-none-eabi
+          - wasm32-unknown-unknown
+    steps:
+      - uses: actions/checkout@v7
+      - uses: RustCrypto/actions/cargo-cache@master
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: ${{ matrix.target }}
+      - run: cargo build --no-default-features --target ${{ matrix.target }}

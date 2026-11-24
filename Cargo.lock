@@ -957,6 +957,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "zeroize_allocator"
+version = "0.1.0"
+dependencies = [
+ "zeroize 1.9.1",
+]
+
+[[package]]
 name = "zeroize_derive"
 version = "1.5.0"
 dependencies = [

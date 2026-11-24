@@ -15,6 +15,7 @@ members = [
     "sponge-cursor",
     "wycheproof2blb",
     "zeroize",
+    "zeroize_allocator",
     "zeroize_derive",
     "zlint"
 ]
