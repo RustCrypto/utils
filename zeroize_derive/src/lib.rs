@@ -46,7 +46,7 @@ fn derive_zeroize_impl(input: DeriveInput) -> TokenStream {
             .auto_params
             .iter()
             .map(|type_param| -> WherePredicate {
-                parse_quote! {#type_param: Zeroize}
+                parse_quote! {#type_param: ::zeroize::Zeroize}
             })
             .collect(),
     };
@@ -545,6 +545,32 @@ mod tests {
             },
             quote! {
                 impl<T> ::zeroize::Zeroize for Z<T> where T: MyTrait {
+                    fn zeroize(&mut self) {
+                        match self {
+                            #[allow(unused_variables, unused_assignments)]
+                            Z(__zeroize_field_0) => {
+                                __zeroize_field_0.zeroize()
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            },
+        );
+    }
+
+    #[test]
+    fn zeroize_infers_fully_qualified_bound() {
+        // The auto-inferred `T: Zeroize` bound must reference the trait by its
+        // full `::zeroize::Zeroize` path, so deriving works at a call site that
+        // does not have the `Zeroize` trait imported into scope.
+        test_derive(
+            derive_zeroize_impl,
+            quote! {
+                struct Z<T>(T);
+            },
+            quote! {
+                impl<T> ::zeroize::Zeroize for Z<T> where T: ::zeroize::Zeroize {
                     fn zeroize(&mut self) {
                         match self {
                             #[allow(unused_variables, unused_assignments)]
