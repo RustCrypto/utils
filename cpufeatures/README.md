@@ -56,6 +56,50 @@ compiler to completely eliminate fallback code.
 After first call macro caches result and returns it in subsequent
 calls, thus runtime overhead for them is minimal.
 
+## Example: several target feature sets
+
+Backends are often selected from a list of alternatives, in which case naming each set
+lets the macro detect all of them at once and cache the outcome in a single atomic
+variable:
+
+```rust
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+pub mod x86_dispatch {
+    // This macro creates `backend` module with a `Features` enum
+    cpufeatures::new!(
+        backend;
+        Avx2: "avx2", "aes";
+        Aes: "aes", "sse4.1";
+        Soft;
+    );
+
+    use backend::Features;
+
+    pub fn run() {
+        // A single relaxed load, regardless of the number of declared sets
+        match backend::get() {
+            Features::Avx2 => println!("AVX2 and AES extensions are supported"),
+            Features::Aes => println!("AES and SSE4.1 extensions are supported"),
+            Features::Soft => println!("no hardware acceleration is available"),
+        }
+
+        // `InitToken` works the same way as for a single target feature set
+        let token: backend::InitToken = backend::init();
+        assert_eq!(token.get(), backend::get());
+    }
+}
+```
+
+Sets are probed in the order in which they are declared and the first fully available one
+is selected, so they should be listed from the most to the least preferred. The trailing
+entry carries no target features and names the variant returned when none of the sets is
+available.
+
+If all target features of the *first* set are enabled via compiler options, it is always
+the selected one, so detection and the atomic load are eliminated entirely. The same happens
+on targets without runtime detection, such as SGX, UEFI and freestanding ones, where the
+selected set follows from the compiler options alone.
+
 ## Supported target architectures
 
 *NOTE: target features with an asterisk are unstable (nightly-only) and subject
