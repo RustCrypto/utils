@@ -34,6 +34,7 @@ compile_error!("This crate works only on `aarch64`, `loongarch64`, `x86`, and `x
 #[macro_export]
 macro_rules! new {
     ($mod_name:ident, $($tf:tt),+ $(,)?) => {
+        #[allow(unexpected_cfgs)]
         mod $mod_name {
             use core::sync::atomic::{AtomicU8, Ordering::Relaxed};
 
